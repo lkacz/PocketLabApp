@@ -1,0 +1,51 @@
+// Participant ID Entry
+// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
+INPUTFIELD;Participant ID Entry;Please enter the Participant ID for this session and then hand the phone over to the participant.;CONTINUE;Participant ID
+
+// Triple Tap Instruction to Start the Study
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;Study Start Confirmation;When you are ready to start, please tap quickly three times anywhere on the screen to reveal the start button.;START THE STUDY
+
+// General Study Overview
+// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+INSTRUCTION;Study Overview;Welcome to our walking study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE
+
+// Instruction for Walking Solo
+// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+INSTRUCTION;Walking Task Solo;Please walk in the park alone for 30 minutes. Start now and continue walking until you hear an alarm.;START WALKING
+
+// Timer for 30 Minutes Solo Walk
+// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
+TIMER;Walking Timer Solo;30 minutes of walking time starts now. Please continue walking until you hear the alarm. [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF AND CONTINUE;1800
+
+// Emotions Scale After Walking Solo
+// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+// Instruction for Walking With a Friend
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;Syncing With Your Friend;Please wait for your friend. Once both of you are together and ready to start the joint session, triple-tap your screen to begin.;My Friend is here and we are ready to continue
+
+// Instruction for Walking With a Friend
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;Walking Task With Friend;Triple-tap and push the 'Start Walking' button with your friend at the same time. When the timer starts, start walking and continue until you hear the alarm.;START WALKING
+
+// Timer for 30 Minutes Walk With Friend
+// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
+TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.;SET OFF ALARM AND CONTINUE;1800
+
+// Emotions Scale After Walking With a Friend
+// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+// Additional Comments Box
+// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
+INPUTFIELD;Additional Comments;Please provide any additional comments about your experience.;SUBMIT;Your Comments
+
+// Thank You Note
+// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+INSTRUCTION;Thank You;Thank you for participating in the study. Your contribution is highly appreciated. [NOTE: Browse to the Documents folder on your smartphone to inspect the generated output files. Tap the next screen 20 times to close the app];FINISH
+
+// Log Study End
+// Syntax: LOG;Text
+LOG;The study ended at this moment.

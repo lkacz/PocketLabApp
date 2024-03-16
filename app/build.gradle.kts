@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.example.frags"
+    namespace = "com.lkacz.pola"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.frags"
-        minSdk = 27
+        applicationId = "com.lkacz.pola"
+        minSdk = 29
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
@@ -47,6 +47,8 @@ android {
 }
 
 dependencies {
+
+    implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("org.apache.poi:poi:5.2.3")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
     implementation("androidx.core:core-ktx:1.12.0")

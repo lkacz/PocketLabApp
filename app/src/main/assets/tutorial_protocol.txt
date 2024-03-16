@@ -1,0 +1,55 @@
+STUDY_ID;Tutorial
+
+// WELCOME TO PoLA TUTORIAL
+// The comment before each command explain its format.
+
+INSTRUCTION;Welcome!;Welcome to the Pocket Lab App (PoLA) tutorial. This interactive tutorial will guide you through each command, demonstrating how it can be effectively used in research. After the Official Part, there is a Fun Part ahead! Press "Start" to begin.;Start
+
+// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+INSTRUCTION;The INSTRUCTION Command;The INSTRUCTION command displays a message with a header, body, and button. This command is foundational for providing participants with information and instructions at different stages of the study.;Understood
+
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;The TAP_INSTRUCTION Command;The TAP_INSTRUCTION command requires participants to triple-tap the screen to reveal the "Continue" button. This feature ensures that participants actively engage with the instruction and do not accidentally skip it. Triple-tap the screen to reveal the Continue button.;Got it! Let's continue!
+
+// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NUMBEROFSECONDS
+TIMER;The TIMER Command;The TIMER command schedules an alarm after a set period. This can prompt participants to perform a task or complete assessments at predetermined times. For example, we'll wait for 10 seconds. Tip: You can skip the waiting time by tapping the screen 20 times. Keep this shortcut confidential from the participant.;Continue;10
+
+// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
+SCALE;The SCALE Command;The SCALE command asks participants to respond to a single question using a labeled scale. How would you rate your understanding of the commands discussed so far?;Understanding;No understanding at all;Some understanding;Moderate understanding;Good understanding;Excellent understanding
+
+// Syntax: MULTISCALE;HEADER_TEXT;BODY_TEXT;[ITEM1_TEXT;ITEM2_TEXT;...];RESPONSE1_TEXT;...;RESPONSE9_TEXT
+MULTISCALE;The MULTISCALE Command;The MULTISCALE command allows you to include multiple items in one question. Rate your level of interest and excitement about learning more commands.;[Interest;Excitement];Not at all;Slightly;Somewhat;Moderately;Very;Extremely
+
+// Syntax: RANDOMIZED_MULTISCALE;HEADER_TEXT;BODY_TEXT;[ITEM1_TEXT;ITEM2_TEXT;...];RESPONSE1_TEXT;...;RESPONSE9_TEXT
+RANDOMIZED_MULTISCALE;The RANDOMIZED_MULTISCALE Command;Similar to MULTISCALE, but items appear in a random order each time. Again, rate your Interest, Excitement, and Astonishment to observe them in a potentially new order. The brackets indicate the original sequence before randomization.;[Interest(#1 on the list);Excitement(#2 on the list);Astonishment(#3 on the list)];Not at all;Slightly;Somewhat;Moderately;Very;Extremely
+
+// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1_TEXT;...;INPUTFIELD#10_TEXT
+INPUTFIELD;The INPUTFIELD Command;The INPUTFIELD command allows text input. Please enter your name and age for practice.;Enter Info;Name;Age
+
+INSTRUCTION;End of the Official Part of the Tutorial;Congratulations! You have completed the official PoLA tutorial. Now, you know how to use various commands to guide participants through a study, collect data, and manage the flow of your research protocol. Let's go through the functionalities once more, using an exciting fun protocol developed by HeLA.;START THE FUN PART
+
+INSTRUCTION;Welcome to the Great Adventure!;This will be a journey like no other. Prepare to engage your senses, challenge your perceptions, and embark on a series of unusual tasks.;Let's Start!
+
+RANDOMIZED_MULTISCALE;Your Adventure Gear;Rate how confident you feel using each item on your adventure.;[Magic Wand;Invisibility Cloak;Time Machine;Flying Carpet];Not confident;Slightly confident;Moderately confident;Very confident;Extremely confident
+
+TIMER;Mental Preparation Time;Take a moment to mentally prepare for the adventure ahead. Visualize success!;Begin Adventure;10
+
+TAP_INSTRUCTION;Secret Handshake;To proceed, perform the secret handshake by tapping the screen three times with a finger you never use for tapping.;Onward!
+
+SCALE;Mystery Sound;Listen carefully to the sounds in your surrounding and rate how familiar they are.;The Sound;Never heard it;Barely recognize;Somewhat familiar;Very familiar;I hear this in my dreams
+
+INPUTFIELD;Adventure Notes;Please note any strange or unusual thoughts you've had since starting the adventure.;Record Thoughts;Your Thoughts
+
+TIMER;Interdimensional Pause;You've briefly entered a parallel universe. Observe any changes around you until the timer runs out. You can travel in time by tapping the screen quickly 20 times;Continue Observing;60
+
+MULTISCALE;Parallel Universe Effects;Rate how these elements differ in the parallel universe you're in.;[Gravity;Light;Sound;Time];Much less;Less;Same;More;Much more
+
+INSTRUCTION;Unexpected Dance Break!;An essential part of any adventure is to take a singing and dancing break. Please stand up, sing, and dance freely as long as you can.;I'm done with my sing & Dance!
+
+RANDOMIZED_MULTISCALE;Post-Dance Energy Levels;How energized do you feel after the dance break? Rate your energy levels.;[Physical Energy;Mental Energy;Emotional Energy];Depleted;Low;Moderate;High;Supercharged
+
+INSTRUCTION;Adventure's End;Congratulations! You've completed the Great Adventure. Take a deep breath and prepare to return to reality.;End Adventure, Start Research!
+
+INSTRUCTION;End of Tutorial;Congratulations! You have completed the Fun Part of PoLA tutorial. Now, you know how creative you can get using PoLA. Browse to the Documents folder on your smartphone to inspect the generated output files. Press "Finish" to conclude this tutorial. To close the "Completed" slide, tap the screen 20 times. This ascertains that only you can close the app.;Finish
+
+END

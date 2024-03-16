@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Frags"
+rootProject.name = "pola"
 include(":app")
  

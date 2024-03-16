@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">PGO</string>
+    <string name="app_name">Pocket Lab App</string>
+    <string name="app_description">Click to open a browser.</string>
+    <string name="app_version">Ver 0.1</string>
+    <string name="select_protocol_file">Select Protocol File</string>
+    <string name="select_file_button">Select your protocol</string>
+    <string name="use_demo_button">Load DEMO protocol</string>
+    <string name="start_protocol_button">Start</string>
+    <string name="selected_protocol">Selected:</string>
 </resources>

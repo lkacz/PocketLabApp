@@ -1,0 +1,49 @@
+<h2>About PoLA (Pocket Lab App)</h2>
+
+<b>Version:</b> 0.1<br>
+<b>Developed by:</b> <i>Lukasz Kaczmarek, PhD., Adam Mickiewicz University, AMU Psychophysiology Laboratory: Gaming & Streaming</i><br>
+<b>Release Date:</b> <i>March 14th, 2024</i><br>
+
+<hr>
+
+<b>Overview:</b><br>
+<p>PoLA (Pocket Lab App) is a mobile application designed to advance the way behavioral research is conducted. Developed with the needs of researchers and participants in mind, PoLA offers a versatile platform for conducting a wide range of studies, from simple surveys to complex experimental protocols, in real-time and naturalistic settings. Leveraging the integration with PoLA's AI-powered <a href="https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-hela">HELPFUL ASSISTANT (HelA)</a>, it streamlines the process of experimental research development.</p>
+
+<b>Key Features:</b>
+<ul>
+    <li><b>Dynamic Study Protocols:</b> Easily upload and manage custom study protocols. Create and revise protocols effortlessly using natural language instructions with HelA.</li>
+    <li><b>Real-time Data Collection:</b> Securely collect and store responses on the device, maintaining data integrity and confidentiality.</li>
+    <li><b>Alarm Management:</b> Schedule notifications and reminders to keep participants engaged and ensure timely task completion.</li>
+    <li><b>User-friendly Interface:</b> Minimum instruction is needed for participants to navigate through studies, enhanced by tutorials and demo protocols.</li>
+    <li><b>Offline Functionality:</b> Enables studies to be conducted without an internet connection, in any location.</li>
+       <li>
+         <b>AI-Powered Protocol Creation:</b> HelA assists in the generation and revision of experimental protocols using natural language processing. Redirect to <a href="https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-hela">HELPFUL ASSISTANT</a>.
+       </li>
+</ul>
+
+<p><b>Getting Started:</b> Upon installation, explore the app through running demo and tutorial protocols. Utilize HelA for protocol creation and revision by providing natural language instructions.</p>
+
+<b>Development and Support:</b><br>
+<p>PoLA is an open-source project led by <i>Lukasz Kaczmarek, PhD</i>, from Adam Mickiewicz University. The app and HelA are continuously improved based on user feedback and research community needs. For inquiries, collaboration, or feedback, contact Dr. Kaczmarek at <i>lkacz@amu.edu.pl</i>.</p>
+
+<b>Contact Us:</b><br>
+<p>For support, feedback, or inquiries about collaboration, please contact us at <i>lkacz@amu.edu.pl</i>.</p>
+
+<b>Contribute:</b><br>
+<p>Contributions from the research and developer communities are welcome. Whether it's suggesting new features, reporting bugs, or contributing code, your input helps enhance PoLA for everyone. Visit our GitHub page to get involved. Contributing under the GNU General Public License (GPL), your modifications will remain free and open.</p>
+
+<b>Acknowledgments:</b><br>
+<p>Gratitude is extended to all researchers, participants, and developers involved in PoLA's development and testing. Your contributions are crucial for meeting the evolving needs of the behavioral research community.</p>
+
+<b>License:</b><br>
+<p>PoLA is licensed under the <i>GNU General Public License (GPL) version 3</i>, promoting the freedom to share, modify, and distribute the software under its terms.</p>
+
+<b>Disclaimer:</b><br>
+<p>PoLA and HelA are provided "as is," without any warranty. The developers are not liable for any damages arising from the software's use.</p>
+
+<hr>
+
+<b>Read the full documentation:</b> For more detailed information, please visit
+<a href="https://raw.githubusercontent.com/lkacz/pocketlabapp/main/Pocket%20Lab%20App%20documentation.pdf">https://raw.githubusercontent.com/lkacz/pocketlabapp/main/Pocket%20Lab%20App%20documentation.pdf</a>
+
+<p>Thank you for choosing PoLA for your research needs. We look forward to being part of your journey in unlocking new insights and advancing behavioral science.</p>
