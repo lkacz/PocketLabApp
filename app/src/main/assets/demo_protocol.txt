@@ -16,7 +16,7 @@ INSTRUCTION;Walking Task Solo;Please walk in the park alone for 30 minutes. Star
 
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking Timer Solo;30 minutes of walking time starts now. Please continue walking until you hear the alarm. [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF AND CONTINUE;1800
+TIMER;Walking Timer Solo;30 minutes of walking time starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF AND CONTINUE;1800
 
 // Emotions Scale After Walking Solo
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
@@ -44,7 +44,7 @@ INPUTFIELD;Additional Comments;Please provide any additional comments about your
 
 // Thank You Note
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Thank You;Thank you for participating in the study. Your contribution is highly appreciated. [NOTE: Browse to the Documents folder on your smartphone to inspect the generated output files. Tap the next screen 20 times to close the app];FINISH
+INSTRUCTION;Thank You;Thank you for participating in the study. Your contribution is highly appreciated. >>>>> [NOTE: Browse to the Documents folder on your smartphone to inspect the generated output files. Tap the next screen 20 times to close the app];FINISH
 
 // Log Study End
 // Syntax: LOG;Text
