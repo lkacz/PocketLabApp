@@ -1,31 +1,36 @@
 package com.lkacz.pola
 
-import android.os.Environment
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Environment
+import android.widget.Toast
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 class Logger private constructor(private val context: Context) {
-    private val fileOperations: FileOperations
+    private lateinit var fileOperations: FileOperations
     private var isBackupCreated = false
     private val excelOperations = ExcelOperations()
     private val sharedPref: SharedPreferences = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
 
-    private val studyId: String? = sharedPref.getString("STUDY_ID", null)
-    private val fileName: String
-    private val mainFolder: File
-    private val file: File
+    private lateinit var studyId: String
+    private lateinit var fileName: String
+    private lateinit var mainFolder: File
+    private lateinit var file: File
 
-    init {
+    fun setupLogger() {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+        studyId = sharedPref.getString("STUDY_ID", "") ?: ""
 
-        fileName = if (studyId.isNullOrEmpty()) {
+        fileName = if (studyId.isEmpty()) {
             "output_$timeStamp.csv"
         } else {
             "${studyId}_output_$timeStamp.csv"
         }
+
+        Toast.makeText(context, "Logger Initialized with STUDY_ID: $studyId", Toast.LENGTH_LONG).show()
 
         val publicStorage = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
         mainFolder = File(publicStorage, "PoLA_Data")
@@ -40,6 +45,10 @@ class Logger private constructor(private val context: Context) {
     }
 
     private fun logToCSV(cells: Array<String?>) {
+        if (!this::fileOperations.isInitialized) {
+            return
+        }
+
         val dateTime = getCurrentDateTime().split(" ")
         val date = dateTime[0]
         val time = dateTime[1]
@@ -67,30 +76,18 @@ class Logger private constructor(private val context: Context) {
         logToCSV(arrayOf(header, intro, item, responseNumber, responseText, null, null, null))
     }
 
-    fun logOther(message: String) {
-        logToCSV(arrayOf(null, null, null, null, null, null, message, null))
-    }
-
     fun backupLogFile() {
         if (!file.exists()) {
             return
         }
 
         try {
-            // Create Excel file in main folder
             val mainFolderXlsxFileName = fileName.replace(".csv", ".xlsx")
             val mainFolderXlsxFile = File(mainFolder, mainFolderXlsxFileName)
-            excelOperations.createXlsxBackup(
-                mainFolderXlsxFile,
-                file,
-                BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
-            )
+            excelOperations.createXlsxBackup(mainFolderXlsxFile, file, BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")), BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")))
 
-            // Check if backup is already created to avoid duplication
             if (isBackupCreated) return
 
-            // Create backup folder and copy CSV file
             val backupFolder = File(mainFolder.parentFile, backupFolderName)
             if (!backupFolder.exists()) {
                 backupFolder.mkdirs()
@@ -100,15 +97,9 @@ class Logger private constructor(private val context: Context) {
             val backupFileCsv = File(backupFolder, backupFileNameCsv)
             file.copyTo(backupFileCsv, overwrite = true)
 
-            // Create Excel backup file
             val backupFileNameXlsx = fileName.replace(".csv", "_backup.xlsx")
             val backupFileXlsx = File(backupFolder, backupFileNameXlsx)
-            excelOperations.createXlsxBackup(
-                backupFileXlsx,
-                file,
-                BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
-            )
+            excelOperations.createXlsxBackup(backupFileXlsx, file, BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")), BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")))
 
             isBackupCreated = true
         } catch (e: IOException) {
@@ -117,6 +108,7 @@ class Logger private constructor(private val context: Context) {
     }
 
     companion object {
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var INSTANCE: Logger? = null
         private const val backupFolderName = "PoLA_Backup"

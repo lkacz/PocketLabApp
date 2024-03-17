@@ -43,17 +43,13 @@ class StartFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
         updateProtocolNameDisplay(protocolUri?.let {
-            fileUriUtils.getFileName(
-                requireContext(),
-                it
-            )
+            fileUriUtils.getFileName(requireContext(), it)
         } ?: "None")
 
         setupButtons(view)
@@ -77,8 +73,7 @@ class StartFragment : Fragment() {
             .setOnClickListener { themeManager.toggleTheme().also { activity?.recreate() } }
         view.findViewById<Button>(R.id.btnShowProtocolContent)
             .setOnClickListener { showProtocolContentDialog() }
-        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {showAboutContentDialog()
-        }
+        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener { showAboutContentDialog() }
     }
 
     private fun handleFileUri(uri: Uri) {
@@ -129,6 +124,8 @@ class StartFragment : Fragment() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
             { uri -> fileUriUtils.getFileName(requireContext(), uri) }) {
+            // This is where the Logger should be initialized in MainActivity
+            (activity as? MainActivity)?.initializeLogger()
             listener.onProtocolSelected(protocolUri)
         }
     }
@@ -160,5 +157,4 @@ class StartFragment : Fragment() {
         val aboutHtmlContent = readFromAssets("about.txt")
         ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
-
 }

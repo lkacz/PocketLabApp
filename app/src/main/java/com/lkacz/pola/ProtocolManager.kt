@@ -8,9 +8,9 @@ import android.net.Uri
 import java.io.FileNotFoundException
 
 import android.content.SharedPreferences
+import android.widget.Toast
 
 class ProtocolManager(private val context: Context) {
-    var studyId: String? = null // Variable to store the STUDY_ID
 
     private var sharedPref: SharedPreferences =
         context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
@@ -35,6 +35,7 @@ class ProtocolManager(private val context: Context) {
                 lines?.firstOrNull { it.startsWith("STUDY_ID;") }?.let {
                     val studyId = it.split(";").getOrNull(1)
                     sharedPref.edit().putString("STUDY_ID", studyId).apply()
+                    Toast.makeText(context, "Updated STUDY_ID: $studyId", Toast.LENGTH_LONG).show() // remove this when no longer necessary
                 }
             }
         } catch (e: FileNotFoundException) {

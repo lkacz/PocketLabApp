@@ -9,13 +9,12 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import java.io.BufferedReader
 import android.net.Uri
-import android.widget.Toast
 
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
 
     private val channelId = "ForegroundServiceChannel"
     private lateinit var fragmentLoader: FragmentLoader
-    private lateinit var logger: Logger
+    private var logger: Logger? = null // Make logger nullable
     private lateinit var protocolManager: ProtocolManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +26,6 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         supportActionBar?.hide()
 
         Logger.resetInstance()
-        logger = Logger.getInstance(this)
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -46,13 +44,20 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol: BufferedReader = protocolManager.getManipulatedProtocol()
 
-        fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
-        loadNextFragment()
+        // Ensure logger is initialized here
+        initializeLogger()
+        logger?.setupLogger() // Setup logger with the current context and preferences
+
+        // Now that logger is initialized and set up, create the fragmentLoader
+        logger?.let {
+            fragmentLoader = FragmentLoader(manipulatedProtocol, it)
+            loadNextFragment()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        logger.backupLogFile()
+        logger?.backupLogFile()
     }
 
     private fun createNotificationChannel() {
@@ -62,7 +67,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(channel)  // Removed conditional check
+        manager.createNotificationChannel(channel)
     }
 
     fun loadNextFragment() {
@@ -70,5 +75,9 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, fragment)
             .commit()
+    }
+
+    fun initializeLogger() {
+        logger = Logger.getInstance(this)
     }
 }

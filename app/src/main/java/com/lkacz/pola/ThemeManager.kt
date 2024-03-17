@@ -2,7 +2,6 @@ package com.lkacz.pola
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatDelegate
 
 class ThemeManager(private val context: Context) {
     companion object {

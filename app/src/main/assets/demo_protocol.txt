@@ -1,3 +1,5 @@
+STUDY_ID;Demo
+
 // Participant ID Entry
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;Participant ID Entry;Please enter the Participant ID for this session and then hand the phone over to the participant.;CONTINUE;Participant ID
