@@ -12,7 +12,7 @@ INSTRUCTION;The INSTRUCTION Command;The INSTRUCTION command displays a message w
 TAP_INSTRUCTION;The TAP_INSTRUCTION Command;The TAP_INSTRUCTION command requires participants to triple-tap the screen to reveal the "Continue" button. This feature ensures that participants actively engage with the instruction and do not accidentally skip it. Triple-tap the screen to reveal the Continue button.;Got it! Let's continue!
 
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NUMBEROFSECONDS
-TIMER;The TIMER Command;The TIMER command schedules an alarm after a set period. This can prompt participants to perform a task or complete assessments at predetermined times. For example, we'll wait for 10 seconds. Tip: You can skip the waiting time by tapping the screen 20 times. Keep this shortcut confidential from the participant.;Continue;10
+TIMER;The TIMER Command;The TIMER command schedules an alarm after a set period. This can prompt participants to perform a task or complete assessments at predetermined times. For example, we'll wait for 10 seconds. Tip: You can skip the waiting time by tapping the screen 20 times. Keep this shortcut confidential from the participant.;Continue;30
 
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
 SCALE;The SCALE Command;The SCALE command asks participants to respond to a single question using a labeled scale. How would you rate your understanding of the commands discussed so far?;Understanding;No understanding at all;Some understanding;Moderate understanding;Good understanding;Excellent understanding
@@ -50,6 +50,6 @@ RANDOMIZED_MULTISCALE;Post-Dance Energy Levels;How energized do you feel after t
 
 INSTRUCTION;Adventure's End;Congratulations! You've completed the Great Adventure. Take a deep breath and prepare to return to reality.;End Adventure, Start Research!
 
-INSTRUCTION;End of Tutorial;Congratulations! You have completed the Fun Part of PoLA tutorial. Now, you know how creative you can get using PoLA. Browse to the Documents folder on your smartphone to inspect the generated output files. Press "Finish" to conclude this tutorial. To close the "Completed" slide, tap the screen 20 times. This ascertains that only you can close the app.;Finish
+INSTRUCTION;End of Tutorial;You have completed the Fun Part of PoLA tutorial. Now, you know how creative you can get using PoLA. Browse to the Documents folder on your smartphone to inspect the generated output files. Press "Finish" to conclude this tutorial. To close the next "Completed" slide, tap the screen 20 times. This ascertains that only you can close the app.;Finish
 
 END
