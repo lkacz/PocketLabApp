@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
-import android.widget.Toast
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -29,8 +28,6 @@ class Logger private constructor(private val context: Context) {
         } else {
             "${studyId}_output_$timeStamp.csv"
         }
-
-        Toast.makeText(context, "Logger Initialized with STUDY_ID: $studyId", Toast.LENGTH_LONG).show()
 
         val publicStorage = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
         mainFolder = File(publicStorage, "PoLA_Data")

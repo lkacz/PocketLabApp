@@ -12,7 +12,7 @@ import androidx.fragment.app.Fragment
 class EndFragment : Fragment() {
 
     private lateinit var logger: Logger
-    private val touchCounter = TouchCounter(5000, 20)  // Initialize TouchCounter
+    private val touchCounter = TouchCounter(5000, 10)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,7 +26,6 @@ class EndFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Delay the backup operation for 1 second
         Handler(Looper.getMainLooper()).postDelayed({
             logger.backupLogFile()
         }, 500)

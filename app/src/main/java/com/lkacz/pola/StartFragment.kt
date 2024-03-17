@@ -124,7 +124,7 @@ class StartFragment : Fragment() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
             { uri -> fileUriUtils.getFileName(requireContext(), uri) }) {
-            // This is where the Logger should be initialized in MainActivity
+
             (activity as? MainActivity)?.initializeLogger()
             listener.onProtocolSelected(protocolUri)
         }
