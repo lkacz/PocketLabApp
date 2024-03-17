@@ -1,6 +1,5 @@
 package com.lkacz.pola
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
@@ -8,7 +7,7 @@ import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-class Logger private constructor(private val context: Context) {
+class Logger private constructor(context: Context) {
     private lateinit var fileOperations: FileOperations
     private var isBackupCreated = false
     private val excelOperations = ExcelOperations()
@@ -105,7 +104,6 @@ class Logger private constructor(private val context: Context) {
     }
 
     companion object {
-        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var INSTANCE: Logger? = null
         private const val backupFolderName = "PoLA_Backup"

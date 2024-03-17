@@ -18,7 +18,7 @@ class TimerFragment : Fragment() {
     private lateinit var alarmManager: AlarmManager
     private lateinit var logger: Logger
 
-    private val touchCounter = TouchCounter(5000, 20)
+    private val touchCounter = TouchCounter(5000, 10)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +61,7 @@ class TimerFragment : Fragment() {
             }
 
             override fun onFinish() {
-                timerTextView.text = "Continue."
+                timerTextView.text = getString(R.string.time_continue_text)
                 nextButton.visibility = View.VISIBLE
                 alarmManager.startAlarm()
                 logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)

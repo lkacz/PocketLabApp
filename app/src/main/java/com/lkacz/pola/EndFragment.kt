@@ -32,10 +32,9 @@ class EndFragment : Fragment() {
         view.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (touchCounter.onTouch()) {
-                    // Close the application logic goes here
                     activity?.finish()
                 }
-                v.performClick()  // Indicate that the view was clicked
+                v.performClick()
             }
             true
         }
