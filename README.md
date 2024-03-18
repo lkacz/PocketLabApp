@@ -24,14 +24,19 @@ A protocol is a sequence of instructions stored in a .txt file. Each line in the
 ```
 // This is the name of my study
 STUDY_ID;MindfulWalkStudy
+
 // This scale will ask about mood and provide five buttons for the response between stressed and relaxed
 SCALE;Pre-Walk Mood;How do you feel right now?;Your Current Mood;Very Stressed;Stressed;Neutral;Relaxed;Very Relaxed
+
 // The participant receives instructions on walking mindfully and start the session by pressing Begin Walk
 INSTRUCTION;Mindful Walk Instructions;During your walk, focus on your surroundings. Observe the colors, sounds, and scents around you. If your mind wanders, gently bring your attention back to the present moment.;BEGIN WALK
+
 // Now the participant continues to walk mindfully for 15 minutes
 TIMER;Walk Time;Enjoy your mindful walk. Press 'Continue' when you finish.;Continue;900
+
 // Here we check again the mood
 SCALE;Post-Walk Mood;How do you feel right now?;Your Current Mood;Very Stressed;Stressed;Neutral;Relaxed;Very Relaxed
+
 // We finish with asking for feedback
 INPUTFIELD;Feedback;We value your feedback. Please share your thoughts about the mindful walk.;SUBMIT;Your Experience
 ```
