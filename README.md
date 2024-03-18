@@ -5,7 +5,7 @@
 The Pocket Lab App (PoLA) is a research tool designed to streamline the process of conducting experimental research outside traditional laboratory settings. Free, open-source, and user-friendly, PoLA operates on Android devices to facilitate experiment flow, time management, self-report collection, and data logging. Its integration with PoLA's Helpful Assistant (HeLA), an artificial intelligence component, makes protocol creation and revision as simple as providing natural language instructions.
 
 ### Installation
-1. Visit [https://lkacz.github.io/pocketlabapp/](https://lkacz.github.io/pocketlabapp/) to download the PoLA .apk file.
+1. Visit [https://lkacz.github.io/pocketlabapp/releases](https://lkacz.github.io/pocketlabapp/releases) to download the most recent PoLA Android Installation .apk file for your laboratory smartphone.
 2. Allow installation from unknown sources in your device's settings.
 3. Install the .apk file on your Android device.
 
@@ -129,3 +129,81 @@ For inquiries, collaborations, or feedback regarding PoLA and HeLA, please conta
 - **Format and Function:** Text not starting with a command identifier is ignored, serving as comments within the protocol file.
 - **Examples:** `// This is a comment`, `--- Section divider`
 - **Usage:** Organizes and annotates the protocol file for better readability and documentation purposes. HeLA can create or verify commands based on a natural language description of desired functionality. Thus, commenting is a good practice for protocol reuse, modification, or AI-assisted verification.
+
+
+## HeLA (Helpful Assistant for PoLA) Documentation
+
+### Introduction
+HeLA, or Helpful Assistant, is an AI-powered support tool designed to assist researchers in creating and revising experimental protocols for use with the Pocket Lab App (PoLA). HeLA simplifies the transition from research ideas to actionable experimental protocols by leveraging natural language processing and understanding. This documentation outlines HeLA's capabilities, usage, and how it integrates with PoLA to facilitate efficient experimental setup and execution.
+
+### Features
+- **Natural Language Understanding:** HeLA interprets instructions provided in natural language, allowing researchers to describe their study requirements without writing in code or specific command syntax.
+- **Protocol Generation:** Automatically generates PoLA-compatible protocols based on descriptions of the study design, objectives, and required measurements.
+- **Protocol Revision:** Offers suggestions for improving existing protocols by identifying potential issues or opportunities for refinement.
+- **Questionnaire Conversion:** Converts traditional questionnaire formats into interactive PoLA slides, selecting suitable command formats based on the content.
+- **Creative Solution Finding:** Suggests workarounds for functionalities not directly supported by PoLA, enhancing the versatility of experiment design.
+
+### Getting Started with HeLA
+To utilize HeLA, researchers must have a basic understanding of their research objectives and the types of data they wish to collect. HeLA operates through a user-friendly interface where researchers input descriptions of their study in natural language or paste their protocols for reviewing.
+
+### Accessing HeLA
+HeLA can be accessed as a chatGPT tailored GPT (via the GPTs functionality). Visit PoLA website for the link or use this link: [https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-HeLA](https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-HeLA)
+You need to have access to ChatGPT premium account to use GPTs. Upon accessing HeLA, you will be greeted with an input field where you can start describing your experimental needs.
+
+### Inputting Instructions
+1. **(optional) Describe Your Study:** Include a brief overview of your study, including its purpose and the data you intend to collect.
+2. **Detail Specific Requirements:** Describe point-by-point specific elements of your study design, such as the types of questions you plan to ask, the scales to be used for responses, timings for timed tasks, and any special instructions for participants.
+3. **Specify Desired PoLA Commands:** If you're familiar with PoLA's capabilities, you can mention specific commands you wish to use. However, this is unnecessary, as HeLA can suggest the most appropriate commands based on your description.
+
+### Receiving and Implementing Suggestions
+After inputting your instructions, HeLA processes the information and generates a suggested protocol. This protocol will be presented in a format compatible with PoLA, including all necessary commands and settings. Review the suggestions carefully and adjust as needed to fit your research design. You can also paste the protocol to another instance of HeLA for a second critical review.
+
+### Creativity and Troubleshooting
+HeLA is capable of creative problem-solving, offering novel solutions to research design challenges. It can suggest alternative approaches when specific experimental designs cannot be directly implemented in PoLA. However, some of the creative solutions should be inspected critically.
+
+### Best Practices for Using HeLA
+- **Be Specific:** Provide detailed descriptions of your study requirements to enable HeLA to generate the most accurate and valuable protocols.
+- **Be systematic:** Split your instruction into sections that follow specific slides on the smartphone.
+- **Iterate:** Generate a protocol, review it, and refine your description based on the output. Iterative design helps fine-tune the protocol to your precise needs.
+- **Verify:** Always verify the generated protocol manually to ensure it meets your study's objectives and aligns with ethical guidelines.
+- **Copywrite:** Do not paste copyrighted material for LLMs that use users' input for training.
+
+### Limitations
+While HeLA significantly streamlines the process of protocol generation, it is essential to recognize its limitations. HeLA's suggestions are based on its current understanding and the information provided by the user. Therefore, the accuracy and appropriateness of its recommendations depend heavily on the quality and detail of the input it receives.
+
+Researchers are encouraged to use HeLA as a complementary tool in their protocol development process, always applying their expertise and judgment to the final experimental design.
+
+### Conclusion
+HeLA offers a groundbreaking approach to experimental protocol development, making it easier for researchers to translate their ideas into actionable studies. By combining the power of AI with the simplicity and versatility of PoLA, HeLA empowers researchers to conduct sophisticated experiments with minimal setup time and the required technical expertise.
+
+### HeLA’s Prompt for use with LLMs
+You can initiate a discussion with any LLM with a large context window using this prompt, followed by specific questions regarding PoLA:
+
+
+## License and Disclaimer Addendum
+
+### GNU General Public License (GPL)
+PoLA and HeLA are distributed under the GNU General Public License (GPL) version 3. This licensing framework is dedicated to ensuring the freedom to share and change all versions of a program—to make sure it remains free software for all its users. Under the terms of the GPL:
+
+- **Freedom to run the program** for any purpose.
+- **Freedom to study how the program works**, and change it to make it do what you wish.
+- **Freedom to redistribute copies**. 
+- **Freedom to distribute copies of your modified versions** to others. 
+
+The source code for PoLA and HeLA is available, allowing researchers and developers to inspect, modify, and improve the software according to their needs and share their modifications under the same GPL license.
+
+For the full GNU General Public License, version 3, please refer to the [GNU official website](https://www.gnu.org/licenses/gpl-3.0.html).
+
+### Disclaimer
+PoLA and HeLA are provided "AS IS" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors, copyright holders, developers, or any parties involved in the creation, production, or delivery of the software be liable for any claim, damages, or other liabilities, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+### Additional Notes
+- **Use at Your Own Risk:** Users employ PoLA and HeLA at their own risk. Users are responsible for the ethical and legal aspects of their research protocols. The developers strongly recommend reviewing generated protocols for compliance with ethical guidelines and research standards.
+- **No Warranties:** The developers do not guarantee the software will meet users' requirements, operate under specific conditions, or operate uninterrupted or error-free.
+- **Limitation of Liability:** To the fullest extent permitted by law, the developers shall not be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption).
+
+## Contribution and Feedback
+Users and developers are encouraged to contribute to PoLA's and HeLA's development by providing feedback, bug reports, and code contributions. These contributions are invaluable to the software's continuous improvement and are welcomed under the same GNU GPL framework to ensure the software remains free and open for all users.
+
+By respecting these guidelines and the GPL, we aim to foster a collaborative, open, and ethical environment for advancing scientific research and experimentation.
+
