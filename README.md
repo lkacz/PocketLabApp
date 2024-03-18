@@ -1,10 +1,12 @@
 # Pocket Lab App (PoLA) Documentation 
 ## (ver. 13.03.2024)
 
+![PoLA Promo Outdoor](https://github.com/lkacz/PocketLabApp/assets/35294398/9b4649cd-0a11-4488-bb5e-2397065116a8)
+
 ### Introduction
 The Pocket Lab App (PoLA) is a research tool designed to streamline the process of conducting experimental research outside traditional laboratory settings. Free, open-source, and user-friendly, PoLA operates on Android devices to facilitate experiment flow, time management, self-report collection, and data logging. Its integration with PoLA's Helpful Assistant (HeLA), an artificial intelligence component, makes protocol creation and revision as simple as providing natural language instructions.
 
-![www_pola_working_mechanism](https://github.com/lkacz/PocketLabApp/assets/35294398/94b5ae39-3818-4546-a5d6-3429daeb7269)
+![PoLA working mechanism with github background](https://github.com/lkacz/PocketLabApp/assets/35294398/1aafb025-eef5-4bf9-84bf-087c4dbf2159)
 
 ### Installation
 1. Visit [https://lkacz.github.io/pocketlabapp/releases](https://github.com/lkacz/PocketLabApp/releases) to download the most recent PoLA Android Installation .apk file for your laboratory smartphone.
@@ -66,6 +68,8 @@ Lukasz Kaczmarek, PhD., Adam Mickiewicz University, AMU Psychophysiology Laborat
 For inquiries, collaborations, or feedback regarding PoLA and HeLA, please contact Dr. Kaczmarek directly via email.
 
 ## Commands
+
+![PoLA Commands](https://github.com/lkacz/PocketLabApp/assets/35294398/124f792e-421e-49ea-9464-091996c63f07)
 
 ### 1. STUDY_ID
 - **Format:** `STUDY_ID;STUDY_ID_TEXT`
@@ -138,6 +142,8 @@ For inquiries, collaborations, or feedback regarding PoLA and HeLA, please conta
 ### Introduction
 HeLA, or Helpful Assistant, is an AI-powered support tool designed to assist researchers in creating and revising experimental protocols for use with the Pocket Lab App (PoLA). HeLA simplifies the transition from research ideas to actionable experimental protocols by leveraging natural language processing and understanding. This documentation outlines HeLA's capabilities, usage, and how it integrates with PoLA to facilitate efficient experimental setup and execution.
 
+![PoLA HeLA previews](https://github.com/lkacz/PocketLabApp/assets/35294398/857b4aa7-6dc4-424a-866d-98c07d9a6228)
+
 ### Features
 - **Natural Language Understanding:** HeLA interprets instructions provided in natural language, allowing researchers to describe their study requirements without writing in code or specific command syntax.
 - **Protocol Generation:** Automatically generates PoLA-compatible protocols based on descriptions of the study design, objectives, and required measurements.
@@ -178,9 +184,11 @@ Researchers are encouraged to use HeLA as a complementary tool in their protocol
 ### Conclusion
 HeLA offers a groundbreaking approach to experimental protocol development, making it easier for researchers to translate their ideas into actionable studies. By combining the power of AI with the simplicity and versatility of PoLA, HeLA empowers researchers to conduct sophisticated experiments with minimal setup time and the required technical expertise.
 
-### HeLA’s Prompt for use with LLMs
+### HeLA’s Prompt for use with other LLMs
 You can copy and paste this prompt to initiate a discussion with any LLM with a large context window using this prompt (e.g., ChatGPT 3.5, Claude, Gemini, LLaMA). Continue by asking specific questions regarding PoLA:
 
+
+This prompt will turn any LLM chat into your educated and helpful PoLA's AI assistant:
 ```
 You are a helpful assistant that helps in using an application named Pocket Lab App (PoLA).
 
@@ -266,6 +274,10 @@ PoLA follows instructions from a protocol file uploaded by the user. The protoco
 The PoLA app is designed for use in a research context, where it is installed on a laboratory-owned smartphone. Researchers initiate its use by downloading and installing the app from an .apk file directly onto the lab smartphone. The application should be screen-pinned post-installation to prevent accidental closure during a participant's use. The app operates in the foreground, blocking access to other applications until a specific button combination is pressed.
 Inform honestly if a particular function or a task is NOT feasible in PoLA. PoLA does not support time-sensitive cognitive experiments.
 ```
+
+Example use of this prompt in Gemini (Google, Inc).
+![PoLA HeLA previews Gemini](https://github.com/lkacz/PocketLabApp/assets/35294398/be61a450-7df1-45f6-8ed4-86c9b41b1674)
+
 
 
 ## License and Disclaimer Addendum
