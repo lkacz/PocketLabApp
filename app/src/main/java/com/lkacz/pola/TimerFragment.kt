@@ -27,6 +27,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
         }
 
+        // Ensure timeInSeconds is at least zero to avoid negative durations
+        if (timeInSeconds == null || timeInSeconds!! < 0) {
+            timeInSeconds = 0
+        }
+
         alarmHelper = AlarmHelper(requireContext())
         logger = Logger.getInstance(requireContext())
         logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
@@ -75,7 +80,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     /**
-     * Overriding the method to forcibly end the timer when threshold taps are detected.
+     * Cancels the timer early when the user performs enough touch actions.
      */
     override fun onTouchThresholdReached() {
         timer?.cancel()

@@ -1,13 +1,12 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.net.Uri
+import android.content.SharedPreferences
 import java.io.BufferedReader
+import java.io.FileNotFoundException
 import java.io.StringReader
 import kotlin.random.Random
-import android.net.Uri
-import java.io.FileNotFoundException
-
-import android.content.SharedPreferences
 
 class ProtocolManager(private val context: Context) {
     var studyId: String? = null // Variable to store the STUDY_ID
@@ -42,58 +41,39 @@ class ProtocolManager(private val context: Context) {
         }
     }
 
-    // Method to randomize sections of the protocol.
+    /**
+     * Performs manipulations on the original protocol, including
+     * - Enabling/disabling randomization blocks
+     * - Expanding MULTISCALE and RANDOMIZED_MULTISCALE lines into multiple SCALE lines
+     * Then sets [finalProtocol] with the resulting lines.
+     */
     private fun performManipulations() {
         val lines = originalProtocol?.lines()
         val newLines = mutableListOf<String>()
         var randomize = false
         val randomSection = mutableListOf<String>()
 
-        if (lines != null) {
-            for (line in lines) {
-                when {
-                    line.trim() == "RANDOMIZE_ON" -> {
-                        randomize = true
-                    }
-                    line.trim() == "RANDOMIZE_OFF" -> {
-                        randomize = false
-                        randomSection.shuffle(Random)
-                        newLines.addAll(randomSection)
-                        randomSection.clear()
-                    }
-                    line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
-                        val isRandom = line.trim().startsWith("RANDOMIZED_MULTISCALE")
-                        val bracketStart = line.indexOf('[')
-                        val bracketEnd = line.indexOf(']')
-
-                        // Extract sections of the line before, within, and after brackets
-                        val preBracket = line.substring(0, bracketStart).split(';')
-                        val multiItems = line.substring(bracketStart + 1, bracketEnd).split(';')
-                        val postBracket = line.substring(bracketEnd + 1).split(';').drop(1)  // drop 1 to remove the leading empty string
-
-                        val header = preBracket[1]
-                        val introduction = preBracket[2]
-                        val responses = postBracket.joinToString(";")
-
-                        val questionnaireLines = mutableListOf<String>()
-
-                        for (item in multiItems) {
-                            val newLine = "SCALE;$header;$introduction;$item;$responses"
-                            questionnaireLines.add(newLine)
-                        }
-
-                        if (isRandom) {
-                            questionnaireLines.shuffle(Random)
-                        }
-
-                        newLines.addAll(questionnaireLines)
-                    }
-                    else -> {
-                        if (randomize) {
-                            randomSection.add(line)
-                        } else {
-                            newLines.add(line)
-                        }
+        lines?.forEach { line ->
+            when {
+                line.trim() == "RANDOMIZE_ON" -> {
+                    randomize = true
+                }
+                line.trim() == "RANDOMIZE_OFF" -> {
+                    randomize = false
+                    // Shuffle the accumulated randomSection, then add to newLines
+                    randomSection.shuffle(Random)
+                    newLines.addAll(randomSection)
+                    randomSection.clear()
+                }
+                line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
+                    // Expand using helper and add results
+                    newLines.addAll(MultiScaleHelper.expandMultiScaleLine(line))
+                }
+                else -> {
+                    if (randomize) {
+                        randomSection.add(line)
+                    } else {
+                        newLines.add(line)
                     }
                 }
             }
@@ -102,7 +82,9 @@ class ProtocolManager(private val context: Context) {
         finalProtocol = newLines.joinToString("\n")
     }
 
-    // Method to provide the manipulated protocol as BufferedReader.
+    /**
+     * @return A [BufferedReader] containing the manipulated protocol.
+     */
     fun getManipulatedProtocol(): BufferedReader {
         performManipulations()
         return BufferedReader(StringReader(finalProtocol))
