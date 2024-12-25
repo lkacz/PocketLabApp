@@ -8,14 +8,6 @@ object InstructionUiHelper {
 
     /**
      * Sets up the instruction fragment UI elements: header, body, and next button.
-     *
-     * @param view The inflated layout's root View.
-     * @param header The text for the header TextView.
-     * @param body The text for the body TextView.
-     * @param nextButtonText Optional custom text for the button. Defaults to "Next" if null.
-     * @param onNextClick Action to be performed when the next button is clicked.
-     *
-     * @return The nextButton for further manipulation if needed (e.g., changing visibility).
      */
     fun setupInstructionViews(
         view: View,
@@ -28,8 +20,9 @@ object InstructionUiHelper {
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
 
-        headerTextView.text = header
-        bodyTextView.text = body
+        // Allow HTML rendering
+        headerTextView.text = HtmlUtils.parseHtml(header)
+        bodyTextView.text = HtmlUtils.parseHtml(body)
         nextButton.text = nextButtonText ?: "Next"
 
         nextButton.setOnClickListener { onNextClick() }

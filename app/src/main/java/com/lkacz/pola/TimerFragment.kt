@@ -27,7 +27,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
         }
 
-        // Ensure timeInSeconds is at least zero to avoid negative durations
         if (timeInSeconds == null || timeInSeconds!! < 0) {
             timeInSeconds = 0
         }
@@ -38,8 +37,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
@@ -49,8 +47,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
-        headerTextView.text = header ?: "Default Header"
-        bodyTextView.text = body ?: "Default Body"
+        // Allow HTML rendering
+        headerTextView.text = HtmlUtils.parseHtml(header ?: "Default Header")
+        bodyTextView.text = HtmlUtils.parseHtml(body ?: "Default Body")
         nextButton.text = nextButtonText ?: "Next"
         nextButton.visibility = View.INVISIBLE
 
@@ -79,9 +78,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         return view
     }
 
-    /**
-     * Cancels the timer early when the user performs enough touch actions.
-     */
     override fun onTouchThresholdReached() {
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)

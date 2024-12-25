@@ -80,10 +80,7 @@ class StartFragment : Fragment() {
                 themeManager.toggleTheme()
                 activity?.recreate()
             }
-        view.findViewById<Button>(R.id.btnShowProtocolContent)
-            .setOnClickListener { showProtocolContentDialog() }
-        view.findViewById<Button>(R.id.btnShowAbout)
-            .setOnClickListener { showAboutContentDialog() }
+        // Removed btnShowProtocolContent and associated functionality.
     }
 
     private fun handleFileUri(uri: Uri) {
@@ -111,17 +108,6 @@ class StartFragment : Fragment() {
         tvSelectedProtocolName.text = protocolName
     }
 
-    private fun showProtocolContentDialog() {
-        val protocolName = tvSelectedProtocolName.text.toString()
-        val fileContent = when (protocolName) {
-            "Demo Protocol" -> protocolReader.readFromAssets(requireContext(), "demo_protocol.txt")
-            "Tutorial Protocol" -> protocolReader.readFromAssets(requireContext(), "tutorial_protocol.txt")
-            else -> protocolUri?.let { protocolReader.readFileContent(requireContext(), it) }
-                ?: "File content not available"
-        }
-        ProtocolContentDisplayer(requireContext()).showProtocolContent(protocolName, fileContent)
-    }
-
     private fun showToast(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
@@ -137,10 +123,5 @@ class StartFragment : Fragment() {
 
     private fun showChangeProtocolConfirmation(onConfirm: () -> Unit) {
         confirmationDialogManager.showChangeProtocolConfirmation(onConfirm)
-    }
-
-    private fun showAboutContentDialog() {
-        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
-        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
 }

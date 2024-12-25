@@ -6,6 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 
+/**
+ * Displays instructions with HTML formatting support.
+ */
 class InstructionFragment : Fragment() {
     private var header: String? = null
     private var body: String? = null
@@ -30,13 +33,13 @@ class InstructionFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
+        // Use a helper to set up instruction UI with HTML parsing
         InstructionUiHelper.setupInstructionViews(
             view,
             header ?: "Default Header",
             body ?: "Default Body",
             nextButtonText
         ) {
-            // Transition to the next fragment
             (activity as MainActivity).loadNextFragment()
         }
 

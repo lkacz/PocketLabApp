@@ -6,6 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 
+/**
+ * A fragment that displays instructions requiring taps before revealing the 'Next' button.
+ * Taps are counted, and once threshold is reached, the button is displayed.
+ * HTML formatting is preserved via HtmlUtils.parseHtml().
+ */
 class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
     private var header: String? = null
@@ -32,7 +37,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
-        // Reuse the UI setup helper but initially hide the Next button.
+        // Reuse the same UI setup helper, which applies HTML parsing.
         nextButton = InstructionUiHelper.setupInstructionViews(
             view,
             header ?: "Default Header",
@@ -46,8 +51,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     }
 
     /**
-     * Once the user has tapped enough times, reveal the 'Next' button
-     * and log that the threshold was reached.
+     * Reveals the 'Next' button once the tap threshold is reached.
      */
     override fun onTouchThresholdReached() {
         logger.logOther("Tap threshold reached in TapInstructionFragment")
