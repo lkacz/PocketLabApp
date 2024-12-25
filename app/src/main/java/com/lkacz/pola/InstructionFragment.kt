@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 
 class InstructionFragment : Fragment() {
@@ -26,22 +24,19 @@ class InstructionFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
-        // Populate header, body, and next button text
-        val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
-        val nextButton: Button = view.findViewById(R.id.nextButton)
-
-        headerTextView.text = header ?: "Default Header"
-        bodyTextView.text = body ?: "Default Body"
-        nextButton.text = nextButtonText ?: "Next"
-
-        nextButton.setOnClickListener {
-            // Add logic to move to next fragment
+        InstructionUiHelper.setupInstructionViews(
+            view,
+            header ?: "Default Header",
+            body ?: "Default Body",
+            nextButtonText
+        ) {
+            // Transition to the next fragment
             (activity as MainActivity).loadNextFragment()
         }
 

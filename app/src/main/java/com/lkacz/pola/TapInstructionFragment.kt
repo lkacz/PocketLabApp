@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.TextView
 
 class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
@@ -13,6 +12,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     private var body: String? = null
     private var nextButtonText: String? = null
     private lateinit var logger: Logger
+    private var nextButton: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,27 +32,24 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
-        val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
-        val nextButton: Button = view.findViewById(R.id.nextButton)
-
-        headerTextView.text = header ?: "Default Header"
-        bodyTextView.text = body ?: "Default Body"
-        nextButton.text = nextButtonText ?: "Next"
-        nextButton.visibility = View.INVISIBLE
-
-        nextButton.setOnClickListener {
+        // Reuse the UI setup helper but initially hide the Next button.
+        nextButton = InstructionUiHelper.setupInstructionViews(
+            view,
+            header ?: "Default Header",
+            body ?: "Default Body",
+            nextButtonText
+        ) {
             (activity as MainActivity).loadNextFragment()
         }
-
+        nextButton?.visibility = View.INVISIBLE
         return view
     }
 
     /**
-     * Overriding the method to reveal the 'Next' button once the threshold is reached.
+     * Once the user has tapped enough times, reveal the 'Next' button.
      */
     override fun onTouchThresholdReached() {
-        view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
+        nextButton?.visibility = View.VISIBLE
     }
 
     companion object {
