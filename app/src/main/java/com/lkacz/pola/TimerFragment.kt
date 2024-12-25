@@ -3,22 +3,20 @@ package com.lkacz.pola
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 
-class TimerFragment : Fragment() {
+class TimerFragment : BaseTouchAwareFragment(5000, 20) {
+
     private var header: String? = null
     private var body: String? = null
     private var nextButtonText: String? = null
     private var timeInSeconds: Int? = null
     private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
-
-    private val touchCounter = TouchCounter(5000, 20)
+    private var timer: CountDownTimer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +33,8 @@ class TimerFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
@@ -51,9 +50,7 @@ class TimerFragment : Fragment() {
         nextButton.visibility = View.INVISIBLE
 
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
-        val countDownInterval = 1000L
-
-        val timer = object : CountDownTimer(totalTimeMillis, countDownInterval) {
+        timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val minutesLeft = millisUntilFinished / 60000
                 val secondsLeft = (millisUntilFinished % 60000) / 1000
@@ -68,32 +65,24 @@ class TimerFragment : Fragment() {
             }
         }.start()
 
-        view.setOnTouchListener { v, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                if (touchCounter.onTouch()) {
-                    timer.cancel()
-                    // Log a message indicating the user forcibly ended the timer
-                    logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
-                    timerTextView.text = "Continue."
-                    nextButton.visibility = View.VISIBLE
-                    alarmHelper.startAlarm()
-                }
-                v.performClick()
-            }
-            true
-        }
-
         nextButton.setOnClickListener {
             alarmHelper.stopAlarm()
             (activity as MainActivity).loadNextFragment()
-            logger.logTimerFragment(
-                header ?: "Default Header",
-                "Next Button Clicked",
-                timeInSeconds = 0
-            )
+            logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
         }
 
         return view
+    }
+
+    /**
+     * Overriding the method to forcibly end the timer when threshold taps are detected.
+     */
+    override fun onTouchThresholdReached() {
+        timer?.cancel()
+        logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
+        view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
+        view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
+        alarmHelper.startAlarm()
     }
 
     override fun onDestroy() {
@@ -104,14 +93,18 @@ class TimerFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(header: String?, body: String?, nextButtonText: String?, timeInSeconds: Int?) =
-            TimerFragment().apply {
-                arguments = Bundle().apply {
-                    putString("HEADER", header)
-                    putString("BODY", body)
-                    putString("NEXT_BUTTON_TEXT", nextButtonText)
-                    putInt("TIME_IN_SECONDS", timeInSeconds ?: 0)
-                }
+        fun newInstance(
+            header: String?,
+            body: String?,
+            nextButtonText: String?,
+            timeInSeconds: Int?
+        ) = TimerFragment().apply {
+            arguments = Bundle().apply {
+                putString("HEADER", header)
+                putString("BODY", body)
+                putString("NEXT_BUTTON_TEXT", nextButtonText)
+                putInt("TIME_IN_SECONDS", timeInSeconds ?: 0)
             }
+        }
     }
 }
