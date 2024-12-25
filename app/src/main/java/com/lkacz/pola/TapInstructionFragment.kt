@@ -46,9 +46,11 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     }
 
     /**
-     * Once the user has tapped enough times, reveal the 'Next' button.
+     * Once the user has tapped enough times, reveal the 'Next' button
+     * and log that the threshold was reached.
      */
     override fun onTouchThresholdReached() {
+        logger.logOther("Tap threshold reached in TapInstructionFragment")
         nextButton?.visibility = View.VISIBLE
     }
 
