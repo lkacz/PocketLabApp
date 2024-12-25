@@ -72,7 +72,11 @@ class TimerFragment : Fragment() {
             if (event.action == MotionEvent.ACTION_DOWN) {
                 if (touchCounter.onTouch()) {
                     timer.cancel()
-                    timer.onFinish()
+                    // Log a message indicating the user forcibly ended the timer
+                    logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
+                    timerTextView.text = "Continue."
+                    nextButton.visibility = View.VISIBLE
+                    alarmHelper.startAlarm()
                 }
                 v.performClick()
             }
@@ -84,7 +88,7 @@ class TimerFragment : Fragment() {
             (activity as MainActivity).loadNextFragment()
             logger.logTimerFragment(
                 header ?: "Default Header",
-                body = "Next Button Clicked",
+                "Next Button Clicked",
                 timeInSeconds = 0
             )
         }

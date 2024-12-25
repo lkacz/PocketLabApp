@@ -26,7 +26,8 @@ class Logger private constructor(private val context: Context) {
             "${studyId}_output_$timeStamp.csv"
         }
 
-        val publicStorage = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        // Use app-specific external storage directory for better compliance with scoped storage
+        val publicStorage = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         mainFolder = File(publicStorage, "PoLA_Data")
         file = File(mainFolder, fileName)
         fileOperations = FileOperations(mainFolder, file)
@@ -89,7 +90,6 @@ class Logger private constructor(private val context: Context) {
             // Avoid duplicating backups
             if (isBackupCreated) return
 
-            // Check if parentFile is available
             val parentFile = mainFolder.parentFile ?: return
             val backupFolder = File(parentFile, backupFolderName)
             if (!backupFolder.exists()) {
@@ -100,7 +100,6 @@ class Logger private constructor(private val context: Context) {
             val backupFileCsv = File(backupFolder, backupFileNameCsv)
             file.copyTo(backupFileCsv, overwrite = true)
 
-            // Create Excel backup file
             val backupFileNameXlsx = fileName.replace(".csv", "_backup.xlsx")
             val backupFileXlsx = File(backupFolder, backupFileNameXlsx)
             excelOperations.createXlsxBackup(
