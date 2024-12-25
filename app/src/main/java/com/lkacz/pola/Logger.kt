@@ -20,7 +20,6 @@ class Logger private constructor(private val context: Context) {
 
     init {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-
         fileName = if (studyId.isNullOrEmpty()) {
             "output_$timeStamp.csv"
         } else {
@@ -87,11 +86,12 @@ class Logger private constructor(private val context: Context) {
                 BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
             )
 
-            // Check if backup is already created to avoid duplication
+            // Avoid duplicating backups
             if (isBackupCreated) return
 
-            // Create backup folder and copy CSV file
-            val backupFolder = File(mainFolder.parentFile, backupFolderName)
+            // Check if parentFile is available
+            val parentFile = mainFolder.parentFile ?: return
+            val backupFolder = File(parentFile, backupFolderName)
             if (!backupFolder.exists()) {
                 backupFolder.mkdirs()
             }

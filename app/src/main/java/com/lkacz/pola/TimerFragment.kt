@@ -15,7 +15,7 @@ class TimerFragment : Fragment() {
     private var body: String? = null
     private var nextButtonText: String? = null
     private var timeInSeconds: Int? = null
-    private lateinit var alarmManager: AlarmManager
+    private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
 
     private val touchCounter = TouchCounter(5000, 20)
@@ -29,7 +29,7 @@ class TimerFragment : Fragment() {
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
         }
 
-        alarmManager = AlarmManager(requireContext())
+        alarmHelper = AlarmHelper(requireContext())
         logger = Logger.getInstance(requireContext())
         logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
     }
@@ -63,7 +63,7 @@ class TimerFragment : Fragment() {
             override fun onFinish() {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
-                alarmManager.startAlarm()
+                alarmHelper.startAlarm()
                 logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
             }
         }.start()
@@ -80,13 +80,12 @@ class TimerFragment : Fragment() {
         }
 
         nextButton.setOnClickListener {
-            alarmManager.stopAlarm()
+            alarmHelper.stopAlarm()
             (activity as MainActivity).loadNextFragment()
             logger.logTimerFragment(
-                header = header ?: "Default Header",
+                header ?: "Default Header",
                 body = "Next Button Clicked",
-                timeInSeconds = 0,
-                other = null
+                timeInSeconds = 0
             )
         }
 
@@ -95,7 +94,7 @@ class TimerFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        alarmManager.release()
+        alarmHelper.release()
         logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
     }
 

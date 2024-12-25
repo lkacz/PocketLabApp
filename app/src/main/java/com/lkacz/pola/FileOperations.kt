@@ -1,12 +1,18 @@
 package com.lkacz.pola
 
-import java.io.*
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class FileOperations(private val mainFolder: File, private val file: File) {
 
     fun createFileAndFolder() {
         try {
-            if (mainFolder.mkdirs() || file.createNewFile()) {
+            if (!mainFolder.exists()) {
+                mainFolder.mkdirs()
+            }
+            val isFileNewlyCreated = if (!file.exists()) file.createNewFile() else false
+            if (isFileNewlyCreated) {
                 writeHeader()
             }
         } catch (e: IOException) {
