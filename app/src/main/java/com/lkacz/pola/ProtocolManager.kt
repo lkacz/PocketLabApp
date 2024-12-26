@@ -14,6 +14,10 @@ class ProtocolManager(private val context: Context) {
     private var sharedPref: SharedPreferences =
         context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
 
+    /**
+     * Reads the original protocol from either the provided Uri or from default assets
+     * (demo or tutorial). The originalProtocol is stored as a static field for later use.
+     */
     fun readOriginalProtocol(uri: Uri? = null) {
         try {
             val inputStream = if (uri != null) {
@@ -42,7 +46,8 @@ class ProtocolManager(private val context: Context) {
     }
 
     /**
-     * Performs manipulations on the original protocol, including
+     * Performs manipulations on the original protocol, including:
+     * - Capturing font size directives (HEADER_SIZE;X, etc.) and persisting them
      * - Enabling/disabling randomization blocks
      * - Expanding MULTISCALE and RANDOMIZED_MULTISCALE lines into multiple SCALE lines
      * Then sets [finalProtocol] with the resulting lines.
@@ -54,6 +59,11 @@ class ProtocolManager(private val context: Context) {
         val randomSection = mutableListOf<String>()
 
         lines?.forEach { line ->
+            // 1) If it's a font size directive, update font sizes in SharedPreferences, skip it
+            if (FontSizeUpdater.updateFontSizesFromLine(context, line)) {
+                return@forEach
+            }
+
             when {
                 line.trim() == "RANDOMIZE_ON" -> {
                     randomize = true
@@ -67,9 +77,15 @@ class ProtocolManager(private val context: Context) {
                 }
                 line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
                     // Expand using helper and add results
-                    newLines.addAll(MultiScaleHelper.expandMultiScaleLine(line))
+                    val expanded = MultiScaleHelper.expandMultiScaleLine(line)
+                    if (randomize) {
+                        randomSection.addAll(expanded)
+                    } else {
+                        newLines.addAll(expanded)
+                    }
                 }
                 else -> {
+                    // Normal line, either accumulate in randomSection or add to newLines
                     if (randomize) {
                         randomSection.add(line)
                     } else {
@@ -77,6 +93,13 @@ class ProtocolManager(private val context: Context) {
                     }
                 }
             }
+        }
+
+        // If randomize was still true at the end, flush what remains in randomSection
+        if (randomize) {
+            randomSection.shuffle(Random)
+            newLines.addAll(randomSection)
+            randomSection.clear()
         }
 
         finalProtocol = newLines.joinToString("\n")
