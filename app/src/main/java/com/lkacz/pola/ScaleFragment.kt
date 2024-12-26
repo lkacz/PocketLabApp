@@ -10,9 +10,12 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
+/**
+ * Replaced 'introduction' with 'body' for naming consistency.
+ */
 class ScaleFragment : Fragment() {
     private var header: String? = null
-    private var introduction: String? = null
+    private var body: String? = null
     private var item: String? = null
     private var responses: List<String>? = null
     private lateinit var logger: Logger
@@ -22,7 +25,7 @@ class ScaleFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             header = it.getString("HEADER")
-            introduction = it.getString("INTRODUCTION")
+            body = it.getString("BODY")
             item = it.getString("ITEM")
             responses = it.getStringArrayList("RESPONSES")
         }
@@ -37,52 +40,35 @@ class ScaleFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
 
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        val introductionTextView: TextView = view.findViewById(R.id.introductionTextView)
+        val bodyTextView: TextView = view.findViewById(R.id.introductionTextView) // Renamed in layout file to bodyTextView for clarity
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
-        // Retrieve the media folder URI to load images if <img> tags exist
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Render HTML with image loading for header, intro, and item
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            header ?: "Default Header"
-        )
+        // Apply persisted font sizes
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, header ?: "Default Header")
+        headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        introductionTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            introduction ?: "Default Introduction"
-        )
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        itemTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            item ?: "Default Item"
-        )
+        itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, item ?: "Default Item")
+        itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
 
-        // Generate response buttons
         responses?.forEachIndexed { index, response ->
             val button = Button(context).apply {
-                text = HtmlMediaHelper.toSpannedHtml(
-                    requireContext(),
-                    mediaFolderUri,
-                    response
-                )
-                textSize = 12f
+                text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, response)
+                textSize = FontSizeManager.getResponseSize(requireContext())
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 0, 0, 0)
-                }
+                )
                 setOnClickListener {
                     selectedResponse.value = response
                     logger.logScaleFragment(
                         header ?: "Default Header",
-                        introduction ?: "Default Introduction",
+                        body ?: "Default Body",
                         item ?: "Default Item",
                         index + 1,
                         response
@@ -100,13 +86,13 @@ class ScaleFragment : Fragment() {
         @JvmStatic
         fun newInstance(
             header: String?,
-            introduction: String?,
+            body: String?,
             item: String?,
             responses: List<String>?
         ) = ScaleFragment().apply {
             arguments = Bundle().apply {
                 putString("HEADER", header)
-                putString("INTRODUCTION", introduction)
+                putString("BODY", body)
                 putString("ITEM", item)
                 putStringArrayList("RESPONSES", ArrayList(responses ?: emptyList()))
             }

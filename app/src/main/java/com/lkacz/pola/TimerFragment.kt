@@ -47,27 +47,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
-        // Retrieve media folder URI to load images if <img> tags exist
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Render header, body, and button text with image support (including width/height)
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            header ?: "Default Header"
-        )
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, header ?: "Default Header")
+        headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            body ?: "Default Body"
-        )
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            nextButtonText ?: "Next"
-        )
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, nextButtonText ?: "Next")
+        nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.visibility = View.INVISIBLE
 
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
@@ -82,22 +71,14 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
                 alarmHelper.startAlarm()
-                logger.logTimerFragment(
-                    header ?: "Default Header",
-                    "Timer Finished",
-                    timeInSeconds ?: 0
-                )
+                logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
             }
         }.start()
 
         nextButton.setOnClickListener {
             alarmHelper.stopAlarm()
             (activity as MainActivity).loadNextFragment()
-            logger.logTimerFragment(
-                header ?: "Default Header",
-                "Next Button Clicked",
-                0
-            )
+            logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
         }
 
         return view
@@ -105,11 +86,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     override fun onTouchThresholdReached() {
         timer?.cancel()
-        logger.logTimerFragment(
-            header ?: "Default Header",
-            "Timer forcibly ended by user",
-            timeInSeconds ?: 0
-        )
+        logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
         view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
         alarmHelper.startAlarm()

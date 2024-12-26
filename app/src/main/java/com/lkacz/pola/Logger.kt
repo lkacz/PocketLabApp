@@ -26,7 +26,6 @@ class Logger private constructor(private val context: Context) {
             "${studyId}_output_$timeStamp.csv"
         }
 
-        // Use app-specific external storage directory for better compliance with scoped storage
         val publicStorage = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         mainFolder = File(publicStorage, "PoLA_Data")
         file = File(mainFolder, fileName)
@@ -49,22 +48,28 @@ class Logger private constructor(private val context: Context) {
     }
 
     fun logInstructionFragment(header: String, body: String) {
+        // Column layout changed from INTRODUCTION to BODY
         logToCSV(arrayOf(header, body, null, null, null, null, null, null))
     }
 
     fun logTimerFragment(header: String, body: String, timeInSeconds: Int, other: String? = null) {
-        val cells = arrayOf(header, body, null, null, null, timeInSeconds.toString(), null, other)
-        logToCSV(cells)
+        logToCSV(arrayOf(header, body, null, null, null, timeInSeconds.toString(), null, other))
     }
 
-    fun logScaleFragment(header: String, intro: String, item: String, responseNumber: Int, responseText: String) {
-        logToCSV(arrayOf(header, intro, item, responseNumber.toString(), responseText, null, null, null))
+    /**
+     * Renamed "intro" to "body" in the signature and CSV structure
+     */
+    fun logScaleFragment(header: String, body: String, item: String, responseNumber: Int, responseText: String) {
+        logToCSV(arrayOf(header, body, item, responseNumber.toString(), responseText, null, null, null))
     }
 
-    fun logInputFieldFragment(header: String, intro: String, item: String, response: String, isNumeric: Boolean) {
+    /**
+     * "intro" param changed to "body" in CSV columns
+     */
+    fun logInputFieldFragment(header: String, body: String, item: String, response: String, isNumeric: Boolean) {
         val responseNumber = if (isNumeric) response else null
         val responseText = if (!isNumeric) response else null
-        logToCSV(arrayOf(header, intro, item, responseNumber, responseText, null, null, null))
+        logToCSV(arrayOf(header, body, item, responseNumber, responseText, null, null, null))
     }
 
     fun logOther(message: String) {
@@ -75,9 +80,7 @@ class Logger private constructor(private val context: Context) {
         if (!file.exists()) {
             return
         }
-
         try {
-            // Create Excel file in main folder
             val mainFolderXlsxFileName = fileName.replace(".csv", ".xlsx")
             val mainFolderXlsxFile = File(mainFolder, mainFolderXlsxFileName)
             excelOperations.createXlsxBackup(
@@ -87,9 +90,7 @@ class Logger private constructor(private val context: Context) {
                 BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
             )
 
-            // Avoid duplicating backups
             if (isBackupCreated) return
-
             val parentFile = mainFolder.parentFile ?: return
             val backupFolder = File(parentFile, backupFolderName)
             if (!backupFolder.exists()) {

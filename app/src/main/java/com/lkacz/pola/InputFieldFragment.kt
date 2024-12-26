@@ -13,7 +13,7 @@ import androidx.fragment.app.Fragment
 
 class InputFieldFragment : Fragment() {
     private var heading: String? = null
-    private var text: String? = null
+    private var body: String? = null
     private var buttonName: String? = null
     private var inputFields: List<String>? = null
     private lateinit var logger: Logger
@@ -23,7 +23,7 @@ class InputFieldFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             heading = it.getString("HEADING")
-            text = it.getString("TEXT")
+            body = it.getString("TEXT") // Retaining arg key "TEXT" for backward compatibility
             buttonName = it.getString("BUTTON")
             inputFields = it.getStringArrayList("INPUTFIELDS")
         }
@@ -38,31 +38,22 @@ class InputFieldFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_input_field, container, false)
 
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
-        val textTextView: TextView = view.findViewById(R.id.textTextView)
+        val bodyTextView: TextView = view.findViewById(R.id.textTextView)
         val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
 
-        // Retrieve media folder URI for loading images if <img> tags exist
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Render heading with possible <img> tags (width/height supported)
-        headingTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            heading ?: "Default Heading"
-        )
+        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, heading ?: "Default Heading")
+        headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        // Render text with possible <img> tags (width/height supported)
-        textTextView.text = HtmlMediaHelper.toSpannedHtml(
-            requireContext(),
-            mediaFolderUri,
-            text ?: "Default Text"
-        )
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        // Dynamically create input fields
         inputFields?.forEach { field ->
             val editText = EditText(context).apply {
                 hint = field
-                textSize = 14f
+                // This could be considered an "item," but applying body-size for consistency
+                textSize = FontSizeManager.getBodySize(requireContext())
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -73,20 +64,15 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Create Next button, support <img> tags in buttonName
         val nextButton = Button(context).apply {
-            text = HtmlMediaHelper.toSpannedHtml(
-                requireContext(),
-                mediaFolderUri,
-                buttonName ?: "Next"
-            )
-            textSize = 16f
+            text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, buttonName ?: "Next")
+            textSize = FontSizeManager.getButtonSize(requireContext())
             setOnClickListener {
                 fieldValues.forEach { (field, value) ->
                     val isNumeric = value.toDoubleOrNull() != null
                     logger.logInputFieldFragment(
                         heading ?: "Default Heading",
-                        (text ?: "Default Text").toString(),
+                        body ?: "Default Body",
                         field,
                         value,
                         isNumeric

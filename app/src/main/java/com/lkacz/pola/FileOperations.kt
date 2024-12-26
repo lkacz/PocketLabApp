@@ -21,7 +21,8 @@ class FileOperations(private val mainFolder: File, private val file: File) {
     }
 
     private fun writeHeader() {
-        writeToCSV("DATE\tTIME\tHEADER\tINTRODUCTION\tITEM\tITEM RESPONSE (number)\tITEM RESPONSE (text)\tWAITING TIME\tOTHER\n")
+        // Renamed INTRODUCTION -> BODY
+        writeToCSV("DATE\tTIME\tHEADER\tBODY\tITEM\tITEM RESPONSE (number)\tITEM RESPONSE (text)\tWAITING TIME\tOTHER\n")
     }
 
     fun writeToCSV(logMessage: String) {

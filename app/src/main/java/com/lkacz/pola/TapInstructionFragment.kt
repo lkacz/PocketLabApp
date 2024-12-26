@@ -32,7 +32,6 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
-        // Utilize the same UI helper, which now also handles <img> tags
         nextButton = InstructionUiHelper.setupInstructionViews(
             view,
             header ?: "Default Header",
