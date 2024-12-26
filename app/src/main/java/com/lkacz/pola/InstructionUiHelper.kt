@@ -5,20 +5,12 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.core.text.HtmlCompat
 
+/**
+ * Sets up the instruction fragment UI elements: header, body, and next button.
+ * Uses [HtmlImageLoader] so that <img> tags in HTML can render from user-selected media folder.
+ */
 object InstructionUiHelper {
 
-    /**
-     * Sets up the instruction fragment UI elements: header, body, and next button.
-     *
-     * @param view The inflated layout's root View.
-     * @param header The text for the header TextView, which may contain HTML formatting (e.g. <b></b>).
-     * @param body The text for the body TextView, which may contain HTML formatting (e.g. <b></b>).
-     * @param nextButtonText Optional custom text for the button, which may contain HTML formatting.
-     *                       Defaults to "Next" if null.
-     * @param onNextClick Action to be performed when the next button is clicked.
-     *
-     * @return The nextButton for further manipulation if needed (e.g., changing visibility).
-     */
     fun setupInstructionViews(
         view: View,
         header: String,
@@ -26,19 +18,34 @@ object InstructionUiHelper {
         nextButtonText: String?,
         onNextClick: () -> Unit
     ): Button {
+
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
 
-        // Parse header HTML
-        headerTextView.text = HtmlCompat.fromHtml(header, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        // Retrieve the URI of the user-selected media folder
+        val mediaFolderUri = MediaFolderManager(view.context).getMediaFolderUri()
 
-        // Parse body HTML
-        bodyTextView.text = HtmlCompat.fromHtml(body, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        // Render possible <img> tags in header and body
+        headerTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            view.context,
+            mediaFolderUri,
+            header
+        )
 
-        // Parse nextButton HTML if available, otherwise use "Next"
-        nextButton.text = if (nextButtonText != null) {
-            HtmlCompat.fromHtml(nextButtonText, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        bodyTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            view.context,
+            mediaFolderUri,
+            body
+        )
+
+        // Apply HTML image loading to the button text if provided
+        nextButton.text = if (!nextButtonText.isNullOrEmpty()) {
+            HtmlImageLoader.getSpannedFromHtml(
+                view.context,
+                mediaFolderUri,
+                nextButtonText
+            )
         } else {
             "Next"
         }

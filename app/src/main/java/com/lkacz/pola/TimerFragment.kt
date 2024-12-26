@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.text.HtmlCompat
 
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
@@ -27,8 +26,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             nextButtonText = it.getString("NEXT_BUTTON_TEXT")
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
         }
-
-        // Ensure timeInSeconds is at least zero
         if (timeInSeconds == null || timeInSeconds!! < 0) {
             timeInSeconds = 0
         }
@@ -50,22 +47,29 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
-        // Display header, body, and button text as HTML
-        headerTextView.text = HtmlCompat.fromHtml(
-            header ?: "Default Header",
-            HtmlCompat.FROM_HTML_MODE_LEGACY
+        // Retrieve media folder URI to load images if <img> tags exist
+        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+
+        // Render header, body, and button with possible <img> tags
+        headerTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            requireContext(),
+            mediaFolderUri,
+            header ?: "Default Header"
         )
-        bodyTextView.text = HtmlCompat.fromHtml(
-            body ?: "Default Body",
-            HtmlCompat.FROM_HTML_MODE_LEGACY
+
+        bodyTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            requireContext(),
+            mediaFolderUri,
+            body ?: "Default Body"
         )
-        nextButton.text = HtmlCompat.fromHtml(
-            nextButtonText ?: "Next",
-            HtmlCompat.FROM_HTML_MODE_LEGACY
+
+        nextButton.text = HtmlImageLoader.getSpannedFromHtml(
+            requireContext(),
+            mediaFolderUri,
+            nextButtonText ?: "Next"
         )
         nextButton.visibility = View.INVISIBLE
 
-        // Set up countdown timer
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -86,7 +90,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }.start()
 
-        // Handle button click
         nextButton.setOnClickListener {
             alarmHelper.stopAlarm()
             (activity as MainActivity).loadNextFragment()
@@ -100,9 +103,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         return view
     }
 
-    /**
-     * Cancel the timer and start the alarm if user taps enough times.
-     */
     override fun onTouchThresholdReached() {
         timer?.cancel()
         logger.logTimerFragment(

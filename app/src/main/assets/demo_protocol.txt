@@ -1,9 +1,12 @@
 // Participant ID Entry
 
+// General Study Overview
+// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+INSTRUCTION;Study<br><i>Overview</i>;Welcome <img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">to our<br><i>walking</i> study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br>NOW
 
 // Emotions Scale After Walking Solo
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;Emotional<br>state;Please rate how you are feeling<br><br>right now.;Emotions<br>now;Very<br>negative;Somewhat<br>negative;<font color='green'>Neutral</font>;Somewhat positive;Very positive
+SCALE;<img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">Emotional<br>state;Please rate how you are feeling<br><br>right now.;Emotions<br>now;Very<br>negative;Somewhat<br>negative;<font color='green'>Neutral</font>;Somewhat positive<img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">;Very positive
 
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
@@ -17,9 +20,6 @@ TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 TAP_INSTRUCTION;Study<br>Start Confirmation;When you are ready to<br>start, please tap quickly three times anywhere on the screen to reveal the start button.;START<br>THE STUDY
 
-// General Study Overview
-// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Study<br><i>Overview</i>;Welcome to our<br><i>walking</i> study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br>NOW
 
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID

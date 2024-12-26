@@ -8,9 +8,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.text.HtmlCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
+import androidx.core.widget.addTextChangedListener
 
 class InputFieldFragment : Fragment() {
     private var heading: String? = null
@@ -39,15 +38,22 @@ class InputFieldFragment : Fragment() {
 
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
         val textTextView: TextView = view.findViewById(R.id.textTextView)
+        val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
 
-        // Enable HTML formatting for heading and body texts
-        headingTextView.text = HtmlCompat.fromHtml(
-            heading ?: "Default Heading",
-            HtmlCompat.FROM_HTML_MODE_LEGACY
+        // Retrieve media folder URI for loading images if <img> tags exist
+        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+
+        // Render heading and text with possible <img> tags
+        headingTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            requireContext(),
+            mediaFolderUri,
+            heading ?: "Default Heading"
         )
-        textTextView.text = HtmlCompat.fromHtml(
-            text ?: "Default Text",
-            HtmlCompat.FROM_HTML_MODE_LEGACY
+
+        textTextView.text = HtmlImageLoader.getSpannedFromHtml(
+            requireContext(),
+            mediaFolderUri,
+            text ?: "Default Text"
         )
 
         // Dynamically create input fields
@@ -59,17 +65,19 @@ class InputFieldFragment : Fragment() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                // Track text changes
-                addTextChangedListener { fieldValues[field] = it.toString() }
             }
-
+            editText.addTextChangedListener { fieldValues[field] = it.toString() }
             fieldValues[field] = ""
-            view.findViewById<LinearLayout>(R.id.inputFieldContainer).addView(editText)
+            containerLayout.addView(editText)
         }
 
-        // Create Next button with HTML text support
+        // Create Next button, apply images if <img> tags exist in buttonName
         val nextButton = Button(context).apply {
-            text = HtmlCompat.fromHtml(buttonName ?: "Next", HtmlCompat.FROM_HTML_MODE_LEGACY)
+            text = HtmlImageLoader.getSpannedFromHtml(
+                requireContext(),
+                mediaFolderUri,
+                buttonName ?: "Next"
+            )
             textSize = 16f
             setOnClickListener {
                 fieldValues.forEach { (field, value) ->
@@ -85,7 +93,7 @@ class InputFieldFragment : Fragment() {
                 (activity as MainActivity).loadNextFragment()
             }
         }
-        view.findViewById<LinearLayout>(R.id.inputFieldContainer).addView(nextButton)
+        containerLayout.addView(nextButton)
 
         return view
     }

@@ -32,7 +32,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
-        // Reuse the UI setup helper but initially hide the Next button.
+        // Utilize the same UI helper, which now also handles <img> tags
         nextButton = InstructionUiHelper.setupInstructionViews(
             view,
             header ?: "Default Header",
@@ -45,10 +45,6 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         return view
     }
 
-    /**
-     * Once the user has tapped enough times, reveal the 'Next' button
-     * and log that the threshold was reached.
-     */
     override fun onTouchThresholdReached() {
         logger.logOther("Tap threshold reached in TapInstructionFragment")
         nextButton?.visibility = View.VISIBLE
