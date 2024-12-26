@@ -18,12 +18,18 @@ class ThemeManager(private val context: Context) {
         applyTheme()
     }
 
+    /**
+     * Applies a Material3 light or dark theme dynamically.
+     * For completeness, ensure your styles.xml includes the corresponding
+     * Theme.Material3.Light.* and Theme.Material3.Dark.* definitions.
+     */
     fun applyTheme() {
         val isDarkTheme = sharedPref.getBoolean(IS_DARK_THEME, false)
         if (isDarkTheme) {
-            context.setTheme(R.style.AppTheme_Dark)
+            // You could reference a custom dark Material3 theme if defined
+            context.setTheme(R.style.Theme_Material3_Dark)
         } else {
-            context.setTheme(R.style.AppTheme_Light)
+            context.setTheme(R.style.Theme_Material3_Light)
         }
     }
 }

@@ -1,21 +1,26 @@
 <resources>
-    <!-- Light Theme -->
-    <style name="AppTheme.Light" parent="Theme.AppCompat.Light">
-        <item name="colorPrimary">@color/light_primary</item>
-        <item name="colorPrimaryDark">@color/light_primary_dark</item>
-        <item name="colorAccent">@color/light_accent</item>
-        <item name="android:windowBackground">@color/light_background</item>
-        <item name="android:textColor">@color/dark_text</item>
-        <!-- Other attributes -->
+
+    <!-- (A) Material Components DayNight theme (common in older libraries but still valid) -->
+    <style name="Theme.Material3.Light.NoActionBar"
+        parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <!-- Add your color overrides here -->
     </style>
 
-    <!-- Dark Theme -->
-    <style name="AppTheme.Dark" parent="Theme.AppCompat">
-        <item name="colorPrimary">@color/dark_primary</item>
-        <item name="colorPrimaryDark">@color/dark_primary_dark</item>
-        <item name="colorAccent">@color/dark_accent</item>
-        <item name="android:windowBackground">@color/dark_background</item>
-        <item name="android:textColor">@color/light_text</item>
-        <!-- Other attributes -->
+    <!-- (B) Material 3 DayNight theme (available in some 1.8.0+ or 1.9.0+ versions of material) -->
+    <style name="Theme.Material3.DayNight.NoActionBar"
+        parent="Theme.Material3.DayNight">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
     </style>
+
+    <!-- If you prefer a strictly “Light” M3 theme, try referencing the library’s actual name: -->
+    <style name="Theme.Material3.Light.NoActionBar"
+        parent="Theme.Material3.Light">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+
 </resources>
+
