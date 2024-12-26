@@ -50,20 +50,20 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         // Retrieve media folder URI to load images if <img> tags exist
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Render header, body, and button with possible <img> tags
-        headerTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        // Render header, body, and button text with image support (including width/height)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             header ?: "Default Header"
         )
 
-        bodyTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             body ?: "Default Body"
         )
 
-        nextButton.text = HtmlImageLoader.getSpannedFromHtml(
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             nextButtonText ?: "Next"

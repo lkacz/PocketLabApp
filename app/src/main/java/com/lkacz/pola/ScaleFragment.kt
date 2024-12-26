@@ -45,19 +45,19 @@ class ScaleFragment : Fragment() {
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
         // Render HTML with image loading for header, intro, and item
-        headerTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             header ?: "Default Header"
         )
 
-        introductionTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        introductionTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             introduction ?: "Default Introduction"
         )
 
-        itemTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        itemTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             item ?: "Default Item"
@@ -66,7 +66,7 @@ class ScaleFragment : Fragment() {
         // Generate response buttons
         responses?.forEachIndexed { index, response ->
             val button = Button(context).apply {
-                text = HtmlImageLoader.getSpannedFromHtml(
+                text = HtmlMediaHelper.toSpannedHtml(
                     requireContext(),
                     mediaFolderUri,
                     response

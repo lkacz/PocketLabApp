@@ -8,8 +8,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.Fragment
 
 class InputFieldFragment : Fragment() {
     private var heading: String? = null
@@ -31,7 +31,8 @@ class InputFieldFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_input_field, container, false)
@@ -43,14 +44,15 @@ class InputFieldFragment : Fragment() {
         // Retrieve media folder URI for loading images if <img> tags exist
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Render heading and text with possible <img> tags
-        headingTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        // Render heading with possible <img> tags (width/height supported)
+        headingTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             heading ?: "Default Heading"
         )
 
-        textTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        // Render text with possible <img> tags (width/height supported)
+        textTextView.text = HtmlMediaHelper.toSpannedHtml(
             requireContext(),
             mediaFolderUri,
             text ?: "Default Text"
@@ -71,9 +73,9 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Create Next button, apply images if <img> tags exist in buttonName
+        // Create Next button, support <img> tags in buttonName
         val nextButton = Button(context).apply {
-            text = HtmlImageLoader.getSpannedFromHtml(
+            text = HtmlMediaHelper.toSpannedHtml(
                 requireContext(),
                 mediaFolderUri,
                 buttonName ?: "Next"

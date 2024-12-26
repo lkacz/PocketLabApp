@@ -2,7 +2,7 @@
 
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Study<br><i>Overview</i>;Welcome <img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">to our<br><i>walking</i> study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br>NOW
+INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
 
 // Emotions Scale After Walking Solo
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT

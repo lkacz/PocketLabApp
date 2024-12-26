@@ -3,11 +3,11 @@ package com.lkacz.pola
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.text.HtmlCompat
 
 /**
  * Sets up the instruction fragment UI elements: header, body, and next button.
- * Uses [HtmlImageLoader] so that <img> tags in HTML can render from user-selected media folder.
+ * Uses [HtmlMediaHelper] so that <img> tags in HTML can render from user-selected media folder
+ * and properly scale width and height if provided.
  */
 object InstructionUiHelper {
 
@@ -26,14 +26,14 @@ object InstructionUiHelper {
         // Retrieve the URI of the user-selected media folder
         val mediaFolderUri = MediaFolderManager(view.context).getMediaFolderUri()
 
-        // Render possible <img> tags in header and body
-        headerTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        // Render possible <img> tags in header and body using HtmlMediaHelper
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(
             view.context,
             mediaFolderUri,
             header
         )
 
-        bodyTextView.text = HtmlImageLoader.getSpannedFromHtml(
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(
             view.context,
             mediaFolderUri,
             body
@@ -41,7 +41,7 @@ object InstructionUiHelper {
 
         // Apply HTML image loading to the button text if provided
         nextButton.text = if (!nextButtonText.isNullOrEmpty()) {
-            HtmlImageLoader.getSpannedFromHtml(
+            HtmlMediaHelper.toSpannedHtml(
                 view.context,
                 mediaFolderUri,
                 nextButtonText
