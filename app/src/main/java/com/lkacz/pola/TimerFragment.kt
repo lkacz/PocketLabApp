@@ -59,6 +59,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.visibility = View.INVISIBLE
 
+        // Apply the body font size to all timer text (e.g., "Time left", "Continue").
+        timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
+
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {

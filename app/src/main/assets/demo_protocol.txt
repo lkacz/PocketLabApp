@@ -1,5 +1,12 @@
 // Participant ID Entry
 
+HEADER_SIZE;20
+BODY_SIZE;14
+BUTTON_SIZE;40
+ITEM_SIZE;10
+RESPONSE_SIZE;40
+
+
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
