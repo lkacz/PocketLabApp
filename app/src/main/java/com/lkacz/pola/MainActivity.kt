@@ -1,53 +1,58 @@
-package com.lkacz.pola
+package com.lkacz.pola.ui
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedReader
-import android.net.Uri
-import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import com.lkacz.pola.Logger
+import com.lkacz.pola.MyForegroundService
+import com.lkacz.pola.ProtocolManager
+import com.lkacz.pola.ThemeManager
+import com.lkacz.pola.ui.screens.AppNavigation
 
-class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
+/**
+ * MainActivity revised to use Jetpack Compose.
+ * Key changes:
+ * - Removed XML-based setContentView and replaced it with setContent { ... } for composables.
+ * - Retained the original logic for the foreground service and logger usage.
+ * - Manages theming via [ThemeManager].
+ */
+class MainActivity : ComponentActivity() {
 
     private val channelId = "ForegroundServiceChannel"
-    private lateinit var fragmentLoader: FragmentLoader
-    private lateinit var logger: Logger
-    private lateinit var protocolManager: ProtocolManager
+    lateinit var logger: Logger
+    lateinit var protocolManager: ProtocolManager
+    lateinit var themeManager: ThemeManager
+
+    // State of selected protocol Uri in Compose-based screens.
+    var protocolUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeManager(this).applyTheme()
+        // Apply theme early
+        themeManager = ThemeManager(this)
+        themeManager.applyTheme()
+
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        supportActionBar?.hide()
-
+        // Reinitialize logger for each session
         Logger.resetInstance()
         logger = Logger.getInstance(this)
 
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, StartFragment())
-                .commit()
-        }
-
         createNotificationChannel()
+        startForegroundService(Intent(this, MyForegroundService::class.java))
 
-        val serviceIntent = Intent(this, MyForegroundService::class.java)
-        startForegroundService(serviceIntent)
-    }
-
-    override fun onProtocolSelected(protocolUri: Uri?) {
-        protocolManager = ProtocolManager(this)
-        protocolManager.readOriginalProtocol(protocolUri)
-        val manipulatedProtocol: BufferedReader = protocolManager.getManipulatedProtocol()
-
-        fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
-        loadNextFragment()
+        setContent {
+            AppNavigation(
+                mainActivity = this,
+                logger = logger
+            )
+        }
     }
 
     override fun onDestroy() {
@@ -55,6 +60,9 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         logger.backupLogFile()
     }
 
+    /**
+     * Creates the notification channel for the foreground service.
+     */
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             channelId,
@@ -62,13 +70,6 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(channel)  // Removed conditional check
-    }
-
-    fun loadNextFragment() {
-        val fragment = fragmentLoader.loadNextFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        manager.createNotificationChannel(channel)
     }
 }

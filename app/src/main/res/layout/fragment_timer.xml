@@ -1,52 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/timerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:keepScreenOn="true"
     android:padding="16dp">
 
-    <!-- Header TextView -->
-    <TextView
-        android:id="@+id/headerTextView"
+    <WebView
+        android:id="@+id/timerWebView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Default Header"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-    <!-- Body TextView -->
-    <TextView
-        android:id="@+id/bodyTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Default Body"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
-
-    <!-- Timer TextView -->
     <TextView
         android:id="@+id/timerTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Time remaining: XX seconds"
-        android:textSize="18sp"
-        android:layout_gravity="center"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:text="Time left: 00:00" />
 
-    <!-- Next Button -->
     <Button
         android:id="@+id/nextButton"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Next"
-        android:layout_gravity="end"
-        tools:ignore="HardcodedText" />
-
+        android:text="Next"/>
 </LinearLayout>

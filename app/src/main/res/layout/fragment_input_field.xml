@@ -1,42 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/inputFieldLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Heading TextView -->
-    <TextView
-        android:id="@+id/headingTextView"
+    <WebView
+        android:id="@+id/inputFieldWebView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Default Heading"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText"
-        android:layout_alignParentTop="true" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- Text TextView -->
-    <TextView
-        android:id="@+id/textTextView"
-        android:layout_below="@+id/headingTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Default Text"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
-
-    <!-- Container for dynamically added EditText fields and the Next button -->
     <LinearLayout
         android:id="@+id/inputFieldContainer"
-        android:layout_below="@+id/textTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="16dp">
-        <!-- EditText fields and Next button will be added here programmatically -->
-    </LinearLayout>
+        android:orientation="vertical" />
 
-</RelativeLayout>
+</LinearLayout>
