@@ -8,6 +8,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 
@@ -39,47 +40,51 @@ class InputFieldFragment : Fragment() {
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
         val textTextView: TextView = view.findViewById(R.id.textTextView)
 
-        headingTextView.text = heading ?: "Default Heading"
-        textTextView.text = text ?: "Default Text"
+        // Enable HTML formatting for heading and body texts
+        headingTextView.text = HtmlCompat.fromHtml(
+            heading ?: "Default Heading",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        textTextView.text = HtmlCompat.fromHtml(
+            text ?: "Default Text",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
 
+        // Dynamically create input fields
         inputFields?.forEach { field ->
-            val editText = EditText(context)
-            editText.hint = field
-            editText.textSize = 14f
-
-            val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, 0)
-            editText.layoutParams = params
-
-            fieldValues[field] = ""
-
-            editText.addTextChangedListener {
-                fieldValues[field] = it.toString()
+            val editText = EditText(context).apply {
+                hint = field
+                textSize = 14f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                // Track text changes
+                addTextChangedListener { fieldValues[field] = it.toString() }
             }
 
+            fieldValues[field] = ""
             view.findViewById<LinearLayout>(R.id.inputFieldContainer).addView(editText)
         }
 
-        val nextButton = Button(context)
-        nextButton.text = buttonName ?: "Next"
-        nextButton.textSize = 16f
-        nextButton.setOnClickListener {
-            fieldValues.forEach { (field, value) ->
-                val isNumeric = value.toDoubleOrNull() != null
-                logger.logInputFieldFragment(
-                    heading ?: "Default Heading",
-                    text ?: "Default Text",
-                    field,
-                    value,
-                    isNumeric
-                )
+        // Create Next button with HTML text support
+        val nextButton = Button(context).apply {
+            text = HtmlCompat.fromHtml(buttonName ?: "Next", HtmlCompat.FROM_HTML_MODE_LEGACY)
+            textSize = 16f
+            setOnClickListener {
+                fieldValues.forEach { (field, value) ->
+                    val isNumeric = value.toDoubleOrNull() != null
+                    logger.logInputFieldFragment(
+                        heading ?: "Default Heading",
+                        (text ?: "Default Text").toString(),
+                        field,
+                        value,
+                        isNumeric
+                    )
+                }
+                (activity as MainActivity).loadNextFragment()
             }
-            (activity as MainActivity).loadNextFragment()
         }
-
         view.findViewById<LinearLayout>(R.id.inputFieldContainer).addView(nextButton)
 
         return view
@@ -87,14 +92,18 @@ class InputFieldFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(heading: String?, text: String?, buttonName: String?, inputFields: List<String>?) =
-            InputFieldFragment().apply {
-                arguments = Bundle().apply {
-                    putString("HEADING", heading)
-                    putString("TEXT", text)
-                    putString("BUTTON", buttonName)
-                    putStringArrayList("INPUTFIELDS", ArrayList(inputFields ?: emptyList()))
-                }
+        fun newInstance(
+            heading: String?,
+            text: String?,
+            buttonName: String?,
+            inputFields: List<String>?
+        ) = InputFieldFragment().apply {
+            arguments = Bundle().apply {
+                putString("HEADING", heading)
+                putString("TEXT", text)
+                putString("BUTTON", buttonName)
+                putStringArrayList("INPUTFIELDS", ArrayList(inputFields ?: emptyList()))
             }
+        }
     }
 }

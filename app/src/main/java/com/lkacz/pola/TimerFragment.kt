@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.core.text.HtmlCompat
 
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
@@ -27,7 +28,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
         }
 
-        // Ensure timeInSeconds is at least zero to avoid negative durations
+        // Ensure timeInSeconds is at least zero
         if (timeInSeconds == null || timeInSeconds!! < 0) {
             timeInSeconds = 0
         }
@@ -49,11 +50,22 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
-        headerTextView.text = header ?: "Default Header"
-        bodyTextView.text = body ?: "Default Body"
-        nextButton.text = nextButtonText ?: "Next"
+        // Display header, body, and button text as HTML
+        headerTextView.text = HtmlCompat.fromHtml(
+            header ?: "Default Header",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        bodyTextView.text = HtmlCompat.fromHtml(
+            body ?: "Default Body",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        nextButton.text = HtmlCompat.fromHtml(
+            nextButtonText ?: "Next",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
         nextButton.visibility = View.INVISIBLE
 
+        // Set up countdown timer
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -66,25 +78,38 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
                 alarmHelper.startAlarm()
-                logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
+                logger.logTimerFragment(
+                    header ?: "Default Header",
+                    "Timer Finished",
+                    timeInSeconds ?: 0
+                )
             }
         }.start()
 
+        // Handle button click
         nextButton.setOnClickListener {
             alarmHelper.stopAlarm()
             (activity as MainActivity).loadNextFragment()
-            logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
+            logger.logTimerFragment(
+                header ?: "Default Header",
+                "Next Button Clicked",
+                0
+            )
         }
 
         return view
     }
 
     /**
-     * Cancels the timer early when the user performs enough touch actions.
+     * Cancel the timer and start the alarm if user taps enough times.
      */
     override fun onTouchThresholdReached() {
         timer?.cancel()
-        logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
+        logger.logTimerFragment(
+            header ?: "Default Header",
+            "Timer forcibly ended by user",
+            timeInSeconds ?: 0
+        )
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
         view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
         alarmHelper.startAlarm()
