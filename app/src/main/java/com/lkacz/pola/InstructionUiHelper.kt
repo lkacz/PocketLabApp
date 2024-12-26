@@ -11,9 +11,10 @@ object InstructionUiHelper {
      * Sets up the instruction fragment UI elements: header, body, and next button.
      *
      * @param view The inflated layout's root View.
-     * @param header The text for the header TextView.
+     * @param header The text for the header TextView, which may contain HTML formatting (e.g. <b></b>).
      * @param body The text for the body TextView, which may contain HTML formatting (e.g. <b></b>).
-     * @param nextButtonText Optional custom text for the button. Defaults to "Next" if null.
+     * @param nextButtonText Optional custom text for the button, which may contain HTML formatting.
+     *                       Defaults to "Next" if null.
      * @param onNextClick Action to be performed when the next button is clicked.
      *
      * @return The nextButton for further manipulation if needed (e.g., changing visibility).
@@ -29,11 +30,19 @@ object InstructionUiHelper {
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
 
-        headerTextView.text = header
-        // CHANGED: Use HtmlCompat.fromHtml to display HTML-formatted text without sanitizing.
+        // Parse header HTML
+        headerTextView.text = HtmlCompat.fromHtml(header, HtmlCompat.FROM_HTML_MODE_LEGACY)
+
+        // Parse body HTML
         bodyTextView.text = HtmlCompat.fromHtml(body, HtmlCompat.FROM_HTML_MODE_LEGACY)
 
-        nextButton.text = nextButtonText ?: "Next"
+        // Parse nextButton HTML if available, otherwise use "Next"
+        nextButton.text = if (nextButtonText != null) {
+            HtmlCompat.fromHtml(nextButtonText, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        } else {
+            "Next"
+        }
+
         nextButton.setOnClickListener { onNextClick() }
         return nextButton
     }

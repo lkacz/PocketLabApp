@@ -2,10 +2,10 @@
 
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Study Overview;Welcome to our walking study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE
+INSTRUCTION;Study<br><i>Overview</i>;Welcome to our<br><i>walking</i> study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br>NOW
 
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE;Participant ID
+INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
 
 // Triple Tap Instruction to Start the Study
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
