@@ -24,11 +24,27 @@ class StartFragment : Fragment() {
     private lateinit var themeManager: ThemeManager
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
 
+    // Newly added MediaFolderManager to handle folder URI storage
+    private lateinit var mediaFolderManager: MediaFolderManager
+
     private val filePicker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let {
-                handleFileUri(it)
-            } ?: showToast("File selection was cancelled")
+            uri?.let { handleFileUri(it) } ?: showToast("File selection was cancelled")
+        }
+
+    /**
+     * Folder picker for selecting a media directory, not a single file.
+     * We use [ActivityResultContracts.OpenDocumentTree] to allow the user
+     * to select an entire folder.
+     */
+    private val folderPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                mediaFolderManager.storeMediaFolderUri(uri)
+                showToast("Media folder set: ${uri.lastPathSegment ?: uri.toString()}")
+            } else {
+                showToast("Folder selection was cancelled")
+            }
         }
 
     interface OnProtocolSelectedListener {
@@ -41,6 +57,7 @@ class StartFragment : Fragment() {
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
         themeManager = ThemeManager(context)
+        mediaFolderManager = MediaFolderManager(context)
     }
 
     override fun onCreateView(
@@ -50,10 +67,7 @@ class StartFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
-        updateProtocolNameDisplay(
-            protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
-        )
-
+        updateProtocolNameDisplay(protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None")
         setupButtons(view)
         return view
     }
@@ -65,25 +79,34 @@ class StartFragment : Fragment() {
 
     private fun setupButtons(view: View) {
         view.findViewById<Button>(R.id.btnStart).setOnClickListener { showStartStudyConfirmation() }
-        view.findViewById<Button>(R.id.btnSelectFile)
-            .setOnClickListener {
-                showChangeProtocolConfirmation {
-                    filePicker.launch(arrayOf("text/plain"))
-                }
+        view.findViewById<Button>(R.id.btnSelectFile).setOnClickListener {
+            showChangeProtocolConfirmation {
+                filePicker.launch(arrayOf("text/plain"))
             }
-        view.findViewById<Button>(R.id.btnUseDemo)
-            .setOnClickListener { handleProtocolChange("demo", "Demo Protocol") }
-        view.findViewById<Button>(R.id.btnUseTutorial)
-            .setOnClickListener { handleProtocolChange("tutorial", "Tutorial Protocol") }
-        view.findViewById<Button>(R.id.btnToggleTheme)
-            .setOnClickListener {
-                themeManager.toggleTheme()
-                activity?.recreate()
+        }
+        view.findViewById<Button>(R.id.btnUseDemo).setOnClickListener {
+            handleProtocolChange("demo", "Demo Protocol")
+        }
+        view.findViewById<Button>(R.id.btnUseTutorial).setOnClickListener {
+            handleProtocolChange("tutorial", "Tutorial Protocol")
+        }
+        view.findViewById<Button>(R.id.btnToggleTheme).setOnClickListener {
+            themeManager.toggleTheme()
+            activity?.recreate()
+        }
+        view.findViewById<Button>(R.id.btnShowProtocolContent).setOnClickListener {
+            showProtocolContentDialog()
+        }
+        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
+            showAboutContentDialog()
+        }
+
+        // Newly added button to pick the media folder
+        view.findViewById<Button>(R.id.btnSelectMediaFolder).setOnClickListener {
+            showChangeMediaFolderConfirmation {
+                mediaFolderManager.pickMediaFolder(folderPicker)
             }
-        view.findViewById<Button>(R.id.btnShowProtocolContent)
-            .setOnClickListener { showProtocolContentDialog() }
-        view.findViewById<Button>(R.id.btnShowAbout)
-            .setOnClickListener { showAboutContentDialog() }
+        }
     }
 
     private fun handleFileUri(uri: Uri) {
@@ -102,7 +125,10 @@ class StartFragment : Fragment() {
     private fun handleProtocolChange(mode: String, protocolName: String) {
         showChangeProtocolConfirmation {
             protocolUri = null
-            sharedPref.edit().remove("PROTOCOL_URI").putString("CURRENT_MODE", mode).apply()
+            sharedPref.edit()
+                .remove("PROTOCOL_URI")
+                .putString("CURRENT_MODE", mode)
+                .apply()
             updateProtocolNameDisplay(protocolName)
         }
     }
@@ -137,6 +163,23 @@ class StartFragment : Fragment() {
 
     private fun showChangeProtocolConfirmation(onConfirm: () -> Unit) {
         confirmationDialogManager.showChangeProtocolConfirmation(onConfirm)
+    }
+
+    /**
+     * For changing the media folder with a confirmation prompt.
+     */
+    private fun showChangeMediaFolderConfirmation(onConfirm: () -> Unit) {
+        ConfirmationDialogManager(requireContext())
+            .apply {
+                context?.let {
+                    AlertDialogBuilderUtils.showConfirmation(
+                        it,
+                        title = "Confirm Media Folder",
+                        message = "Are you sure you want to change the media folder?",
+                        onConfirm = onConfirm
+                    )
+                }
+            }
     }
 
     private fun showAboutContentDialog() {

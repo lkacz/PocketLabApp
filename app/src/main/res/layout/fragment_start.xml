@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center">
-
+    android:padding="16dp">
 
     <TextView
         android:layout_width="wrap_content"
@@ -17,10 +17,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="36dp"
         android:text="@string/app_version"
-        android:textSize="12sp"
-        android:layout_marginBottom="36dp"/>
-
+        android:textSize="12sp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -33,28 +32,28 @@
         android:id="@+id/tvSelectedProtocolName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Selected protocol:None"
-        android:textStyle="bold"
         android:gravity="center"
-        android:textSize="16sp" />
+        android:text="Selected protocol:None"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
     <Button
         android:id="@+id/btnShowProtocolContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Show Protocol Content"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="16dp"
-        android:layout_gravity="center_horizontal" />
+        android:text="Show Protocol Content" />
 
     <Button
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="36dp"
         android:layout_marginTop="22dp"
         android:text="@string/start_protocol_button"
         android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="36dp"/>
+        android:textStyle="bold" />
 
     <Button
         android:id="@+id/btnSelectFile"
@@ -72,8 +71,8 @@
         android:id="@+id/btnUseTutorial"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Load Tutorial Protocol"
-        android:layout_marginBottom="36dp"/>
+        android:layout_marginBottom="36dp"
+        android:text="Load Tutorial Protocol" />
 
     <Button
         android:id="@+id/btnToggleTheme"
@@ -87,4 +86,11 @@
         android:layout_height="wrap_content"
         android:text="Show About" />
 
+    <!-- Newly added button to pick the media folder -->
+    <Button
+        android:id="@+id/btnSelectMediaFolder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Media Folder"
+        android:layout_marginTop="16dp"/>
 </LinearLayout>
