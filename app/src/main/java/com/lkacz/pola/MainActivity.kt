@@ -4,13 +4,16 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import java.io.BufferedReader
-import android.net.Uri
-import android.widget.Toast
 
+/**
+ * Main entry point for the PoLA app. If you see "Activity class does not exist," confirm
+ * the app's package and installation match com.lkacz.pola and MainActivity is present
+ * in the final APK or AAB.
+ */
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
 
     private val channelId = "ForegroundServiceChannel"
@@ -44,7 +47,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     override fun onProtocolSelected(protocolUri: Uri?) {
         protocolManager = ProtocolManager(this)
         protocolManager.readOriginalProtocol(protocolUri)
-        val manipulatedProtocol: BufferedReader = protocolManager.getManipulatedProtocol()
+        val manipulatedProtocol = protocolManager.getManipulatedProtocol()
 
         fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
         loadNextFragment()
@@ -55,6 +58,26 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         logger.backupLogFile()
     }
 
+    /**
+     * Loads the next instruction-based fragment.
+     */
+    fun loadNextFragment() {
+        val fragment = fragmentLoader.loadNextFragment()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .commit()
+    }
+
+    /**
+     * Public method that a BranchScaleFragment can call to jump to a label.
+     */
+    fun loadFragmentByLabel(label: String) {
+        val fragment = fragmentLoader.jumpToLabelAndLoad(label)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .commit()
+    }
+
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             channelId,
@@ -62,13 +85,6 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(channel)  // Removed conditional check
-    }
-
-    fun loadNextFragment() {
-        val fragment = fragmentLoader.loadNextFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        manager.createNotificationChannel(channel)
     }
 }

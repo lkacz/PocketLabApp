@@ -7,6 +7,23 @@ ITEM_SIZE;10
 RESPONSE_SIZE;40
 
 
+LABEL;START
+
+// Emotions Scale After Walking With a Friend
+SCALE;Wybierz;Wybierz coś sobie.;Werja;Wersja pierwsza[Version1];Wersja druga[Version2]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+GOTO;START
+
+
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
@@ -18,7 +35,6 @@ SCALE;<img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" heig
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
 
-
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF<br>AND<br>CONTINUE;1800
@@ -26,7 +42,6 @@ TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please
 // Triple Tap Instruction to Start the Study
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 TAP_INSTRUCTION;Study<br>Start Confirmation;When you are ready to<br>start, please tap quickly three times anywhere on the screen to reveal the start button.;START<br>THE STUDY
-
 
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
@@ -49,7 +64,7 @@ TIMER;Walking Timer Solo;30 minutes of walking time starts now. Please continue 
 
 // Emotions Scale After Walking Solo
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+BRANCHING_SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative[Part2];Somewhat negative;Neutral;Somewhat positive;Very positive
 
 // Instruction for Walking With a Friend
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
