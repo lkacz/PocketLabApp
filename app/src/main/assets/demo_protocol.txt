@@ -10,7 +10,7 @@ RESPONSE_SIZE;40
 LABEL;START
 
 // Emotions Scale After Walking With a Friend
-SCALE;Wybierz;Wybierz coś sobie.;Werja;Wersja pierwsza[Version1];Wersja druga[Version2]
+BRANCH_SCALE;Wybierz;Wybierz coś sobie.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2]
 
 LABEL;Version1
 INSTRUCTION;Werjsa 1;Tere fere.;DALEJ

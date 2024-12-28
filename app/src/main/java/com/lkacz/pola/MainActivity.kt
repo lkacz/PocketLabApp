@@ -10,9 +10,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Main entry point for the PoLA app. If you see "Activity class does not exist," confirm
- * the app's package and installation match com.lkacz.pola and MainActivity is present
- * in the final APK or AAB.
+ * Updated to allow fragments to jump to labels (e.g., from BranchScaleFragment).
  */
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
 
