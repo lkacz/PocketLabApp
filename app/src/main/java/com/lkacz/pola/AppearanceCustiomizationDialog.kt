@@ -346,6 +346,19 @@ class AppearanceCustomizationDialog : DialogFragment() {
             stopTempPlayer()
             dismiss()
         }
+
+        // Defaults button
+        // Sets an elegant set of sizes/colors for all UI elements
+        val defaultsButton = Button(requireContext()).apply {
+            id = View.generateViewId()
+            text = "Defaults"
+            setOnClickListener {
+                restoreAllDefaults(ctx)
+            }
+        }
+        // Insert it into the same parent as the OK/Cancel buttons
+        val buttonsLayout = cancelButton.parent as? LinearLayout
+        buttonsLayout?.addView(defaultsButton, buttonsLayout.indexOfChild(cancelButton))
     }
 
     /**
@@ -390,6 +403,86 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    /**
+     * Sets a curated set of defaults to provide a cohesive, elegant style.
+     * Also updates the UI preview.
+     */
+    private fun restoreAllDefaults(ctx: Context) {
+        // Example "elegant" defaults
+        val defaultHeaderSize = 48f
+        val defaultBodySize = 18f
+        val defaultButtonSize = 18f
+        val defaultItemSize = 22f
+        val defaultResponseSize = 16f
+
+        val defaultHeaderColor = Color.parseColor("#37474F")      // Dark Gray
+        val defaultBodyColor = Color.parseColor("#616161")        // Medium Gray
+        val defaultButtonTextColor = Color.WHITE
+        val defaultButtonBgColor = Color.parseColor("#008577")    // Teal
+        val defaultItemColor = Color.parseColor("#008577")        // Teal
+        val defaultResponseColor = Color.parseColor("#C51162")    // Pinkish
+        val defaultScreenBgColor = Color.parseColor("#F5F5F5")    // Light Gray
+
+        // Font sizes
+        FontSizeManager.setHeaderSize(ctx, defaultHeaderSize)
+        FontSizeManager.setBodySize(ctx, defaultBodySize)
+        FontSizeManager.setButtonSize(ctx, defaultButtonSize)
+        FontSizeManager.setItemSize(ctx, defaultItemSize)
+        FontSizeManager.setResponseSize(ctx, defaultResponseSize)
+
+        sliderHeader.progress = defaultHeaderSize.toInt().coerceIn(8, 100)
+        sliderBody.progress = defaultBodySize.toInt().coerceIn(8, 100)
+        sliderButton.progress = defaultButtonSize.toInt().coerceIn(8, 100)
+        sliderItem.progress = defaultItemSize.toInt().coerceIn(8, 100)
+        sliderResponse.progress = defaultResponseSize.toInt().coerceIn(8, 100)
+
+        tvHeaderSizeValue.text = sliderHeader.progress.toString()
+        tvBodySizeValue.text = sliderBody.progress.toString()
+        tvButtonSizeValue.text = sliderButton.progress.toString()
+        tvItemSizeValue.text = sliderItem.progress.toString()
+        tvResponseSizeValue.text = sliderResponse.progress.toString()
+
+        previewHeaderTextView.textSize = defaultHeaderSize
+        previewBodyTextView.textSize = defaultBodySize
+        previewButton.textSize = defaultButtonSize
+        previewItemTextView.textSize = defaultItemSize
+        previewResponseButton.textSize = defaultResponseSize
+
+        // Colors
+        ColorManager.setHeaderTextColor(ctx, defaultHeaderColor)
+        ColorManager.setBodyTextColor(ctx, defaultBodyColor)
+        ColorManager.setButtonTextColor(ctx, defaultButtonTextColor)
+        ColorManager.setButtonBackgroundColor(ctx, defaultButtonBgColor)
+        ColorManager.setItemTextColor(ctx, defaultItemColor)
+        ColorManager.setResponseTextColor(ctx, defaultResponseColor)
+        ColorManager.setScreenBackgroundColor(ctx, defaultScreenBgColor)
+
+        headerTextColor = defaultHeaderColor
+        bodyTextColor = defaultBodyColor
+        buttonTextColor = defaultButtonTextColor
+        buttonBackgroundColor = defaultButtonBgColor
+        itemTextColor = defaultItemColor
+        responseTextColor = defaultResponseColor
+        screenBgColor = defaultScreenBgColor
+
+        view?.findViewById<View>(R.id.headerColorPicker)?.setBackgroundColor(defaultHeaderColor)
+        view?.findViewById<View>(R.id.bodyColorPicker)?.setBackgroundColor(defaultBodyColor)
+        view?.findViewById<View>(R.id.buttonTextColorPicker)?.setBackgroundColor(defaultButtonTextColor)
+        view?.findViewById<View>(R.id.buttonBackgroundColorPicker)?.setBackgroundColor(defaultButtonBgColor)
+        view?.findViewById<View>(R.id.itemColorPicker)?.setBackgroundColor(defaultItemColor)
+        view?.findViewById<View>(R.id.responseColorPicker)?.setBackgroundColor(defaultResponseColor)
+        view?.findViewById<View>(R.id.screenBackgroundColorPicker)?.setBackgroundColor(defaultScreenBgColor)
+
+        previewHeaderTextView.setTextColor(defaultHeaderColor)
+        previewBodyTextView.setTextColor(defaultBodyColor)
+        previewButton.setTextColor(defaultButtonTextColor)
+        previewButton.setBackgroundColor(defaultButtonBgColor)
+        previewItemTextView.setTextColor(defaultItemColor)
+        previewResponseButton.setTextColor(defaultResponseColor)
+        previewResponseButton.setBackgroundColor(defaultButtonBgColor)
+        previewContainer.setBackgroundColor(defaultScreenBgColor)
     }
 
     private fun stopTempPlayer() {
