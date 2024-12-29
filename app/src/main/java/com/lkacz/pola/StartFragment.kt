@@ -4,25 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 
-/**
- * Changes made:
- * 1) Added a new "Customize App" button (btnCustomizeApp) to open a dialog (FontCustomizationDialog) for adjusting:
- *    - HEADER_SIZE, BODY_SIZE, BUTTON_SIZE, ITEM_SIZE, RESPONSE_SIZE
- *    - TIMER_SOUND
- * 2) The new dialog allows slider-based font size changes and a button to preview the selected alarm sound from
- *    the user-chosen media folder. Changes persist in SharedPreferences.
- * Reasoning:
- * - This addition provides a direct way to modify and preview user customization features before starting the study.
- */
 class StartFragment : Fragment() {
 
     private lateinit var listener: OnProtocolSelectedListener
@@ -33,8 +22,6 @@ class StartFragment : Fragment() {
     private val protocolReader by lazy { ProtocolReader() }
     private lateinit var themeManager: ThemeManager
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
-
-    // Newly added MediaFolderManager to handle folder URI storage
     private lateinit var mediaFolderManager: MediaFolderManager
 
     private val filePicker =
@@ -42,9 +29,6 @@ class StartFragment : Fragment() {
             uri?.let { handleFileUri(it) } ?: showToast("File selection was cancelled")
         }
 
-    /**
-     * Folder picker for selecting a media directory, not a single file.
-     */
     private val folderPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             if (uri != null) {
@@ -68,17 +52,13 @@ class StartFragment : Fragment() {
         mediaFolderManager = MediaFolderManager(context)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
 
-        updateProtocolNameDisplay(protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None")
+        val fileName = protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
+        updateProtocolNameDisplay(fileName)
         setupButtons(view)
-
         return view
     }
 
@@ -116,9 +96,9 @@ class StartFragment : Fragment() {
             }
         }
 
-        // New "Customize App" button to open FontCustomizationDialog
+        // Changed to open the new AppearanceCustomizationDialog
         view.findViewById<Button>(R.id.btnCustomizeApp).setOnClickListener {
-            FontCustomizationDialog().show(parentFragmentManager, "FontCustomizationDialog")
+            AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
         }
     }
 
@@ -155,10 +135,16 @@ class StartFragment : Fragment() {
         val fileContent = when (protocolName) {
             "Demo Protocol" -> protocolReader.readFromAssets(requireContext(), "demo_protocol.txt")
             "Tutorial Protocol" -> protocolReader.readFromAssets(requireContext(), "tutorial_protocol.txt")
-            else -> protocolUri?.let { protocolReader.readFileContent(requireContext(), it) }
-                ?: "File content not available"
+            else -> protocolUri?.let {
+                protocolReader.readFileContent(requireContext(), it)
+            } ?: "File content not available"
         }
         ProtocolContentDisplayer(requireContext()).showProtocolContent(protocolName, fileContent)
+    }
+
+    private fun showAboutContentDialog() {
+        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
+        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
 
     private fun showToast(message: String) {
@@ -179,21 +165,11 @@ class StartFragment : Fragment() {
     }
 
     private fun showChangeMediaFolderConfirmation(onConfirm: () -> Unit) {
-        ConfirmationDialogManager(requireContext())
-            .apply {
-                context?.let {
-                    AlertDialogBuilderUtils.showConfirmation(
-                        it,
-                        title = "Confirm Media Folder",
-                        message = "Are you sure you want to change the media folder?",
-                        onConfirm = onConfirm
-                    )
-                }
-            }
-    }
-
-    private fun showAboutContentDialog() {
-        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
-        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
+        AlertDialogBuilderUtils.showConfirmation(
+            requireContext(),
+            title = "Confirm Media Folder",
+            message = "Are you sure you want to change the media folder?",
+            onConfirm = onConfirm
+        )
     }
 }

@@ -4,18 +4,11 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.TextView
 import android.widget.VideoView
 
-/**
- * Revised to handle a user-defined custom alarm sound (TIMER_SOUND;mytimersound.mp3)
- * in addition to the default alarm sound. The custom sound setting is parsed and
- * stored similarly to font sizes, enabling persistent usage across sessions.
- */
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private var header: String? = null
@@ -26,7 +19,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private lateinit var logger: Logger
     private var timer: CountDownTimer? = null
 
-    // Holds MediaPlayer references for any played inline .mp3
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
 
@@ -47,46 +39,45 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
+
+        // BG
+        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
-
-        videoView = view.findViewById(R.id.videoView2)  // For .mp4 playback
+        videoView = view.findViewById(R.id.videoView2)
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Parse & play audio references in header/body/nextButton, then check for .mp4
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
-
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
-
         val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+
+        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
 
-        // Apply text to UI with user-defined font sizes
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
+        headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
+        bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanNextButton)
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
+        nextButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
+        nextButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
         nextButton.visibility = View.INVISIBLE
 
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
+        timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Start countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -94,7 +85,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 val secondsLeft = (millisUntilFinished % 60000) / 1000
                 timerTextView.text = String.format("Time left: %02d:%02d", minutesLeft, secondsLeft)
             }
-
             override fun onFinish() {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
@@ -112,10 +102,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         return view
     }
 
-    /**
-     * If the user forcibly ends the timer by multiple taps, we stop the countdown,
-     * show the Next button, and trigger the alarm.
-     */
     override fun onTouchThresholdReached() {
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
@@ -124,10 +110,21 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         alarmHelper.startAlarm()
     }
 
-    /**
-     * Detects and plays any <filename.mp3[,volume]> placeholders, returning
-     * the text minus those placeholders.
-     */
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
+        if (this::videoView.isInitialized && videoView.isPlaying) {
+            videoView.stopPlayback()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        alarmHelper.release()
+        logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
+    }
+
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
@@ -137,21 +134,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         )
     }
 
-    /**
-     * If we detect <filename.mp4[,volume]>, we attempt to play it in videoView.
-     */
     private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
-
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
-
         videoView.visibility = View.VISIBLE
         playVideoFile(fileName, volume, mediaFolderUri)
     }
@@ -162,31 +154,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
         videoView.setOnPreparedListener { mp ->
-            // Volume not adjustable with default VideoView
             mp.start()
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Release inline audio players
-        mediaPlayers.forEach { it.release() }
-        mediaPlayers.clear()
-
-        // Stop video if playing
-        if (this::videoView.isInitialized && videoView.isPlaying) {
-            videoView.stopPlayback()
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        alarmHelper.release()
-        logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
     }
 
     companion object {

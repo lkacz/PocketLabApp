@@ -3,9 +3,7 @@ package com.lkacz.pola
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -22,8 +20,8 @@ class ScaleFragment : Fragment() {
     private lateinit var logger: Logger
     private val selectedResponse = MutableLiveData<String>()
 
-    private val mediaPlayers = mutableListOf<MediaPlayer>() // for .mp3
-    private lateinit var videoView: VideoView            // for .mp4
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
+    private lateinit var videoView: VideoView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,12 +34,11 @@ class ScaleFragment : Fragment() {
         logger = Logger.getInstance(requireContext())
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
+
+        // Apply background color
+        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
@@ -51,24 +48,25 @@ class ScaleFragment : Fragment() {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Parse audio (mp3)
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), mediaFolderUri)
 
-        // Parse video (mp4)
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(item.orEmpty(), mediaFolderUri)
 
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
+        headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
+        bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
+        itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, mediaFolderUri)
@@ -77,6 +75,8 @@ class ScaleFragment : Fragment() {
             val button = Button(context).apply {
                 text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, buttonText)
                 textSize = FontSizeManager.getResponseSize(requireContext())
+                setTextColor(ColorManager.getResponseTextColor(requireContext()))
+                setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -93,11 +93,18 @@ class ScaleFragment : Fragment() {
                     (activity as MainActivity).loadNextFragment()
                 }
             }
-            // Add new button to top or bottom
             buttonContainer.addView(button, 0)
         }
-
         return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
+        if (this::videoView.isInitialized && videoView.isPlaying) {
+            videoView.stopPlayback()
+        }
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -113,14 +120,12 @@ class ScaleFragment : Fragment() {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
-
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
-
         videoView.visibility = View.VISIBLE
         playVideoFile(fileName, volume, mediaFolderUri)
     }
@@ -131,22 +136,10 @@ class ScaleFragment : Fragment() {
             ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
         videoView.setOnPreparedListener { mp ->
-            // For real volume control, you'd need a custom MediaPlayer approach
             mp.start()
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        mediaPlayers.forEach { it.release() }
-        mediaPlayers.clear()
-
-        if (this::videoView.isInitialized && videoView.isPlaying) {
-            videoView.stopPlayback()
         }
     }
 
