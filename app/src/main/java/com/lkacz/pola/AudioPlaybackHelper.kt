@@ -7,8 +7,8 @@ import androidx.documentfile.provider.DocumentFile
 import java.util.regex.Pattern
 
 /**
- * Scans a string for audio playback markers of the form <filename.mp3[,volume]> and plays them.
- * Volume is optional and defaults to 1.0 (100%).
+ * Scans a string for audio playback markers of the form <filename.mp3[,volume]> or <filename.wav[,volume]>
+ * and plays them. Volume is optional and defaults to 1.0 (100%).
  *
  * Usage:
  *   val cleanedText = AudioPlaybackHelper.parseAndPlayAudio(
@@ -17,21 +17,25 @@ import java.util.regex.Pattern
  *       mediaFolderUri = mediaFolderUri,
  *       mediaPlayers = mediaPlayers
  *   )
- *   // 'cleanedText' is 'someStringContainingMarkers' with all <...> segments removed or replaced
+ *   // 'cleanedText' is 'someStringContainingMarkers' with all <...> segments removed
  *   // so you can safely show it in UI.
+ *
+ * Revision Notes:
+ * - Added support for .wav files in addition to .mp3 so that .wav markers (e.g., <alert.wav,50>)
+ *   will also be properly played.
  */
 object AudioPlaybackHelper {
 
-    // A simple pattern to find any <...> substring.
+    // A simple pattern to find any <...> substring in the raw text.
     private val pattern = Pattern.compile("<([^>]+)>")
 
     /**
-     * Parse and play audio references in the form <filename.mp3[,volume]> from the given raw text,
-     * using files found in [mediaFolderUri]. Found audio references are played immediately and
-     * removed from the returned string.
+     * Parse and play audio references in the form <filename.mp3[,volume]> or <filename.wav[,volume]>
+     * from the given [rawText], using files found in [mediaFolderUri]. Found audio references
+     * are played immediately and removed from the returned string.
      *
      * @param context The Android context.
-     * @param rawText The text possibly containing <filename.mp3[,volume]> markers.
+     * @param rawText The text possibly containing <filename.mp3[,volume]> or <filename.wav[,volume]> markers.
      * @param mediaFolderUri The URI of the user-selected media folder; can be null if none selected.
      * @param mediaPlayers A collection of [MediaPlayer] references to track active players for release later.
      *
@@ -51,12 +55,14 @@ object AudioPlaybackHelper {
         while (matcher.find()) {
             val fullMatch = matcher.group(1)?.trim() ?: continue
 
-            // Expected format: "mySoundFile.mp3[,0-100]"
-            // We'll parse out fileName and optionalVolume
+            // Expected format: "mySoundFile.mp3[,0-100]" or "mySoundFile.wav[,0-100]"
             val (fileName, volume) = parseFileAndVolume(fullMatch)
 
-            // Attempt to play the sound file if it ends with ".mp3"
-            if (fileName.endsWith(".mp3", ignoreCase = true)) {
+            // Attempt to play the sound file if it ends with ".mp3" or ".wav"
+            if (
+                fileName.endsWith(".mp3", ignoreCase = true) ||
+                fileName.endsWith(".wav", ignoreCase = true)
+            ) {
                 playSoundFile(context, fileName, volume, mediaFolderUri, mediaPlayers)
             }
 
@@ -70,7 +76,7 @@ object AudioPlaybackHelper {
 
     /**
      * If the text inside <> is "something.mp3,50", we parse out "something.mp3" and 0.50f for volume (50%).
-     * If no comma is found, volume defaults to 1.0f.
+     * Same logic applies for .wav. If no comma is found, volume defaults to 1.0f.
      */
     private fun parseFileAndVolume(fullMatch: String): Pair<String, Float> {
         val segments = fullMatch.split(",")

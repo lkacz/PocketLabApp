@@ -6,6 +6,12 @@ BUTTON_SIZE;24
 ITEM_SIZE;30
 RESPONSE_SIZE;24
 
+
+INSTRUCTION;Study Overview;Welcome<pic.jpg,400,200><br><pic2.png>to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
+
+INSTRUCTION;Study Overview;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
+
+
 // Emotions Scale After Walking With a Friend
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative<sound.mp3,10>;Somewhat negative;Neutral;Somewhat positive;Very positive
