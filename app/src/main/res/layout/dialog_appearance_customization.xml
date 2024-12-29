@@ -215,8 +215,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
 
             <!-- Header Text Color -->
             <LinearLayout
@@ -294,8 +294,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
 
             <!-- Item Text Color -->
             <LinearLayout
@@ -371,6 +371,98 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Preview Sound" />
+
+        <!-- INLINE COLOR PICKER SECTION -->
+        <TextView
+            android:id="@+id/tvInlineColorPickerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Inline RGB Color Picker"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/layoutInlineColorPicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical">
+
+            <!-- Red -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Red:"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/seekRed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:max="255" />
+            </LinearLayout>
+
+            <!-- Green -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Green:"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/seekGreen"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:max="255" />
+            </LinearLayout>
+
+            <!-- Blue -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Blue:"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/seekBlue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:max="255" />
+            </LinearLayout>
+
+            <!-- Color preview box -->
+            <View
+                android:id="@+id/colorPreview"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="8dp"
+                android:background="#FF0000" />
+        </LinearLayout>
 
         <!-- OK / Cancel -->
         <LinearLayout

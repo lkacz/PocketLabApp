@@ -1,20 +1,24 @@
 package com.lkacz.pola
 
+import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.core.graphics.alpha
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.DialogFragment
 
 /**
  * A unified dialog for customizing both font sizes and colors
  * (header/body/button/item/response text + background).
+ *
+ * Revised to place color pickers next to each slider and to use a
+ * standard color picker dialog for full customization.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
 
@@ -26,32 +30,34 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var previewItemTextView: TextView
     private lateinit var previewResponseButton: Button
 
-    // Color pickers
-    private lateinit var headerColorPicker: View
-    private lateinit var bodyColorPicker: View
-    private lateinit var buttonTextColorPicker: View
-    private lateinit var buttonBackgroundColorPicker: View
-    private lateinit var itemColorPicker: View
-    private lateinit var responseColorPicker: View
-    private lateinit var screenBackgroundColorPicker: View
-
-    // Font-size numeric indicators
-    private lateinit var tvHeaderSizeValue: TextView
-    private lateinit var tvBodySizeValue: TextView
-    private lateinit var tvButtonSizeValue: TextView
-    private lateinit var tvItemSizeValue: TextView
-    private lateinit var tvResponseSizeValue: TextView
-
-    // Sliders
+    // Sliders and corresponding indicators
     private lateinit var sliderHeader: SeekBar
+    private lateinit var tvHeaderSizeValue: TextView
+
     private lateinit var sliderBody: SeekBar
+    private lateinit var tvBodySizeValue: TextView
+
     private lateinit var sliderButton: SeekBar
+    private lateinit var tvButtonSizeValue: TextView
+
     private lateinit var sliderItem: SeekBar
+    private lateinit var tvItemSizeValue: TextView
+
     private lateinit var sliderResponse: SeekBar
+    private lateinit var tvResponseSizeValue: TextView
 
     // Timer Sound
     private lateinit var timerSoundEditText: EditText
     private var tempMediaPlayer: android.media.MediaPlayer? = null
+
+    // Current colors
+    private var headerTextColor: Int = Color.BLACK
+    private var bodyTextColor: Int = Color.DKGRAY
+    private var buttonTextColor: Int = Color.WHITE
+    private var buttonBackgroundColor: Int = Color.BLUE
+    private var itemTextColor: Int = Color.BLUE
+    private var responseTextColor: Int = Color.RED
+    private var screenBgColor: Int = Color.WHITE
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -68,92 +74,81 @@ class AppearanceCustomizationDialog : DialogFragment() {
         )
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         return inflater.inflate(R.layout.dialog_appearance_customization, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Reference the entire preview container for setting background color
+        // References
         previewContainer = view.findViewById(R.id.previewContainer)
-
-        // Font previews
         previewHeaderTextView = view.findViewById(R.id.previewHeaderTextView)
         previewBodyTextView = view.findViewById(R.id.previewBodyTextView)
         previewButton = view.findViewById(R.id.previewButton)
         previewItemTextView = view.findViewById(R.id.previewItemTextView)
         previewResponseButton = view.findViewById(R.id.previewResponseButton)
 
-        // Color pickers
-        headerColorPicker = view.findViewById(R.id.headerColorPicker)
-        bodyColorPicker = view.findViewById(R.id.bodyColorPicker)
-        buttonTextColorPicker = view.findViewById(R.id.buttonTextColorPicker)
-        buttonBackgroundColorPicker = view.findViewById(R.id.buttonBackgroundColorPicker)
-        itemColorPicker = view.findViewById(R.id.itemColorPicker)
-        responseColorPicker = view.findViewById(R.id.responseColorPicker)
-        screenBackgroundColorPicker = view.findViewById(R.id.screenBackgroundColorPicker)
-
-        // Font size indicators
+        sliderHeader = view.findViewById(R.id.sliderHeaderSize)
         tvHeaderSizeValue = view.findViewById(R.id.tvHeaderSizeValue)
+
+        sliderBody = view.findViewById(R.id.sliderBodySize)
         tvBodySizeValue = view.findViewById(R.id.tvBodySizeValue)
+
+        sliderButton = view.findViewById(R.id.sliderButtonSize)
         tvButtonSizeValue = view.findViewById(R.id.tvButtonSizeValue)
+
+        sliderItem = view.findViewById(R.id.sliderItemSize)
         tvItemSizeValue = view.findViewById(R.id.tvItemSizeValue)
+
+        sliderResponse = view.findViewById(R.id.sliderResponseSize)
         tvResponseSizeValue = view.findViewById(R.id.tvResponseSizeValue)
 
-        // Sliders
-        sliderHeader = view.findViewById(R.id.sliderHeaderSize)
-        sliderBody = view.findViewById(R.id.sliderBodySize)
-        sliderButton = view.findViewById(R.id.sliderButtonSize)
-        sliderItem = view.findViewById(R.id.sliderItemSize)
-        sliderResponse = view.findViewById(R.id.sliderResponseSize)
-
-        // Timer Sound
         timerSoundEditText = view.findViewById(R.id.timerSoundEditText)
 
         val ctx = requireContext()
         val prefs = ctx.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
 
-        // ---- Initialize Font Sizes ----
+        // Load stored font sizes
         val currentHeaderSize = FontSizeManager.getHeaderSize(ctx).toInt()
         val currentBodySize = FontSizeManager.getBodySize(ctx).toInt()
         val currentButtonSize = FontSizeManager.getButtonSize(ctx).toInt()
         val currentItemSize = FontSizeManager.getItemSize(ctx).toInt()
         val currentResponseSize = FontSizeManager.getResponseSize(ctx).toInt()
 
+        // Initialize slider positions
         sliderHeader.progress = currentHeaderSize.coerceIn(8, 100)
         sliderBody.progress = currentBodySize.coerceIn(8, 100)
         sliderButton.progress = currentButtonSize.coerceIn(8, 100)
         sliderItem.progress = currentItemSize.coerceIn(8, 100)
         sliderResponse.progress = currentResponseSize.coerceIn(8, 100)
 
+        // Initialize numeric TextViews
         tvHeaderSizeValue.text = sliderHeader.progress.toString()
         tvBodySizeValue.text = sliderBody.progress.toString()
         tvButtonSizeValue.text = sliderButton.progress.toString()
         tvItemSizeValue.text = sliderItem.progress.toString()
         tvResponseSizeValue.text = sliderResponse.progress.toString()
 
-        // Apply initial preview font sizes
+        // Preview font sizes
         previewHeaderTextView.textSize = sliderHeader.progress.toFloat()
         previewBodyTextView.textSize = sliderBody.progress.toFloat()
         previewButton.textSize = sliderButton.progress.toFloat()
         previewItemTextView.textSize = sliderItem.progress.toFloat()
         previewResponseButton.textSize = sliderResponse.progress.toFloat()
 
-        // ---- Initialize Colors ----
-        fun colorIntToRgbString(color: Int): String {
-            // Return a hex string like "#RRGGBB" for display in the small color preview
-            return String.format("#%02X%02X%02X", color.red, color.green, color.blue)
-        }
-
-        // Get current color values from ColorManager
-        val headerTextColor = ColorManager.getHeaderTextColor(ctx)
-        val bodyTextColor = ColorManager.getBodyTextColor(ctx)
-        val buttonTextColor = ColorManager.getButtonTextColor(ctx)
-        val buttonBackgroundColor = ColorManager.getButtonBackgroundColor(ctx)
-        val itemTextColor = ColorManager.getItemTextColor(ctx)
-        val responseTextColor = ColorManager.getResponseTextColor(ctx)
-        val screenBgColor = ColorManager.getScreenBackgroundColor(ctx)
+        // Stored colors
+        headerTextColor = ColorManager.getHeaderTextColor(ctx)
+        bodyTextColor = ColorManager.getBodyTextColor(ctx)
+        buttonTextColor = ColorManager.getButtonTextColor(ctx)
+        buttonBackgroundColor = ColorManager.getButtonBackgroundColor(ctx)
+        itemTextColor = ColorManager.getItemTextColor(ctx)
+        responseTextColor = ColorManager.getResponseTextColor(ctx)
+        screenBgColor = ColorManager.getScreenBackgroundColor(ctx)
 
         // Apply color previews
         previewHeaderTextView.setTextColor(headerTextColor)
@@ -162,135 +157,148 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewButton.setBackgroundColor(buttonBackgroundColor)
         previewItemTextView.setTextColor(itemTextColor)
         previewResponseButton.setTextColor(responseTextColor)
-        previewResponseButton.setBackgroundColor(buttonBackgroundColor) // just to show a variant
+        previewResponseButton.setBackgroundColor(buttonBackgroundColor)
         previewContainer.setBackgroundColor(screenBgColor)
 
-        // Show current color blocks
-        headerColorPicker.setBackgroundColor(headerTextColor)
-        bodyColorPicker.setBackgroundColor(bodyTextColor)
-        buttonTextColorPicker.setBackgroundColor(buttonTextColor)
-        buttonBackgroundColorPicker.setBackgroundColor(buttonBackgroundColor)
-        itemColorPicker.setBackgroundColor(itemTextColor)
-        responseColorPicker.setBackgroundColor(responseTextColor)
-        screenBackgroundColorPicker.setBackgroundColor(screenBgColor)
-
-        // ---- Timer Sound ----
-        val currentTimerSound = prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3") ?: "mytimersound.mp3"
+        // Timer Sound
+        val currentTimerSound = prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3")
+            ?: "mytimersound.mp3"
         timerSoundEditText.setText(currentTimerSound)
 
-        // Font-size sliders
-        sliderHeader.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                FontSizeManager.setHeaderSize(ctx, value.toFloat())
-                previewHeaderTextView.textSize = value.toFloat()
-                tvHeaderSizeValue.text = value.toString()
+        // Slider change listeners
+        sliderHeader.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                FontSizeManager.setHeaderSize(ctx, it.toFloat())
+                previewHeaderTextView.textSize = it.toFloat()
+                tvHeaderSizeValue.text = it.toString()
             }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        sliderBody.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                FontSizeManager.setBodySize(ctx, value.toFloat())
-                previewBodyTextView.textSize = value.toFloat()
-                tvBodySizeValue.text = value.toString()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        sliderButton.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                FontSizeManager.setButtonSize(ctx, value.toFloat())
-                previewButton.textSize = value.toFloat()
-                tvButtonSizeValue.text = value.toString()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        sliderItem.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                FontSizeManager.setItemSize(ctx, value.toFloat())
-                previewItemTextView.textSize = value.toFloat()
-                tvItemSizeValue.text = value.toString()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        sliderResponse.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, value: Int, fromUser: Boolean) {
-                FontSizeManager.setResponseSize(ctx, value.toFloat())
-                previewResponseButton.textSize = value.toFloat()
-                tvResponseSizeValue.text = value.toString()
-            }
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
-        // Simple approach to handle color picks:
-        // Tapping on each color box cycles through a small set of colors
-        // or triggers a color dialog. (Here we just demonstrate a simple cycle.)
-        val colorChoices = listOf(
-            Color.BLACK, Color.DKGRAY, Color.GRAY, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW,
-            Color.CYAN, Color.MAGENTA, Color.parseColor("#FF6200EE"), Color.WHITE
         )
 
-        fun cycleColor(current: Int): Int {
-            val idx = colorChoices.indexOf(current)
-            return if (idx < 0 || idx == colorChoices.lastIndex) colorChoices.first() else colorChoices[idx + 1]
+        sliderBody.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                FontSizeManager.setBodySize(ctx, it.toFloat())
+                previewBodyTextView.textSize = it.toFloat()
+                tvBodySizeValue.text = it.toString()
+            }
+        )
+
+        sliderButton.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                FontSizeManager.setButtonSize(ctx, it.toFloat())
+                previewButton.textSize = it.toFloat()
+                tvButtonSizeValue.text = it.toString()
+            }
+        )
+
+        sliderItem.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                FontSizeManager.setItemSize(ctx, it.toFloat())
+                previewItemTextView.textSize = it.toFloat()
+                tvItemSizeValue.text = it.toString()
+            }
+        )
+
+        sliderResponse.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                FontSizeManager.setResponseSize(ctx, it.toFloat())
+                previewResponseButton.textSize = it.toFloat()
+                tvResponseSizeValue.text = it.toString()
+            }
+        )
+
+        // Now set up color pickers using standard color selection
+        // For each UI element, we'll open a color picker dialog.
+        // Header text color
+        view.findViewById<View>(R.id.headerColorPicker).apply {
+            setBackgroundColor(headerTextColor)
+            setOnClickListener {
+                openColorPicker(headerTextColor) { chosenColor ->
+                    headerTextColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setHeaderTextColor(ctx, chosenColor)
+                    previewHeaderTextView.setTextColor(chosenColor)
+                }
+            }
         }
 
-        headerColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getHeaderTextColor(ctx))
-            ColorManager.setHeaderTextColor(ctx, newColor)
-            previewHeaderTextView.setTextColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Body text color
+        view.findViewById<View>(R.id.bodyColorPicker).apply {
+            setBackgroundColor(bodyTextColor)
+            setOnClickListener {
+                openColorPicker(bodyTextColor) { chosenColor ->
+                    bodyTextColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setBodyTextColor(ctx, chosenColor)
+                    previewBodyTextView.setTextColor(chosenColor)
+                }
+            }
         }
 
-        bodyColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getBodyTextColor(ctx))
-            ColorManager.setBodyTextColor(ctx, newColor)
-            previewBodyTextView.setTextColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Button text color
+        view.findViewById<View>(R.id.buttonTextColorPicker).apply {
+            setBackgroundColor(buttonTextColor)
+            setOnClickListener {
+                openColorPicker(buttonTextColor) { chosenColor ->
+                    buttonTextColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setButtonTextColor(ctx, chosenColor)
+                    previewButton.setTextColor(chosenColor)
+                    previewResponseButton.setTextColor(chosenColor)
+                }
+            }
         }
 
-        buttonTextColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getButtonTextColor(ctx))
-            ColorManager.setButtonTextColor(ctx, newColor)
-            previewButton.setTextColor(newColor)
-            previewResponseButton.setTextColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Button background color
+        view.findViewById<View>(R.id.buttonBackgroundColorPicker).apply {
+            setBackgroundColor(buttonBackgroundColor)
+            setOnClickListener {
+                openColorPicker(buttonBackgroundColor) { chosenColor ->
+                    buttonBackgroundColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setButtonBackgroundColor(ctx, chosenColor)
+                    previewButton.setBackgroundColor(chosenColor)
+                    previewResponseButton.setBackgroundColor(chosenColor)
+                }
+            }
         }
 
-        buttonBackgroundColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getButtonBackgroundColor(ctx))
-            ColorManager.setButtonBackgroundColor(ctx, newColor)
-            previewButton.setBackgroundColor(newColor)
-            previewResponseButton.setBackgroundColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Item text color
+        view.findViewById<View>(R.id.itemColorPicker).apply {
+            setBackgroundColor(itemTextColor)
+            setOnClickListener {
+                openColorPicker(itemTextColor) { chosenColor ->
+                    itemTextColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setItemTextColor(ctx, chosenColor)
+                    previewItemTextView.setTextColor(chosenColor)
+                }
+            }
         }
 
-        itemColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getItemTextColor(ctx))
-            ColorManager.setItemTextColor(ctx, newColor)
-            previewItemTextView.setTextColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Response text color
+        view.findViewById<View>(R.id.responseColorPicker).apply {
+            setBackgroundColor(responseTextColor)
+            setOnClickListener {
+                openColorPicker(responseTextColor) { chosenColor ->
+                    responseTextColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setResponseTextColor(ctx, chosenColor)
+                    previewResponseButton.setTextColor(chosenColor)
+                }
+            }
         }
 
-        responseColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getResponseTextColor(ctx))
-            ColorManager.setResponseTextColor(ctx, newColor)
-            previewResponseButton.setTextColor(newColor)
-            it.setBackgroundColor(newColor)
-        }
-
-        screenBackgroundColorPicker.setOnClickListener {
-            val newColor = cycleColor(ColorManager.getScreenBackgroundColor(ctx))
-            ColorManager.setScreenBackgroundColor(ctx, newColor)
-            previewContainer.setBackgroundColor(newColor)
-            it.setBackgroundColor(newColor)
+        // Screen background color
+        view.findViewById<View>(R.id.screenBackgroundColorPicker).apply {
+            setBackgroundColor(screenBgColor)
+            setOnClickListener {
+                openColorPicker(screenBgColor) { chosenColor ->
+                    screenBgColor = chosenColor
+                    setBackgroundColor(chosenColor)
+                    ColorManager.setScreenBackgroundColor(ctx, chosenColor)
+                    previewContainer.setBackgroundColor(chosenColor)
+                }
+            }
         }
 
         // Preview timer sound
@@ -304,7 +312,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 Toast.makeText(ctx, "No media folder selected", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(ctx, mediaFolderUri)
+            val parentFolder = DocumentFile.fromTreeUri(ctx, mediaFolderUri)
             val soundFile = parentFolder?.findFile(enteredSound)
             if (soundFile == null || !soundFile.isFile) {
                 Toast.makeText(ctx, "Sound file not found in media folder", Toast.LENGTH_SHORT).show()
@@ -340,6 +348,50 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
     }
 
+    /**
+     * Shows a standard color picker dialog. The callback returns the
+     * newly chosen color as an ARGB integer.
+     */
+    private fun openColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
+        // A simple AlertDialog with RGB inputs or a third-party color picker can be used.
+        // Below is a basic example with RGB SeekBars, but you may replace it
+        // with any robust color picker library or custom view as desired.
+
+        val dialogView = layoutInflater.inflate(R.layout.color_picker_dialog, null)
+        val seekRed = dialogView.findViewById<SeekBar>(R.id.seekRed)
+        val seekGreen = dialogView.findViewById<SeekBar>(R.id.seekGreen)
+        val seekBlue = dialogView.findViewById<SeekBar>(R.id.seekBlue)
+        val colorPreview = dialogView.findViewById<View>(R.id.colorPreview)
+
+        val initR = initialColor.red
+        val initG = initialColor.green
+        val initB = initialColor.blue
+
+        seekRed.progress = initR
+        seekGreen.progress = initG
+        seekBlue.progress = initB
+        colorPreview.setBackgroundColor(Color.rgb(initR, initG, initB))
+
+        val updatePreview = {
+            val newColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
+            colorPreview.setBackgroundColor(newColor)
+        }
+
+        seekRed.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
+        seekGreen.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
+        seekBlue.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Pick a Color")
+            .setView(dialogView)
+            .setPositiveButton("OK") { _, _ ->
+                val chosenColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
+                onColorSelected(chosenColor)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun stopTempPlayer() {
         try {
             tempMediaPlayer?.let {
@@ -348,7 +400,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 }
                 it.release()
             }
-        } catch (_: IllegalStateException) {}
+        } catch (_: IllegalStateException) { }
         tempMediaPlayer = null
     }
 
@@ -356,4 +408,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
         super.onDestroyView()
         stopTempPlayer()
     }
+
+    /**
+     * Helper to shorten OnSeekBarChangeListener usage.
+     */
+    private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
+        object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                onValueChanged(progress)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        }
 }
