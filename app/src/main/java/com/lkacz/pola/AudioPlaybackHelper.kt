@@ -7,39 +7,19 @@ import androidx.documentfile.provider.DocumentFile
 import java.util.regex.Pattern
 
 /**
- * Scans a string for audio playback markers of the form <filename.mp3[,volume]> or <filename.wav[,volume]>
- * and plays them. Volume is optional and defaults to 1.0 (100%).
- *
- * Usage:
- *   val cleanedText = AudioPlaybackHelper.parseAndPlayAudio(
- *       context = requireContext(),
- *       rawText = someStringContainingMarkers,
- *       mediaFolderUri = mediaFolderUri,
- *       mediaPlayers = mediaPlayers
- *   )
- *   // 'cleanedText' is 'someStringContainingMarkers' with all <...> segments removed
- *   // so you can safely show it in UI.
- *
- * Revision Notes:
- * - Added support for .wav files in addition to .mp3 so that .wav markers (e.g., <alert.wav,50>)
- *   will also be properly played.
+ * Updated to locate audio files (.mp3, .wav) recursively within the selected media folder
+ * or any of its subfolders. This ensures that audio markers still work if the user
+ * organizes media files in subdirectories.
  */
 object AudioPlaybackHelper {
 
-    // A simple pattern to find any <...> substring in the raw text.
+    // Pattern to capture <...> segments in the text
     private val pattern = Pattern.compile("<([^>]+)>")
 
     /**
-     * Parse and play audio references in the form <filename.mp3[,volume]> or <filename.wav[,volume]>
-     * from the given [rawText], using files found in [mediaFolderUri]. Found audio references
-     * are played immediately and removed from the returned string.
-     *
-     * @param context The Android context.
-     * @param rawText The text possibly containing <filename.mp3[,volume]> or <filename.wav[,volume]> markers.
-     * @param mediaFolderUri The URI of the user-selected media folder; can be null if none selected.
-     * @param mediaPlayers A collection of [MediaPlayer] references to track active players for release later.
-     *
-     * @return The input text with all <...> segments removed.
+     * Parses [rawText] for <filename.mp3[,volume]> or <filename.wav[,volume]> markers,
+     * tries to locate them recursively in [mediaFolderUri], then plays them.
+     * Returns a version of [rawText] with all <...> segments removed, suitable for display.
      */
     fun parseAndPlayAudio(
         context: Context,
@@ -54,11 +34,9 @@ object AudioPlaybackHelper {
 
         while (matcher.find()) {
             val fullMatch = matcher.group(1)?.trim() ?: continue
-
-            // Expected format: "mySoundFile.mp3[,0-100]" or "mySoundFile.wav[,0-100]"
             val (fileName, volume) = parseFileAndVolume(fullMatch)
 
-            // Attempt to play the sound file if it ends with ".mp3" or ".wav"
+            // Attempt to play the sound only if it ends with .mp3 or .wav
             if (
                 fileName.endsWith(".mp3", ignoreCase = true) ||
                 fileName.endsWith(".wav", ignoreCase = true)
@@ -66,7 +44,7 @@ object AudioPlaybackHelper {
                 playSoundFile(context, fileName, volume, mediaFolderUri, mediaPlayers)
             }
 
-            // Remove the <...> content from the displayed text
+            // Remove the <filename> segment from the returned text
             matcher.appendReplacement(buffer, "")
         }
         matcher.appendTail(buffer)
@@ -75,22 +53,22 @@ object AudioPlaybackHelper {
     }
 
     /**
-     * If the text inside <> is "something.mp3,50", we parse out "something.mp3" and 0.50f for volume (50%).
-     * Same logic applies for .wav. If no comma is found, volume defaults to 1.0f.
+     * Splits the full match (e.g., "someFile.mp3,50") into (fileName, volume),
+     * where volume is converted from 0–100% to 0.0–1.0f.
      */
     private fun parseFileAndVolume(fullMatch: String): Pair<String, Float> {
         val segments = fullMatch.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0.0..100.0) (vol / 100f) else 1.0f
+            if (vol != null && vol in 0f..100f) (vol / 100f) else 1.0f
         } else 1.0f
-
         return fileName to volume
     }
 
     /**
-     * Locates [fileName] in [mediaFolderUri] and plays it with [volume].
+     * Uses [findFileRecursive] to locate [fileName] within [mediaFolderUri] (including subfolders)
+     * and play it with the requested [volume]. If not found or an error occurs, it is quietly ignored.
      */
     private fun playSoundFile(
         context: Context,
@@ -101,14 +79,13 @@ object AudioPlaybackHelper {
     ) {
         if (mediaFolderUri == null) return
         val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri) ?: return
-        val audioFile = parentFolder.findFile(fileName) ?: return
+        val audioFile = findFileRecursive(parentFolder, fileName) ?: return
         if (!audioFile.exists() || !audioFile.isFile) return
 
         try {
             val mediaPlayer = MediaPlayer().apply {
-                val afd = context.contentResolver.openFileDescriptor(audioFile.uri, "r")
-                afd?.let {
-                    setDataSource(it.fileDescriptor)
+                context.contentResolver.openFileDescriptor(audioFile.uri, "r")?.use { pfd ->
+                    setDataSource(pfd.fileDescriptor)
                     prepare()
                     setVolume(volume, volume)
                     start()
@@ -118,5 +95,22 @@ object AudioPlaybackHelper {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    /**
+     * Recursively searches [folder] and its subfolders for a file matching [fileName].
+     * Returns the [DocumentFile] if found, else null.
+     */
+    private fun findFileRecursive(folder: DocumentFile, fileName: String): DocumentFile? {
+        // First check if there's a direct child with this name
+        folder.findFile(fileName)?.let { return it }
+
+        // Otherwise, recurse into any subfolders
+        folder.listFiles().forEach { docFile ->
+            if (docFile.isDirectory) {
+                findFileRecursive(docFile, fileName)?.let { return it }
+            }
+        }
+        return null
     }
 }
