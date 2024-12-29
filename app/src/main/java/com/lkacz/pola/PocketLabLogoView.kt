@@ -24,16 +24,16 @@ class PocketLabLogoView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#FF6200EE") // Purple
+        color = Color.BLACK // Purple Color.parseColor("#FF6200EE") // Purple
         style = Paint.Style.FILL
     }
     private val phonePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
+        color = Color.DKGRAY
         style = Paint.Style.FILL
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.BLACK
-        textSize = 50f
+        color = Color.LTGRAY
+        textSize = 80f
         typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
