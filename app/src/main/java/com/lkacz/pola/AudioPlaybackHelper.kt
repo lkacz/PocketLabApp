@@ -7,19 +7,32 @@ import androidx.documentfile.provider.DocumentFile
 import java.util.regex.Pattern
 
 /**
- * Updated to locate audio files (.mp3, .wav) recursively within the selected media folder
- * or any of its subfolders. This ensures that audio markers still work if the user
- * organizes media files in subdirectories.
+ * Parses text for audio markers in the form <filename.mp3[,volume]> or <filename.wav[,volume]>.
+ * Volume is optional and defaults to 1.0 if omitted. If volume is, for example, 60,
+ * it is interpreted as 60% (0.6f).
+ *
+ * Usage example:
+ *   val cleanedText = AudioPlaybackHelper.parseAndPlayAudio(
+ *       context = requireContext(),
+ *       rawText = "Some text <clip.mp3,50> more text",
+ *       mediaFolderUri = yourMediaFolderUri,
+ *       mediaPlayers = yourMediaPlayersList
+ *   )
+ *   // 'cleanedText' will not contain the <clip.mp3,50> portion.
+ *   // Meanwhile, "clip.mp3" will start playing at 50% volume if found.
  */
 object AudioPlaybackHelper {
 
-    // Pattern to capture <...> segments in the text
-    private val pattern = Pattern.compile("<([^>]+)>")
+    // Revised to only target mp3/wav placeholders and avoid removing <img> or other HTML tags.
+    private val pattern = Pattern.compile("<([^>]+\\.(?:mp3|wav)(?:,[^>]+)?)>", Pattern.CASE_INSENSITIVE)
 
     /**
-     * Parses [rawText] for <filename.mp3[,volume]> or <filename.wav[,volume]> markers,
-     * tries to locate them recursively in [mediaFolderUri], then plays them.
-     * Returns a version of [rawText] with all <...> segments removed, suitable for display.
+     * Scans [rawText] for <filename.mp3[,volume]> or <filename.wav[,volume]> markers,
+     * attempts to locate each file under [mediaFolderUri], and plays the file if found.
+     * Returns [rawText] with the <...> segments removed for display purposes.
+     *
+     * [mediaPlayers] is a shared list of MediaPlayer instances that you manage, ensuring
+     * you can stop or release them as needed (e.g., in onDestroyView()).
      */
     fun parseAndPlayAudio(
         context: Context,
@@ -34,41 +47,38 @@ object AudioPlaybackHelper {
 
         while (matcher.find()) {
             val fullMatch = matcher.group(1)?.trim() ?: continue
+
+            // Split by comma to get file name and volume
             val (fileName, volume) = parseFileAndVolume(fullMatch)
 
-            // Attempt to play the sound only if it ends with .mp3 or .wav
-            if (
-                fileName.endsWith(".mp3", ignoreCase = true) ||
-                fileName.endsWith(".wav", ignoreCase = true)
-            ) {
-                playSoundFile(context, fileName, volume, mediaFolderUri, mediaPlayers)
-            }
+            // Play if it's .mp3 or .wav
+            playSoundFile(context, fileName, volume, mediaFolderUri, mediaPlayers)
 
-            // Remove the <filename> segment from the returned text
+            // Remove the <...> audio placeholder from the final displayed string
             matcher.appendReplacement(buffer, "")
         }
-        matcher.appendTail(buffer)
 
+        matcher.appendTail(buffer)
         return buffer.toString()
     }
 
     /**
-     * Splits the full match (e.g., "someFile.mp3,50") into (fileName, volume),
-     * where volume is converted from 0–100% to 0.0–1.0f.
+     * Splits something like "song.mp3,60" into ("song.mp3", 0.60f).
+     * If volume is missing, defaults to 1.0 (i.e., 100%).
      */
     private fun parseFileAndVolume(fullMatch: String): Pair<String, Float> {
         val segments = fullMatch.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) (vol / 100f) else 1.0f
+            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
         return fileName to volume
     }
 
     /**
-     * Uses [findFileRecursive] to locate [fileName] within [mediaFolderUri] (including subfolders)
-     * and play it with the requested [volume]. If not found or an error occurs, it is quietly ignored.
+     * Attempts to locate [fileName] (MP3/WAV) inside [mediaFolderUri]. Then plays it with [volume].
+     * If file not found, no action is taken.
      */
     private fun playSoundFile(
         context: Context,
@@ -78,14 +88,16 @@ object AudioPlaybackHelper {
         mediaPlayers: MutableList<MediaPlayer>
     ) {
         if (mediaFolderUri == null) return
+
         val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri) ?: return
-        val audioFile = findFileRecursive(parentFolder, fileName) ?: return
-        if (!audioFile.exists() || !audioFile.isFile) return
+        val mediaFile = parentFolder.findFile(fileName) ?: return
+        if (!mediaFile.exists() || !mediaFile.isFile) return
 
         try {
             val mediaPlayer = MediaPlayer().apply {
-                context.contentResolver.openFileDescriptor(audioFile.uri, "r")?.use { pfd ->
-                    setDataSource(pfd.fileDescriptor)
+                val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
+                pfd?.use {
+                    setDataSource(it.fileDescriptor)
                     prepare()
                     setVolume(volume, volume)
                     start()
@@ -95,22 +107,5 @@ object AudioPlaybackHelper {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    /**
-     * Recursively searches [folder] and its subfolders for a file matching [fileName].
-     * Returns the [DocumentFile] if found, else null.
-     */
-    private fun findFileRecursive(folder: DocumentFile, fileName: String): DocumentFile? {
-        // First check if there's a direct child with this name
-        folder.findFile(fileName)?.let { return it }
-
-        // Otherwise, recurse into any subfolders
-        folder.listFiles().forEach { docFile ->
-            if (docFile.isDirectory) {
-                findFileRecursive(docFile, fileName)?.let { return it }
-            }
-        }
-        return null
     }
 }
