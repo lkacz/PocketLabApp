@@ -1,11 +1,35 @@
 // Participant ID Entry
 
-HEADER_SIZE;20
-BODY_SIZE;14
-BUTTON_SIZE;40
-ITEM_SIZE;10
-RESPONSE_SIZE;40
+HEADER_SIZE;48
+BODY_SIZE;32
+BUTTON_SIZE;24
+ITEM_SIZE;30
+RESPONSE_SIZE;24
 
+// Emotions Scale After Walking With a Friend
+// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
+SCALE;Emotional state;Please rate how you are feeling right now.;<br<br><br<br><br<br>Emotions;Very negative<video.mp4>;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+
+
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Wybierz;Wybierz coś sobie<video.mp4>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Wersja 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+
+// Triple Tap Instruction to Start the Study
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;Study;Start<sound.mp3>;START THE STUDY
+
+// Triple Tap Instruction to Start the Study
+// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
+TAP_INSTRUCTION;Start;Study<video.mp4>;START THE STUDY
 
 INSTRUCTION;Listening session;Listen to this .wav audio<sound.wav>;CONTINUE
 INSTRUCTION;Listening session;Listen to this .mp3 audio<sound.mp3>;CONTINUE
@@ -13,25 +37,53 @@ INSTRUCTION;Listening session;Listen to this audio played silently<sound.mp3,30>
 
 INSTRUCTION;Watching session;Watch this video<video.mp4>;CONTINUE
 
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Wybierz;Wybierz coś sobie<sound.mp3>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version3
+INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Wybierz;Wybierz coś sobie<video.mp4>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version3
+INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+
 
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
 
-// Emotions Scale After Walking Solo
-// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;<img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">Emotional<br>state;Please rate how you are feeling<br><br>right now.;Emotions<br>now;Very<br>negative;Somewhat<br>negative;<font color='green'>Neutral</font>;Somewhat positive<img src="IMG_20241226_102914.jpg" alt="Girl in a jacket" width="100" height="100">;Very positive
-
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
+INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.<video.mp4>;CONTINUE NOW;Participant ID
 
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF<br>AND<br>CONTINUE;1800
+TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times]<video.mp4>;SET ALARM OFF<br>AND<br>CONTINUE;1800
 
 // Triple Tap Instruction to Start the Study
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Study<br>Start Confirmation;When you are ready to<br>start, please tap quickly three times anywhere on the screen to reveal the start button.;START<br>THE STUDY
+TAP_INSTRUCTION;Study<br>Start Confirmation;When you are ready to<br>start, please tap quickly three times anywhere on the screen to reveal the start button.<video.mp4>;START<br>THE STUDY
 
 // Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
 INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID

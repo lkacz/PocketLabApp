@@ -1,62 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
-    
-    <!-- Header TextView -->
+
+    <!-- Header TextView at the top -->
     <TextView
         android:id="@+id/headerTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="16dp"
         android:text="Default Header"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText"
-        android:layout_alignParentTop="true" />
-
-    <!-- Introduction TextView -->
-    <TextView
-        android:id="@+id/introductionTextView"
-        android:layout_below="@+id/headerTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Default Introduction"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"
         tools:ignore="HardcodedText" />
 
+    <!-- Introduction TextView below the header -->
+    <TextView
+        android:id="@+id/introductionTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/headerTextView"
+        android:layout_marginBottom="16dp"
+        android:text="Default Introduction"
+        android:textSize="16sp"
+        tools:ignore="HardcodedText" />
+
+    <!-- VideoView below the introduction text -->
     <VideoView
         android:id="@+id/videoView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/introductionTextView"
+        android:layout_marginBottom="32dp"
         android:visibility="gone" />
 
-    <!-- Item TextView -->
+    <!-- Item TextView below the video -->
     <TextView
         android:id="@+id/itemTextView"
-        android:layout_below="@+id/introductionTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/videoView2"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_horizontal"
         android:text="Default Item"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        android:gravity="center_horizontal"
         tools:ignore="HardcodedText" />
 
-    <!-- Container for dynamically added buttons -->
+    <!-- Buttons container at the bottom -->
     <LinearLayout
         android:id="@+id/buttonContainer"
         android:layout_width="match_parent"
-        android:layout_height="440dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="10dp"
+        android:layout_below="@+id/itemTextView"
         android:gravity="bottom"
-        android:orientation="vertical">
-        <!-- Buttons will be added here programmatically -->
-    </LinearLayout>
+        android:orientation="vertical"/>
 
 </RelativeLayout>

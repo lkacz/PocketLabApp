@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="16dp"
+    tools:context=".InputFieldFragment">
 
     <!-- Heading TextView -->
     <TextView
@@ -14,36 +16,38 @@
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText"
-        android:layout_alignParentTop="true" />
+        android:layout_alignParentTop="true"
+        tools:ignore="HardcodedText" />
 
-    <!-- Text TextView -->
+    <!-- Body TextView -->
     <TextView
         android:id="@+id/textTextView"
-        android:layout_below="@+id/headingTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Default Text"
         android:textSize="16sp"
         android:layout_marginBottom="16dp"
+        android:layout_below="@+id/headingTextView"
         tools:ignore="HardcodedText" />
 
-    <!-- Video View -->
+    <!-- Video View placed below body text -->
     <VideoView
         android:id="@+id/videoView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/textTextView"
         android:visibility="gone" />
 
-    <!-- Container for dynamically added EditText fields and the Next button -->
+    <!-- Container for dynamically added EditText fields and Next button,
+         placed below the video to avoid overlap -->
     <LinearLayout
         android:id="@+id/inputFieldContainer"
-        android:layout_below="@+id/textTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/videoView2"
         android:orientation="vertical"
-        android:layout_marginBottom="16dp">
+        android:layout_marginTop="16dp">
+
         <!-- EditText fields and Next button will be added here programmatically -->
     </LinearLayout>
-
 </RelativeLayout>

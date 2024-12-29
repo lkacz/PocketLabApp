@@ -1,6 +1,7 @@
 package com.lkacz.pola
 
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.LayoutInflater
@@ -8,7 +9,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.VideoView
 
+/**
+ * Revised to also handle <filename.mp4[,volume]> markers similarly to InstructionFragment.
+ * Changes Made:
+ * 1) Added a VideoView (videoView) to play .mp4 references from header/body/nextButton.
+ * 2) Implemented checkAndPlayMp4() and playVideoFile() to detect and play .mp4.
+ * 3) Ensured existing audio playback references remain intact and parse <filename.mp3[,volume]>.
+ * 4) Stopped/released video playback in onDestroyView() to prevent leaks.
+ * Reasoning: Aligns TimerFragment with InstructionFragment for unified media playback.
+ */
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private var header: String? = null
@@ -19,8 +30,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private lateinit var logger: Logger
     private var timer: CountDownTimer? = null
 
-    // Holds MediaPlayer references for any played sounds in this fragment
+    // Holds MediaPlayer references for any played sounds
     private val mediaPlayers = mutableListOf<MediaPlayer>()
+    private lateinit var videoView: VideoView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,27 +63,21 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
+        // Newly added VideoView (must exist in fragment_timer.xml with id=videoView2)
+        videoView = view.findViewById(R.id.videoView2)
+
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Parse & play any audio references in header/body/nextButton text
-        val cleanHeader = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = header ?: "Default Header",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
-        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = body ?: "Default Body",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
-        val cleanNextButton = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = nextButtonText ?: "Next",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
+        // Parse & play audio references in header/body/nextButton
+        // Then check & play .mp4 references
+        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
+
+        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
+
+        val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
 
         // Apply text to UI
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
@@ -84,7 +90,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.visibility = View.INVISIBLE
 
-        // Timer text styling
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
         // Start countdown
@@ -121,11 +126,64 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         alarmHelper.startAlarm()
     }
 
+    /**
+     * Detects and plays any <something.mp3[,volume]> markers. Returns text with markers removed.
+     */
+    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+        return AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = text,
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+    }
+
+    /**
+     * If we detect <something.mp4[,volume]>, attempt to play it in videoView.
+     */
+    private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
+        val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return
+        val group = match.groupValues[1]
+
+        val segments = group.split(",")
+        val fileName = segments[0].trim()
+        val volume = if (segments.size > 1) {
+            val vol = segments[1].trim().toFloatOrNull()
+            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+        } else 1.0f
+
+        videoView.visibility = View.VISIBLE
+        playVideoFile(fileName, volume, mediaFolderUri)
+    }
+
+    /**
+     * Play .mp4 file from [mediaFolderUri] if found. For volume control, a custom approach is needed.
+     */
+    private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
+        if (mediaFolderUri == null) return
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+            ?: return
+        val videoFile = parentFolder.findFile(fileName) ?: return
+        if (!videoFile.exists() || !videoFile.isFile) return
+
+        val videoUri = videoFile.uri
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        // Release all MediaPlayers for this fragment
+        // Release any audio players
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
+
+        // Stop the VideoView if it’s playing
+        if (this::videoView.isInitialized && videoView.isPlaying) {
+            videoView.stopPlayback()
+        }
     }
 
     override fun onDestroy() {

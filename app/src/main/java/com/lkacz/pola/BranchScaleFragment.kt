@@ -1,6 +1,8 @@
+// File: app/src/main/java/com/lkacz/pola/BranchScaleFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.VideoView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
@@ -15,6 +18,8 @@ import androidx.lifecycle.MutableLiveData
  * A specialized fragment for handling BRANCH_SCALE instructions.
  * Each response can optionally have a bracketed label, e.g. "Very negative[Part1]".
  * When clicked, if a bracketed label exists, we jump to that label; otherwise, move on.
+ *
+ * Revised to also play .mp4 references, similarly to InstructionFragment and others.
  */
 class BranchScaleFragment : Fragment() {
 
@@ -25,7 +30,10 @@ class BranchScaleFragment : Fragment() {
     private lateinit var logger: Logger
     private val selectedResponse = MutableLiveData<String>()
 
+    // For audio playback
     private val mediaPlayers = mutableListOf<MediaPlayer>()
+    // For video playback
+    private lateinit var videoView: VideoView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,28 +64,24 @@ class BranchScaleFragment : Fragment() {
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
+        // New: VideoView to play .mp4 references if present
+        videoView = view.findViewById(R.id.videoView2)
+
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Parse & play audio references in header/body/item
-        val cleanHeader = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = header ?: "Default Header",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
-        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = body ?: "Default Body",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
-        val cleanItem = AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = item ?: "Default Item",
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
+        // Parse & play audio in header, then check & play .mp4
+        val cleanHeader = parseAndPlayAudioIfAny(header ?: "Default Header", mediaFolderUri)
+        checkAndPlayMp4(header ?: "Default Header", mediaFolderUri)
 
+        // Parse & play audio in body, then check & play .mp4
+        val cleanBody = parseAndPlayAudioIfAny(body ?: "Default Body", mediaFolderUri)
+        checkAndPlayMp4(body ?: "Default Body", mediaFolderUri)
+
+        // Parse & play audio in item, then check & play .mp4
+        val cleanItem = parseAndPlayAudioIfAny(item ?: "Default Item", mediaFolderUri)
+        checkAndPlayMp4(item ?: "Default Item", mediaFolderUri)
+
+        // Set UI text with HTML + user-defined font sizes
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
@@ -87,14 +91,12 @@ class BranchScaleFragment : Fragment() {
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
 
-        // Dynamically add buttons
+        // Dynamically create buttons for each response
         branchResponses.forEachIndexed { index, (displayText, label) ->
-            val cleanResponse = AudioPlaybackHelper.parseAndPlayAudio(
-                context = requireContext(),
-                rawText = displayText,
-                mediaFolderUri = mediaFolderUri,
-                mediaPlayers = mediaPlayers
-            )
+            // Parse & play audio for the display text, then check & play .mp4
+            val cleanResponse = parseAndPlayAudioIfAny(displayText, mediaFolderUri)
+            checkAndPlayMp4(displayText, mediaFolderUri)
+
             val button = Button(context).apply {
                 text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanResponse)
                 textSize = FontSizeManager.getResponseSize(requireContext())
@@ -119,6 +121,7 @@ class BranchScaleFragment : Fragment() {
                     }
                 }
             }
+            // Add each new button at the top
             buttonContainer.addView(button, 0)
         }
 
@@ -127,8 +130,65 @@ class BranchScaleFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Release audio players
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
+
+        // Stop video playback if playing
+        if (this::videoView.isInitialized && videoView.isPlaying) {
+            videoView.stopPlayback()
+        }
+    }
+
+    /**
+     * Detects and plays any <filename.mp3[,volume]> markers
+     * and returns the cleaned text without those markers.
+     */
+    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+        return AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = text,
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+    }
+
+    /**
+     * Checks for a <filename.mp4[,volume]> marker and plays
+     * it in the fragment's [videoView] if found.
+     */
+    private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
+        val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return
+        val group = match.groupValues[1]
+
+        val segments = group.split(",")
+        val fileName = segments[0].trim()
+        val volume = if (segments.size > 1) {
+            val vol = segments[1].trim().toFloatOrNull()
+            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+        } else 1.0f
+
+        videoView.visibility = View.VISIBLE
+        playVideoFile(fileName, volume, mediaFolderUri)
+    }
+
+    /**
+     * Locates [fileName] in [mediaFolderUri] and plays it in [videoView].
+     * Volume control would require a custom MediaPlayer approach.
+     */
+    private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
+        if (mediaFolderUri == null) return
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+            ?: return
+        val videoFile = parentFolder.findFile(fileName) ?: return
+        if (!videoFile.exists() || !videoFile.isFile) return
+
+        val videoUri = videoFile.uri
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+        }
     }
 
     companion object {

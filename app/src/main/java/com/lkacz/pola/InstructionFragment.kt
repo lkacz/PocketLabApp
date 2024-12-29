@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/lkacz/pola/InstructionFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
@@ -17,7 +18,7 @@ class InstructionFragment : Fragment() {
     private lateinit var logger: Logger
 
     private lateinit var videoView: VideoView
-    private val mediaPlayers = mutableListOf<MediaPlayer>() // For .mp3 playback if desired
+    private val mediaPlayers = mutableListOf<MediaPlayer>() // For .mp3 playback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,26 +45,24 @@ class InstructionFragment : Fragment() {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // 1) Possibly parse out .mp3 references and play them with a normal MediaPlayer
-        //    (Only if you still want to handle <filename.mp3[,volume]> markers the old way).
-        //    For example:
+        // Parse out .mp3 and play with MediaPlayer
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        val cleanNext = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
 
-        // 2) Possibly parse out .mp4 references and show them in the VideoView
+        // Check for .mp4 references and show them in VideoView
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
 
-        // 3) Set text with HTML rendering, if desired
+        // Apply HTML + user font sizes
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanNext)
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanNextText)
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
 
         nextButton.setOnClickListener {
@@ -73,10 +72,11 @@ class InstructionFragment : Fragment() {
         return view
     }
 
+    /**
+     * Uses AudioPlaybackHelper to detect <sound.mp3[,volume]> placeholders,
+     * play them, and strip them from the returned string for display.
+     */
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
-        // If you still want to reuse your existing "audio only" logic,
-        // you can keep calling MediaPlaybackHelper or a custom method:
-        // We'll do a quick example that only checks for .mp3:
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
@@ -85,43 +85,45 @@ class InstructionFragment : Fragment() {
         )
     }
 
+    /**
+     * If we detect <something.mp4[,volume]>, we show the video in VideoView and start playback.
+     * The volume param (if present) is recognized but not directly modifiable via VideoView.
+     */
     private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
-        // Find a <filename.mp4[,volume]> pattern if it exists
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
-
-        // Example parse:
         val group = match.groupValues[1]
         val segments = group.split(",")
         val fileName = segments[0].trim()
+        // Volume is read but in standard VideoView usage, there's no direct .setVolume API.
+        // Could implement custom MediaPlayer if precise volume control is required.
+        // We keep the structure here for consistency with audio tags.
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
 
-        // Show the VideoView
         videoView.visibility = View.VISIBLE
         playVideoFile(fileName, volume, mediaFolderUri)
     }
 
+    /**
+     * Locates [fileName] in [mediaFolderUri], sets up VideoView with that URI,
+     * and starts playback. The layout can be set to match_parent or desired size.
+     */
     private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
         if (mediaFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-            ?: return
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
+            requireContext(),
+            mediaFolderUri
+        ) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
 
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
-
-        // If you need advanced volume control, you'd do so with a custom MediaPlayer
-        // For the default VideoView approach:
         videoView.setOnPreparedListener { mp ->
-            // mp.setVolume(leftVolume, rightVolume) is not directly available on a standard VideoView
-            // This is possible only if you do something like:
-            //   videoView.setOnPreparedListener { mediaPlayer ->
-            //       // Force MediaPlayer usage or get the audio session.
-            //   }
+            // Standard VideoView lacks direct volume; custom MediaPlayer logic needed for advanced control
             mp.start()
         }
     }
@@ -132,7 +134,7 @@ class InstructionFragment : Fragment() {
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
 
-        // Optionally stop the VideoView if it’s playing
+        // Stop the VideoView if it’s playing
         if (videoView.isPlaying) {
             videoView.stopPlayback()
         }
