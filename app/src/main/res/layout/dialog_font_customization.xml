@@ -19,8 +19,8 @@
             android:layout_marginBottom="8dp"
             android:gravity="center"
             android:text="Header"
-            android:textStyle="bold"
-            android:textSize="24sp" />
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/previewBodyTextView"
@@ -31,8 +31,9 @@
             android:text="Body"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/previewButtonTextView"
+        <!-- Changed from TextView to Button for precise button preview -->
+        <Button
+            android:id="@+id/previewButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -49,8 +50,9 @@
             android:text="Scale Items"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/previewResponseTextView"
+        <!-- Changed from TextView to Button for precise button preview -->
+        <Button
+            android:id="@+id/previewResponseButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -58,74 +60,149 @@
             android:text="Response Buttons"
             android:textSize="16sp" />
 
-        <!-- Header Size -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Header Size:"
-            android:textStyle="bold" />
-
-        <SeekBar
-            android:id="@+id/sliderHeaderSize"
+        <!-- Header Size Row -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="100" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <!-- Body Size -->
-        <TextView
-            android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Header Size:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderHeaderSize"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvHeaderSizeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="60" />
+        </LinearLayout>
+
+        <!-- Body Size Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Body Size:"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/sliderBodySize"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Body Size:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderBodySize"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvBodySizeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="24" />
+        </LinearLayout>
+
+        <!-- Button Size Row -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100" />
-
-        <!-- Button Size -->
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Button Size:"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/sliderButtonSize"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Button Size:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderButtonSize"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvButtonSizeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="20" />
+        </LinearLayout>
+
+        <!-- Item Size Row -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100" />
-
-        <!-- Item Size -->
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Item Size:"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/sliderItemSize"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Item Size:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderItemSize"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvItemSizeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="50" />
+        </LinearLayout>
+
+        <!-- Response Size Row -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100" />
-
-        <!-- Response Size -->
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Response Size:"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/sliderResponseSize"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Response Size:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderResponseSize"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvResponseSizeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="8" />
+        </LinearLayout>
 
         <!-- Timer Sound -->
         <TextView

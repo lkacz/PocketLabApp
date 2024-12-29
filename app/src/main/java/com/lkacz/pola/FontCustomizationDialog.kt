@@ -7,39 +7,27 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.core.view.isVisible
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.DialogFragment
 
-/**
- * A dialog fragment that allows user customization of:
- *  - HEADER_SIZE, BODY_SIZE, BUTTON_SIZE, ITEM_SIZE, RESPONSE_SIZE
- *  - TIMER_SOUND (from the user-selected media folder)
- *
- * Changes persist in SharedPreferences. Sliders update each preview text in real-time.
- * A "Preview Sound" button attempts to play the selected custom timer sound if found in
- * the media folder. The user can accept changes by tapping "OK".
- *
- * **Changes Made & Reasoning:**
- * 1) Replaced the single [previewTextView] with five separate TextViews that each show how
- *    the respective slider affects the text size. The preview lines are:
- *    "Header", "Body", "Continue Button", "Scale Items", "Response Buttons".
- *    This clarifies for users exactly which slider corresponds to which UI element.
- * 2) Updated each slider’s listener to immediately reflect its size changes in the corresponding
- *    preview TextView, while still persisting values with [FontSizeManager].
- * 3) Retained existing functionalities for timer sound preview, OK/Cancel buttons, and safe
- *    cleanup of the [MediaPlayer].
- */
 class FontCustomizationDialog : DialogFragment() {
 
     private lateinit var previewHeaderTextView: TextView
     private lateinit var previewBodyTextView: TextView
-    private lateinit var previewButtonTextView: TextView
+
+    // Changed these from TextView to Button references
+    private lateinit var previewButton: Button
     private lateinit var previewItemTextView: TextView
-    private lateinit var previewResponseTextView: TextView
+    private lateinit var previewResponseButton: Button
 
     private lateinit var timerSoundEditText: EditText
     private var mediaPlayer: MediaPlayer? = null
+
+    private lateinit var tvHeaderSizeValue: TextView
+    private lateinit var tvBodySizeValue: TextView
+    private lateinit var tvButtonSizeValue: TextView
+    private lateinit var tvItemSizeValue: TextView
+    private lateinit var tvResponseSizeValue: TextView
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -67,12 +55,21 @@ class FontCustomizationDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Preview TextViews for each category
+        // Preview components
         previewHeaderTextView = view.findViewById(R.id.previewHeaderTextView)
         previewBodyTextView = view.findViewById(R.id.previewBodyTextView)
-        previewButtonTextView = view.findViewById(R.id.previewButtonTextView)
+
+        // Updated references to Button
+        previewButton = view.findViewById(R.id.previewButton)
         previewItemTextView = view.findViewById(R.id.previewItemTextView)
-        previewResponseTextView = view.findViewById(R.id.previewResponseTextView)
+        previewResponseButton = view.findViewById(R.id.previewResponseButton)
+
+        // Numeric indicators
+        tvHeaderSizeValue = view.findViewById(R.id.tvHeaderSizeValue)
+        tvBodySizeValue = view.findViewById(R.id.tvBodySizeValue)
+        tvButtonSizeValue = view.findViewById(R.id.tvButtonSizeValue)
+        tvItemSizeValue = view.findViewById(R.id.tvItemSizeValue)
+        tvResponseSizeValue = view.findViewById(R.id.tvResponseSizeValue)
 
         // Sliders
         val sliderHeader = view.findViewById<SeekBar>(R.id.sliderHeaderSize)
@@ -84,14 +81,14 @@ class FontCustomizationDialog : DialogFragment() {
         // Timer Sound
         timerSoundEditText = view.findViewById(R.id.timerSoundEditText)
 
-        // Load current settings
         val context = requireContext()
+        val prefs = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+
         val currentHeader = FontSizeManager.getHeaderSize(context).toInt()
         val currentBody = FontSizeManager.getBodySize(context).toInt()
         val currentButton = FontSizeManager.getButtonSize(context).toInt()
         val currentItem = FontSizeManager.getItemSize(context).toInt()
         val currentResponse = FontSizeManager.getResponseSize(context).toInt()
-        val prefs = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val currentTimerSound = prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3") ?: "mytimersound.mp3"
 
         // Initialize Sliders
@@ -100,20 +97,30 @@ class FontCustomizationDialog : DialogFragment() {
         sliderButton.progress = currentButton.coerceIn(8, 100)
         sliderItem.progress = currentItem.coerceIn(8, 100)
         sliderResponse.progress = currentResponse.coerceIn(8, 100)
+
+        // Initialize numeric TextViews
+        tvHeaderSizeValue.text = sliderHeader.progress.toString()
+        tvBodySizeValue.text = sliderBody.progress.toString()
+        tvButtonSizeValue.text = sliderButton.progress.toString()
+        tvItemSizeValue.text = sliderItem.progress.toString()
+        tvResponseSizeValue.text = sliderResponse.progress.toString()
+
+        // Initialize Timer Sound
         timerSoundEditText.setText(currentTimerSound)
 
-        // Set the initial preview sizes
+        // Set initial preview sizes
         previewHeaderTextView.textSize = sliderHeader.progress.toFloat()
         previewBodyTextView.textSize = sliderBody.progress.toFloat()
-        previewButtonTextView.textSize = sliderButton.progress.toFloat()
+        previewButton.textSize = sliderButton.progress.toFloat()
         previewItemTextView.textSize = sliderItem.progress.toFloat()
-        previewResponseTextView.textSize = sliderResponse.progress.toFloat()
+        previewResponseButton.textSize = sliderResponse.progress.toFloat()
 
-        // === Slider Listeners ===
+        // Slider Listeners
         sliderHeader.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, value: Int, fromUser: Boolean) {
                 FontSizeManager.setHeaderSize(context, value.toFloat())
                 previewHeaderTextView.textSize = value.toFloat()
+                tvHeaderSizeValue.text = value.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -123,6 +130,7 @@ class FontCustomizationDialog : DialogFragment() {
             override fun onProgressChanged(seekBar: SeekBar?, value: Int, fromUser: Boolean) {
                 FontSizeManager.setBodySize(context, value.toFloat())
                 previewBodyTextView.textSize = value.toFloat()
+                tvBodySizeValue.text = value.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -131,7 +139,8 @@ class FontCustomizationDialog : DialogFragment() {
         sliderButton.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, value: Int, fromUser: Boolean) {
                 FontSizeManager.setButtonSize(context, value.toFloat())
-                previewButtonTextView.textSize = value.toFloat()
+                previewButton.textSize = value.toFloat()
+                tvButtonSizeValue.text = value.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -141,6 +150,7 @@ class FontCustomizationDialog : DialogFragment() {
             override fun onProgressChanged(seekBar: SeekBar?, value: Int, fromUser: Boolean) {
                 FontSizeManager.setItemSize(context, value.toFloat())
                 previewItemTextView.textSize = value.toFloat()
+                tvItemSizeValue.text = value.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -149,7 +159,8 @@ class FontCustomizationDialog : DialogFragment() {
         sliderResponse.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, value: Int, fromUser: Boolean) {
                 FontSizeManager.setResponseSize(context, value.toFloat())
-                previewResponseTextView.textSize = value.toFloat()
+                previewResponseButton.textSize = value.toFloat()
+                tvResponseSizeValue.text = value.toString()
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -212,8 +223,7 @@ class FontCustomizationDialog : DialogFragment() {
                 }
                 it.release()
             }
-        } catch (_: IllegalStateException) {
-        }
+        } catch (_: IllegalStateException) {}
         mediaPlayer = null
     }
 
