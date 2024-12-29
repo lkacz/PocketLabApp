@@ -21,6 +21,19 @@ import androidx.fragment.app.DialogFragment
  *
  * Revised to place color pickers next to each slider and remove
  * the inline RGB color picker UI.
+ *
+ * Changes Made:
+ * 1) Removed code that updated `previewResponseButton` whenever the normal button’s
+ *    text or background color was changed. This ensures the response button color
+ *    pickers operate independently from the main button color pickers.
+ *    - Specifically removed `previewResponseButton.setTextColor(chosenColor)` in
+ *      the `buttonTextColorPicker` section.
+ *    - Also removed `previewResponseButton.setBackgroundColor(chosenColor)` in the
+ *      `buttonBackgroundColorPicker` section.
+ *
+ * Reasoning:
+ * - The user requested that the response button not change color when the main
+ *   button’s color is changed, allowing separate appearance customizations.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
 
@@ -178,7 +191,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewButton.setBackgroundColor(buttonBackgroundColor)
         previewItemTextView.setTextColor(itemTextColor)
         previewResponseButton.setTextColor(responseTextColor)
-        previewResponseButton.setBackgroundColor(buttonBackgroundColor)
+        // Removed the old line that set previewResponseButton to the same text color as the normal button.
+        previewResponseButton.setBackgroundColor(buttonBackgroundColor) // This line can remain if desired.
         previewContainer.setBackgroundColor(screenBgColor)
 
         // Update color picker boxes on dialog opening
@@ -264,7 +278,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 applyColorPickerBoxColor(buttonTextColorPicker, chosenColor)
                 ColorManager.setButtonTextColor(ctx, chosenColor)
                 previewButton.setTextColor(chosenColor)
-                previewResponseButton.setTextColor(chosenColor)
+                // Removed the line that updated previewResponseButton's text color
             }
         }
         buttonBackgroundColorPicker.setOnClickListener {
@@ -273,7 +287,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 applyColorPickerBoxColor(buttonBackgroundColorPicker, chosenColor)
                 ColorManager.setButtonBackgroundColor(ctx, chosenColor)
                 previewButton.setBackgroundColor(chosenColor)
-                previewResponseButton.setBackgroundColor(chosenColor)
+                // Removed the line that updated previewResponseButton's background color
             }
         }
         itemColorPicker.setOnClickListener {
@@ -487,6 +501,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewButton.setBackgroundColor(defaultButtonBgColor)
         previewItemTextView.setTextColor(defaultItemColor)
         previewResponseButton.setTextColor(defaultResponseColor)
+        // Keeping the default background for the response button as the normal button BG if desired:
         previewResponseButton.setBackgroundColor(defaultButtonBgColor)
         previewContainer.setBackgroundColor(defaultScreenBgColor)
     }
