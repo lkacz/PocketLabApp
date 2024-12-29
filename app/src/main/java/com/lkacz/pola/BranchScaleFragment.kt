@@ -1,5 +1,6 @@
 package com.lkacz.pola
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -24,16 +25,16 @@ class BranchScaleFragment : Fragment() {
     private lateinit var logger: Logger
     private val selectedResponse = MutableLiveData<String>()
 
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             header = it.getString(ARG_HEADER)
             body = it.getString(ARG_BODY)
             item = it.getString(ARG_ITEM)
-            // Convert the strings back into pairs
             val rawList = it.getStringArrayList(ARG_BRANCH_RESPONSES)
             branchResponses = rawList?.map { raw ->
-                // Each raw is "DisplayText||Label" or "DisplayText||" if no label
                 val split = raw.split("||")
                 val display = split.getOrNull(0) ?: ""
                 val lbl = split.getOrNull(1)?.ifEmpty { null }
@@ -57,20 +58,45 @@ class BranchScaleFragment : Fragment() {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Apply persisted font sizes
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, header ?: "Default Header")
+        // Parse & play audio references in header/body/item
+        val cleanHeader = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = header ?: "Default Header",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = body ?: "Default Body",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanItem = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = item ?: "Default Item",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, item ?: "Default Item")
+        itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
 
         // Dynamically add buttons
         branchResponses.forEachIndexed { index, (displayText, label) ->
+            val cleanResponse = AudioPlaybackHelper.parseAndPlayAudio(
+                context = requireContext(),
+                rawText = displayText,
+                mediaFolderUri = mediaFolderUri,
+                mediaPlayers = mediaPlayers
+            )
             val button = Button(context).apply {
-                text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, displayText)
+                text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanResponse)
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -85,7 +111,6 @@ class BranchScaleFragment : Fragment() {
                         index + 1,
                         displayText
                     )
-                    // If label is non-null, jump there; else go to next instruction
                     val mainActivity = activity as? MainActivity
                     if (!label.isNullOrEmpty()) {
                         mainActivity?.loadFragmentByLabel(label)
@@ -100,16 +125,18 @@ class BranchScaleFragment : Fragment() {
         return view
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
+    }
+
     companion object {
         private const val ARG_HEADER = "branchScaleHeader"
         private const val ARG_BODY = "branchScaleBody"
         private const val ARG_ITEM = "branchScaleItem"
         private const val ARG_BRANCH_RESPONSES = "branchScaleResponses"
 
-        /**
-         * @param responses A list of (displayText, optionalLabel).
-         *                  We'll serialize them as "display||optionalLabel".
-         */
         @JvmStatic
         fun newInstance(
             header: String?,

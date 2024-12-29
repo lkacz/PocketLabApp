@@ -1,5 +1,6 @@
 package com.lkacz.pola
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.LayoutInflater
@@ -17,6 +18,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
     private var timer: CountDownTimer? = null
+
+    // Holds MediaPlayer references for any played sounds in this fragment
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,19 +53,41 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, header ?: "Default Header")
+        // Parse & play any audio references in header/body/nextButton text
+        val cleanHeader = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = header ?: "Default Header",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = body ?: "Default Body",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanNextButton = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = nextButtonText ?: "Next",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+
+        // Apply text to UI
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, nextButtonText ?: "Next")
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanNextButton)
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.visibility = View.INVISIBLE
 
-        // Apply the body font size to all timer text (e.g., "Time left", "Continue").
+        // Timer text styling
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
+        // Start countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -93,6 +119,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
         view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
         alarmHelper.startAlarm()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Release all MediaPlayers for this fragment
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
     }
 
     override fun onDestroy() {

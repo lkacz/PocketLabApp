@@ -29,6 +29,13 @@
         android:layout_marginBottom="16dp"
         tools:ignore="HardcodedText" />
 
+    <!-- Video View -->
+    <VideoView
+        android:id="@+id/videoView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
     <!-- Timer TextView -->
     <TextView
         android:id="@+id/timerTextView"

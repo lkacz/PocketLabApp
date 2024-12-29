@@ -7,21 +7,11 @@ ITEM_SIZE;10
 RESPONSE_SIZE;40
 
 
-LABEL;START
+INSTRUCTION;Listening session;Listen to this .wav audio<sound.wav>;CONTINUE
+INSTRUCTION;Listening session;Listen to this .mp3 audio<sound.mp3>;CONTINUE
+INSTRUCTION;Listening session;Listen to this audio played silently<sound.mp3,30>;CONTINUE
 
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Wybierz;Wybierz coś sobie.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
-GOTO;START
+INSTRUCTION;Watching session;Watch this video<video.mp4>;CONTINUE
 
 
 // General Study Overview
@@ -93,3 +83,22 @@ INSTRUCTION;Thank You;Thank you for participating in the study. Your contributio
 // Log Study End
 // Syntax: LOG;Text
 LOG;The study ended at this moment.
+
+LABEL;START
+
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Wybierz;Wybierz coś sobie.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version3
+INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+GOTO;START

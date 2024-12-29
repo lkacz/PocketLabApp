@@ -1,5 +1,6 @@
 package com.lkacz.pola
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,11 +20,13 @@ class InputFieldFragment : Fragment() {
     private lateinit var logger: Logger
     private val fieldValues = mutableMapOf<String, String>()
 
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             heading = it.getString("HEADING")
-            body = it.getString("TEXT") // Retaining arg key "TEXT" for backward compatibility
+            body = it.getString("TEXT")
             buttonName = it.getString("BUTTON")
             inputFields = it.getStringArrayList("INPUTFIELDS")
         }
@@ -43,29 +46,58 @@ class InputFieldFragment : Fragment() {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, heading ?: "Default Heading")
+        // Parse & play audio references for heading/body
+        val cleanHeading = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = heading ?: "Default Heading",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = body ?: "Default Body",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+
+        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeading)
         headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, body ?: "Default Body")
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
 
+        // For each field, just set the hint. The user might include <audio> in the field text,
+        // though it's unusual. We'll parse for completeness.
         inputFields?.forEach { field ->
+            val cleanHint = AudioPlaybackHelper.parseAndPlayAudio(
+                context = requireContext(),
+                rawText = field,
+                mediaFolderUri = mediaFolderUri,
+                mediaPlayers = mediaPlayers
+            )
             val editText = EditText(context).apply {
-                hint = field
-                // This could be considered an "item," but applying body-size for consistency
+                hint = cleanHint
                 textSize = FontSizeManager.getBodySize(requireContext())
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
             }
-            editText.addTextChangedListener { fieldValues[field] = it.toString() }
+            editText.addTextChangedListener {
+                fieldValues[field] = it.toString()
+            }
             fieldValues[field] = ""
             containerLayout.addView(editText)
         }
 
+        val cleanButtonText = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = buttonName ?: "Next",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
         val nextButton = Button(context).apply {
-            text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, buttonName ?: "Next")
+            text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanButtonText)
             textSize = FontSizeManager.getButtonSize(requireContext())
             setOnClickListener {
                 fieldValues.forEach { (field, value) ->
@@ -84,6 +116,12 @@ class InputFieldFragment : Fragment() {
         containerLayout.addView(nextButton)
 
         return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.lkacz.pola
 
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,8 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     private var nextButtonText: String? = null
     private lateinit var logger: Logger
     private var nextButton: Button? = null
+
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,11 +35,32 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
+        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+
+        val cleanHeader = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = header ?: "Default Header",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanBody = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = body ?: "Default Body",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+        val cleanNextButton = AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = nextButtonText ?: "Next",
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+
         nextButton = InstructionUiHelper.setupInstructionViews(
             view,
-            header ?: "Default Header",
-            body ?: "Default Body",
-            nextButtonText
+            cleanHeader,
+            cleanBody,
+            cleanNextButton
         ) {
             (activity as MainActivity).loadNextFragment()
         }
@@ -47,6 +71,12 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     override fun onTouchThresholdReached() {
         logger.logOther("Tap threshold reached in TapInstructionFragment")
         nextButton?.visibility = View.VISIBLE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mediaPlayers.forEach { it.release() }
+        mediaPlayers.clear()
     }
 
     companion object {

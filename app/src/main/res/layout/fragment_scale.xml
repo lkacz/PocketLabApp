@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
-
+    
     <!-- Header TextView -->
     <TextView
         android:id="@+id/headerTextView"
@@ -27,6 +27,12 @@
         android:textSize="16sp"
         android:layout_marginBottom="16dp"
         tools:ignore="HardcodedText" />
+
+    <VideoView
+        android:id="@+id/videoView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
     <!-- Item TextView -->
     <TextView
