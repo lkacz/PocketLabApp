@@ -8,20 +8,7 @@ RESPONSE_SIZE;24
 
 // Emotions Scale After Walking With a Friend
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;Emotional state;Please rate how you are feeling right now.;<br<br><br<br><br<br>Emotions;Very negative<video.mp4>;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-
-
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Wybierz;Wybierz coś sobie<video.mp4>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Wersja 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative<sound.mp3,10>;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 // Triple Tap Instruction to Start the Study
 // Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
@@ -37,45 +24,15 @@ INSTRUCTION;Listening session;Listen to this audio played silently<sound.mp3,30>
 
 INSTRUCTION;Watching session;Watch this video<video.mp4>;CONTINUE
 
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Wybierz;Wybierz coś sobie<sound.mp3>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
+INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.<video.mp4>;CONTINUE NOW;Participant ID
 
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
-
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Wybierz;Wybierz coś sobie<video.mp4>.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
 
 
 // General Study Overview
 // Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
 INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
 
-// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.<video.mp4>;CONTINUE NOW;Participant ID
 
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds

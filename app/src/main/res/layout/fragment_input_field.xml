@@ -36,6 +36,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/textTextView"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
         android:visibility="gone" />
 
     <!-- Container for dynamically added EditText fields and Next button,
