@@ -86,11 +86,19 @@
         android:layout_height="wrap_content"
         android:text="Show About" />
 
-    <!-- Newly added button to pick the media folder -->
     <Button
         android:id="@+id/btnSelectMediaFolder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Media Folder"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="16dp"
+        android:text="Select Media Folder" />
+
+    <!-- Newly added customization button -->
+    <Button
+        android:id="@+id/btnCustomizeApp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Customize App" />
+
 </LinearLayout>

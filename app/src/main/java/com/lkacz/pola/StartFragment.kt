@@ -13,6 +13,16 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 
+/**
+ * Changes made:
+ * 1) Added a new "Customize App" button (btnCustomizeApp) to open a dialog (FontCustomizationDialog) for adjusting:
+ *    - HEADER_SIZE, BODY_SIZE, BUTTON_SIZE, ITEM_SIZE, RESPONSE_SIZE
+ *    - TIMER_SOUND
+ * 2) The new dialog allows slider-based font size changes and a button to preview the selected alarm sound from
+ *    the user-chosen media folder. Changes persist in SharedPreferences.
+ * Reasoning:
+ * - This addition provides a direct way to modify and preview user customization features before starting the study.
+ */
 class StartFragment : Fragment() {
 
     private lateinit var listener: OnProtocolSelectedListener
@@ -34,8 +44,6 @@ class StartFragment : Fragment() {
 
     /**
      * Folder picker for selecting a media directory, not a single file.
-     * We use [ActivityResultContracts.OpenDocumentTree] to allow the user
-     * to select an entire folder.
      */
     private val folderPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -67,8 +75,10 @@ class StartFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
+
         updateProtocolNameDisplay(protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None")
         setupButtons(view)
+
         return view
     }
 
@@ -100,12 +110,15 @@ class StartFragment : Fragment() {
         view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
             showAboutContentDialog()
         }
-
-        // Newly added button to pick the media folder
         view.findViewById<Button>(R.id.btnSelectMediaFolder).setOnClickListener {
             showChangeMediaFolderConfirmation {
                 mediaFolderManager.pickMediaFolder(folderPicker)
             }
+        }
+
+        // New "Customize App" button to open FontCustomizationDialog
+        view.findViewById<Button>(R.id.btnCustomizeApp).setOnClickListener {
+            FontCustomizationDialog().show(parentFragmentManager, "FontCustomizationDialog")
         }
     }
 
@@ -165,9 +178,6 @@ class StartFragment : Fragment() {
         confirmationDialogManager.showChangeProtocolConfirmation(onConfirm)
     }
 
-    /**
-     * For changing the media folder with a confirmation prompt.
-     */
     private fun showChangeMediaFolderConfirmation(onConfirm: () -> Unit) {
         ConfirmationDialogManager(requireContext())
             .apply {
