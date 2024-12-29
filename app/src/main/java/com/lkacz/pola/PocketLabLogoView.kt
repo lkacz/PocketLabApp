@@ -12,73 +12,68 @@ import androidx.core.content.ContextCompat
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * A custom view that draws:
- *   1. A "pocket" shape (round-rect) at the bottom (dark).
- *   2. A smartphone icon (vector drawable) partially hidden by the pocket.
- *   3. Light "Pocket Lab App" text on top of the icon.
- *
- * The user can drag the phone downward. After release, it bounces back.
- * The icon also gently floats (levitates) when not being dragged,
- * inviting the user to interact.
- *
- * Key Changes:
- * 1) Using a vector resource ic_smartphone.xml to represent the smartphone,
- *    rather than the old “call” icon or a custom drawn shape.
- * 2) Tinted the icon to match a dark theme if desired.
- * 3) Preserved slight tilt (baseRotation) and floating animation logic.
- */
+/*
+Changes Made:
+1. Moved the text "Pocket Lab App" to the background so it does not rotate or move with the phone.
+2. Reduced phone width to 20% of the screen (instead of 35%) to make the phone narrower.
+3. Made the pocket narrower (25% of the screen width) and centered it at the bottom.
+4. Preserved bounce-back logic for the phone.
+5. Kept levitation/floating animations for the phone, while the text remains stationary in the background.
+Reasoning:
+- The user wants the text fixed in the background, the phone narrower, and the pocket less wide, with the phone still draggable and bouncing back.
+- Retained all original functionalities (dragging, levitation, bounce) except for the text which is now drawn behind the phone and no longer moves/rotates.
+*/
+
 class PocketLabLogoView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    // Paint for the pocket
     private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        // Nearly black for the pocket
         color = Color.rgb(20, 20, 20)
         style = Paint.Style.FILL
     }
 
-    // Smartphone icon from our custom vector drawable (see ic_smartphone.xml).
-    // Tinted dark if desired; you can adjust the tint color or remove it if you prefer.
+    // Smartphone icon
     private val phoneDrawable = ContextCompat.getDrawable(context, R.drawable.ic_smartphone)?.mutate()
 
+    // Paint for the background text that remains stationary
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        // Light text for contrast
         color = Color.LTGRAY
         textSize = 80f
         typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
-    // The bounding rect for the pocket at the bottom.
+    // Pocket rect (now narrower and centered)
     private val pocketRect = RectF()
 
-    // The phone's bounding rect for drag detection in local coords.
+    // Phone rect for local coordinates
     private val phoneRect = RectF()
 
-    // For drag + bounce
+    // Phone center coords for dragging/floating
     private var phoneCenterX = 0f
     private var phoneCenterY = 0f
     private var initialPhoneCenterY = 0f
+
     private var isDragging = false
     private var touchOffsetY = 0f
 
-    // We'll define an approximate "phone size" for bounding and hit detection.
+    // Phone size
     private var phoneWidth = 0f
     private var phoneHeight = 0f
 
-    // Slight angle offset so icon isn’t fully vertical
+    // Slight rotation offset for phone
     private var baseRotation = -10f
     private var currentRotation = baseRotation
 
-    // How far the phone can enter the pocket area before we bounce back
+    // Bounce threshold
     private val bounceThreshold = 50f
 
-    // Animators for gentle levitation
+    // Levitation animators
     private var levitateAnimatorSet: AnimatorSet? = null
 
     init {
-        // Optional: tint the smartphone icon darker if you prefer
         phoneDrawable?.setTint(Color.DKGRAY)
         phoneDrawable?.setTintMode(PorterDuff.Mode.SRC_IN)
     }
@@ -94,18 +89,22 @@ class PocketLabLogoView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        // Define the pocket region
+        // Pocket is 25% of screen width, centered at bottom
+        val pocketWidth = w * 0.25f
         val pocketHeight = h * 0.10f
-        pocketRect.set(0f, h - pocketHeight, w.toFloat(), h.toFloat())
+        val pocketLeft = (w - pocketWidth) / 2f
+        val pocketTop = h - pocketHeight
+        pocketRect.set(pocketLeft, pocketTop, pocketLeft + pocketWidth, h.toFloat())
 
-        // We'll define a bounding box for the phone icon
-        phoneWidth = w * 0.35f
-        phoneHeight = w * 0.35f
+        // Phone narrower: 20% of screen width
+        phoneWidth = w * 0.20f
+        phoneHeight = w * 0.20f
+
+        // Center phone above pocket
         phoneCenterX = w * 0.5f
-        phoneCenterY = (h - pocketHeight) - phoneHeight * 0.5f + 20f
+        phoneCenterY = pocketTop - phoneHeight * 0.5f + 20f
         initialPhoneCenterY = phoneCenterY
 
-        // Start the tilt + float
         currentRotation = baseRotation
         startLevitateAnimation()
     }
@@ -113,19 +112,21 @@ class PocketLabLogoView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Draw the dark round-rect pocket at bottom
-        val pocketRadius = height * 0.05f
+        // 1) Draw the stationary background text near the center or top
+        val textY = height * 0.4f
+        canvas.drawText("Pocket Lab App", width * 0.5f, textY, textPaint)
+
+        // 2) Draw pocket
+        val pocketRadius = (pocketRect.height()) / 2f
         canvas.drawRoundRect(pocketRect, pocketRadius, pocketRadius, pocketPaint)
 
-        // Save canvas state and rotate around phone center
+        // 3) Draw phone with rotation around center
         canvas.save()
         canvas.translate(phoneCenterX, phoneCenterY)
         canvas.rotate(currentRotation)
 
-        // phoneRect is local coordinates for the icon
         phoneRect.set(-phoneWidth / 2f, -phoneHeight / 2f, phoneWidth / 2f, phoneHeight / 2f)
 
-        // Lay out the icon
         phoneDrawable?.setBounds(
             phoneRect.left.toInt(),
             phoneRect.top.toInt(),
@@ -134,11 +135,6 @@ class PocketLabLogoView @JvmOverloads constructor(
         )
         phoneDrawable?.draw(canvas)
 
-        // Draw the text “Pocket Lab App” on top
-        val textY = phoneRect.centerY() + textPaint.textSize / 4
-        canvas.drawText("Pocket Lab App", phoneRect.centerX(), textY, textPaint)
-
-        // Restore
         canvas.restore()
     }
 
@@ -161,8 +157,9 @@ class PocketLabLogoView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
-                    // If phone is low enough, bounce it
-                    if ((phoneCenterY + phoneHeight / 2f) > (pocketRect.top - bounceThreshold)) {
+                    // Check if phone is lowered near the pocket
+                    val phoneBottom = phoneCenterY + phoneHeight / 2f
+                    if (phoneBottom > (pocketRect.top - bounceThreshold)) {
                         bouncePhone()
                     } else {
                         settlePhone()
@@ -174,25 +171,8 @@ class PocketLabLogoView @JvmOverloads constructor(
         return true
     }
 
-    /**
-     * Check if user touched inside the phone icon, taking rotation into account.
-     */
-    private fun hitTestPhone(touchX: Float, touchY: Float): Boolean {
-        val relX = touchX - phoneCenterX
-        val relY = touchY - phoneCenterY
-        val rad = Math.toRadians(currentRotation.toDouble())
-
-        val cosA = cos(-rad)
-        val sinA = sin(-rad)
-
-        // Reverse-rotate the point
-        val rotatedX = (relX * cosA - relY * sinA).toFloat()
-        val rotatedY = (relX * sinA + relY * cosA).toFloat()
-
-        return phoneRect.contains(rotatedX, rotatedY)
-    }
-
     private fun bouncePhone() {
+        // Quick bounce up then settle
         val bounceUp = ObjectAnimator.ofFloat(
             this, "phoneCenterY", phoneCenterY, initialPhoneCenterY - 20f
         ).apply { duration = 300 }
@@ -216,7 +196,7 @@ class PocketLabLogoView @JvmOverloads constructor(
         }
     }
 
-    // Animator reflection usage
+    // Reflection use for bounce anim
     @Suppress("unused")
     fun setPhoneCenterY(value: Float) {
         phoneCenterY = value
@@ -225,9 +205,6 @@ class PocketLabLogoView @JvmOverloads constructor(
 
     fun getPhoneCenterY(): Float = phoneCenterY
 
-    /**
-     * Gently float the icon up/down and rotate ±2° around baseRotation.
-     */
     private fun startLevitateAnimation() {
         if (levitateAnimatorSet != null) return
 
@@ -250,11 +227,11 @@ class PocketLabLogoView @JvmOverloads constructor(
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.REVERSE
             addUpdateListener { anim ->
-                val delta = anim.animatedValue as Float
-                currentRotation = baseRotation + delta
+                currentRotation = baseRotation + (anim.animatedValue as Float)
                 invalidate()
             }
         }
+
         levitateAnimatorSet = AnimatorSet().apply {
             playTogether(levitateTranslate, levitateRotation)
             start()
@@ -276,5 +253,19 @@ class PocketLabLogoView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         stopLevitateAnimation()
+    }
+
+    /**
+     * Checks if the user tapped on the phone, accounting for current rotation.
+     */
+    private fun hitTestPhone(touchX: Float, touchY: Float): Boolean {
+        val relX = touchX - phoneCenterX
+        val relY = touchY - phoneCenterY
+        val rad = Math.toRadians(currentRotation.toDouble())
+        val cosA = cos(-rad)
+        val sinA = sin(-rad)
+        val rotatedX = (relX * cosA - relY * sinA).toFloat()
+        val rotatedY = (relX * sinA + relY * cosA).toFloat()
+        return phoneRect.contains(rotatedX, rotatedY)
     }
 }
