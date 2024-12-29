@@ -48,6 +48,7 @@ class ProtocolManager(private val context: Context) {
     /**
      * Performs manipulations on the original protocol, including:
      * - Capturing font size directives (HEADER_SIZE;X, etc.) and persisting them
+     * - Capturing custom timer sound directives (TIMER_SOUND;filename.mp3)
      * - Enabling/disabling randomization blocks
      * - Expanding MULTISCALE and RANDOMIZED_MULTISCALE lines into multiple SCALE lines
      * Then sets [finalProtocol] with the resulting lines.
@@ -59,24 +60,29 @@ class ProtocolManager(private val context: Context) {
         val randomSection = mutableListOf<String>()
 
         lines?.forEach { line ->
-            // 1) If it's a font size directive, update font sizes in SharedPreferences, skip it
+            // 0) Check if line sets a custom timer sound. If so, store and skip further processing
+            if (TimerSoundUpdater.updateTimerSoundFromLine(context, line)) {
+                return@forEach
+            }
+
+            // 1) Check if it's a font-size directive
             if (FontSizeUpdater.updateFontSizesFromLine(context, line)) {
                 return@forEach
             }
 
+            // 2) Handle randomization blocks
             when {
                 line.trim() == "RANDOMIZE_ON" -> {
                     randomize = true
                 }
                 line.trim() == "RANDOMIZE_OFF" -> {
                     randomize = false
-                    // Shuffle the accumulated randomSection, then add to newLines
                     randomSection.shuffle(Random)
                     newLines.addAll(randomSection)
                     randomSection.clear()
                 }
                 line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
-                    // Expand using helper and add results
+                    // Expand MULTISCALE instructions
                     val expanded = MultiScaleHelper.expandMultiScaleLine(line)
                     if (randomize) {
                         randomSection.addAll(expanded)
@@ -95,7 +101,7 @@ class ProtocolManager(private val context: Context) {
             }
         }
 
-        // If randomize was still true at the end, flush what remains in randomSection
+        // If randomize is still active at the end, flush the remaining lines
         if (randomize) {
             randomSection.shuffle(Random)
             newLines.addAll(randomSection)
