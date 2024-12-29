@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- App Title -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -21,6 +23,7 @@
         android:text="@string/app_version"
         android:textSize="12sp" />
 
+    <!-- Selected protocol name display -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -33,65 +36,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Selected protocol:None"
+        android:text="None"
         android:textSize="16sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/btnShowProtocolContent"
+    <!-- Consolidated Protocol Menu (Dropdown) -->
+    <com.lkacz.pola.ProtocolMenuDropdown
+        android:id="@+id/protocolMenuDropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:text="Show Protocol Content" />
+        android:layout_marginTop="24dp"/>
 
+    <!-- Start Button -->
     <Button
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="36dp"
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="24dp"
         android:text="@string/start_protocol_button"
         android:textSize="24sp"
         android:textStyle="bold" />
-
-    <Button
-        android:id="@+id/btnSelectFile"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/select_file_button" />
-
-    <Button
-        android:id="@+id/btnUseDemo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/use_demo_button" />
-
-    <Button
-        android:id="@+id/btnUseTutorial"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="36dp"
-        android:text="Load Tutorial Protocol" />
-
-    <Button
-        android:id="@+id/btnToggleTheme"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Toggle Theme" />
-
-    <Button
-        android:id="@+id/btnShowAbout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Show About" />
-
-    <Button
-        android:id="@+id/btnSelectMediaFolder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Select Media Folder" />
 
     <!-- Newly added customization button -->
     <Button
@@ -100,5 +64,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Customize App" />
+
+    <!-- About icon at top-right (manually placed at end, programmatically used) -->
+    <ImageView
+        android:id="@+id/imgAboutIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:src="@android:drawable/ic_menu_help"
+        android:contentDescription="About" />
 
 </LinearLayout>

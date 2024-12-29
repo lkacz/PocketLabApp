@@ -5,14 +5,23 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
-import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 
+/**
+ * Updated StartFragment:
+ * 1) Includes a PocketLabLogoView at the top for the new animated "logo."
+ * 2) Existing logic for protocol selection remains intact.
+ */
 class StartFragment : Fragment() {
+
+    interface OnProtocolSelectedListener {
+        fun onProtocolSelected(protocolUri: Uri?)
+    }
 
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
@@ -20,15 +29,19 @@ class StartFragment : Fragment() {
     private lateinit var sharedPref: SharedPreferences
     private val fileUriUtils = FileUriUtils()
     private val protocolReader by lazy { ProtocolReader() }
-    private lateinit var themeManager: ThemeManager
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
     private lateinit var mediaFolderManager: MediaFolderManager
 
+    // Dropdown for protocol selection
+    private lateinit var protocolMenuDropdown: ProtocolMenuDropdown
+
+    // File Picker
     private val filePicker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri?.let { handleFileUri(it) } ?: showToast("File selection was cancelled")
         }
 
+    // Folder Picker
     private val folderPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             if (uri != null) {
@@ -39,67 +52,90 @@ class StartFragment : Fragment() {
             }
         }
 
-    interface OnProtocolSelectedListener {
-        fun onProtocolSelected(protocolUri: Uri?)
-    }
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         listener = context as OnProtocolSelectedListener
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
-        themeManager = ThemeManager(context)
         mediaFolderManager = MediaFolderManager(context)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
-        tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
 
+        // 1) Add the PocketLabLogoView at runtime near the top
+        val containerLayout = view.findViewById<android.widget.LinearLayout>(R.id.linearLayout)
+            ?: view as? android.widget.LinearLayout
+            ?: return view
+
+        // Create our new custom "logo" view and add it to the layout
+        val logoView = PocketLabLogoView(requireContext()).apply {
+            // Optionally set layout params or any extra config
+            layoutParams = ViewGroup.MarginLayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).also {
+                it.bottomMargin = 32
+            }
+        }
+        // Insert the logo at index 0 for top placement
+        containerLayout.addView(logoView, 0)
+
+        // 2) Setup existing UI elements
+        tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
         val fileName = protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
         updateProtocolNameDisplay(fileName)
-        setupButtons(view)
+
+        // About icon
+        val aboutIcon = view.findViewById<ImageView>(R.id.imgAboutIcon)
+        aboutIcon.setOnClickListener { showAboutContentDialog() }
+
+        // Protocol menu dropdown
+        protocolMenuDropdown = view.findViewById(R.id.protocolMenuDropdown)
+        protocolMenuDropdown.setup(
+            onFileSelectionClick = {
+                showChangeProtocolConfirmation {
+                    filePicker.launch(arrayOf("text/plain"))
+                }
+            },
+            onSelectDemoClick = {
+                showChangeProtocolConfirmation {
+                    handleProtocolChange("demo", "Demo Protocol")
+                }
+            },
+            onSelectTutorialClick = {
+                showChangeProtocolConfirmation {
+                    handleProtocolChange("tutorial", "Tutorial Protocol")
+                }
+            },
+            onSelectMediaFolderClick = {
+                showChangeMediaFolderConfirmation {
+                    mediaFolderManager.pickMediaFolder(folderPicker)
+                }
+            },
+            onShowProtocolContentClick = {
+                showProtocolContentDialog()
+            }
+        )
+
+        // Start button
+        val btnStart = view.findViewById<View>(R.id.btnStart)
+        btnStart.setOnClickListener { showStartStudyConfirmation() }
+
+        // Customize App button
+        val btnCustomizeApp = view.findViewById<View>(R.id.btnCustomizeApp)
+        btnCustomizeApp.setOnClickListener {
+            AppearanceCustomizationDialog().show(
+                requireActivity().supportFragmentManager,
+                "AppearanceCustomizationDialog"
+            )
+        }
+
         return view
-    }
-
-    override fun onResume() {
-        super.onResume()
-        themeManager.applyTheme()
-    }
-
-    private fun setupButtons(view: View) {
-        view.findViewById<Button>(R.id.btnStart).setOnClickListener { showStartStudyConfirmation() }
-        view.findViewById<Button>(R.id.btnSelectFile).setOnClickListener {
-            showChangeProtocolConfirmation {
-                filePicker.launch(arrayOf("text/plain"))
-            }
-        }
-        view.findViewById<Button>(R.id.btnUseDemo).setOnClickListener {
-            handleProtocolChange("demo", "Demo Protocol")
-        }
-        view.findViewById<Button>(R.id.btnUseTutorial).setOnClickListener {
-            handleProtocolChange("tutorial", "Tutorial Protocol")
-        }
-        view.findViewById<Button>(R.id.btnToggleTheme).setOnClickListener {
-            themeManager.toggleTheme()
-            activity?.recreate()
-        }
-        view.findViewById<Button>(R.id.btnShowProtocolContent).setOnClickListener {
-            showProtocolContentDialog()
-        }
-        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
-            showAboutContentDialog()
-        }
-        view.findViewById<Button>(R.id.btnSelectMediaFolder).setOnClickListener {
-            showChangeMediaFolderConfirmation {
-                mediaFolderManager.pickMediaFolder(folderPicker)
-            }
-        }
-
-        // Changed to open the new AppearanceCustomizationDialog
-        view.findViewById<Button>(R.id.btnCustomizeApp).setOnClickListener {
-            AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
-        }
     }
 
     private fun handleFileUri(uri: Uri) {
@@ -116,14 +152,12 @@ class StartFragment : Fragment() {
     }
 
     private fun handleProtocolChange(mode: String, protocolName: String) {
-        showChangeProtocolConfirmation {
-            protocolUri = null
-            sharedPref.edit()
-                .remove("PROTOCOL_URI")
-                .putString("CURRENT_MODE", mode)
-                .apply()
-            updateProtocolNameDisplay(protocolName)
-        }
+        protocolUri = null
+        sharedPref.edit()
+            .remove("PROTOCOL_URI")
+            .putString("CURRENT_MODE", mode)
+            .apply()
+        updateProtocolNameDisplay(protocolName)
     }
 
     private fun updateProtocolNameDisplay(protocolName: String) {
@@ -147,10 +181,6 @@ class StartFragment : Fragment() {
         ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
     private fun showStartStudyConfirmation() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
@@ -171,5 +201,9 @@ class StartFragment : Fragment() {
             message = "Are you sure you want to change the media folder?",
             onConfirm = onConfirm
         )
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 }
