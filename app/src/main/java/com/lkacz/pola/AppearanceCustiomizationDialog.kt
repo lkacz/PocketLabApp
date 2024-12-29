@@ -4,9 +4,11 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
@@ -17,8 +19,8 @@ import androidx.fragment.app.DialogFragment
  * A unified dialog for customizing both font sizes and colors
  * (header/body/button/item/response text + background).
  *
- * Revised to place color pickers next to each slider and to use a
- * standard color picker dialog for full customization.
+ * Revised to place color pickers next to each slider and remove
+ * the inline RGB color picker UI.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
 
@@ -30,7 +32,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var previewItemTextView: TextView
     private lateinit var previewResponseButton: Button
 
-    // Sliders and corresponding indicators
+    // Sliders and size indicators
     private lateinit var sliderHeader: SeekBar
     private lateinit var tvHeaderSizeValue: TextView
 
@@ -45,6 +47,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
     private lateinit var sliderResponse: SeekBar
     private lateinit var tvResponseSizeValue: TextView
+
+    // Color pickers
+    private lateinit var headerColorPicker: View
+    private lateinit var bodyColorPicker: View
+    private lateinit var buttonTextColorPicker: View
+    private lateinit var buttonBackgroundColorPicker: View
+    private lateinit var itemColorPicker: View
+    private lateinit var responseColorPicker: View
+    private lateinit var screenBackgroundColorPicker: View
 
     // Timer Sound
     private lateinit var timerSoundEditText: EditText
@@ -108,6 +119,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderResponse = view.findViewById(R.id.sliderResponseSize)
         tvResponseSizeValue = view.findViewById(R.id.tvResponseSizeValue)
 
+        // Color pickers (placed next to sliders in layout)
+        headerColorPicker = view.findViewById(R.id.headerColorPicker)
+        bodyColorPicker = view.findViewById(R.id.bodyColorPicker)
+        buttonTextColorPicker = view.findViewById(R.id.buttonTextColorPicker)
+        buttonBackgroundColorPicker = view.findViewById(R.id.buttonBackgroundColorPicker)
+        itemColorPicker = view.findViewById(R.id.itemColorPicker)
+        responseColorPicker = view.findViewById(R.id.responseColorPicker)
+        screenBackgroundColorPicker = view.findViewById(R.id.screenBackgroundColorPicker)
+
+        // Timer Sound
         timerSoundEditText = view.findViewById(R.id.timerSoundEditText)
 
         val ctx = requireContext()
@@ -120,7 +141,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val currentItemSize = FontSizeManager.getItemSize(ctx).toInt()
         val currentResponseSize = FontSizeManager.getResponseSize(ctx).toInt()
 
-        // Initialize slider positions
+        // Coerce to [8..100] and set slider positions
         sliderHeader.progress = currentHeaderSize.coerceIn(8, 100)
         sliderBody.progress = currentBodySize.coerceIn(8, 100)
         sliderButton.progress = currentButtonSize.coerceIn(8, 100)
@@ -160,6 +181,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewResponseButton.setBackgroundColor(buttonBackgroundColor)
         previewContainer.setBackgroundColor(screenBgColor)
 
+        // Update color picker boxes on dialog opening
+        applyColorPickerBoxColor(headerColorPicker, headerTextColor)
+        applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
+        applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColor)
+        applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColor)
+        applyColorPickerBoxColor(itemColorPicker, itemTextColor)
+        applyColorPickerBoxColor(responseColorPicker, responseTextColor)
+        applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+
         // Timer Sound
         val currentTimerSound = prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3")
             ?: "mytimersound.mp3"
@@ -168,136 +198,106 @@ class AppearanceCustomizationDialog : DialogFragment() {
         // Slider change listeners
         sliderHeader.setOnSeekBarChangeListener(
             simpleSeekBarListener {
-                FontSizeManager.setHeaderSize(ctx, it.toFloat())
-                previewHeaderTextView.textSize = it.toFloat()
-                tvHeaderSizeValue.text = it.toString()
+                val size = it.coerceIn(8, 100)
+                FontSizeManager.setHeaderSize(ctx, size.toFloat())
+                previewHeaderTextView.textSize = size.toFloat()
+                tvHeaderSizeValue.text = size.toString()
             }
         )
 
         sliderBody.setOnSeekBarChangeListener(
             simpleSeekBarListener {
-                FontSizeManager.setBodySize(ctx, it.toFloat())
-                previewBodyTextView.textSize = it.toFloat()
-                tvBodySizeValue.text = it.toString()
+                val size = it.coerceIn(8, 100)
+                FontSizeManager.setBodySize(ctx, size.toFloat())
+                previewBodyTextView.textSize = size.toFloat()
+                tvBodySizeValue.text = size.toString()
             }
         )
 
         sliderButton.setOnSeekBarChangeListener(
             simpleSeekBarListener {
-                FontSizeManager.setButtonSize(ctx, it.toFloat())
-                previewButton.textSize = it.toFloat()
-                tvButtonSizeValue.text = it.toString()
+                val size = it.coerceIn(8, 100)
+                FontSizeManager.setButtonSize(ctx, size.toFloat())
+                previewButton.textSize = size.toFloat()
+                tvButtonSizeValue.text = size.toString()
             }
         )
 
         sliderItem.setOnSeekBarChangeListener(
             simpleSeekBarListener {
-                FontSizeManager.setItemSize(ctx, it.toFloat())
-                previewItemTextView.textSize = it.toFloat()
-                tvItemSizeValue.text = it.toString()
+                val size = it.coerceIn(8, 100)
+                FontSizeManager.setItemSize(ctx, size.toFloat())
+                previewItemTextView.textSize = size.toFloat()
+                tvItemSizeValue.text = size.toString()
             }
         )
 
         sliderResponse.setOnSeekBarChangeListener(
             simpleSeekBarListener {
-                FontSizeManager.setResponseSize(ctx, it.toFloat())
-                previewResponseButton.textSize = it.toFloat()
-                tvResponseSizeValue.text = it.toString()
+                val size = it.coerceIn(8, 100)
+                FontSizeManager.setResponseSize(ctx, size.toFloat())
+                previewResponseButton.textSize = size.toFloat()
+                tvResponseSizeValue.text = size.toString()
             }
         )
 
-        // Now set up color pickers using standard color selection
-        // For each UI element, we'll open a color picker dialog.
-        // Header text color
-        view.findViewById<View>(R.id.headerColorPicker).apply {
-            setBackgroundColor(headerTextColor)
-            setOnClickListener {
-                openColorPicker(headerTextColor) { chosenColor ->
-                    headerTextColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setHeaderTextColor(ctx, chosenColor)
-                    previewHeaderTextView.setTextColor(chosenColor)
-                }
+        // Set up color pickers (clickable boxes)
+        headerColorPicker.setOnClickListener {
+            openColorPicker(headerTextColor) { chosenColor ->
+                headerTextColor = chosenColor
+                applyColorPickerBoxColor(headerColorPicker, chosenColor)
+                ColorManager.setHeaderTextColor(ctx, chosenColor)
+                previewHeaderTextView.setTextColor(chosenColor)
             }
         }
-
-        // Body text color
-        view.findViewById<View>(R.id.bodyColorPicker).apply {
-            setBackgroundColor(bodyTextColor)
-            setOnClickListener {
-                openColorPicker(bodyTextColor) { chosenColor ->
-                    bodyTextColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setBodyTextColor(ctx, chosenColor)
-                    previewBodyTextView.setTextColor(chosenColor)
-                }
+        bodyColorPicker.setOnClickListener {
+            openColorPicker(bodyTextColor) { chosenColor ->
+                bodyTextColor = chosenColor
+                applyColorPickerBoxColor(bodyColorPicker, chosenColor)
+                ColorManager.setBodyTextColor(ctx, chosenColor)
+                previewBodyTextView.setTextColor(chosenColor)
             }
         }
-
-        // Button text color
-        view.findViewById<View>(R.id.buttonTextColorPicker).apply {
-            setBackgroundColor(buttonTextColor)
-            setOnClickListener {
-                openColorPicker(buttonTextColor) { chosenColor ->
-                    buttonTextColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setButtonTextColor(ctx, chosenColor)
-                    previewButton.setTextColor(chosenColor)
-                    previewResponseButton.setTextColor(chosenColor)
-                }
+        buttonTextColorPicker.setOnClickListener {
+            openColorPicker(buttonTextColor) { chosenColor ->
+                buttonTextColor = chosenColor
+                applyColorPickerBoxColor(buttonTextColorPicker, chosenColor)
+                ColorManager.setButtonTextColor(ctx, chosenColor)
+                previewButton.setTextColor(chosenColor)
+                previewResponseButton.setTextColor(chosenColor)
             }
         }
-
-        // Button background color
-        view.findViewById<View>(R.id.buttonBackgroundColorPicker).apply {
-            setBackgroundColor(buttonBackgroundColor)
-            setOnClickListener {
-                openColorPicker(buttonBackgroundColor) { chosenColor ->
-                    buttonBackgroundColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setButtonBackgroundColor(ctx, chosenColor)
-                    previewButton.setBackgroundColor(chosenColor)
-                    previewResponseButton.setBackgroundColor(chosenColor)
-                }
+        buttonBackgroundColorPicker.setOnClickListener {
+            openColorPicker(buttonBackgroundColor) { chosenColor ->
+                buttonBackgroundColor = chosenColor
+                applyColorPickerBoxColor(buttonBackgroundColorPicker, chosenColor)
+                ColorManager.setButtonBackgroundColor(ctx, chosenColor)
+                previewButton.setBackgroundColor(chosenColor)
+                previewResponseButton.setBackgroundColor(chosenColor)
             }
         }
-
-        // Item text color
-        view.findViewById<View>(R.id.itemColorPicker).apply {
-            setBackgroundColor(itemTextColor)
-            setOnClickListener {
-                openColorPicker(itemTextColor) { chosenColor ->
-                    itemTextColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setItemTextColor(ctx, chosenColor)
-                    previewItemTextView.setTextColor(chosenColor)
-                }
+        itemColorPicker.setOnClickListener {
+            openColorPicker(itemTextColor) { chosenColor ->
+                itemTextColor = chosenColor
+                applyColorPickerBoxColor(itemColorPicker, chosenColor)
+                ColorManager.setItemTextColor(ctx, chosenColor)
+                previewItemTextView.setTextColor(chosenColor)
             }
         }
-
-        // Response text color
-        view.findViewById<View>(R.id.responseColorPicker).apply {
-            setBackgroundColor(responseTextColor)
-            setOnClickListener {
-                openColorPicker(responseTextColor) { chosenColor ->
-                    responseTextColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setResponseTextColor(ctx, chosenColor)
-                    previewResponseButton.setTextColor(chosenColor)
-                }
+        responseColorPicker.setOnClickListener {
+            openColorPicker(responseTextColor) { chosenColor ->
+                responseTextColor = chosenColor
+                applyColorPickerBoxColor(responseColorPicker, chosenColor)
+                ColorManager.setResponseTextColor(ctx, chosenColor)
+                previewResponseButton.setTextColor(chosenColor)
             }
         }
-
-        // Screen background color
-        view.findViewById<View>(R.id.screenBackgroundColorPicker).apply {
-            setBackgroundColor(screenBgColor)
-            setOnClickListener {
-                openColorPicker(screenBgColor) { chosenColor ->
-                    screenBgColor = chosenColor
-                    setBackgroundColor(chosenColor)
-                    ColorManager.setScreenBackgroundColor(ctx, chosenColor)
-                    previewContainer.setBackgroundColor(chosenColor)
-                }
+        screenBackgroundColorPicker.setOnClickListener {
+            openColorPicker(screenBgColor) { chosenColor ->
+                screenBgColor = chosenColor
+                applyColorPickerBoxColor(screenBackgroundColorPicker, chosenColor)
+                ColorManager.setScreenBackgroundColor(ctx, chosenColor)
+                previewContainer.setBackgroundColor(chosenColor)
             }
         }
 
@@ -362,14 +362,21 @@ class AppearanceCustomizationDialog : DialogFragment() {
     }
 
     /**
-     * Shows a standard color picker dialog. The callback returns the
-     * newly chosen color as an ARGB integer.
+     * Helper to apply the chosen color to the picker's background while
+     * preserving the black outline stroke.
+     */
+    private fun applyColorPickerBoxColor(picker: View, color: Int) {
+        val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
+        if (drawable is GradientDrawable) {
+            drawable.setColor(color)
+            picker.background = drawable
+        }
+    }
+
+    /**
+     * Shows a standard color picker dialog. The callback returns the newly chosen color as ARGB.
      */
     private fun openColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
-        // A simple AlertDialog with RGB inputs or a third-party color picker can be used.
-        // Below is a basic example with RGB SeekBars, but you may replace it
-        // with any robust color picker library or custom view as desired.
-
         val dialogView = layoutInflater.inflate(R.layout.color_picker_dialog, null)
         val seekRed = dialogView.findViewById<SeekBar>(R.id.seekRed)
         val seekGreen = dialogView.findViewById<SeekBar>(R.id.seekGreen)
@@ -406,8 +413,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
     }
 
     /**
-     * Sets a curated set of defaults to provide a cohesive, elegant style.
-     * Also updates the UI preview.
+     * Restore default sizes/colors, updating the UI preview accordingly.
      */
     private fun restoreAllDefaults(ctx: Context) {
         // Example "elegant" defaults
@@ -425,12 +431,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultResponseColor = Color.parseColor("#C51162")    // Pinkish
         val defaultScreenBgColor = Color.parseColor("#F5F5F5")    // Light Gray
 
-        // Font sizes
-        FontSizeManager.setHeaderSize(ctx, defaultHeaderSize)
-        FontSizeManager.setBodySize(ctx, defaultBodySize)
-        FontSizeManager.setButtonSize(ctx, defaultButtonSize)
-        FontSizeManager.setItemSize(ctx, defaultItemSize)
-        FontSizeManager.setResponseSize(ctx, defaultResponseSize)
+        // Font sizes (coerce to 8..100 to be safe)
+        FontSizeManager.setHeaderSize(ctx, defaultHeaderSize.coerceIn(8f, 100f))
+        FontSizeManager.setBodySize(ctx, defaultBodySize.coerceIn(8f, 100f))
+        FontSizeManager.setButtonSize(ctx, defaultButtonSize.coerceIn(8f, 100f))
+        FontSizeManager.setItemSize(ctx, defaultItemSize.coerceIn(8f, 100f))
+        FontSizeManager.setResponseSize(ctx, defaultResponseSize.coerceIn(8f, 100f))
 
         sliderHeader.progress = defaultHeaderSize.toInt().coerceIn(8, 100)
         sliderBody.progress = defaultBodySize.toInt().coerceIn(8, 100)
@@ -444,11 +450,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvItemSizeValue.text = sliderItem.progress.toString()
         tvResponseSizeValue.text = sliderResponse.progress.toString()
 
-        previewHeaderTextView.textSize = defaultHeaderSize
-        previewBodyTextView.textSize = defaultBodySize
-        previewButton.textSize = defaultButtonSize
-        previewItemTextView.textSize = defaultItemSize
-        previewResponseButton.textSize = defaultResponseSize
+        previewHeaderTextView.textSize = sliderHeader.progress.toFloat()
+        previewBodyTextView.textSize = sliderBody.progress.toFloat()
+        previewButton.textSize = sliderButton.progress.toFloat()
+        previewItemTextView.textSize = sliderItem.progress.toFloat()
+        previewResponseButton.textSize = sliderResponse.progress.toFloat()
 
         // Colors
         ColorManager.setHeaderTextColor(ctx, defaultHeaderColor)
@@ -467,13 +473,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         responseTextColor = defaultResponseColor
         screenBgColor = defaultScreenBgColor
 
-        view?.findViewById<View>(R.id.headerColorPicker)?.setBackgroundColor(defaultHeaderColor)
-        view?.findViewById<View>(R.id.bodyColorPicker)?.setBackgroundColor(defaultBodyColor)
-        view?.findViewById<View>(R.id.buttonTextColorPicker)?.setBackgroundColor(defaultButtonTextColor)
-        view?.findViewById<View>(R.id.buttonBackgroundColorPicker)?.setBackgroundColor(defaultButtonBgColor)
-        view?.findViewById<View>(R.id.itemColorPicker)?.setBackgroundColor(defaultItemColor)
-        view?.findViewById<View>(R.id.responseColorPicker)?.setBackgroundColor(defaultResponseColor)
-        view?.findViewById<View>(R.id.screenBackgroundColorPicker)?.setBackgroundColor(defaultScreenBgColor)
+        applyColorPickerBoxColor(headerColorPicker, defaultHeaderColor)
+        applyColorPickerBoxColor(bodyColorPicker, defaultBodyColor)
+        applyColorPickerBoxColor(buttonTextColorPicker, defaultButtonTextColor)
+        applyColorPickerBoxColor(buttonBackgroundColorPicker, defaultButtonBgColor)
+        applyColorPickerBoxColor(itemColorPicker, defaultItemColor)
+        applyColorPickerBoxColor(responseColorPicker, defaultResponseColor)
+        applyColorPickerBoxColor(screenBackgroundColorPicker, defaultScreenBgColor)
 
         previewHeaderTextView.setTextColor(defaultHeaderColor)
         previewBodyTextView.setTextColor(defaultBodyColor)
