@@ -1,3 +1,4 @@
+// Filename: BranchScaleFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
@@ -63,7 +64,6 @@ class BranchScaleFragment : Fragment() {
         val cleanItem = parseAndPlayAudioIfAny(item ?: "Default Item", mediaFolderUri)
         checkAndPlayMp4(item ?: "Default Item", mediaFolderUri)
 
-        // Set text content + color + size
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
@@ -75,6 +75,11 @@ class BranchScaleFragment : Fragment() {
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
+
+        // Retrieve user-selected padding (dp), convert to px
+        val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
+        val scale = resources.displayMetrics.density
+        val userPaddingPx = (userPaddingDp * scale + 0.5f).toInt()
 
         // Create response buttons
         branchResponses.forEachIndexed { index, (displayText, label) ->
@@ -89,7 +94,9 @@ class BranchScaleFragment : Fragment() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                )
+                ).apply {
+                    setMargins(userPaddingPx, userPaddingPx, userPaddingPx, userPaddingPx)
+                }
                 setOnClickListener {
                     selectedResponse.value = displayText
                     logger.logScaleFragment(

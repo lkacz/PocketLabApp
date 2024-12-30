@@ -1,3 +1,4 @@
+// Filename: ScaleFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
@@ -68,6 +69,11 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
+        // Retrieve user-selected padding (dp), convert to px
+        val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
+        val scale = resources.displayMetrics.density
+        val userPaddingPx = (userPaddingDp * scale + 0.5f).toInt()
+
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, mediaFolderUri)
             checkAndPlayMp4(response, mediaFolderUri)
@@ -80,7 +86,9 @@ class ScaleFragment : Fragment() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                )
+                ).apply {
+                    setMargins(userPaddingPx, userPaddingPx, userPaddingPx, userPaddingPx)
+                }
                 setOnClickListener {
                     selectedResponse.value = response
                     logger.logScaleFragment(

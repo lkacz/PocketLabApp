@@ -259,6 +259,39 @@
             android:layout_height="50dp"
             android:layout_marginTop="8dp" />
 
+        <!-- CAN YOU ADD SOME GRAPHICAL SPACER HERE?  -->
+
+        <!-- NEW: Response Padding Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Response Padding:"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderResponsePadding"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100" />
+
+            <TextView
+                android:id="@+id/tvResponsePaddingValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="0" />
+        </LinearLayout>
+
+        <!-- CAN YOU ADD SOME GRAPHICAL SPACER HERE?  -->
+
         <!-- TIMER SOUND -->
         <TextView
             android:layout_width="wrap_content"
@@ -301,6 +334,12 @@
                 android:layout_marginStart="16dp"
                 android:text="Cancel" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
 
     </LinearLayout>
 </ScrollView>
