@@ -57,26 +57,21 @@ class ScaleFragment : Fragment() {
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
         videoView = view.findViewById(R.id.videoView2)
 
-        // Create a WebView and position it between the introduction text and the item
+        // Create a WebView and position it below the VideoView and above the item text
         webView = WebView(requireContext()).apply {
             id = View.generateViewId()
         }
-
-        // Because we use a RelativeLayout, we set LayoutParams to place the WebView
-        // below introductionTextView and above itemTextView.
         val layout = view as RelativeLayout
         var layoutParams = RelativeLayout.LayoutParams(
             RelativeLayout.LayoutParams.MATCH_PARENT,
             RelativeLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.addRule(RelativeLayout.BELOW, R.id.introductionTextView)
-        layoutParams.addRule(RelativeLayout.ABOVE, R.id.itemTextView)
-
-        // Add top/bottom margins
-        val density = resources.displayMetrics.density
-        val marginPx = (16 * density + 0.5f).toInt()
-        layoutParams.setMargins(0, marginPx, 0, marginPx)
-
+        ).apply {
+            addRule(RelativeLayout.BELOW, R.id.videoView2)
+            addRule(RelativeLayout.ABOVE, R.id.itemTextView)
+            val density = resources.displayMetrics.density
+            val marginPx = (16 * density + 0.5f).toInt()
+            setMargins(0, marginPx, 0, marginPx)
+        }
         webView.layoutParams = layoutParams
         layout.addView(webView)
         setupWebView()

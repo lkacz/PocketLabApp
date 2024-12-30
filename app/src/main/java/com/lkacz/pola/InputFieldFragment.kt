@@ -1,11 +1,16 @@
+// Filename: InputFieldFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.*
 import androidx.core.widget.addTextChangedListener
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 class InputFieldFragment : Fragment() {
@@ -18,6 +23,7 @@ class InputFieldFragment : Fragment() {
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
+    private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,10 +36,14 @@ class InputFieldFragment : Fragment() {
         logger = Logger.getInstance(requireContext())
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_input_field, container, false)
 
-        // Screen BG
+        // Screen background color
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
@@ -41,28 +51,53 @@ class InputFieldFragment : Fragment() {
         val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
         videoView = view.findViewById(R.id.videoView2)
 
+        // Insert a WebView right after the videoView but before input fields
+        val parentLayout = view as RelativeLayout
+        webView = WebView(requireContext()).apply {
+            id = View.generateViewId()
+        }
+
+        val density = resources.displayMetrics.density
+        val marginPx = (16 * density + 0.5f).toInt()
+
+        val webParams = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            addRule(RelativeLayout.BELOW, R.id.videoView2)
+            setMargins(0, marginPx, 0, marginPx)
+        }
+        // Insert the webView before the containerLayout
+        parentLayout.addView(webView, webParams)
+        setupWebView()
+
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
+        // Parse and handle HTML references, audio, and video in heading/body
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), mediaFolderUri)
+        val refinedHeading = checkAndLoadHtml(cleanHeading, mediaFolderUri)
         checkAndPlayMp4(heading.orEmpty(), mediaFolderUri)
 
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
 
-        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeading)
+        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeading)
         headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // Handle input fields and their hints
         inputFields?.forEach { field ->
             val cleanHint = parseAndPlayAudioIfAny(field, mediaFolderUri)
+            val refinedHint = checkAndLoadHtml(cleanHint, mediaFolderUri)
             checkAndPlayMp4(field, mediaFolderUri)
 
             val editText = EditText(context).apply {
-                hint = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHint)
+                hint = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHint)
                 textSize = FontSizeManager.getBodySize(requireContext())
                 setTextColor(ColorManager.getBodyTextColor(requireContext()))
                 layoutParams = LinearLayout.LayoutParams(
@@ -77,11 +112,13 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
+        // Add "Continue" button at the bottom
         val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), mediaFolderUri)
+        val refinedButtonText = checkAndLoadHtml(cleanButtonText, mediaFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), mediaFolderUri)
 
         val nextButton = Button(context).apply {
-            text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanButtonText)
+            text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedButtonText)
             textSize = FontSizeManager.getButtonSize(requireContext())
             setTextColor(ColorManager.getButtonTextColor(requireContext()))
             setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -110,6 +147,41 @@ class InputFieldFragment : Fragment() {
         if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
+    }
+
+    /**
+     * Checks for <filename.html> references in [text] and loads them into the WebView if found.
+     * Returns the [text] with the snippet placeholder removed.
+     */
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -137,12 +209,10 @@ class InputFieldFragment : Fragment() {
 
     private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
         if (mediaFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-            ?: return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-        val videoUri = videoFile.uri
-        videoView.setVideoURI(videoUri)
+        videoView.setVideoURI(videoFile.uri)
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
