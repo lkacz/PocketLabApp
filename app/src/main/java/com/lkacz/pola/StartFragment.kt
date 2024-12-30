@@ -1,3 +1,4 @@
+// Filename: StartFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -14,13 +15,16 @@ import androidx.fragment.app.Fragment
 
 class StartFragment : Fragment() {
 
+    interface OnProtocolSelectedListener {
+        fun onProtocolSelected(protocolUri: Uri?)
+    }
+
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
     private var protocolUri: Uri? = null
     private lateinit var sharedPref: SharedPreferences
     private val fileUriUtils = FileUriUtils()
     private val protocolReader by lazy { ProtocolReader() }
-    private lateinit var themeManager: ThemeManager
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
     private lateinit var mediaFolderManager: MediaFolderManager
 
@@ -39,66 +43,76 @@ class StartFragment : Fragment() {
             }
         }
 
-    interface OnProtocolSelectedListener {
-        fun onProtocolSelected(protocolUri: Uri?)
-    }
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         listener = context as OnProtocolSelectedListener
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
-        themeManager = ThemeManager(context)
         mediaFolderManager = MediaFolderManager(context)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
 
         val fileName = protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
         updateProtocolNameDisplay(fileName)
+
         setupButtons(view)
         return view
     }
 
-    override fun onResume() {
-        super.onResume()
-        themeManager.applyTheme()
-    }
-
     private fun setupButtons(view: View) {
-        view.findViewById<Button>(R.id.btnStart).setOnClickListener { showStartStudyConfirmation() }
+        // Show Protocol Content
+        view.findViewById<Button>(R.id.btnShowProtocolContent).setOnClickListener {
+            showProtocolContentDialog()
+        }
+
+        // Start the study
+        view.findViewById<Button>(R.id.btnStart).setOnClickListener {
+            showStartStudyConfirmation()
+        }
+
+        // Select protocol file
         view.findViewById<Button>(R.id.btnSelectFile).setOnClickListener {
             showChangeProtocolConfirmation {
                 filePicker.launch(arrayOf("text/plain"))
             }
         }
+
+        // Use Demo
         view.findViewById<Button>(R.id.btnUseDemo).setOnClickListener {
             handleProtocolChange("demo", "Demo Protocol")
         }
+
+        // Use Tutorial
         view.findViewById<Button>(R.id.btnUseTutorial).setOnClickListener {
             handleProtocolChange("tutorial", "Tutorial Protocol")
         }
-        view.findViewById<Button>(R.id.btnToggleTheme).setOnClickListener {
-            themeManager.toggleTheme()
-            activity?.recreate()
-        }
-        view.findViewById<Button>(R.id.btnShowProtocolContent).setOnClickListener {
-            showProtocolContentDialog()
-        }
-        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
-            showAboutContentDialog()
-        }
+
+        // Select Media Folder (moved below tutorial)
         view.findViewById<Button>(R.id.btnSelectMediaFolder).setOnClickListener {
             showChangeMediaFolderConfirmation {
                 mediaFolderManager.pickMediaFolder(folderPicker)
             }
         }
 
-        // Changed to open the new AppearanceCustomizationDialog
-        view.findViewById<Button>(R.id.btnCustomizeApp).setOnClickListener {
+        // Customization > Colors and sizes
+        view.findViewById<Button>(R.id.btnColorsAndSizes).setOnClickListener {
             AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
+        }
+
+        // Customization > Alarm
+        view.findViewById<Button>(R.id.btnAlarm).setOnClickListener {
+            AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
+        }
+
+        // Show About (moved to the bottom)
+        view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
+            showAboutContentDialog()
         }
     }
 

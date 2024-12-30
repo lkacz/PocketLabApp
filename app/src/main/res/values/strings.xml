@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Pocket Lab App</string>
     <string name="app_description">Click to open a browser.</string>
-    <string name="app_version">Ver 0.1</string>
+    <string name="app_version">Ver 0.2</string>
     <string name="select_protocol_file">Select Protocol File</string>
     <string name="select_file_button">Select your protocol</string>
     <string name="use_demo_button">Load DEMO protocol</string>
