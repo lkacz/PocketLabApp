@@ -1,13 +1,20 @@
+// Filename: TimerFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.TextView
 import android.widget.VideoView
+import androidx.documentfile.provider.DocumentFile
 
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
@@ -21,6 +28,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
+    private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +47,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
 
         // BG
@@ -49,27 +61,40 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
+
         videoView = view.findViewById(R.id.videoView2)
+        webView = WebView(requireContext())
+        // Insert WebView into layout:
+        // For demonstration, add it below the Body TextView in code.
+        // You may also place it directly in fragment_timer.xml if preferred.
+        (view as? ViewGroup)?.addView(webView)
+
+        setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
+        // Clean + parse header, body, next button text
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri) // loads <filename.html> if found
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
         val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+        val refinedNextText = checkAndLoadHtml(cleanNextButton, mediaFolderUri)
 
+        // Videos
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanNextButton)
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -78,6 +103,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
         timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // Countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -85,6 +111,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 val secondsLeft = (millisUntilFinished % 60000) / 1000
                 timerTextView.text = String.format("Time left: %02d:%02d", minutesLeft, secondsLeft)
             }
+
             override fun onFinish() {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
@@ -112,17 +139,55 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        timer?.cancel()
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
         if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
+        webView.destroy()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         alarmHelper.release()
         logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
+    }
+
+    /**
+     * Look for <filename.html> placeholders in [text] and load them into the WebView.
+     * Removes the <...> snippet from the returned text so it doesn't appear in normal display.
+     */
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+
+        val matchedFull = match.value // e.g. <pola_snake.html>
+        val fileName = match.groupValues[1].trim() // e.g. pola_snake.html
+
+        // Attempt to load the HTML into the WebView
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        // Return text with the <filename.html> removed
+        return text.replace(matchedFull, "")
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -150,8 +215,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
         if (mediaFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-            ?: return
+        val parentFolder =
+            androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+                ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         val videoUri = videoFile.uri

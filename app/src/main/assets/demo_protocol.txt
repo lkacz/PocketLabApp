@@ -9,9 +9,9 @@
 
 // Timer for 30 Minutes Walk With Friend
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.;SET OFF ALARM AND CONTINUE;3
+TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.<pola_snake.html>;SET OFF ALARM AND CONTINUE;3
 
-CUSTOM_HTML;custom.html
+CUSTOM_HTML;pola_snake.html
 
 LABEL;START
 
