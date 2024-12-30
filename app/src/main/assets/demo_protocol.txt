@@ -11,6 +11,8 @@
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.;SET OFF ALARM AND CONTINUE;3
 
+CUSTOM_HTML;custom.html
+
 LABEL;START
 
 // Emotions Scale After Walking With a Friend
