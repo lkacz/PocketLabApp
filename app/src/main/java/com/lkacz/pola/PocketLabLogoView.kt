@@ -1,83 +1,102 @@
+// Filename: PocketLabLogoView.kt
 package com.lkacz.pola
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
+import android.animation.*
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.*
 import androidx.core.content.ContextCompat
 import kotlin.math.cos
 import kotlin.math.sin
 
-/*
-Changes Made:
-1. Moved the text "Pocket Lab App" to the background so it does not rotate or move with the phone.
-2. Reduced phone width to 20% of the screen (instead of 35%) to make the phone narrower.
-3. Made the pocket narrower (25% of the screen width) and centered it at the bottom.
-4. Preserved bounce-back logic for the phone.
-5. Kept levitation/floating animations for the phone, while the text remains stationary in the background.
-Reasoning:
-- The user wants the text fixed in the background, the phone narrower, and the pocket less wide, with the phone still draggable and bouncing back.
-- Retained all original functionalities (dragging, levitation, bounce) except for the text which is now drawn behind the phone and no longer moves/rotates.
-*/
-
 class PocketLabLogoView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    // Paint for the pocket
-    private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.rgb(20, 20, 20)
-        style = Paint.Style.FILL
-    }
+    private val phoneDrawable = ContextCompat
+        .getDrawable(context, R.drawable.ic_smartphone)
+        ?.mutate()
 
-    // Smartphone icon
-    private val phoneDrawable = ContextCompat.getDrawable(context, R.drawable.ic_smartphone)?.mutate()
-
-    // Paint for the background text that remains stationary
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.LTGRAY
-        textSize = 80f
+        textSize = 100f
         typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
-    // Pocket rect (now narrower and centered)
-    private val pocketRect = RectF()
-
-    // Phone rect for local coordinates
+    // The phone’s bounding rect (in local phone coordinates)
     private val phoneRect = RectF()
 
-    // Phone center coords for dragging/floating
+    // Screen rect for shimmering effect
+    private val screenRect = RectF()
+
+    // Phone dimension ratios
+    private val phoneWidthRatio = 0.12f
+    private val phoneHeightRatio = 0.20f
+
+    // Positions
     private var phoneCenterX = 0f
     private var phoneCenterY = 0f
+    private var initialPhoneCenterX = 0f
     private var initialPhoneCenterY = 0f
 
     private var isDragging = false
+    private var didUserMove = false
+    private var touchOffsetX = 0f
     private var touchOffsetY = 0f
 
-    // Phone size
     private var phoneWidth = 0f
     private var phoneHeight = 0f
 
-    // Slight rotation offset for phone
-    private var baseRotation = -10f
+    // Rotation states
+    private val baseRotation = -4f
     private var currentRotation = baseRotation
 
-    // Bounce threshold
-    private val bounceThreshold = 50f
+    // How far we let the phone float about
+    private val floatRangeX = 6f
+    private val floatRangeY = 10f
+
+    // How much rotation from side to side
+    private val rotationRange = 2f
 
     // Levitation animators
+    private var translateXAnimator: ValueAnimator? = null
+    private var translateYAnimator: ValueAnimator? = null
+    private var rotationAnimator: ValueAnimator? = null
     private var levitateAnimatorSet: AnimatorSet? = null
 
-    init {
-        phoneDrawable?.setTint(Color.DKGRAY)
-        phoneDrawable?.setTintMode(PorterDuff.Mode.SRC_IN)
+    // Shimmer offset used to scroll the gradient
+    private var shimmerOffset = 0f
+    private val shimmerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private var shimmerAnimator: ValueAnimator? = null
+
+    // Stripe paint
+    private val stripePaintA = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(120, 120, 120)
+        style = Paint.Style.FILL
+    }
+    private val stripePaintB = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.rgb(200, 200, 200)
+        style = Paint.Style.FILL
+    }
+    private val stripePaintC = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.FILL
     }
 
+    private var stripeA_Y = 0f
+    private var stripeB_Y = 0f
+    private var stripeThickness = 0f
+
+    //----------------------------------------------------------------------------------------------
+    //  Lifecycle
+    //----------------------------------------------------------------------------------------------
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val desiredSize = 600
@@ -89,44 +108,51 @@ class PocketLabLogoView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        // Pocket is 25% of screen width, centered at bottom
-        val pocketWidth = w * 0.25f
-        val pocketHeight = h * 0.10f
-        val pocketLeft = (w - pocketWidth) / 2f
-        val pocketTop = h - pocketHeight
-        pocketRect.set(pocketLeft, pocketTop, pocketLeft + pocketWidth, h.toFloat())
+        phoneWidth = w * phoneWidthRatio
+        phoneHeight = w * phoneHeightRatio
 
-        // Phone narrower: 20% of screen width
-        phoneWidth = w * 0.20f
-        phoneHeight = w * 0.20f
-
-        // Center phone above pocket
+        // Place the phone near the upper-middle portion
         phoneCenterX = w * 0.5f
-        phoneCenterY = pocketTop - phoneHeight * 0.5f + 20f
+        phoneCenterY = h * 0.4f
+
+        // Remember these as "rest" positions
+        initialPhoneCenterX = phoneCenterX
         initialPhoneCenterY = phoneCenterY
 
         currentRotation = baseRotation
+
         startLevitateAnimation()
+        startShimmerAnimation()
+
+        stripeThickness = h * 0.05f
+        stripeA_Y = h * 0.57f
+        stripeB_Y = h * 0.60f
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 1) Draw the stationary background text near the center or top
-        val textY = height * 0.4f
+        // Title text
+        val textY = height * 0.2f
         canvas.drawText("Pocket Lab App", width * 0.5f, textY, textPaint)
 
-        // 2) Draw pocket
-        val pocketRadius = (pocketRect.height()) / 2f
-        canvas.drawRoundRect(pocketRect, pocketRadius, pocketRadius, pocketPaint)
+        // Stripe A
+        canvas.drawRect(0f, stripeA_Y, width.toFloat(), stripeA_Y + stripeThickness, stripePaintA)
 
-        // 3) Draw phone with rotation around center
+        // Clip so the phone + screen are behind next stripes
         canvas.save()
+        canvas.clipRect(0f, 0f, width.toFloat(), stripeB_Y)
+
+        // Translate + rotate phone
         canvas.translate(phoneCenterX, phoneCenterY)
         canvas.rotate(currentRotation)
 
-        phoneRect.set(-phoneWidth / 2f, -phoneHeight / 2f, phoneWidth / 2f, phoneHeight / 2f)
-
+        phoneRect.set(
+            -phoneWidth / 2f,
+            -phoneHeight / 2f,
+            phoneWidth / 2f,
+            phoneHeight / 2f
+        )
         phoneDrawable?.setBounds(
             phoneRect.left.toInt(),
             phoneRect.top.toInt(),
@@ -135,95 +161,223 @@ class PocketLabLogoView @JvmOverloads constructor(
         )
         phoneDrawable?.draw(canvas)
 
+        // Make the shimmering screen a bit smaller
+        screenRect.set(phoneRect)
+        val border = phoneWidth * 0.08f
+        screenRect.inset(border, border)
+        drawShimmeringScreen(canvas, screenRect)
+
         canvas.restore()
+
+        // Stripe B
+        canvas.drawRect(0f, stripeB_Y, width.toFloat(), stripeB_Y + stripeThickness, stripePaintB)
+
+        // Stripe C
+        val stripeC_Top = stripeB_Y + stripeThickness
+        canvas.drawRect(0f, stripeC_Top, width.toFloat(), height.toFloat(), stripePaintC)
     }
 
+    private fun drawShimmeringScreen(canvas: Canvas, screenBounds: RectF) {
+        val gradientWidth = screenBounds.width() * 2
+        val leftX = screenBounds.left - gradientWidth + shimmerOffset * gradientWidth * 2
+        val rightX = leftX + gradientWidth
+
+        val gradientColors = intArrayOf(
+            Color.parseColor("#222222"),
+            Color.parseColor("#222222"),
+            Color.parseColor("#222222"),
+            Color.parseColor("#333333")
+        )
+        val linearGradient = LinearGradient(
+            leftX, screenBounds.top, rightX, screenBounds.bottom,
+            gradientColors, null, Shader.TileMode.CLAMP
+        )
+        shimmerPaint.shader = linearGradient
+        canvas.drawRoundRect(screenBounds, 8f, 8f, shimmerPaint)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //  Touch / Drag
+    //----------------------------------------------------------------------------------------------
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 if (hitTestPhone(event.x, event.y)) {
                     isDragging = true
-                    stopLevitateAnimation()
+                    didUserMove = false
+
+                    // Pause anims so we can resume from same fraction
+                    pauseLevitateAnimation()
+                    pauseShimmerAnimation()
+
+                    // Track offsets for both X and Y
+                    touchOffsetX = event.x - phoneCenterX
                     touchOffsetY = event.y - phoneCenterY
                     parent.requestDisallowInterceptTouchEvent(true)
                 }
             }
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
-                    phoneCenterY = event.y - touchOffsetY
+                    val newX = event.x - touchOffsetX
+                    val newY = event.y - touchOffsetY
+
+                    if (newX != phoneCenterX || newY != phoneCenterY) {
+                        didUserMove = true
+                    }
+                    phoneCenterX = newX
+                    phoneCenterY = newY
                     invalidate()
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
-                    // Check if phone is lowered near the pocket
-                    val phoneBottom = phoneCenterY + phoneHeight / 2f
-                    if (phoneBottom > (pocketRect.top - bounceThreshold)) {
-                        bouncePhone()
+                    if (didUserMove) {
+                        // Animate X and Y back to initial with a bounce/overshoot effect
+                        animatePhoneBackToInitial()
                     } else {
-                        settlePhone()
+                        // If user just tapped, resume from where we left off
+                        resumeLevitateAnimation()
+                        resumeShimmerAnimation()
                     }
-                    startLevitateAnimation()
                 }
             }
         }
         return true
     }
 
-    private fun bouncePhone() {
-        // Quick bounce up then settle
-        val bounceUp = ObjectAnimator.ofFloat(
-            this, "phoneCenterY", phoneCenterY, initialPhoneCenterY - 20f
-        ).apply { duration = 300 }
-
-        val settleDown = ObjectAnimator.ofFloat(
-            this, "phoneCenterY", initialPhoneCenterY - 20f, initialPhoneCenterY
-        ).apply { duration = 200 }
-
-        AnimatorSet().apply {
-            playSequentially(bounceUp, settleDown)
-            start()
+    //----------------------------------------------------------------------------------------------
+    //  Bouncing back (no dynamic library) with standard ValueAnimator
+    //----------------------------------------------------------------------------------------------
+    /**
+     * Animate both X and Y to the “idle” positions using an Interpolator
+     * that provides a bounce-like or overshoot effect.
+     */
+    private fun animatePhoneBackToInitial() {
+        val animX = ValueAnimator.ofFloat(phoneCenterX, initialPhoneCenterX).apply {
+            duration = 800
+            interpolator = BounceInterpolator()
+            // Or: interpolator = OvershootInterpolator(1.2f)
+            addUpdateListener { animator ->
+                phoneCenterX = animator.animatedValue as Float
+                invalidate()
+            }
         }
+        val animY = ValueAnimator.ofFloat(phoneCenterY, initialPhoneCenterY).apply {
+            duration = 800
+            interpolator = BounceInterpolator()
+            // Or: interpolator = OvershootInterpolator(1.2f)
+            addUpdateListener { animator ->
+                phoneCenterY = animator.animatedValue as Float
+                invalidate()
+            }
+        }
+
+        // Run them in parallel
+        val bounceSet = AnimatorSet()
+        bounceSet.playTogether(animX, animY)
+        bounceSet.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                // Once done bouncing, re-sync the floating cycle so no jump
+                smoothlyResumeLevitate()
+                resumeShimmerAnimation()
+            }
+        })
+        bounceSet.start()
     }
 
-    private fun settlePhone() {
-        ObjectAnimator.ofFloat(
-            this, "phoneCenterY", phoneCenterY, initialPhoneCenterY
-        ).apply {
-            duration = 200
-            start()
+    /**
+     * Sync phone’s (X, Y) *and* rotation with the levitation cycle so there's no jump.
+     */
+    private fun smoothlyResumeLevitate() {
+        if (levitateAnimatorSet == null) {
+            startLevitateAnimation()
+            return
         }
+
+        val tx = translateXAnimator
+        val ty = translateYAnimator
+        val rot = rotationAnimator
+        if (tx == null || ty == null || rot == null ||
+            !tx.isRunning || !ty.isRunning || !rot.isRunning) {
+            // If something is not running, just (re)start
+            startLevitateAnimation()
+            return
+        }
+
+        // 1) Match X fraction
+        val xDiff = phoneCenterX - initialPhoneCenterX
+        val fracX = ((xDiff + floatRangeX / 2f) / floatRangeX).coerceIn(0f, 1f)
+        tx.currentPlayTime = (fracX * tx.duration).toLong()
+        updatePhoneXFromFraction(fracX)
+
+        // 2) Match Y fraction
+        val yDiff = phoneCenterY - initialPhoneCenterY
+        val fracY = ((yDiff + floatRangeY / 2f) / floatRangeY).coerceIn(0f, 1f)
+        ty.currentPlayTime = (fracY * ty.duration).toLong()
+        updatePhoneYFromFraction(fracY)
+
+        // 3) Match rotation fraction
+        val rotDiff = currentRotation - baseRotation
+        val fracRot = ((rotDiff + rotationRange) / (2f * rotationRange)).coerceIn(0f, 1f)
+        rot.currentPlayTime = (fracRot * rot.duration).toLong()
+        updateRotationFromFraction(fracRot)
+
+        // Resume from the newly synced fraction
+        resumeLevitateAnimation()
     }
 
-    // Reflection use for bounce anim
-    @Suppress("unused")
-    fun setPhoneCenterY(value: Float) {
-        phoneCenterY = value
+    private fun updatePhoneXFromFraction(frac: Float) {
+        val offset = floatRangeX * frac - (floatRangeX / 2f)
+        phoneCenterX = initialPhoneCenterX + offset
+        invalidate()
+    }
+    private fun updatePhoneYFromFraction(frac: Float) {
+        val offset = floatRangeY * frac - (floatRangeY / 2f)
+        phoneCenterY = initialPhoneCenterY + offset
+        invalidate()
+    }
+    private fun updateRotationFromFraction(frac: Float) {
+        val rangeVal = -rotationRange + (2f * rotationRange * frac)
+        currentRotation = baseRotation + rangeVal
         invalidate()
     }
 
-    fun getPhoneCenterY(): Float = phoneCenterY
-
+    //----------------------------------------------------------------------------------------------
+    //  Levitation Animations (Idle float + rotation)
+    //----------------------------------------------------------------------------------------------
     private fun startLevitateAnimation() {
         if (levitateAnimatorSet != null) return
 
-        val floatRange = 10f
-        val rotationRange = 2f
-
-        val levitateTranslate = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 2000
+        // phoneCenterX floats left-right
+        translateXAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 3000
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.REVERSE
             addUpdateListener { anim ->
                 val fraction = anim.animatedFraction
-                val offset = floatRange * fraction - (floatRange / 2)
+                val offset = floatRangeX * fraction - (floatRangeX / 2f)
+                phoneCenterX = initialPhoneCenterX + offset
+                invalidate()
+            }
+        }
+
+        // phoneCenterY floats up-down
+        translateYAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 3000
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.REVERSE
+            addUpdateListener { anim ->
+                val fraction = anim.animatedFraction
+                val offset = floatRangeY * fraction - (floatRangeY / 2f)
                 phoneCenterY = initialPhoneCenterY + offset
                 invalidate()
             }
         }
-        val levitateRotation = ValueAnimator.ofFloat(-rotationRange, rotationRange).apply {
-            duration = 2000
+
+        // Gentle rotation
+        rotationAnimator = ValueAnimator.ofFloat(-rotationRange, rotationRange).apply {
+            duration = 3000
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.REVERSE
             addUpdateListener { anim ->
@@ -233,9 +387,17 @@ class PocketLabLogoView @JvmOverloads constructor(
         }
 
         levitateAnimatorSet = AnimatorSet().apply {
-            playTogether(levitateTranslate, levitateRotation)
+            playTogether(translateXAnimator, translateYAnimator, rotationAnimator)
             start()
         }
+    }
+
+    private fun pauseLevitateAnimation() {
+        levitateAnimatorSet?.pause()
+    }
+
+    private fun resumeLevitateAnimation() {
+        levitateAnimatorSet?.resume()
     }
 
     private fun stopLevitateAnimation() {
@@ -243,27 +405,53 @@ class PocketLabLogoView @JvmOverloads constructor(
         levitateAnimatorSet = null
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (!isDragging) {
-            startLevitateAnimation()
+    //----------------------------------------------------------------------------------------------
+    //  Shimmer Animations
+    //----------------------------------------------------------------------------------------------
+    private fun startShimmerAnimation() {
+        if (shimmerAnimator == null) {
+            shimmerAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 100000
+                repeatCount = ValueAnimator.INFINITE
+                repeatMode = ValueAnimator.RESTART
+                interpolator = LinearInterpolator()
+                addUpdateListener {
+                    shimmerOffset = it.animatedFraction
+                    invalidate()
+                }
+            }
+        }
+        if (shimmerAnimator!!.isPaused) {
+            shimmerAnimator!!.resume()
+        } else if (!shimmerAnimator!!.isRunning) {
+            shimmerAnimator!!.start()
         }
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        stopLevitateAnimation()
+    private fun pauseShimmerAnimation() {
+        shimmerAnimator?.pause()
     }
 
-    /**
-     * Checks if the user tapped on the phone, accounting for current rotation.
-     */
+    private fun resumeShimmerAnimation() {
+        shimmerAnimator?.resume()
+    }
+
+    private fun stopShimmerAnimation() {
+        shimmerAnimator?.cancel()
+        shimmerAnimator = null
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //  Utility
+    //----------------------------------------------------------------------------------------------
     private fun hitTestPhone(touchX: Float, touchY: Float): Boolean {
+        // Convert the screen coords to phone coords, factoring in rotation.
         val relX = touchX - phoneCenterX
         val relY = touchY - phoneCenterY
         val rad = Math.toRadians(currentRotation.toDouble())
         val cosA = cos(-rad)
         val sinA = sin(-rad)
+
         val rotatedX = (relX * cosA - relY * sinA).toFloat()
         val rotatedY = (relX * sinA + relY * cosA).toFloat()
         return phoneRect.contains(rotatedX, rotatedY)
