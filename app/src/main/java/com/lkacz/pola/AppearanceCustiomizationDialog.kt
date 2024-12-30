@@ -442,7 +442,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultButtonTextColor = Color.WHITE
         val defaultButtonBgColor = Color.parseColor("#008577")    // Teal
         val defaultItemColor = Color.parseColor("#008577")        // Teal
-        val defaultResponseColor = Color.parseColor("#C51162")    // Pinkish
+        val defaultResponseColor = Color.WHITE
         val defaultScreenBgColor = Color.parseColor("#F5F5F5")    // Light Gray
 
         // Font sizes (coerce to 8..100 to be safe)
