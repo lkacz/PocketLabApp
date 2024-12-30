@@ -5,10 +5,14 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
@@ -23,6 +27,7 @@ class BranchScaleFragment : Fragment() {
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
+    private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +46,10 @@ class BranchScaleFragment : Fragment() {
         logger = Logger.getInstance(requireContext())
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
 
         // Apply screen background color
@@ -53,26 +61,39 @@ class BranchScaleFragment : Fragment() {
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
         videoView = view.findViewById(R.id.videoView2)
 
+        // Insert a WebView for the HTML snippet
+        val rootLayout = view as ViewGroup
+        webView = WebView(requireContext())
+        var layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        rootLayout.addView(webView, rootLayout.indexOfChild(buttonContainer))
+        setupWebView()
+
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
         val cleanHeader = parseAndPlayAudioIfAny(header ?: "Default Header", mediaFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
         checkAndPlayMp4(header ?: "Default Header", mediaFolderUri)
 
         val cleanBody = parseAndPlayAudioIfAny(body ?: "Default Body", mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
         checkAndPlayMp4(body ?: "Default Body", mediaFolderUri)
 
         val cleanItem = parseAndPlayAudioIfAny(item ?: "Default Item", mediaFolderUri)
+        val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
         checkAndPlayMp4(item ?: "Default Item", mediaFolderUri)
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanItem)
+        itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
@@ -84,10 +105,11 @@ class BranchScaleFragment : Fragment() {
         // Create response buttons
         branchResponses.forEachIndexed { index, (displayText, label) ->
             val cleanResponse = parseAndPlayAudioIfAny(displayText, mediaFolderUri)
+            val refinedResponse = checkAndLoadHtml(cleanResponse, mediaFolderUri)
             checkAndPlayMp4(displayText, mediaFolderUri)
 
             val button = Button(context).apply {
-                text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, cleanResponse)
+                text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedResponse)
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -126,6 +148,9 @@ class BranchScaleFragment : Fragment() {
         if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -135,6 +160,28 @@ class BranchScaleFragment : Fragment() {
             mediaFolderUri = mediaFolderUri,
             mediaPlayers = mediaPlayers
         )
+    }
+
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
     }
 
     private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
@@ -153,16 +200,20 @@ class BranchScaleFragment : Fragment() {
 
     private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
         if (mediaFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-            ?: return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     companion object {

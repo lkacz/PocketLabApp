@@ -1,10 +1,15 @@
+// Filename: TapInstructionFragment.kt
 package com.lkacz.pola
 
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 
@@ -17,6 +22,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     private var nextButton: Button? = null
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
+    private lateinit var webView: WebView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,42 +35,62 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         logger.logInstructionFragment(header ?: "Default Header", body ?: "Default Body")
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_instruction, container, false)
 
         // BG color
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
-
         videoView = view.findViewById(R.id.videoView2)
+
+        // Insert a WebView before the nextButton, similar to TimerFragment
+        val containerLayout = view as LinearLayout
+        val nextButtonView = containerLayout.findViewById<Button>(R.id.nextButton)
+        webView = WebView(requireContext())
+        val layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        containerLayout.addView(webView, containerLayout.indexOfChild(nextButtonView))
+        setupWebView()
+
+        val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
+        val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
+        nextButton = view.findViewById(R.id.nextButton)
+        nextButton?.visibility = View.INVISIBLE
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
+
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+
         val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+        val refinedNextButton = checkAndLoadHtml(cleanNextButton, mediaFolderUri)
+
+        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
 
-        // Reuse the setup helper from InstructionUiHelper
-        nextButton = InstructionUiHelper.setupInstructionViews(
-            view,
-            cleanHeader,
-            cleanBody,
-            cleanNextButton
-        ) {
-            (activity as MainActivity).loadNextFragment()
-        }
-        // Override color after the helper sets text
-        val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
+        headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
+        bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedNextButton)
+        nextButton?.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton?.setTextColor(ColorManager.getButtonTextColor(requireContext()))
         nextButton?.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
-        nextButton?.visibility = View.INVISIBLE
+        nextButton?.setOnClickListener {
+            (activity as MainActivity).loadNextFragment()
+        }
 
         return view
     }
@@ -81,6 +107,38 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
+    }
+
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+            ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -112,8 +170,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
             ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-        val videoUri = videoFile.uri
-        videoView.setVideoURI(videoUri)
+        videoView.setVideoURI(videoFile.uri)
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
