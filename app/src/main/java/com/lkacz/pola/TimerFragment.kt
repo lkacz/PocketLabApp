@@ -12,6 +12,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
@@ -53,35 +54,42 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
-
-        // BG
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
-
         videoView = view.findViewById(R.id.videoView2)
-        webView = WebView(requireContext())
-        // Insert WebView into layout:
-        // For demonstration, add it below the Body TextView in code.
-        // You may also place it directly in fragment_timer.xml if preferred.
-        (view as? ViewGroup)?.addView(webView)
 
+        // Insert the WebView before the 'nextButton'
+        val containerLayout = view as LinearLayout
+        webView = WebView(requireContext())
+
+        // Add 32dp top and bottom margin for the WebView
+        val layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        val scale = resources.displayMetrics.density
+        val marginPx = (32 * scale + 0.5f).toInt()
+        layoutParams.setMargins(0, marginPx, 0, marginPx)
+        webView.layoutParams = layoutParams
+
+        containerLayout.addView(webView, containerLayout.indexOfChild(nextButton))
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Clean + parse header, body, next button text
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
-        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri) // loads <filename.html> if found
+        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
+
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+
         val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
         val refinedNextText = checkAndLoadHtml(cleanNextButton, mediaFolderUri)
 
-        // Videos
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
@@ -103,7 +111,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
         timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -154,20 +161,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
     }
 
-    /**
-     * Look for <filename.html> placeholders in [text] and load them into the WebView.
-     * Removes the <...> snippet from the returned text so it doesn't appear in normal display.
-     */
     private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
         if (text.isBlank() || mediaFolderUri == null) return text
-
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
 
-        val matchedFull = match.value // e.g. <pola_snake.html>
-        val fileName = match.groupValues[1].trim() // e.g. pola_snake.html
-
-        // Attempt to load the HTML into the WebView
         val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
@@ -180,7 +180,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 e.printStackTrace()
             }
         }
-        // Return text with the <filename.html> removed
         return text.replace(matchedFull, "")
     }
 
@@ -215,9 +214,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
         if (mediaFolderUri == null) return
-        val parentFolder =
-            androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-                ?: return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         val videoUri = videoFile.uri
