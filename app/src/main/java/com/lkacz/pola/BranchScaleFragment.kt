@@ -64,10 +64,17 @@ class BranchScaleFragment : Fragment() {
         // Insert a WebView for the HTML snippet
         val rootLayout = view as ViewGroup
         webView = WebView(requireContext())
+
+        // Add 16 dp top and bottom margin for the WebView
+        val scale = resources.displayMetrics.density
+        val marginPx = (16 * scale + 0.5f).toInt()
         var layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+        layoutParams.setMargins(0, marginPx, 0, marginPx)
+        webView.layoutParams = layoutParams
+
         rootLayout.addView(webView, rootLayout.indexOfChild(buttonContainer))
         setupWebView()
 
@@ -99,8 +106,8 @@ class BranchScaleFragment : Fragment() {
 
         // Retrieve user-selected padding (dp), convert to px
         val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
-        val scale = resources.displayMetrics.density
-        val userPaddingPx = (userPaddingDp * scale + 0.5f).toInt()
+        val density = resources.displayMetrics.density
+        val userPaddingPx = (userPaddingDp * density + 0.5f).toInt()
 
         // Create response buttons
         branchResponses.forEachIndexed { index, (displayText, label) ->

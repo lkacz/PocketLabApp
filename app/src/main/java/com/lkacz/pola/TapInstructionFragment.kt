@@ -49,10 +49,17 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val containerLayout = view as LinearLayout
         val nextButtonView = containerLayout.findViewById<Button>(R.id.nextButton)
         webView = WebView(requireContext())
+
+        // Add 16 dp top and bottom margin for the WebView
+        val scale = resources.displayMetrics.density
+        val marginPx = (16 * scale + 0.5f).toInt()
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
+        layoutParams.setMargins(0, marginPx, 0, marginPx)
+        webView.layoutParams = layoutParams
+
         containerLayout.addView(webView, containerLayout.indexOfChild(nextButtonView))
         setupWebView()
 

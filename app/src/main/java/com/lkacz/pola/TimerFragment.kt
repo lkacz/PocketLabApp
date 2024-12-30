@@ -49,8 +49,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_timer, container, false)
@@ -66,13 +65,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val containerLayout = view as LinearLayout
         webView = WebView(requireContext())
 
-        // Add 32dp top and bottom margin for the WebView
+        // Add 16 dp top and bottom margin for the WebView
+        val scaleVal = resources.displayMetrics.density
+        val marginPx = (16 * scaleVal + 0.5f).toInt()
         val layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        val scale = resources.displayMetrics.density
-        val marginPx = (32 * scale + 0.5f).toInt()
         layoutParams.setMargins(0, marginPx, 0, marginPx)
         webView.layoutParams = layoutParams
 

@@ -28,14 +28,27 @@ class CustomHtmlFragment : Fragment() {
         fileName = arguments?.getString(ARG_HTML_FILE)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         val layout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
         }
         webView = WebView(requireContext())
-        layout.addView(webView, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
+
+        // Add 16 dp top and bottom margin for the WebView
+        val scaleVal = resources.displayMetrics.density
+        val marginPx = (16 * scaleVal + 0.5f).toInt()
+        val webViewParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
         )
+        webViewParams.setMargins(0, marginPx, 0, marginPx)
+        webView.layoutParams = webViewParams
+
+        layout.addView(webView)
 
         val continueButton = Button(requireContext()).apply {
             text = "Continue"
@@ -44,9 +57,8 @@ class CustomHtmlFragment : Fragment() {
             }
         }
         layout.addView(continueButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        )
-
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
         return layout
     }
 

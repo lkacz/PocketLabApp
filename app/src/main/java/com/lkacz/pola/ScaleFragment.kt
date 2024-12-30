@@ -15,6 +15,7 @@ import android.widget.VideoView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 import androidx.documentfile.provider.DocumentFile
+import android.widget.RelativeLayout
 
 class ScaleFragment : Fragment() {
 
@@ -41,7 +42,8 @@ class ScaleFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
@@ -55,15 +57,28 @@ class ScaleFragment : Fragment() {
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
         videoView = view.findViewById(R.id.videoView2)
 
-        // Insert a WebView to display any <filename.html> snippet, similar to TimerFragment
-        val rootLayout = view as ViewGroup
-        webView = WebView(requireContext())
-        var layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+        // Create a WebView and position it between the introduction text and the item
+        webView = WebView(requireContext()).apply {
+            id = View.generateViewId()
+        }
+
+        // Because we use a RelativeLayout, we set LayoutParams to place the WebView
+        // below introductionTextView and above itemTextView.
+        val layout = view as RelativeLayout
+        var layoutParams = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
         )
-        // We add it above the buttonContainer, for instance
-        rootLayout.addView(webView, rootLayout.indexOfChild(buttonContainer))
+        layoutParams.addRule(RelativeLayout.BELOW, R.id.introductionTextView)
+        layoutParams.addRule(RelativeLayout.ABOVE, R.id.itemTextView)
+
+        // Add top/bottom margins
+        val density = resources.displayMetrics.density
+        val marginPx = (16 * density + 0.5f).toInt()
+        layoutParams.setMargins(0, marginPx, 0, marginPx)
+
+        webView.layoutParams = layoutParams
+        layout.addView(webView)
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
@@ -95,8 +110,8 @@ class ScaleFragment : Fragment() {
 
         // Retrieve user-selected padding (dp), convert to px
         val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
-        val scale = resources.displayMetrics.density
-        val userPaddingPx = (userPaddingDp * scale + 0.5f).toInt()
+        val scaleVal = resources.displayMetrics.density
+        val userPaddingPx = (userPaddingDp * scaleVal + 0.5f).toInt()
 
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, mediaFolderUri)
@@ -108,7 +123,7 @@ class ScaleFragment : Fragment() {
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
-                layoutParams = LinearLayout.LayoutParams(
+                layoutParams = RelativeLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
@@ -152,6 +167,9 @@ class ScaleFragment : Fragment() {
         )
     }
 
+    /**
+     * If <filename.html> is found, loads it into the WebView. Returns text with that snippet removed.
+     */
     private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
         if (text.isBlank() || mediaFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)

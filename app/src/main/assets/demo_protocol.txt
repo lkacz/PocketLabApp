@@ -7,9 +7,13 @@
 //RESPONSE_SIZE;24
 //TIMER_SOUND;sound.wav
 
+// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
+INPUTFIELD;Participant ID Entry;<video.mp4>Please<b>enter</b>the Participant <custom.html>ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
+
+
 INSTRUCTION;Study Overview<custom.html>;Welcome<br>Pics kodem html <img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><pic.jpg,150,50><br>NOW
 
-TAP_INSTRUCTION;Study;Start<custom.html>;START THE STUDY
+TAP_INSTRUCTION;Study;Start<custom.html><video.mp4>;START THE STUDY
 
 // Emotions Scale After Walking With a Friend
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
