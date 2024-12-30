@@ -13,6 +13,15 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+/**
+ * A custom View featuring:
+ * - A static two-color background:
+ *   (1) Top half blue (#E3F2FD),
+ *   (2) Bottom half green (#C8E6C9).
+ * - Seven parallax layers (1–4 for blue “sky” + clouds, 5–7 for green “grass”),
+ *   from slowest to fastest. White cloud layer is always above the blue layers.
+ * - A phone graphic in the middle, levitating with a shimmer effect.
+ */
 class PocketLabLogoView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
@@ -22,9 +31,7 @@ class PocketLabLogoView @JvmOverloads constructor(
     //  Parallax Structures
     //----------------------------------------------------------------------------------------------
 
-    /**
-     * A single “box” that scrolls from right to left.
-     */
+    /** A single “box” that scrolls from right to left. */
     data class ParallaxBox(
         var x: Float,
         var y: Float,
@@ -33,23 +40,23 @@ class PocketLabLogoView @JvmOverloads constructor(
         var color: Int
     )
 
-    /**
-     * A layer that has multiple ParallaxBoxes and a speed at which they move.
-     */
+    /** A layer that has multiple ParallaxBoxes and a speed at which they move. */
     data class ParallaxLayer(
         val boxes: MutableList<ParallaxBox>,
         val speed: Float     // pixels per second
     )
 
     private val parallaxLayers = mutableListOf<ParallaxLayer>()
-    private val parallaxPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val parallaxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
 
     // Parallax animation
     private var parallaxAnimator: ValueAnimator? = null
-    private var lastFrameTime = 0L
+    private var lastFrameTimeNanos = 0L
 
     //----------------------------------------------------------------------------------------------
-    //  Phone + Text + Stripes (unchanged)
+    //  Phone + Text + Stripes
     //----------------------------------------------------------------------------------------------
 
     private val phoneDrawable = ContextCompat
@@ -111,7 +118,7 @@ class PocketLabLogoView @JvmOverloads constructor(
     }
     private var shimmerAnimator: ValueAnimator? = null
 
-    // Stripe paint
+    // Stripe paints
     private val stripePaintA = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.rgb(120, 120, 120)
         style = Paint.Style.FILL
@@ -147,9 +154,9 @@ class PocketLabLogoView @JvmOverloads constructor(
         phoneWidth = w * phoneWidthRatio
         phoneHeight = w * phoneHeightRatio
 
-        // Place the phone near the upper-middle portion
+        // Place the phone around 45% so it's visually between the top (blue) half and bottom (green) half
         phoneCenterX = w * 0.5f
-        phoneCenterY = h * 0.4f
+        phoneCenterY = h * 0.45f
 
         // Remember these as "rest" positions
         initialPhoneCenterX = phoneCenterX
@@ -165,7 +172,7 @@ class PocketLabLogoView @JvmOverloads constructor(
         stripeA_Y = h * 0.57f
         stripeB_Y = h * 0.60f
 
-        // Initialize and start parallax background
+        // Initialize parallax layers
         initParallaxLayers(w, h)
         startParallaxAnimation()
     }
@@ -173,21 +180,30 @@ class PocketLabLogoView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 1) Draw parallax background first
+        // 1) Draw static top half (blue)
+        val halfHeight = (height / 2f)
+        val topRect = RectF(0f, 0f, width.toFloat(), halfHeight)
+        canvas.drawRect(topRect, Paint().apply { color = Color.parseColor("#E3F2FD") })
+
+        // 2) Draw static bottom half (green)
+        val bottomRect = RectF(0f, halfHeight, width.toFloat(), height.toFloat())
+        canvas.drawRect(bottomRect, Paint().apply { color = Color.parseColor("#C8E6C9") })
+
+        // 3) Draw parallax layers on top
         drawParallaxBackground(canvas)
 
-        // 2) Draw title text
+        // 4) Draw title text
         val textY = height * 0.2f
         canvas.drawText("Pocket Lab App", width * 0.5f, textY, textPaint)
 
-        // 3) Stripe A
+        // 5) Stripe A
         canvas.drawRect(0f, stripeA_Y, width.toFloat(), stripeA_Y + stripeThickness, stripePaintA)
 
-        // 4) Clip so the phone + screen are behind next stripes
+        // 6) Clip so the phone + screen are behind next stripes
         canvas.save()
         canvas.clipRect(0f, 0f, width.toFloat(), stripeB_Y)
 
-        // 5) Translate + rotate phone
+        // 7) Translate + rotate phone
         canvas.translate(phoneCenterX, phoneCenterY)
         canvas.rotate(currentRotation)
 
@@ -205,7 +221,7 @@ class PocketLabLogoView @JvmOverloads constructor(
         )
         phoneDrawable?.draw(canvas)
 
-        // 6) Shimmering screen
+        // 8) Shimmering screen
         screenRect.set(phoneRect)
         val border = phoneWidth * 0.08f
         screenRect.inset(border, border)
@@ -213,10 +229,10 @@ class PocketLabLogoView @JvmOverloads constructor(
 
         canvas.restore()
 
-        // 7) Stripe B
+        // 9) Stripe B
         canvas.drawRect(0f, stripeB_Y, width.toFloat(), stripeB_Y + stripeThickness, stripePaintB)
 
-        // 8) Stripe C
+        // 10) Stripe C
         val stripeC_Top = stripeB_Y + stripeThickness
         canvas.drawRect(0f, stripeC_Top, width.toFloat(), height.toFloat(), stripePaintC)
     }
@@ -225,77 +241,158 @@ class PocketLabLogoView @JvmOverloads constructor(
     //  Parallax: Initialization + Drawing + Updates
     //----------------------------------------------------------------------------------------------
 
+    /**
+     * Create 7 layers from slowest to fastest.
+     *  - parallax1: Blue (light)
+     *  - parallax2: Blue (medium)
+     *  - parallax3: Blue (darker)
+     *  - parallax4: White clouds (always on top of the blues)
+     *  - parallax5: Green (light)
+     *  - parallax6: Green (medium)
+     *  - parallax7: Green (darker, fastest)
+     *
+     * Each set is restricted to either top half (blue layers) or bottom half (green layers).
+     */
     private fun initParallaxLayers(w: Int, h: Int) {
         parallaxLayers.clear()
 
-        // Speeds in pixels/sec for each plane (tweak as desired)
-        val speedFar = 20f
-        val speedMid = 40f
-        val speedNear = 70f
+        // define speeds (from slowest to fastest)
+        val speed1 = 8f
+        val speed2 = 11f
+        val speed3 = 14f
+        val speed4 = 17f
+        val speed5 = 20f
+        val speed6 = 23f
+        val speed7 = 26f
 
-        // Far sky layer: lighter blues + white
-        val farLayer = ParallaxLayer(
-            boxes = generateRandomBoxes(
+        // define color ranges
+        val topHalf = 0f..(h / 2f)
+        val bottomHalf = (h / 2f)..h.toFloat()
+
+        // Blue-ish layers
+        // 1) Light blue
+        val layer1 = ParallaxLayer(
+            generateBoxes(
                 count = 15,
                 screenWidth = w,
                 screenHeight = h,
-                colorRange = 0xFFADD8E6.toInt()..0xFF87CEFA.toInt(), // Light blues
-                cloudChance = 0.2f
+                minY = topHalf.start,
+                maxY = topHalf.endInclusive,
+                colorRange = 0xFFBBDEFB.toInt()..0xFF90CAF9.toInt(),
+                cloudChance = 0f
             ),
-            speed = speedFar
+            speed1
         )
-        // Mid sky layer: a bit darker range of blue
-        val midLayer = ParallaxLayer(
-            boxes = generateRandomBoxes(
+        // 2) Medium blue
+        val layer2 = ParallaxLayer(
+            generateBoxes(
                 count = 15,
                 screenWidth = w,
                 screenHeight = h,
-                colorRange = 0xFF87CEEB.toInt()..0xFF4682B4.toInt(), // from SkyBlue to SteelBlue
-                cloudChance = 0.1f
+                minY = topHalf.start,
+                maxY = topHalf.endInclusive,
+                colorRange = 0xFF90CAF9.toInt()..0xFF64B5F6.toInt(),
+                cloudChance = 0f
             ),
-            speed = speedMid
+            speed2
         )
-        // Forest layer: greens
-        val forestLayer = ParallaxLayer(
-            boxes = generateRandomBoxes(
+        // 3) Darker blue
+        val layer3 = ParallaxLayer(
+            generateBoxes(
                 count = 15,
                 screenWidth = w,
                 screenHeight = h,
-                colorRange = 0xFF008000.toInt()..0xFF006400.toInt(), // from Green to DarkGreen
-                cloudChance = 0f        // no clouds in forest
+                minY = topHalf.start,
+                maxY = topHalf.endInclusive,
+                colorRange = 0xFF64B5F6.toInt()..0xFF2196F3.toInt(),
+                cloudChance = 0f
             ),
-            speed = speedNear
+            speed3
+        )
+        // 4) White clouds (slightly varying whiteness), near top as well
+        val layer4 = ParallaxLayer(
+            generateBoxes(
+                count = 15,
+                screenWidth = w,
+                screenHeight = h,
+                minY = topHalf.start,
+                // If you want them fairly high, reduce the maxY (like 0.3f*h).
+                // For now we put them anywhere in top half.
+                maxY = topHalf.endInclusive,
+                colorRange = 0xFFECECEC.toInt()..0xFFFFFFFF.toInt(),
+                cloudChance = 1f  // effectively all white, with slight variations
+            ),
+            speed4
         )
 
-        parallaxLayers.add(farLayer)
-        parallaxLayers.add(midLayer)
-        parallaxLayers.add(forestLayer)
+        // Green-ish layers
+        // 5) Light green
+        val layer5 = ParallaxLayer(
+            generateBoxes(
+                count = 15,
+                screenWidth = w,
+                screenHeight = h,
+                minY = bottomHalf.start,
+                maxY = bottomHalf.endInclusive,
+                colorRange = 0xFFC8E6C9.toInt()..0xFFA5D6A7.toInt(),
+                cloudChance = 0f
+            ),
+            speed5
+        )
+        // 6) Medium green
+        val layer6 = ParallaxLayer(
+            generateBoxes(
+                count = 15,
+                screenWidth = w,
+                screenHeight = h,
+                minY = bottomHalf.start,
+                maxY = bottomHalf.endInclusive,
+                colorRange = 0xFFA5D6A7.toInt()..0xFF81C784.toInt(),
+                cloudChance = 0f
+            ),
+            speed6
+        )
+        // 7) Darker green (fastest)
+        val layer7 = ParallaxLayer(
+            generateBoxes(
+                count = 15,
+                screenWidth = w,
+                screenHeight = h,
+                minY = bottomHalf.start,
+                maxY = bottomHalf.endInclusive,
+                colorRange = 0xFF81C784.toInt()..0xFF4CAF50.toInt(),
+                cloudChance = 0f
+            ),
+            speed7
+        )
+
+        // Add them in order from far (slowest) to near (fastest)
+        parallaxLayers.addAll(listOf(layer1, layer2, layer3, layer4, layer5, layer6, layer7))
     }
 
-    /**
-     * Generate a list of randomly placed boxes across the screen.
-     *
-     * @param colorRange an IntRange representing ARGB colors
-     * @param cloudChance fraction [0..1] chance to insert a white box
-     */
-    private fun generateRandomBoxes(
+    private fun generateBoxes(
         count: Int,
         screenWidth: Int,
         screenHeight: Int,
+        minY: Float,
+        maxY: Float,
         colorRange: IntRange,
         cloudChance: Float
     ): MutableList<ParallaxBox> {
         val list = mutableListOf<ParallaxBox>()
         repeat(count) {
-            // Position anywhere horizontally, anywhere vertically
-            val w = Random.nextFloat() * (screenWidth * 0.2f) + 500f  // box width ~ 50..20% of screen
-            val h = Random.nextFloat() * (screenHeight * 0.1f) + 200f // box height
+            val w = Random.nextFloat() * (screenWidth * 0.4f) + 50f
+            val h = Random.nextFloat() * (screenHeight * 0.4f) + 20f
+
             val x = Random.nextFloat() * screenWidth
-            val y = Random.nextFloat() * screenHeight * 0.5f         // only top half for sky or so
+            val y = Random.nextFloat() * (maxY - minY) + minY
+
+            // For clouds or near-white boxes, we just randomize in [minColor..maxColor].
             val color = if (Random.nextFloat() < cloudChance) {
-                Color.WHITE
+                // But here cloudChance = 1f in layer4, so effectively we randomize whiteness
+                randomColorInRange(colorRange.first, colorRange.last)
             } else {
-                // Pick from the given color range
+                // Otherwise pick from the color range
                 randomColorInRange(colorRange.first, colorRange.last)
             }
             list.add(ParallaxBox(x, y, w, h, color))
@@ -303,12 +400,8 @@ class PocketLabLogoView @JvmOverloads constructor(
         return list
     }
 
-    /**
-     * Both minColor and maxColor assumed to be ARGB.
-     * You can refine if you prefer a certain gradient approach.
-     */
+    /** Returns a random color between two ARGB values. */
     private fun randomColorInRange(minColor: Int, maxColor: Int): Int {
-        // Extract components
         val aMin = (minColor shr 24) and 0xFF
         val rMin = (minColor shr 16) and 0xFF
         val gMin = (minColor shr 8) and 0xFF
@@ -319,7 +412,6 @@ class PocketLabLogoView @JvmOverloads constructor(
         val gMax = (maxColor shr 8) and 0xFF
         val bMax = maxColor and 0xFF
 
-        // Ensure min <= max for each component
         val aLo = minOf(aMin, aMax)
         val aHi = maxOf(aMin, aMax)
         val rLo = minOf(rMin, rMax)
@@ -329,7 +421,6 @@ class PocketLabLogoView @JvmOverloads constructor(
         val bLo = minOf(bMin, bMax)
         val bHi = maxOf(bMin, bMax)
 
-        // Now we safely generate random components
         val a = Random.nextInt(aLo, aHi + 1)
         val r = Random.nextInt(rLo, rHi + 1)
         val g = Random.nextInt(gLo, gHi + 1)
@@ -338,12 +429,8 @@ class PocketLabLogoView @JvmOverloads constructor(
         return Color.argb(a, r, g, b)
     }
 
-
-
-    /**
-     * Called every frame (in onDraw, after we update positions in the animator).
-     */
     private fun drawParallaxBackground(canvas: Canvas) {
+        // Draw layers in the order they appear in parallaxLayers (slowest first -> fastest last).
         for (layer in parallaxLayers) {
             for (box in layer.boxes) {
                 parallaxPaint.color = box.color
@@ -358,7 +445,8 @@ class PocketLabLogoView @JvmOverloads constructor(
     }
 
     /**
-     * Shift each box left by speed * deltaTime, and re-wrap if off the screen.
+     * Shift each box left by (speed * deltaTime).
+     * When a box goes off-screen on the left, re-randomize its x,y to re-enter on the right.
      */
     private fun updateParallaxBoxes(deltaTimeSec: Float) {
         val screenWidth = width.toFloat()
@@ -366,35 +454,47 @@ class PocketLabLogoView @JvmOverloads constructor(
             val speed = layer.speed
             for (box in layer.boxes) {
                 box.x -= speed * deltaTimeSec
-                // If the box is fully off-screen on the left, move it to the right
+                // If fully off the left side, respawn on the right
                 if (box.x + box.width < 0f) {
                     box.x = screenWidth + Random.nextFloat() * screenWidth
-                    // Optionally randomize the Y, color again if you want constant “fresh” boxes
-                    box.y = Random.nextFloat() * height * 0.5f
+
+                    // Identify which layer we are in
+                    val index = parallaxLayers.indexOf(layer)
+                    // Re-map the index to the correct vertical half
+                    // 0..3 => top half, 4..6 => bottom half
+                    if (index in 0..3) {
+                        // top half
+                        val minY = 0f
+                        val maxY = height / 2f
+                        box.y = Random.nextFloat() * (maxY - minY) + minY
+                    } else {
+                        // bottom half
+                        val minY = height / 2f
+                        val maxY = height.toFloat()
+                        box.y = Random.nextFloat() * (maxY - minY) + minY
+                    }
                 }
             }
         }
     }
 
-    // Start an infinite ValueAnimator that updates parallax each frame
     private fun startParallaxAnimation() {
         if (parallaxAnimator == null) {
             parallaxAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 100000 // big number
+                duration = 100000 // large duration
                 repeatCount = ValueAnimator.INFINITE
                 repeatMode = ValueAnimator.RESTART
                 interpolator = LinearInterpolator()
-                addUpdateListener { animator ->
-                    val currentTime = System.currentTimeMillis()
-                    if (lastFrameTime == 0L) {
-                        // First frame, just init
-                        lastFrameTime = currentTime
+                addUpdateListener {
+                    val nowNanos = System.nanoTime()
+                    if (lastFrameTimeNanos == 0L) {
+                        lastFrameTimeNanos = nowNanos
+                        return@addUpdateListener
                     }
-                    val dt = (currentTime - lastFrameTime) / 1000f
-                    lastFrameTime = currentTime
+                    val deltaTimeSec = (nowNanos - lastFrameTimeNanos) / 1_000_000_000f
+                    lastFrameTimeNanos = nowNanos
 
-                    // Update positions & redraw
-                    updateParallaxBoxes(dt)
+                    updateParallaxBoxes(deltaTimeSec)
                     invalidate()
                 }
             }
@@ -452,12 +552,10 @@ class PocketLabLogoView @JvmOverloads constructor(
                     isDragging = true
                     didUserMove = false
 
-                    // Pause anims so we can resume from same fraction
                     pauseLevitateAnimation()
                     pauseShimmerAnimation()
                     pauseParallaxAnimation()
 
-                    // Track offsets for both X and Y
                     touchOffsetX = event.x - phoneCenterX
                     touchOffsetY = event.y - phoneCenterY
                     parent.requestDisallowInterceptTouchEvent(true)
@@ -480,7 +578,7 @@ class PocketLabLogoView @JvmOverloads constructor(
                 if (isDragging) {
                     isDragging = false
                     if (didUserMove) {
-                        // Animate X and Y back to initial with a bounce/overshoot effect
+                        // Animate X/Y back with bounce
                         animatePhoneBackToInitial()
                     } else {
                         // If user just tapped, resume from where we left off
@@ -495,7 +593,7 @@ class PocketLabLogoView @JvmOverloads constructor(
     }
 
     //----------------------------------------------------------------------------------------------
-    //  Bouncing back (no dynamic library) with standard ValueAnimator
+    //  Bouncing back with standard ValueAnimator
     //----------------------------------------------------------------------------------------------
     private fun animatePhoneBackToInitial() {
         val animX = ValueAnimator.ofFloat(phoneCenterX, initialPhoneCenterX).apply {
@@ -515,12 +613,10 @@ class PocketLabLogoView @JvmOverloads constructor(
             }
         }
 
-        // Run them in parallel
         val bounceSet = AnimatorSet()
         bounceSet.playTogether(animX, animY)
         bounceSet.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
-                // Once done bouncing, re-sync the floating cycle so no jump
                 smoothlyResumeLevitate()
                 resumeShimmerAnimation()
                 resumeParallaxAnimation()
@@ -684,7 +780,7 @@ class PocketLabLogoView @JvmOverloads constructor(
     //  Utility
     //----------------------------------------------------------------------------------------------
     private fun hitTestPhone(touchX: Float, touchY: Float): Boolean {
-        // Convert the screen coords to phone coords, factoring in rotation.
+        // Convert screen coords to phone coords, factoring in rotation.
         val relX = touchX - phoneCenterX
         val relY = touchY - phoneCenterY
         val rad = Math.toRadians(currentRotation.toDouble())
