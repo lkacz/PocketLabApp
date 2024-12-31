@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- Do NOT include filename at the beginning for .xml -->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -259,8 +259,6 @@
             android:layout_height="50dp"
             android:layout_marginTop="8dp" />
 
-        <!-- CAN YOU ADD SOME GRAPHICAL SPACER HERE?  -->
-
         <!-- NEW: Response Padding Row -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -290,9 +288,7 @@
                 android:text="0" />
         </LinearLayout>
 
-        <!-- CAN YOU ADD SOME GRAPHICAL SPACER HERE?  -->
-
-        <!-- TIMER SOUND -->
+        <!-- TIMER SOUND (unchanged logic) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -312,6 +308,20 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Preview Sound" />
+
+        <!-- NEW: Transitions Spinner -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Transitions:"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerTransitions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" />
 
         <!-- OK / Cancel + Defaults Buttons Row -->
         <LinearLayout

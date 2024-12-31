@@ -16,7 +16,7 @@ import androidx.core.graphics.red
 import androidx.fragment.app.DialogFragment
 
 /**
- * Dialog for customizing font sizes, UI colors, and response-button padding.
+ * Dialog for customizing font sizes, UI colors, transitions, and response-button padding.
  * Timer-sound logic has been moved out into AlarmCustomizationDialog.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
@@ -67,6 +67,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var itemTextColor: Int = Color.BLUE
     private var responseTextColor: Int = Color.RED
     private var screenBgColor: Int = Color.WHITE
+
+    // New transitions spinner
+    private lateinit var transitionsSpinner: Spinner
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -137,7 +140,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 16, 0, 16) // some spacing around
+                setMargins(0, 16, 0, 16)
             }
         }
         previewContainer.addView(previewPaddingButtonContainer)
@@ -324,6 +327,32 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
 
+        // NEW: Transitions Spinner
+        transitionsSpinner = view.findViewById(R.id.spinnerTransitions)
+        val transitionOptions = listOf("No transition", "Slide to left")
+        val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, transitionOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        transitionsSpinner.adapter = adapter
+
+        // Set initial selection based on stored mode
+        val storedMode = TransitionManager.getTransitionMode(ctx)
+        transitionsSpinner.setSelection(if (storedMode == "off") 0 else 1, false)
+
+        transitionsSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                when (position) {
+                    0 -> TransitionManager.setTransitionMode(ctx, "off")
+                    1 -> TransitionManager.setTransitionMode(ctx, "slide")
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
         // OK / Cancel
         val okButton = view.findViewById<Button>(R.id.btnOk)
         okButton.setOnClickListener {
@@ -482,6 +511,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderResponsePadding.progress = 0
         tvResponsePaddingValue.text = "0"
         applyResponseButtonMargin(0)
+
+        // Default transitions = "slide"
+        TransitionManager.setTransitionMode(ctx, "slide")
+        transitionsSpinner.setSelection(1, false)
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =

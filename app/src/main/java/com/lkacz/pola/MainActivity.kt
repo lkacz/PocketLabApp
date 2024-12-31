@@ -1,3 +1,4 @@
+// Filename: MainActivity.kt
 package com.lkacz.pola
 
 import android.app.NotificationChannel
@@ -10,7 +11,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Updated to allow fragments to jump to labels (e.g., from BranchScaleFragment).
+ * Updated to respect the transitions setting (off vs. slide).
  */
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
 
@@ -46,7 +47,6 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager = ProtocolManager(this)
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol = protocolManager.getManipulatedProtocol()
-
         fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
         loadNextFragment()
     }
@@ -56,24 +56,34 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         logger.backupLogFile()
     }
 
-    /**
-     * Loads the next instruction-based fragment.
-     */
     fun loadNextFragment() {
         val fragment = fragmentLoader.loadNextFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        val mode = TransitionManager.getTransitionMode(this)
+        val transaction = supportFragmentManager.beginTransaction()
+        if (mode == "slide") {
+            transaction.setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
+        }
+        transaction.replace(R.id.fragmentContainer, fragment).commit()
     }
 
-    /**
-     * Public method that a BranchScaleFragment can call to jump to a label.
-     */
     fun loadFragmentByLabel(label: String) {
         val fragment = fragmentLoader.jumpToLabelAndLoad(label)
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
+        val mode = TransitionManager.getTransitionMode(this)
+        val transaction = supportFragmentManager.beginTransaction()
+        if (mode == "slide") {
+            transaction.setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
+        }
+        transaction.replace(R.id.fragmentContainer, fragment).commit()
     }
 
     private fun createNotificationChannel() {
