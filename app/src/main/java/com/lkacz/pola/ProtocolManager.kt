@@ -44,16 +44,6 @@ class ProtocolManager(private val context: Context) {
         val randomSection = mutableListOf<String>()
 
         lines?.forEach { line ->
-            // Check if line sets a custom timer sound
-            if (TimerSoundUpdater.updateTimerSoundFromLine(context, line)) {
-                return@forEach
-            }
-            // Check if line sets any font-size directive
-            if (FontSizeUpdater.updateFontSizesFromLine(context, line)) {
-                return@forEach
-            }
-            // We no longer filter out TRANSITIONS lines here! (They stay for FragmentLoader.)
-
             when {
                 line.trim() == "RANDOMIZE_ON" -> {
                     randomize = true

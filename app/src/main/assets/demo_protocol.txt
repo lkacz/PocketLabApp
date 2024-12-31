@@ -8,6 +8,15 @@
 //TIMER_SOUND;sound.wav
 //CUSTOM_HTML;mycode.html
 
+
+TIMER_SOUND;sound.mp3
+TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
+
+TIMER_SOUND;sound.wav
+TIMER;Timer 2 no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
+
+
+
 TRANSITIONS;off
 
 CUSTOM_HTML;pola_snake.html
