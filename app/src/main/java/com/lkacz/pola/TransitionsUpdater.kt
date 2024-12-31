@@ -10,7 +10,8 @@ import android.content.Context
  */
 object TransitionsUpdater {
 
-    private val pattern = Regex("^Transitions;(off|slide)$", RegexOption.IGNORE_CASE)
+    // Updated pattern to allow optional spaces around 'off' or 'slide'
+    private val pattern = Regex("^Transitions;\\s*(off|slide)\\s*$", RegexOption.IGNORE_CASE)
 
     fun updateTransitionFromLine(context: Context, line: String): Boolean {
         val match = pattern.find(line.trim())

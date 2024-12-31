@@ -8,9 +8,19 @@
 //TIMER_SOUND;sound.wav
 //CUSTOM_HTML;mycode.html
 
+TRANSITIONS;off
+
 CUSTOM_HTML;pola_snake.html
 
+TRANSITIONS;slide
+
+HEADER_SIZE;28
+
 RANDOMIZED_MULTISCALE;Randomized multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+TRANSITIONS;off
+
+HEADER_SIZE;8
 
 // Emotions Scale After Walking With a Friend
 MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
@@ -242,3 +252,5 @@ GOTO;START
 TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.<custom.html>;SET OFF ALARM AND CONTINUE;3
 
 CUSTOM_HTML;pola_snake.html
+
+HEADER_SIZE;58

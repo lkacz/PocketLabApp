@@ -68,7 +68,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var responseTextColor: Int = Color.RED
     private var screenBgColor: Int = Color.WHITE
 
-    // New transitions spinner
+    // Transitions spinner
     private lateinit var transitionsSpinner: Spinner
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -327,7 +327,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
 
-        // NEW: Transitions Spinner
+        // Transitions Spinner
         transitionsSpinner = view.findViewById(R.id.spinnerTransitions)
         val transitionOptions = listOf("No transition", "Slide to left")
         val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, transitionOptions)
@@ -337,11 +337,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         // Set initial selection based on stored mode
         val storedMode = TransitionManager.getTransitionMode(ctx)
         transitionsSpinner.setSelection(if (storedMode == "off") 0 else 1, false)
-
         transitionsSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
-                view: View?,
+                v: View?,
                 position: Int,
                 id: Long
             ) {
@@ -512,9 +511,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvResponsePaddingValue.text = "0"
         applyResponseButtonMargin(0)
 
-        // Default transitions = "slide"
-        TransitionManager.setTransitionMode(ctx, "slide")
-        transitionsSpinner.setSelection(1, false)
+        // NO forced transitions set here anymore. (Removed hardcoded "slide" default)
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =

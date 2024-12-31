@@ -48,14 +48,11 @@ class ProtocolManager(private val context: Context) {
             if (TimerSoundUpdater.updateTimerSoundFromLine(context, line)) {
                 return@forEach
             }
-            // Check if line sets transitions
-            if (TransitionsUpdater.updateTransitionFromLine(context, line)) {
-                return@forEach
-            }
-            // Check if it's a font-size directive
+            // Check if line sets any font-size directive
             if (FontSizeUpdater.updateFontSizesFromLine(context, line)) {
                 return@forEach
             }
+            // We no longer filter out TRANSITIONS lines here! (They stay for FragmentLoader.)
 
             when {
                 line.trim() == "RANDOMIZE_ON" -> {
