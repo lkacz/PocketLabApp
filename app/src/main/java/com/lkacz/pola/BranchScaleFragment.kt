@@ -4,7 +4,9 @@ package com.lkacz.pola
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -47,69 +49,54 @@ class BranchScaleFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_scale, container, false)
-
-        // Apply screen background color
-        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
+        // Inflate the new layout for branching scale
+        val view = inflater.inflate(R.layout.fragment_branch_scale, container, false)
 
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
+        webView = view.findViewById(R.id.htmlSnippetWebView)
+        val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
+        videoView = view.findViewById(R.id.videoView2)
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
-        videoView = view.findViewById(R.id.videoView2)
 
-        // Insert a WebView for the HTML snippet
-        val rootLayout = view as ViewGroup
-        webView = WebView(requireContext())
-
-        // Add 16 dp top and bottom margin for the WebView
-        val scale = resources.displayMetrics.density
-        val marginPx = (16 * scale + 0.5f).toInt()
-        var layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, marginPx, 0, marginPx)
-        webView.layoutParams = layoutParams
-
-        rootLayout.addView(webView, rootLayout.indexOfChild(buttonContainer))
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        val cleanHeader = parseAndPlayAudioIfAny(header ?: "Default Header", mediaFolderUri)
+        // Header
+        val cleanHeader = parseAndPlayAudioIfAny(header ?: "", mediaFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
-        checkAndPlayMp4(header ?: "Default Header", mediaFolderUri)
-
-        val cleanBody = parseAndPlayAudioIfAny(body ?: "Default Body", mediaFolderUri)
-        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
-        checkAndPlayMp4(body ?: "Default Body", mediaFolderUri)
-
-        val cleanItem = parseAndPlayAudioIfAny(item ?: "Default Item", mediaFolderUri)
-        val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
-        checkAndPlayMp4(item ?: "Default Item", mediaFolderUri)
-
+        checkAndPlayMp4(header ?: "", mediaFolderUri)
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
+        // Body
+        val cleanBody = parseAndPlayAudioIfAny(body ?: "", mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+        checkAndPlayMp4(body ?: "", mediaFolderUri)
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // Item
+        val cleanItem = parseAndPlayAudioIfAny(item ?: "", mediaFolderUri)
+        val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
+        checkAndPlayMp4(item ?: "", mediaFolderUri)
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Retrieve user-selected padding (dp), convert to px
+        // Prepare padding for response buttons
         val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
         val density = resources.displayMetrics.density
         val userPaddingPx = (userPaddingDp * density + 0.5f).toInt()
 
-        // Create response buttons
+        // Build each branch response as a button
         branchResponses.forEachIndexed { index, (displayText, label) ->
             val cleanResponse = parseAndPlayAudioIfAny(displayText, mediaFolderUri)
             val refinedResponse = checkAndLoadHtml(cleanResponse, mediaFolderUri)
@@ -143,8 +130,9 @@ class BranchScaleFragment : Fragment() {
                     }
                 }
             }
-            buttonContainer.addView(button, 0)
+            buttonContainer.addView(button)
         }
+
         return view
     }
 
@@ -158,6 +146,12 @@ class BranchScaleFragment : Fragment() {
         if (this::webView.isInitialized) {
             webView.destroy()
         }
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
@@ -212,15 +206,7 @@ class BranchScaleFragment : Fragment() {
         if (!videoFile.exists() || !videoFile.isFile) return
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
-    }
-
-    private fun setupWebView() {
-        val settings: WebSettings = webView.settings
-        settings.javaScriptEnabled = true
-        webView.webChromeClient = WebChromeClient()
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     companion object {

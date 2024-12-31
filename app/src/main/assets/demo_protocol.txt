@@ -6,9 +6,42 @@
 //ITEM_SIZE;30
 //RESPONSE_SIZE;24
 //TIMER_SOUND;sound.wav
+//CUSTOM_HTML;mycode.html
 
-// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;Participant ID Entry;<video.mp4>Please<b>enter</b>the Participant.ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
+RANDOMIZED_MULTISCALE;Randomized multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+// Emotions Scale After Walking With a Friend
+MULTISCALE;Multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Branching Scale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version3
+INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+
+SCALE;State;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+INPUTFIELD;Inputfield;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
+
+TIMER;Timer;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE;5
+
+INSTRUCTION;Instruction;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE
+
+TAP_INSTRUCTION;Instruction;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE
+
+
+
 
 // Emotions Scale After Walking With a Friend
 // Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
@@ -120,7 +153,6 @@ LABEL;Version3
 INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
 GOTO;AFTER_VERSIONS
 
-LABEL;AFTER_VERSIONS
 GOTO;START
 
 // Timer for 30 Minutes Walk With Friend

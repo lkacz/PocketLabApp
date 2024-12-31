@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/scaleRootLayout"
+    android:id="@+id/branchScaleRootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -13,7 +13,7 @@
         android:id="@+id/headerTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Default Header"
+        android:text="Branch Header"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
@@ -25,12 +25,12 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp" />
 
-    <!-- 3) BODY TEXT -->
+    <!-- 3) BODY -->
     <TextView
-        android:id="@+id/introductionTextView"
+        android:id="@+id/bodyTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Default Body"
+        android:text="Branch Body"
         android:textSize="16sp"
         android:layout_marginBottom="16dp" />
 
@@ -42,17 +42,17 @@
         android:layout_marginBottom="32dp"
         android:visibility="gone" />
 
-    <!-- 5) ITEM -->
+    <!-- 5) ITEM (text) + RESPONSE (these show in code) -->
     <TextView
         android:id="@+id/itemTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Default Item"
+        android:text="Branch Item"
         android:textStyle="bold"
         android:textSize="16sp"
         android:layout_marginBottom="16dp" />
 
-    <!-- 6) RESPONSE BUTTONS -->
+    <!-- 6) BUTTONS (branch responses) -->
     <LinearLayout
         android:id="@+id/buttonContainer"
         android:layout_width="match_parent"

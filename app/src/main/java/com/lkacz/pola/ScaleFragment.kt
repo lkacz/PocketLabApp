@@ -4,7 +4,9 @@ package com.lkacz.pola
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -12,10 +14,9 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
-import androidx.documentfile.provider.DocumentFile
-import android.widget.RelativeLayout
 
 class ScaleFragment : Fragment() {
 
@@ -46,64 +47,51 @@ class ScaleFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        // Inflate the updated layout with the dedicated WebView
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
 
-        // Apply background color
-        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
-
+        // 1) HEADER
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
+        // 2) HTML (WebView)
+        webView = view.findViewById(R.id.htmlSnippetWebView)
+        // 3) BODY TEXT
         val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
-        val itemTextView: TextView = view.findViewById(R.id.itemTextView)
-        val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
+        // 4) VIDEO
         videoView = view.findViewById(R.id.videoView2)
+        // 5) ITEM
+        val itemTextView: TextView = view.findViewById(R.id.itemTextView)
+        // 6) RESPONSE BUTTONS
+        val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
-        // Create a WebView and position it below the VideoView and above the item text
-        webView = WebView(requireContext()).apply {
-            id = View.generateViewId()
-        }
-        val layout = view as RelativeLayout
-        var layoutParams = RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.MATCH_PARENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            addRule(RelativeLayout.BELOW, R.id.videoView2)
-            addRule(RelativeLayout.ABOVE, R.id.itemTextView)
-            val density = resources.displayMetrics.density
-            val marginPx = (16 * density + 0.5f).toInt()
-            setMargins(0, marginPx, 0, marginPx)
-        }
-        webView.layoutParams = layoutParams
-        layout.addView(webView)
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
+        // Parse/Load header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
-
-        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
-
-        val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), mediaFolderUri)
-        val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
-
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(item.orEmpty(), mediaFolderUri)
-
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
+        // Parse/Load body
+        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // Parse/Load item
+        val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), mediaFolderUri)
+        val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
+        checkAndPlayMp4(item.orEmpty(), mediaFolderUri)
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Retrieve user-selected padding (dp), convert to px
+        // Response buttons
         val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
         val scaleVal = resources.displayMetrics.density
         val userPaddingPx = (userPaddingDp * scaleVal + 0.5f).toInt()
@@ -118,7 +106,7 @@ class ScaleFragment : Fragment() {
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
-                layoutParams = RelativeLayout.LayoutParams(
+                layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
@@ -136,8 +124,10 @@ class ScaleFragment : Fragment() {
                     (activity as MainActivity).loadNextFragment()
                 }
             }
-            buttonContainer.addView(button, 0)
+            // Add each response button
+            buttonContainer.addView(button)
         }
+
         return view
     }
 
@@ -153,18 +143,14 @@ class ScaleFragment : Fragment() {
         }
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
-        return AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = text,
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
+    // Set up the WebView for HTML snippet
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
-    /**
-     * If <filename.html> is found, loads it into the WebView. Returns text with that snippet removed.
-     */
+    // Loads an HTML file if <filename.html> is found, returns the text with that snippet removed
     private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
         if (text.isBlank() || mediaFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
@@ -187,10 +173,13 @@ class ScaleFragment : Fragment() {
         return text.replace(matchedFull, "")
     }
 
-    private fun setupWebView() {
-        val settings: WebSettings = webView.settings
-        settings.javaScriptEnabled = true
-        webView.webChromeClient = WebChromeClient()
+    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+        return AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = text,
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
     }
 
     private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
@@ -214,9 +203,7 @@ class ScaleFragment : Fragment() {
         if (!videoFile.exists() || !videoFile.isFile) return
         val videoUri = videoFile.uri
         videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     companion object {
