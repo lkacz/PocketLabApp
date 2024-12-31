@@ -47,27 +47,22 @@ class ScaleFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the updated layout with the dedicated WebView
         val view = inflater.inflate(R.layout.fragment_scale, container, false)
 
-        // 1) HEADER
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        // 2) HTML (WebView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
-        // 3) BODY TEXT
+        // Hide WebView by default
+        webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
-        // 4) VIDEO
         videoView = view.findViewById(R.id.videoView2)
-        // 5) ITEM
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
-        // 6) RESPONSE BUTTONS
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // Parse/Load header
+        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
@@ -75,7 +70,7 @@ class ScaleFragment : Fragment() {
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        // Parse/Load body
+        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
@@ -83,7 +78,7 @@ class ScaleFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Parse/Load item
+        // Item
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), mediaFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, mediaFolderUri)
         checkAndPlayMp4(item.orEmpty(), mediaFolderUri)
@@ -124,7 +119,6 @@ class ScaleFragment : Fragment() {
                     (activity as MainActivity).loadNextFragment()
                 }
             }
-            // Add each response button
             buttonContainer.addView(button)
         }
 
@@ -143,14 +137,21 @@ class ScaleFragment : Fragment() {
         }
     }
 
-    // Set up the WebView for HTML snippet
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
         webView.webChromeClient = WebChromeClient()
     }
 
-    // Loads an HTML file if <filename.html> is found, returns the text with that snippet removed
+    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+        return AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = text,
+            mediaFolderUri = mediaFolderUri,
+            mediaPlayers = mediaPlayers
+        )
+    }
+
     private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
         if (text.isBlank() || mediaFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
@@ -164,6 +165,8 @@ class ScaleFragment : Fragment() {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
+                    // Make WebView visible only if we can load HTML
+                    webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
             } catch (e: Exception) {
@@ -171,15 +174,6 @@ class ScaleFragment : Fragment() {
             }
         }
         return text.replace(matchedFull, "")
-    }
-
-    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
-        return AudioPlaybackHelper.parseAndPlayAudio(
-            context = requireContext(),
-            rawText = text,
-            mediaFolderUri = mediaFolderUri,
-            mediaPlayers = mediaPlayers
-        )
     }
 
     private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {

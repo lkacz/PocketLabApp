@@ -15,12 +15,13 @@
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
 
-    <!-- 2) HTML SNIPPET WEBVIEW -->
+    <!-- 2) HTML SNIPPET WEBVIEW - now hidden by default -->
     <WebView
         android:id="@+id/htmlSnippetWebView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
 
     <!-- 3) BODY TEXT -->
     <TextView

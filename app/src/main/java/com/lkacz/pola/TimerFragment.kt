@@ -61,6 +61,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
+        // Hide WebView by default
+        webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
         val nextButton: Button = view.findViewById(R.id.nextButton)
@@ -201,6 +203,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
+                    // Make WebView visible only if we can load HTML
+                    webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
             } catch (e: Exception) {

@@ -16,12 +16,13 @@
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
 
-    <!-- 2) HTML (WebView) -->
+    <!-- 2) HTML (WebView) - now hidden by default -->
     <WebView
         android:id="@+id/htmlSnippetWebView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
 
     <!-- 3) BODY_TEXT -->
     <TextView
@@ -53,5 +54,5 @@
         android:id="@+id/continueButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Continue" />\
+        android:text="Continue" />
 </LinearLayout>

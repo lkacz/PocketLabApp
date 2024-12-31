@@ -51,6 +51,8 @@ class InstructionFragment : Fragment() {
 
         val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
+        // Hide WebView by default
+        webView.visibility = View.GONE
         val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
         val nextButton = view.findViewById<Button>(R.id.nextButton)
@@ -134,9 +136,7 @@ class InstructionFragment : Fragment() {
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
@@ -152,6 +152,8 @@ class InstructionFragment : Fragment() {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
+                    // Make WebView visible only if we can load HTML
+                    webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
             } catch (e: Exception) {

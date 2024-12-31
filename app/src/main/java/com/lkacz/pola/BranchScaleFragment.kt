@@ -64,6 +64,8 @@ class BranchScaleFragment : Fragment() {
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
         setupWebView()
+        // Hide WebView by default
+        webView.visibility = View.GONE
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
@@ -176,6 +178,8 @@ class BranchScaleFragment : Fragment() {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
+                    // Make WebView visible only if we can load HTML
+                    webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
             } catch (e: Exception) {

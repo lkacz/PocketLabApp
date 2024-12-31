@@ -8,10 +8,6 @@
 //TIMER_SOUND;sound.wav
 //CUSTOM_HTML;mycode.html
 
-
-
-
-
 RANDOMIZED_MULTISCALE;Randomized multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
 // Emotions Scale After Walking With a Friend
@@ -31,6 +27,7 @@ GOTO;AFTER_VERSIONS
 LABEL;Version3
 INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
 GOTO;AFTER_VERSIONS
+
 
 LABEL;AFTER_VERSIONS
 

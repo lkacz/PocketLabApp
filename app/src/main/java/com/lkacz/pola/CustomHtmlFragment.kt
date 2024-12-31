@@ -35,9 +35,12 @@ class CustomHtmlFragment : Fragment() {
         val layout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
         }
-        webView = WebView(requireContext())
 
-        // Add 16 dp top and bottom margin for the WebView
+        // Programmatically create WebView, hidden by default
+        webView = WebView(requireContext())
+        webView.visibility = View.GONE
+
+        // Add some margins for the WebView
         val scaleVal = resources.displayMetrics.density
         val marginPx = (16 * scaleVal + 0.5f).toInt()
         val webViewParams = LinearLayout.LayoutParams(
@@ -95,9 +98,10 @@ class CustomHtmlFragment : Fragment() {
         }
 
         try {
-            // Reading the HTML from the file and injecting into the WebView
             requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                 val htmlContent = inputStream.bufferedReader().readText()
+                // Make WebView visible if content is found
+                webView.visibility = View.VISIBLE
                 webView.loadDataWithBaseURL(
                     null,
                     htmlContent,

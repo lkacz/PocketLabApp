@@ -41,15 +41,16 @@ class InputFieldFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate our revised layout, which follows the requested order.
+        // Inflate our revised layout
         val view = inflater.inflate(R.layout.fragment_input_field, container, false)
 
         // Screen background color
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
-        // Retrieve all views in the correct order
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
+        // Hide WebView by default
+        webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
         val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
@@ -59,7 +60,7 @@ class InputFieldFragment : Fragment() {
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
-        // 1) Parse & handle heading text
+        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), mediaFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, mediaFolderUri)
         checkAndPlayMp4(heading.orEmpty(), mediaFolderUri)
@@ -67,9 +68,7 @@ class InputFieldFragment : Fragment() {
         headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        // 2) (HTML snippet is already set up in the layout via WebView)
-
-        // 3) Parse & handle body text
+        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
@@ -77,10 +76,7 @@ class InputFieldFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // 4) VideoView logic is triggered if <file.mp4> is found
-        //    (already handled in checkAndPlayMp4)
-
-        // 5) Input fields
+        // Input fields
         inputFields?.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, mediaFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, mediaFolderUri)
@@ -102,7 +98,7 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // 6) Continue button
+        // Continue button
         val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), mediaFolderUri)
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, mediaFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), mediaFolderUri)
@@ -187,6 +183,8 @@ class InputFieldFragment : Fragment() {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
+                    // Make WebView visible only if we can load HTML
+                    webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
             } catch (e: Exception) {
