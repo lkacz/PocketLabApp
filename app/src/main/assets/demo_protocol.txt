@@ -8,6 +8,8 @@
 //TIMER_SOUND;sound.wav
 //CUSTOM_HTML;mycode.html
 
+CUSTOM_HTML;pola_snake.html
+
 RANDOMIZED_MULTISCALE;Randomized multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
 // Emotions Scale After Walking With a Friend
@@ -87,12 +89,6 @@ TIMER;Timer no vid;This is <b>bold</b>. This is <font color ='green'>green</font
 INSTRUCTION;Instruction no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
 
 TAP_INSTRUCTION;Instruction no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
-
-
-
-//
-
-
 
 RANDOMIZED_MULTISCALE;Randomized multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
