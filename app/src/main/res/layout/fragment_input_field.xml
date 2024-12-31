@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragmentInputFieldRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    tools:context=".InputFieldFragment">
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <!-- Heading TextView -->
+    <!-- 1) HEADER -->
     <TextView
         android:id="@+id/headingTextView"
         android:layout_width="match_parent"
@@ -15,41 +14,44 @@
         android:text="Default Heading"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        android:layout_alignParentTop="true"
-        tools:ignore="HardcodedText" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- Body TextView -->
-    <TextView
-        android:id="@+id/textTextView"
+    <!-- 2) HTML (WebView) -->
+    <WebView
+        android:id="@+id/htmlSnippetWebView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Default Text"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"
-        android:layout_below="@+id/headingTextView"
-        tools:ignore="HardcodedText" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- Video View placed below body text -->
+    <!-- 3) BODY_TEXT -->
+    <TextView
+        android:id="@+id/bodyTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Default Body"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 4) VIDEO -->
     <VideoView
         android:id="@+id/videoView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textTextView"
-        android:layout_marginTop="32dp"
         android:layout_marginBottom="32dp"
         android:visibility="gone" />
 
-    <!-- Container for dynamically added EditText fields and Next button,
-         placed below the video to avoid overlap -->
+    <!-- 5) INPUTFIELD(S) container -->
     <LinearLayout
         android:id="@+id/inputFieldContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/videoView2"
         android:orientation="vertical"
-        android:layout_marginTop="16dp">
+        android:layout_marginBottom="16dp" />
 
-        <!-- EditText fields and Next button will be added here programmatically -->
-    </LinearLayout>
-</RelativeLayout>
+    <!-- 6) CONTINUE BUTTON -->
+    <Button
+        android:id="@+id/continueButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Continue" />\
+</LinearLayout>
