@@ -1,12 +1,12 @@
 // Participant ID Entry
 
-//HEADER_SIZE;48
-//BODY_SIZE;32
-//BUTTON_SIZE;24
-//ITEM_SIZE;30
-//RESPONSE_SIZE;24
-//TIMER_SOUND;sound.wav
-//CUSTOM_HTML;mycode.html
+HEADER_SIZE;48
+BODY_SIZE;32
+BUTTON_SIZE;24
+ITEM_SIZE;30
+RESPONSE_SIZE;24
+TIMER_SOUND;sound.wav
+CUSTOM_HTML;mycode.html
 
 
 TIMER_SOUND;sound.mp3
@@ -94,18 +94,18 @@ INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
 GOTO;AFTER_VERSIONS
 
 LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+INSTRuUCTION;Werjsa 3;Tere fere.;DALEJ
 GOTO;AFTER_VERSIONS
 
 LABEL;AFTER_VERSIONS
 
-SCALE;State no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+SCALE;State no vid;This is <b>bold</b>. This is <font color ='green'></font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 INPUTFIELD;Inputfield no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
 
 TIMER;Timer no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has HTML<custom.html>;CONTINUE;5
 
-INSTRUCTION;Instruction no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
+INSTRUCTION;Instruction no vid;This is <b></b>. This<> is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
 
 TAP_INSTRUCTION;Instruction no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
 
