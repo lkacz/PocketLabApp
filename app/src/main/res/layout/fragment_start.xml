@@ -121,6 +121,13 @@
             android:text="Alarm"
             android:layout_marginBottom="36dp" />
 
+        <Button
+            android:id="@+id/btnProtocolValidation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Protocol Validation"
+            android:layout_marginBottom="36dp" />
+
         <!-- Show About (moved to bottom) -->
         <Button
             android:id="@+id/btnShowAbout"

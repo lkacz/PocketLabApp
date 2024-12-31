@@ -10,7 +10,6 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 
 class StartFragment : Fragment() {
@@ -52,65 +51,59 @@ class StartFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
-
         val fileName = protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
         updateProtocolNameDisplay(fileName)
-
         setupButtons(view)
         return view
     }
 
     private fun setupButtons(view: View) {
-        // Show Protocol Content
         view.findViewById<Button>(R.id.btnShowProtocolContent).setOnClickListener {
             showProtocolContentDialog()
         }
 
-        // Start the study
         view.findViewById<Button>(R.id.btnStart).setOnClickListener {
             showStartStudyConfirmation()
         }
 
-        // Select protocol file
         view.findViewById<Button>(R.id.btnSelectFile).setOnClickListener {
             showChangeProtocolConfirmation {
                 filePicker.launch(arrayOf("text/plain"))
             }
         }
 
-        // Use Demo
         view.findViewById<Button>(R.id.btnUseDemo).setOnClickListener {
             handleProtocolChange("demo", "Demo Protocol")
         }
 
-        // Use Tutorial
         view.findViewById<Button>(R.id.btnUseTutorial).setOnClickListener {
             handleProtocolChange("tutorial", "Tutorial Protocol")
         }
 
-        // Select Media Folder (moved below tutorial)
         view.findViewById<Button>(R.id.btnSelectMediaFolder).setOnClickListener {
             showChangeMediaFolderConfirmation {
                 mediaFolderManager.pickMediaFolder(folderPicker)
             }
         }
 
-        // Customization > Colors and sizes
         view.findViewById<Button>(R.id.btnColorsAndSizes).setOnClickListener {
             AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
         }
 
-        // Customization > Alarm
         view.findViewById<Button>(R.id.btnAlarm).setOnClickListener {
             AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
         }
 
-        // Show About (moved to the bottom)
+        view.findViewById<Button>(R.id.btnProtocolValidation).setOnClickListener {
+            ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
+        }
+
         view.findViewById<Button>(R.id.btnShowAbout).setOnClickListener {
             showAboutContentDialog()
         }
@@ -181,9 +174,9 @@ class StartFragment : Fragment() {
     private fun showChangeMediaFolderConfirmation(onConfirm: () -> Unit) {
         AlertDialogBuilderUtils.showConfirmation(
             requireContext(),
-            title = "Confirm Media Folder",
-            message = "Are you sure you want to change the media folder?",
-            onConfirm = onConfirm
+            "Confirm Media Folder",
+            "Are you sure you want to change the media folder?",
+            onConfirm
         )
     }
 }
