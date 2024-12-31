@@ -37,34 +37,24 @@ class InstructionFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_instruction, container, false)
+        return inflater.inflate(R.layout.fragment_instruction, container, false)
+    }
 
-        // Screen background
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
+        webView = view.findViewById(R.id.htmlSnippetWebView)
         val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
-        val nextButton = view.findViewById<Button>(R.id.nextButton)
         videoView = view.findViewById(R.id.videoView2)
+        val nextButton = view.findViewById<Button>(R.id.nextButton)
 
-        // Insert a WebView programmatically, just before the nextButton
-        val containerLayout = view as LinearLayout
-        webView = WebView(requireContext())
-
-        // Add 16 dp top and bottom margin for the WebView
-        val scale = resources.displayMetrics.density
-        val marginPx = (16 * scale + 0.5f).toInt()
-        val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, marginPx, 0, marginPx)
-        webView.layoutParams = layoutParams
-
-        containerLayout.addView(webView, containerLayout.indexOfChild(nextButton))
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
@@ -97,8 +87,6 @@ class InstructionFragment : Fragment() {
         nextButton.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
         }
-
-        return view
     }
 
     override fun onDestroyView() {
@@ -109,32 +97,6 @@ class InstructionFragment : Fragment() {
             videoView.stopPlayback()
         }
         webView.destroy()
-    }
-
-    /**
-     * Looks for <filename.html> references and, if found, loads that file into the WebView.
-     * Returns the input text with the HTML snippet placeholder removed.
-     */
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
-        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
-        val match = pattern.find(text) ?: return text
-        val matchedFull = match.value
-        val fileName = match.groupValues[1].trim()
-
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
-        val htmlFile = parentFolder.findFile(fileName)
-        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
-            try {
-                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
-                    val htmlContent = inputStream.bufferedReader().readText()
-                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return text.replace(matchedFull, "")
     }
 
     private fun setupWebView() {
@@ -175,6 +137,28 @@ class InstructionFragment : Fragment() {
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
+    }
+
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
     }
 
     companion object {

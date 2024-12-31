@@ -12,7 +12,6 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
@@ -49,33 +48,24 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_timer, container, false)
-        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
+        return inflater.inflate(R.layout.fragment_timer, container, false)
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
+        webView = view.findViewById(R.id.htmlSnippetWebView)
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
+        videoView = view.findViewById(R.id.videoView2)
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
-        videoView = view.findViewById(R.id.videoView2)
 
-        // Insert the WebView before the 'nextButton'
-        val containerLayout = view as LinearLayout
-        webView = WebView(requireContext())
-
-        // Add 16 dp top and bottom margin for the WebView
-        val scaleVal = resources.displayMetrics.density
-        val marginPx = (16 * scaleVal + 0.5f).toInt()
-        val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, marginPx, 0, marginPx)
-        webView.layoutParams = layoutParams
-
-        containerLayout.addView(webView, containerLayout.indexOfChild(nextButton))
         setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
@@ -86,8 +76,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
 
-        val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
-        val refinedNextText = checkAndLoadHtml(cleanNextButton, mediaFolderUri)
+        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
+        val refinedNextText = checkAndLoadHtml(cleanNextText, mediaFolderUri)
 
         checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
         checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
@@ -131,8 +121,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             (activity as MainActivity).loadNextFragment()
             logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
         }
-
-        return view
     }
 
     override fun onTouchThresholdReached() {
@@ -158,28 +146,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         super.onDestroy()
         alarmHelper.release()
         logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
-    }
-
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
-        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
-        val match = pattern.find(text) ?: return text
-        val matchedFull = match.value
-        val fileName = match.groupValues[1].trim()
-
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
-        val htmlFile = parentFolder.findFile(fileName)
-        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
-            try {
-                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
-                    val htmlContent = inputStream.bufferedReader().readText()
-                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return text.replace(matchedFull, "")
     }
 
     private fun setupWebView() {
@@ -216,11 +182,32 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
-        val videoUri = videoFile.uri
-        videoView.setVideoURI(videoUri)
+        videoView.setVideoURI(videoFile.uri)
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
+    }
+
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
     }
 
     companion object {

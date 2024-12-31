@@ -9,7 +9,6 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 
@@ -36,37 +35,25 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_instruction, container, false)
+        return inflater.inflate(R.layout.fragment_instruction, container, false)
+    }
 
-        // BG color
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         videoView = view.findViewById(R.id.videoView2)
-
-        // Insert a WebView before the nextButton, similar to TimerFragment
-        val containerLayout = view as LinearLayout
-        val nextButtonView = containerLayout.findViewById<Button>(R.id.nextButton)
-        webView = WebView(requireContext())
-
-        // Add 16 dp top and bottom margin for the WebView
-        val scale = resources.displayMetrics.density
-        val marginPx = (16 * scale + 0.5f).toInt()
-        val layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        layoutParams.setMargins(0, marginPx, 0, marginPx)
-        webView.layoutParams = layoutParams
-
-        containerLayout.addView(webView, containerLayout.indexOfChild(nextButtonView))
-        setupWebView()
-
         val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
+        webView = view.findViewById(R.id.htmlSnippetWebView)
         val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
         nextButton = view.findViewById(R.id.nextButton)
         nextButton?.visibility = View.INVISIBLE
+
+        setupWebView()
 
         val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
 
@@ -98,8 +85,6 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         nextButton?.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
         }
-
-        return view
     }
 
     override fun onTouchThresholdReached() {
@@ -117,29 +102,6 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         if (this::webView.isInitialized) {
             webView.destroy()
         }
-    }
-
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
-        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
-        val match = pattern.find(text) ?: return text
-        val matchedFull = match.value
-        val fileName = match.groupValues[1].trim()
-
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
-            ?: return text
-        val htmlFile = parentFolder.findFile(fileName)
-        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
-            try {
-                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
-                    val htmlContent = inputStream.bufferedReader().readText()
-                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return text.replace(matchedFull, "")
     }
 
     private fun setupWebView() {
@@ -181,6 +143,29 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         videoView.setOnPreparedListener { mp ->
             mp.start()
         }
+    }
+
+    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
+        if (text.isBlank() || mediaFolderUri == null) return text
+        val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return text
+        val matchedFull = match.value
+        val fileName = match.groupValues[1].trim()
+
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+            ?: return text
+        val htmlFile = parentFolder.findFile(fileName)
+        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+            try {
+                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                    val htmlContent = inputStream.bufferedReader().readText()
+                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return text.replace(matchedFull, "")
     }
 
     companion object {

@@ -1,14 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     android:orientation="vertical"
     android:keepScreenOn="true"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <!-- Header TextView -->
+    <!-- 1) HEADER -->
     <TextView
         android:id="@+id/headerTextView"
         android:layout_width="match_parent"
@@ -16,46 +13,47 @@
         android:text="Default Header"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- Body TextView -->
+    <!-- 2) HTML SNIPPET WEBVIEW -->
+    <WebView
+        android:id="@+id/htmlSnippetWebView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 3) BODY TEXT -->
     <TextView
         android:id="@+id/bodyTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Default Body"
         android:textSize="16sp"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        android:layout_marginBottom="16dp" />
 
-    <!-- Video View -->
+    <!-- 4) VIDEO -->
     <VideoView
         android:id="@+id/videoView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="32dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:layout_marginBottom="32dp" />
 
-    <!-- Timer TextView -->
+    <!-- 5) TIMER TEXT -->
     <TextView
         android:id="@+id/timerTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Time remaining: XX seconds"
         android:textSize="18sp"
-        android:layout_gravity="center"
         android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        android:layout_gravity="center" />
 
-    <!-- Next Button -->
+    <!-- 6) NEXT BUTTON -->
     <Button
         android:id="@+id/nextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Next"
-        android:layout_gravity="end"
-        tools:ignore="HardcodedText" />
-
+        android:layout_gravity="end" />
 </LinearLayout>
