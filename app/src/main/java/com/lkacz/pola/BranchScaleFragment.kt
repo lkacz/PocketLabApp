@@ -69,17 +69,14 @@ class BranchScaleFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header ?: "", resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header ?: "", resourcesFolderUri)
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
-        // Apply dynamic header style
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body ?: "", resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body ?: "", resourcesFolderUri)
@@ -87,7 +84,6 @@ class BranchScaleFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Item
         val cleanItem = parseAndPlayAudioIfAny(item ?: "", resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
         checkAndPlayMp4(item ?: "", resourcesFolderUri)
@@ -95,7 +91,6 @@ class BranchScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Spacing/padding for response buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -103,12 +98,9 @@ class BranchScaleFragment : Fragment() {
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
-
-        // Additional spacing for consecutive responses
         val extraSpacingDp = SpacingManager.getResponsesSpacing(requireContext())
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
-        // Build each branch response button
         branchResponses.forEachIndexed { index, (displayText, label) ->
             val cleanResponse = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
             val refinedResponse = checkAndLoadHtml(cleanResponse, resourcesFolderUri)

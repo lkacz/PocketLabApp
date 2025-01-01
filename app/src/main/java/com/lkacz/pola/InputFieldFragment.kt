@@ -58,7 +58,6 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -67,7 +66,6 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -75,7 +73,6 @@ class InputFieldFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Input fields
         inputFields?.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
@@ -97,7 +94,6 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // CONTINUE button
         val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
@@ -127,7 +123,6 @@ class InputFieldFragment : Fragment() {
             }
             (activity as MainActivity).loadNextFragment()
         }
-
         return view
     }
 

@@ -70,22 +70,16 @@ class InstructionFragment : Fragment() {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Header
-        headerTextView.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
-        bodyTextView.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // CONTINUE (Next) button styling
-        nextButton.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -156,8 +150,9 @@ class InstructionFragment : Fragment() {
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
-        val parentFolder =
-            DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {

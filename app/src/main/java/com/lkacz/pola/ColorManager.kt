@@ -5,10 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
 
-/**
- * Manages color customizations for various UI elements.
- * All values persist in SharedPreferences and can be updated at runtime.
- */
 object ColorManager {
 
     private const val COLOR_PREFS = "ColorPrefs"
@@ -20,12 +16,9 @@ object ColorManager {
     private const val ITEM_TEXT_COLOR_KEY = "itemTextColor"
     private const val RESPONSE_TEXT_COLOR_KEY = "responseTextColor"
     private const val SCREEN_BACKGROUND_COLOR_KEY = "screenBackgroundColor"
-
-    // New keys for CONTINUE buttons
     private const val CONTINUE_TEXT_COLOR_KEY = "continueTextColor"
     private const val CONTINUE_BACKGROUND_COLOR_KEY = "continueBackgroundColor"
 
-    // Default color values
     private const val DEFAULT_HEADER_TEXT_COLOR = Color.BLACK
     private const val DEFAULT_BODY_TEXT_COLOR = Color.DKGRAY
     private const val DEFAULT_BUTTON_TEXT_COLOR = Color.WHITE
@@ -33,8 +26,6 @@ object ColorManager {
     private const val DEFAULT_ITEM_TEXT_COLOR = Color.BLUE
     private const val DEFAULT_RESPONSE_TEXT_COLOR = Color.RED
     private const val DEFAULT_SCREEN_BACKGROUND_COLOR = Color.WHITE
-
-    // Defaults for CONTINUE buttons
     private const val DEFAULT_CONTINUE_TEXT_COLOR = Color.WHITE
     private const val DEFAULT_CONTINUE_BACKGROUND_COLOR = Color.DKGRAY
 

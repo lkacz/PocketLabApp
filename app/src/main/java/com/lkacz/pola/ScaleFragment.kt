@@ -63,7 +63,6 @@ class ScaleFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -72,7 +71,6 @@ class ScaleFragment : Fragment() {
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -80,7 +78,6 @@ class ScaleFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Item
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
         checkAndPlayMp4(item.orEmpty(), resourcesFolderUri)
@@ -88,7 +85,6 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Prepare spacing/padding for "RESPONSE" buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -96,12 +92,9 @@ class ScaleFragment : Fragment() {
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
-
-        // Additional vertical spacing
         val extraSpacingDp = SpacingManager.getResponsesSpacing(requireContext())
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
-        // Build response buttons
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, resourcesFolderUri)
             val refinedButton = checkAndLoadHtml(buttonText, resourcesFolderUri)

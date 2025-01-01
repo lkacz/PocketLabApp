@@ -13,10 +13,6 @@ import android.widget.FrameLayout
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
-/**
- * Fragment that loads a custom HTML file.
- * The main user navigation is a CONTINUE button at the bottom.
- */
 class CustomHtmlFragment : Fragment() {
 
     private var fileName: String? = null
@@ -49,7 +45,6 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        // CONTINUE button
         val continueButton = Button(requireContext()).apply {
             text = "Continue"
             textSize = FontSizeManager.getContinueSize(requireContext())

@@ -17,22 +17,17 @@ import androidx.fragment.app.DialogFragment
 
 class AppearanceCustomizationDialog : DialogFragment() {
 
-    // Top preview elements
     private lateinit var previewHeaderTextView: TextView
     private lateinit var previewBodyTextView: TextView
     private lateinit var previewContinueButton: Button
-
-    // Additional preview elements (Scale Item, Response Buttons)
     private lateinit var previewItemTextView: TextView
     private lateinit var previewPaddingButtonContainer: LinearLayout
     private lateinit var previewPaddingButton1: Button
     private lateinit var previewPaddingButton2: Button
 
-    // Container(s)
     private lateinit var previewContainerTop: LinearLayout
     private lateinit var previewContainerScaleAndResponse: LinearLayout
 
-    // Sliders for font sizes
     private lateinit var sliderHeader: SeekBar
     private lateinit var tvHeaderSizeValue: TextView
     private lateinit var sliderBody: SeekBar
@@ -44,23 +39,17 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var sliderResponse: SeekBar
     private lateinit var tvResponseSizeValue: TextView
 
-    // Slider for space between response buttons
     private lateinit var sliderSpaceBetweenBtns: SeekBar
     private lateinit var tvSpaceBetweenBtnsValue: TextView
-
-    // Sliders for response padding
     private lateinit var sliderResponsePaddingH: SeekBar
     private lateinit var tvResponsePaddingHValue: TextView
     private lateinit var sliderResponsePaddingV: SeekBar
     private lateinit var tvResponsePaddingVValue: TextView
-
-    // Sliders for continue button padding
     private lateinit var sliderContinuePaddingH: SeekBar
     private lateinit var tvContinuePaddingHValue: TextView
     private lateinit var sliderContinuePaddingV: SeekBar
     private lateinit var tvContinuePaddingVValue: TextView
 
-    // Color pickers
     private lateinit var headerColorPicker: View
     private lateinit var bodyColorPicker: View
     private lateinit var continueTextColorPicker: View
@@ -70,11 +59,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var buttonTextColorPicker: View
     private lateinit var buttonBackgroundColorPicker: View
     private lateinit var screenBackgroundColorPicker: View
-
-    // Spinner for transitions
     private lateinit var spinnerTransitions: Spinner
 
-    // In-memory default values
     private var headerTextSize = 24f
     private var bodyTextSize = 16f
     private var continueTextSize = 18f
@@ -90,8 +76,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var buttonTextColorVar = Color.WHITE
     private var buttonBackgroundColorVar = Color.BLUE
     private var screenBgColor = Color.WHITE
-
-    // This is for demonstration, not yet used in code. Real usage is in Protocol reading:
     private var currentTransitionMode = "off"
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -114,7 +98,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Root scroll
         val rootScrollView = ScrollView(requireContext()).apply {
             isFillViewport = true
             layoutParams = ViewGroup.LayoutParams(
@@ -132,7 +115,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         rootScrollView.addView(mainLinearLayout)
 
-        // Preview container top
         previewContainerTop = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
@@ -143,7 +125,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         mainLinearLayout.addView(previewContainerTop)
 
-        // Header preview
         val headerLayoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -157,21 +138,18 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         previewContainerTop.addView(previewHeaderTextView)
 
-        // Body preview
         val bodyLayoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dpToPx(8) }
         previewBodyTextView = TextView(requireContext()).apply {
-            text =
-                "Body text, e.g. Lorem ipsum..."
+            text = "Body text, e.g. Lorem ipsum..."
             textSize = 16f
             gravity = Gravity.CENTER
             layoutParams = bodyLayoutParams
         }
         previewContainerTop.addView(previewBodyTextView)
 
-        // Continue button preview
         val continueBtnLp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -186,7 +164,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         previewContainerTop.addView(previewContinueButton)
 
-        // Header row
         val headerRow = newRowLayout()
         mainLinearLayout.addView(headerRow)
         val headerLabel = TextView(requireContext()).apply {
@@ -196,7 +173,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         headerRow.addView(headerLabel)
         sliderHeader = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -216,7 +197,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         headerRow.addView(headerColorPicker)
 
-        // Body row
         val bodyRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -228,7 +208,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         bodyRow.addView(bodyLabel)
         sliderBody = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -248,7 +232,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         bodyRow.addView(bodyColorPicker)
 
-        // Continue BTN slider row
         val continueRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -260,7 +243,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         continueRow.addView(continueLabel)
         sliderContinue = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -286,7 +273,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         continueRow.addView(continueBackgroundColorPicker)
 
-        // Continue BTN Padding (L/R)
         val continuePaddingHRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -298,7 +284,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         continuePaddingHRow.addView(paddingHLabel)
         sliderContinuePaddingH = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -312,7 +302,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         continuePaddingHRow.addView(tvContinuePaddingHValue)
 
-        // Continue BTN Padding (T/B)
         val continuePaddingVRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -324,7 +313,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         continuePaddingVRow.addView(paddingVLabel)
         sliderContinuePaddingV = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -338,14 +331,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         continuePaddingVRow.addView(tvContinuePaddingVValue)
 
-        // Spacer
         mainLinearLayout.addView(View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
             ).apply { topMargin = dpToPx(8) }
         })
 
-        // Scale + Response preview container
         previewContainerScaleAndResponse = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dpToPx(16), 0, dpToPx(16), 0)
@@ -356,7 +347,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         mainLinearLayout.addView(previewContainerScaleAndResponse)
 
-        // Preview item text
         val itemTvLp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -369,7 +359,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         previewContainerScaleAndResponse.addView(previewItemTextView)
 
-        // Container with multiple response buttons
         previewPaddingButtonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -398,7 +387,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         previewPaddingButtonContainer.addView(previewPaddingButton2)
 
-        // Slider for Item size
         val itemRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -410,7 +398,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         itemRow.addView(itemLabel)
         sliderItem = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -430,7 +422,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         itemRow.addView(itemColorPicker)
 
-        // Slider for Response size
         val responseRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -442,7 +433,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         responseRow.addView(responseLabel)
         sliderResponse = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -477,7 +472,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         responseRow.addView(buttonBackgroundColorPicker)
 
-        // Space Between Btns slider
         val spaceBetweenBtnsRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -489,7 +483,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         spaceBetweenBtnsRow.addView(spaceBetweenBtnsLabel)
         sliderSpaceBetweenBtns = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -503,7 +501,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         spaceBetweenBtnsRow.addView(tvSpaceBetweenBtnsValue)
 
-        // Response Padding (Left/Right)
         val responsePaddingHRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -515,7 +512,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         responsePaddingHRow.addView(responsePaddingHLabel)
         sliderResponsePaddingH = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -529,7 +530,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         responsePaddingHRow.addView(tvResponsePaddingHValue)
 
-        // Response Padding (Top/Bottom)
         val responsePaddingVRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -541,7 +541,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         responsePaddingVRow.addView(responsePaddingVLabel)
         sliderResponsePaddingV = SeekBar(requireContext()).apply {
             max = 100
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
                 leftMargin = dpToPx(4)
             }
         }
@@ -555,14 +559,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         responsePaddingVRow.addView(tvResponsePaddingVValue)
 
-        // Spacer
         mainLinearLayout.addView(View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
             ).apply { topMargin = dpToPx(8) }
         })
 
-        // Background color picker
         val bgRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(4)
         }
@@ -579,14 +581,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         bgRow.addView(screenBackgroundColorPicker)
 
-        // Spacer
         mainLinearLayout.addView(View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
             ).apply { topMargin = dpToPx(8) }
         })
 
-        // Transitions spinner
         val transitionsLabel = TextView(requireContext()).apply {
             text = "Slides transition style:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
@@ -610,7 +610,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         mainLinearLayout.addView(spinnerTransitions)
 
-        // Bottom row
         val bottomButtonRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -656,7 +655,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         (view as ScrollView).setBackgroundColor(screenBgColor)
 
-        // Initialize slider values
         sliderHeader.progress = headerTextSize.toInt().coerceIn(8, 100)
         sliderBody.progress = bodyTextSize.toInt().coerceIn(8, 100)
         sliderContinue.progress = continueTextSize.toInt().coerceIn(8, 100)
@@ -676,7 +674,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton1.textSize = sliderResponse.progress.toFloat()
         previewPaddingButton2.textSize = sliderResponse.progress.toFloat()
 
-        // Load stored colors
         previewHeaderTextView.setTextColor(headerTextColor)
         previewBodyTextView.setTextColor(bodyTextColor)
         previewContinueButton.setTextColor(continueTextColor)
@@ -687,7 +684,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton2.setTextColor(responseTextColor)
         previewPaddingButton2.setBackgroundColor(buttonBackgroundColorVar)
 
-        // Color pickers
         applyColorPickerBoxColor(headerColorPicker, headerTextColor)
         applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
         applyColorPickerBoxColor(continueTextColorPicker, continueTextColor)
@@ -698,13 +694,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
         applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
 
-        // Initialize space between buttons
         sliderSpaceBetweenBtns.max = 100
         sliderSpaceBetweenBtns.progress = 0
         tvSpaceBetweenBtnsValue.text = "0"
         applySpaceBetweenButtons(0)
 
-        // Initialize response padding
         sliderResponsePaddingH.max = 100
         sliderResponsePaddingH.progress = 0
         tvResponsePaddingHValue.text = "0"
@@ -713,7 +707,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvResponsePaddingVValue.text = "0"
         applyResponseButtonPadding()
 
-        // Initialize continue button padding
         sliderContinuePaddingH.max = 100
         sliderContinuePaddingH.progress = 0
         tvContinuePaddingHValue.text = "0"
@@ -722,7 +715,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
 
-        // Slider listeners
         sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
             headerTextSize = size.toFloat()
@@ -777,15 +769,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
             applyContinueButtonPadding()
         })
 
-        // Spinner transitions
         val transitionOptions = listOf("No transition", "Slide to left")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, transitionOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerTransitions.adapter = adapter
-        spinnerTransitions.setSelection(
-            if (currentTransitionMode == "off") 0 else 1,
-            false
-        )
+        spinnerTransitions.setSelection(if (currentTransitionMode == "off") 0 else 1, false)
         spinnerTransitions.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 currentTransitionMode = if (position == 0) "off" else "slide"
@@ -997,7 +985,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultItemColor = Color.parseColor("#008577")
         val defaultResponseColor = Color.parseColor("#C51162")
         val defaultScreenBgColor = Color.parseColor("#F5F5F5")
-
         val defaultButtonTextColor = Color.WHITE
         val defaultButtonBgColor = Color.parseColor("#008577")
 
@@ -1076,7 +1063,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
     }
 
     private fun saveCurrentSelections() {
-        // Save final changes to managers
         ColorManager.setHeaderTextColor(requireContext(), headerTextColor)
         ColorManager.setBodyTextColor(requireContext(), bodyTextColor)
         ColorManager.setItemTextColor(requireContext(), itemTextColor)
@@ -1093,10 +1079,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
         FontSizeManager.setResponseSize(requireContext(), responseTextSize)
         FontSizeManager.setContinueSize(requireContext(), continueTextSize)
 
-        // New: store spacing chosen
         SpacingManager.setResponsesSpacing(requireContext(), sliderSpaceBetweenBtns.progress.toFloat())
 
-        SpacingManager.setResponseButtonMargin(requireContext(), 0f) // or keep this if desired
+        SpacingManager.setResponseButtonMargin(requireContext(), 0f)
         SpacingManager.setResponseButtonPaddingHorizontal(requireContext(), sliderResponsePaddingH.progress.toFloat())
         SpacingManager.setResponseButtonPaddingVertical(requireContext(), sliderResponsePaddingV.progress.toFloat())
         SpacingManager.setContinueButtonPaddingHorizontal(requireContext(), sliderContinuePaddingH.progress.toFloat())

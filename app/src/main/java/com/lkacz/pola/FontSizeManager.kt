@@ -4,10 +4,6 @@ package com.lkacz.pola
 import android.content.Context
 import android.content.SharedPreferences
 
-/**
- * Manages font sizes for various UI elements. Sizes persist in SharedPreferences
- * and can be updated at runtime if desired.
- */
 object FontSizeManager {
 
     private const val FONT_PREFS = "FontPrefs"
@@ -17,11 +13,8 @@ object FontSizeManager {
     private const val BUTTON_SIZE_KEY = "buttonSize"
     private const val ITEM_SIZE_KEY = "itemSize"
     private const val RESPONSE_SIZE_KEY = "responseSize"
-
-    // Key for CONTINUE buttons
     private const val CONTINUE_SIZE_KEY = "continueSize"
 
-    // Default sizes
     private const val DEFAULT_HEADER_SIZE = 60f
     private const val DEFAULT_BODY_SIZE = 24f
     private const val DEFAULT_BUTTON_SIZE = 20f

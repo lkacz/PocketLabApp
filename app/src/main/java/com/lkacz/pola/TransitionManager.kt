@@ -4,9 +4,6 @@ package com.lkacz.pola
 import android.content.Context
 import android.content.SharedPreferences
 
-/**
- * Handles reading and writing the user's chosen transition mode ("off" or "slide").
- */
 object TransitionManager {
 
     private const val PREFS_NAME = "ProtocolPrefs"

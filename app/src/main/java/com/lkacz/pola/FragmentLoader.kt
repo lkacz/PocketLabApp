@@ -4,6 +4,7 @@ package com.lkacz.pola
 import android.content.Context
 import com.lkacz.pola.SpacingManager
 import java.io.BufferedReader
+import java.io.StringReader
 
 class FragmentLoader(
     private val bufferedReader: BufferedReader,
@@ -42,11 +43,10 @@ class FragmentLoader(
                     jumpToLabel(parts.getOrNull(1).orEmpty())
                     continue
                 }
-
-                // Existing dynamic commands
                 "TRANSITIONS" -> {
                     val mode = parts.getOrNull(1)?.lowercase() ?: "off"
-                    TransitionManager.setTransitionMode(getContext(), mode)
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("TRANSITION_MODE", mode).apply()
                     continue
                 }
                 "TIMER_SOUND" -> {
@@ -55,8 +55,6 @@ class FragmentLoader(
                         .edit().putString("CUSTOM_TIMER_SOUND", filename).apply()
                     continue
                 }
-
-                // New dynamic commands for appearance
                 "HEADER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
@@ -74,7 +72,6 @@ class FragmentLoader(
                     SpacingManager.setResponsesSpacing(getContext(), spacingVal)
                     continue
                 }
-
                 "HEADER_SIZE", "BODY_SIZE", "BUTTON_SIZE", "ITEM_SIZE", "RESPONSE_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
@@ -88,8 +85,6 @@ class FragmentLoader(
                     }
                     continue
                 }
-
-                // Fragments
                 "BRANCH_SCALE" -> {
                     return createBranchScaleFragment(parts)
                 }
@@ -111,8 +106,9 @@ class FragmentLoader(
                 "CUSTOM_HTML" -> {
                     return createCustomHtmlFragment(parts)
                 }
-
-                else -> continue
+                else -> {
+                    continue
+                }
             }
         }
     }

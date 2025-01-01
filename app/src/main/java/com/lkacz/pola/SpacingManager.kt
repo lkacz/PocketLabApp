@@ -13,11 +13,8 @@ object SpacingManager {
     private const val RESPONSE_BUTTON_PADDING_V_KEY = "responseButtonPaddingV"
     private const val CONTINUE_BUTTON_PADDING_H_KEY = "continueButtonPaddingH"
     private const val CONTINUE_BUTTON_PADDING_V_KEY = "continueButtonPaddingV"
-
-    // New global “responsesSpacing” key
     private const val RESPONSES_SPACING_KEY = "responsesSpacing"
 
-    // Defaults
     private const val DEFAULT_BUTTON_MARGIN = 0f
     private const val DEFAULT_BUTTON_PADDING_H = 0f
     private const val DEFAULT_BUTTON_PADDING_V = 0f
@@ -73,7 +70,6 @@ object SpacingManager {
             .apply()
     }
 
-    // New public methods for overall responses spacing
     fun setResponsesSpacing(context: Context, spacingDp: Float) {
         getSharedPrefs(context).edit()
             .putFloat(RESPONSES_SPACING_KEY, spacingDp)

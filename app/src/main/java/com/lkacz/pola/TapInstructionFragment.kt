@@ -69,22 +69,16 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Header
-        headerTextView.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
-        bodyTextView.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Hidden CONTINUE button
-        nextButton?.text =
-            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
+        nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
         nextButton?.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton?.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton?.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -152,8 +146,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
             requireContext(),
             resourcesFolderUri
-        )
-            ?: return
+        ) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
@@ -170,8 +163,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
             requireContext(),
             resourcesFolderUri
-        )
-            ?: return text
+        ) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
