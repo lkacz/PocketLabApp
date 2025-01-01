@@ -4,6 +4,10 @@ package com.lkacz.pola
 import android.content.Context
 import java.io.BufferedReader
 
+/**
+ * Updated to remove 'BRANCH_SCALE' references and to unify
+ * them under 'SCALE' with optional labels (handled by ScaleFragment).
+ */
 class FragmentLoader(
     bufferedReader: BufferedReader,
     private val logger: Logger
@@ -125,8 +129,9 @@ class FragmentLoader(
                     ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
-                "BRANCH_SCALE" -> {
-                    return createBranchScaleFragment(parts)
+                // Support for normal scale and branch scale with optional labels in a single fragment
+                "SCALE" -> {
+                    return createScaleFragment(parts)
                 }
                 "INSTRUCTION" -> {
                     return createInstructionFragment(parts)
@@ -137,16 +142,18 @@ class FragmentLoader(
                 "TAP_INSTRUCTION" -> {
                     return createTapInstructionFragment(parts)
                 }
-                "SCALE" -> {
-                    return createScaleFragment(parts)
-                }
                 "INPUTFIELD" -> {
                     return createInputFieldFragment(parts)
                 }
                 "CUSTOM_HTML" -> {
                     return createCustomHtmlFragment(parts)
                 }
+                // END / else
+                "END" -> {
+                    return EndFragment()
+                }
                 else -> {
+                    // Possibly unknown or empty directive; skip
                     continue
                 }
             }
@@ -167,24 +174,36 @@ class FragmentLoader(
         currentIndex = targetIndex
     }
 
-    private fun createBranchScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val item = parts.getOrNull(3)
+        // After the first 4 semicolons, the rest are responses or possible label-encoded responses
         val rawResponses = parts.drop(4)
         val branchResponses = mutableListOf<Pair<String, String?>>()
-        rawResponses.forEach { resp ->
+
+        // If any response has optional [label], we treat it as branch
+        for (resp in rawResponses) {
             val bracketStart = resp.indexOf('[')
             val bracketEnd = resp.indexOf(']')
             if (bracketStart in 0 until bracketEnd) {
                 val displayText = resp.substring(0, bracketStart).trim()
-                val lbl = resp.substring(bracketStart + 1, bracketEnd).trim()
-                branchResponses.add(displayText to lbl)
+                val label = resp.substring(bracketStart + 1, bracketEnd).trim()
+                branchResponses.add(displayText to label)
             } else {
+                // normal scale response
                 branchResponses.add(resp to null)
             }
         }
-        return BranchScaleFragment.newInstance(header, body, item, branchResponses)
+
+        // If any label was found, we’ll use newBranchInstance; otherwise, normal newInstance
+        val hasAnyLabel = branchResponses.any { it.second != null }
+        return if (hasAnyLabel) {
+            ScaleFragment.newBranchInstance(header, body, item, branchResponses)
+        } else {
+            val justDisplayTexts = branchResponses.map { it.first }
+            ScaleFragment.newInstance(header, body, item, justDisplayTexts)
+        }
     }
 
     private fun createInstructionFragment(parts: List<String>): androidx.fragment.app.Fragment {
@@ -207,14 +226,6 @@ class FragmentLoader(
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
         return TapInstructionFragment.newInstance(header, body, buttonText)
-    }
-
-    private fun createScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
-        val header = parts.getOrNull(1)
-        val body = parts.getOrNull(2)
-        val item = parts.getOrNull(3)
-        val responses = parts.drop(4)
-        return ScaleFragment.newInstance(header, body, item, responses)
     }
 
     private fun createInputFieldFragment(parts: List<String>): androidx.fragment.app.Fragment {

@@ -35,13 +35,12 @@ TIMER_SOUND;sound.wav
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 // Emotions Scale After Walking With a Friend
-MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia;Również wersja trzecia
 
-RANDOMIZED_MULTISCALE;Randomized multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+RANDOMIZED_MULTISCALE;Randomized multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia;Również wersja trzecia
 
+MULTISCALE;BRANCH Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Branching Scale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
 LABEL;Version1
 INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
