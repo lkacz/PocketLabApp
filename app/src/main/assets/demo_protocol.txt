@@ -30,17 +30,40 @@ TIMER_SOUND;sound.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
+CONTINUE_TEXT_COLOR;#000000
+CONTINUE_BACKGROUND_COLOR;#FFFFFF
+INSTRUCTION;Header;Body;DALEJ
 
-
-ITEM_COLOR;#00ff00
+RESPONSE_TEXT_COLOR;GREEN
+RESPONSE_BACKGROUND_COLOR;RED
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
-ITEM_COLOR;#0000ff
+CONTINUE_TEXT_COLOR;#FFFFFF
+CONTINUE_BACKGROUND_COLOR;#000000
+INSTRUCTION;Header;Body;DALEJ
+
+
+RESPONSE_TEXT_COLOR;RED
+RESPONSE_BACKGROUND_COLOR;GREEN
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+CONTINUE_TEXT_COLOR;#000000
+CONTINUE_BACKGROUND_COLOR;#FFFFFF
+INSTRUCTION;Header;Body;DALEJ
+
+
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 
+
+
+
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 INSTRUCTION;Header;Body;DALEJ
+
+
+
 
 CONTINUE_TEXT_COLOR;#0000ff
 CONTINUE_BACKGROUND_COLOR;#ff0000

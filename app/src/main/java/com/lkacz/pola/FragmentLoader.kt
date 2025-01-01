@@ -95,9 +95,9 @@ class FragmentLoader(
                         .edit().putString("CONTINUE_ALIGNMENT", alignValue).apply()
                     continue
                 }
-                "RESPONSES_SPACING" -> {
+                "RESPONSE_SPACING" -> {
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
-                    SpacingManager.setResponsesSpacing(getContext(), spacingVal)
+                    SpacingManager.setResponseSpacing(getContext(), spacingVal)
                     continue
                 }
                 "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
@@ -111,6 +111,18 @@ class FragmentLoader(
                             "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(getContext(), sizeValue)
                         }
                     }
+                    continue
+                }
+                "RESPONSE_TEXT_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setResponseTextColor(getContext(), colorInt)
+                    continue
+                }
+                "RESPONSE_BACKGROUND_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
                 "BRANCH_SCALE" -> {

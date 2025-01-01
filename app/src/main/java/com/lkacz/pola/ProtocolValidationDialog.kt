@@ -1,3 +1,4 @@
+// Filename: ProtocolValidationDialog.kt
 package com.lkacz.pola
 
 import android.app.Dialog
@@ -39,7 +40,9 @@ class ProtocolValidationDialog : DialogFragment() {
         "RANDOMIZE_ON",
         "RANDOMIZE_OFF",
         "STUDY_ID",
-        "CONTINUE_SIZE"
+        "CONTINUE_SIZE",
+        "RESPONSE_TEXT_COLOR",
+        "RESPONSE_BACKGROUND_COLOR"
     )
 
     private var randomizationLevel = 0
@@ -65,7 +68,7 @@ class ProtocolValidationDialog : DialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val rootLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -79,7 +82,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val contentTable = buildContentTable(getProtocolContent())
 
         if (randomizationLevel > 0) {
-            globalErrors.add("RANDOMIZATION_ON not closed by matching RANDOMIZATION_OFF")
+            globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
         }
 
         if (globalErrors.isNotEmpty()) {
@@ -131,7 +134,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
-            setStretchAllColumns(true)
+            isStretchAllColumns = true
             setPadding(8, 8, 8, 8)
         }
 
@@ -144,7 +147,7 @@ class ProtocolValidationDialog : DialogFragment() {
             val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
 
             if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("//")) {
-                val highlightedLine = highlightLine(trimmedLine, errorMessage, warningMessage)
+                val highlightedLine = highlightLine(trimmedLine, errorMessage)
                 val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
                 val row = TableRow(context).apply {
@@ -473,8 +476,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun highlightLine(
         line: String,
-        errorMessage: String,
-        warningMessage: String
+        errorMessage: String
     ): SpannableString {
         val combined = SpannableString(line)
         val parts = line.split(";")
