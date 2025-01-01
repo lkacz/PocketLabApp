@@ -13,12 +13,12 @@ object SpacingManager {
     private const val RESPONSE_BUTTON_PADDING_V_KEY = "responseButtonPaddingV"
     private const val CONTINUE_BUTTON_PADDING_H_KEY = "continueButtonPaddingH"
     private const val CONTINUE_BUTTON_PADDING_V_KEY = "continueButtonPaddingV"
-    private const val RESPONSES_SPACING_KEY = "responsesSpacing"
+    private const val RESPONSE_SPACING_KEY = "responseSpacing"
 
     private const val DEFAULT_BUTTON_MARGIN = 0f
     private const val DEFAULT_BUTTON_PADDING_H = 0f
     private const val DEFAULT_BUTTON_PADDING_V = 0f
-    private const val DEFAULT_RESPONSES_SPACING = 0f
+    private const val DEFAULT_RESPONSE_SPACING = 0f
 
     fun getResponseButtonMargin(context: Context): Float {
         return getSharedPrefs(context).getFloat(RESPONSE_BUTTON_MARGIN_KEY, DEFAULT_BUTTON_MARGIN)
@@ -70,14 +70,14 @@ object SpacingManager {
             .apply()
     }
 
-    fun setResponsesSpacing(context: Context, spacingDp: Float) {
+    fun setResponseSpacing(context: Context, spacingDp: Float) {
         getSharedPrefs(context).edit()
-            .putFloat(RESPONSES_SPACING_KEY, spacingDp)
+            .putFloat(RESPONSE_SPACING_KEY, spacingDp)
             .apply()
     }
 
-    fun getResponsesSpacing(context: Context): Float {
-        return getSharedPrefs(context).getFloat(RESPONSES_SPACING_KEY, DEFAULT_RESPONSES_SPACING)
+    fun getResponseSpacing(context: Context): Float {
+        return getSharedPrefs(context).getFloat(RESPONSE_SPACING_KEY, DEFAULT_RESPONSE_SPACING)
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {

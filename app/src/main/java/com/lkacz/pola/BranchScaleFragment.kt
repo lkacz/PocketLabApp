@@ -83,7 +83,7 @@ class BranchScaleFragment : Fragment() {
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
-        applyBodyAlignment(bodyTextView) // <-- Newly added for BODY_ALIGNMENT
+        applyBodyAlignment(bodyTextView)
 
         val cleanItem = parseAndPlayAudioIfAny(item ?: "", resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
@@ -99,7 +99,7 @@ class BranchScaleFragment : Fragment() {
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
-        val extraSpacingDp = SpacingManager.getResponsesSpacing(requireContext())
+        val extraSpacingDp = SpacingManager.getResponseSpacing(requireContext())
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
         branchResponses.forEachIndexed { index, (displayText, label) ->
@@ -230,7 +230,6 @@ class BranchScaleFragment : Fragment() {
         }
     }
 
-    // New method for BODY_ALIGNMENT
     private fun applyBodyAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()

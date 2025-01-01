@@ -39,8 +39,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var sliderResponse: SeekBar
     private lateinit var tvResponseSizeValue: TextView
 
-    private lateinit var sliderSpaceBetweenBtns: SeekBar
-    private lateinit var tvSpaceBetweenBtnsValue: TextView
+    private lateinit var sliderResponseSpacing: SeekBar
+    private lateinit var tvResponseSpacingValue: TextView
     private lateinit var sliderResponsePaddingH: SeekBar
     private lateinit var tvResponsePaddingHValue: TextView
     private lateinit var sliderResponsePaddingV: SeekBar
@@ -472,16 +472,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         responseRow.addView(buttonBackgroundColorPicker)
 
-        val spaceBetweenBtnsRow = newRowLayout().apply {
+        val responseSpacingRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
-        mainLinearLayout.addView(spaceBetweenBtnsRow)
-        val spaceBetweenBtnsLabel = TextView(requireContext()).apply {
-            text = "Space Between Btns:"
+        mainLinearLayout.addView(responseSpacingRow)
+        val responseSpacingLabel = TextView(requireContext()).apply {
+            text = "Response Spacing:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
-        spaceBetweenBtnsRow.addView(spaceBetweenBtnsLabel)
-        sliderSpaceBetweenBtns = SeekBar(requireContext()).apply {
+        responseSpacingRow.addView(responseSpacingLabel)
+        sliderResponseSpacing = SeekBar(requireContext()).apply {
             max = 100
             layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -491,15 +491,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 leftMargin = dpToPx(4)
             }
         }
-        spaceBetweenBtnsRow.addView(sliderSpaceBetweenBtns)
-        tvSpaceBetweenBtnsValue = TextView(requireContext()).apply {
+        responseSpacingRow.addView(sliderResponseSpacing)
+        tvResponseSpacingValue = TextView(requireContext()).apply {
             text = "0"
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { leftMargin = dpToPx(4) }
         }
-        spaceBetweenBtnsRow.addView(tvSpaceBetweenBtnsValue)
+        responseSpacingRow.addView(tvResponseSpacingValue)
 
         val responsePaddingHRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
@@ -694,10 +694,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
         applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
 
-        sliderSpaceBetweenBtns.max = 100
-        sliderSpaceBetweenBtns.progress = 0
-        tvSpaceBetweenBtnsValue.text = "0"
-        applySpaceBetweenButtons(0)
+        sliderResponseSpacing.max = 100
+        sliderResponseSpacing.progress = 0
+        tvResponseSpacingValue.text = "0"
+        applyResponseSpacing(0)
 
         sliderResponsePaddingH.max = 100
         sliderResponsePaddingH.progress = 0
@@ -747,10 +747,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
             tvResponseSizeValue.text = size.toString()
         })
 
-        sliderSpaceBetweenBtns.setOnSeekBarChangeListener(simpleSeekBarListener {
+        sliderResponseSpacing.setOnSeekBarChangeListener(simpleSeekBarListener {
             val spaceDp = it.coerceIn(0, 100)
-            tvSpaceBetweenBtnsValue.text = spaceDp.toString()
-            applySpaceBetweenButtons(spaceDp)
+            tvResponseSpacingValue.text = spaceDp.toString()
+            applyResponseSpacing(spaceDp)
         })
         sliderResponsePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
             tvResponsePaddingHValue.text = it.toString()
@@ -798,7 +798,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 
-    private fun applySpaceBetweenButtons(spaceDp: Int) {
+    private fun applyResponseSpacing(spaceDp: Int) {
         val scale = resources.displayMetrics.density
         val spacePx = (spaceDp * scale + 0.5f).toInt()
 
@@ -1045,9 +1045,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         (view as? ScrollView)?.setBackgroundColor(screenBgColor)
 
-        sliderSpaceBetweenBtns.progress = 0
-        tvSpaceBetweenBtnsValue.text = "0"
-        applySpaceBetweenButtons(0)
+        sliderResponseSpacing.progress = 0
+        tvResponseSpacingValue.text = "0"
+        applyResponseSpacing(0)
 
         sliderResponsePaddingH.progress = 0
         tvResponsePaddingHValue.text = "0"
@@ -1079,7 +1079,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         FontSizeManager.setResponseSize(requireContext(), responseTextSize)
         FontSizeManager.setContinueSize(requireContext(), continueTextSize)
 
-        SpacingManager.setResponsesSpacing(requireContext(), sliderSpaceBetweenBtns.progress.toFloat())
+        SpacingManager.setResponseSpacing(requireContext(), sliderResponseSpacing.progress.toFloat())
 
         SpacingManager.setResponseButtonMargin(requireContext(), 0f)
         SpacingManager.setResponseButtonPaddingHorizontal(requireContext(), sliderResponsePaddingH.progress.toFloat())
