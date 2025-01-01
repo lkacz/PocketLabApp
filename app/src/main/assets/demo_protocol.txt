@@ -9,6 +9,8 @@ TIMER_SOUND;sound.wa
 CUSTOM_HTML;mycode.tml
 
 
+CUSTOM_HTML;wiki.html
+
 MULTISCALE;Multiscale;This is sound<sound.mp3>;[Pierwszy item,Drugi item,Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia
 
 

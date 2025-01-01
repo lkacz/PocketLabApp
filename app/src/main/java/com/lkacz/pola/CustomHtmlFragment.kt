@@ -7,6 +7,7 @@ import android.view.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import androidx.documentfile.provider.DocumentFile
@@ -80,7 +81,15 @@ class CustomHtmlFragment : Fragment() {
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
+        // Enable JavaScript, DOM storage, allow mixed content, etc.
         settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
+        // Provide a WebViewClient so that navigation/iframe loads happen inside this WebView
+        webView.webViewClient = WebViewClient()
+
+        // Keep existing
         webView.webChromeClient = WebChromeClient()
     }
 
