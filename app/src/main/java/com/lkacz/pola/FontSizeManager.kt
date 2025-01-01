@@ -1,3 +1,4 @@
+// Filename: FontSizeManager.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -6,13 +7,6 @@ import android.content.SharedPreferences
 /**
  * Manages font sizes for various UI elements. Sizes persist in SharedPreferences
  * and can be updated at runtime if desired.
- *
- * Default sizes are set according to the user's specification:
- * HEADER_SIZE = 60
- * BODY_SIZE = 24
- * BUTTON_SIZE = 20
- * ITEM_SIZE = 50
- * RESPONSE_SIZE = 8
  */
 object FontSizeManager {
 
@@ -24,12 +18,18 @@ object FontSizeManager {
     private const val ITEM_SIZE_KEY = "itemSize"
     private const val RESPONSE_SIZE_KEY = "responseSize"
 
-    // Defaults per user specification:
+    // New key for CONTINUE buttons
+    private const val CONTINUE_SIZE_KEY = "continueSize"
+
+    // Default sizes:
     private const val DEFAULT_HEADER_SIZE = 60f
     private const val DEFAULT_BODY_SIZE = 24f
     private const val DEFAULT_BUTTON_SIZE = 20f
     private const val DEFAULT_ITEM_SIZE = 50f
     private const val DEFAULT_RESPONSE_SIZE = 8f
+
+    // Default for CONTINUE
+    private const val DEFAULT_CONTINUE_SIZE = 18f
 
     fun getHeaderSize(context: Context): Float {
         return getSharedPrefs(context).getFloat(HEADER_SIZE_KEY, DEFAULT_HEADER_SIZE)
@@ -69,6 +69,14 @@ object FontSizeManager {
 
     fun setResponseSize(context: Context, newSize: Float) {
         getSharedPrefs(context).edit().putFloat(RESPONSE_SIZE_KEY, newSize).apply()
+    }
+
+    fun getContinueSize(context: Context): Float {
+        return getSharedPrefs(context).getFloat(CONTINUE_SIZE_KEY, DEFAULT_CONTINUE_SIZE)
+    }
+
+    fun setContinueSize(context: Context, newSize: Float) {
+        getSharedPrefs(context).edit().putFloat(CONTINUE_SIZE_KEY, newSize).apply()
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {

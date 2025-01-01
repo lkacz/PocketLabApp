@@ -3,17 +3,15 @@ package com.lkacz.pola
 
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.view.*
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.*
 import android.widget.Button
 import android.widget.FrameLayout
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
-import android.widget.LinearLayout
-import android.widget.Toast
 
 /**
  * Fragment that loads a custom HTML/JS file from the selected resources folder.
@@ -35,7 +33,6 @@ class CustomHtmlFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Use a FrameLayout to position the button bottom-right elegantly
         val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -52,17 +49,21 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        // Create a 'continue' button with styling similar to other fragments
+        // Create a 'continue' button with distinct styling
         val continueButton = Button(requireContext()).apply {
             text = "Continue"
-            textSize = FontSizeManager.getButtonSize(requireContext())
-            setTextColor(ColorManager.getButtonTextColor(requireContext()))
-            setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+            textSize = FontSizeManager.getContinueSize(requireContext())
+            setTextColor(ColorManager.getContinueTextColor(requireContext()))
+            setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
 
             val density = resources.displayMetrics.density
-            val marginPx = (16 * density + 0.5f).toInt()
+            val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+            val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+            val chPx = (ch * density + 0.5f).toInt()
+            val cvPx = (cv * density + 0.5f).toInt()
+            setPadding(chPx, cvPx, chPx, cvPx)
 
-            // Position bottom-right with some padding
+            val marginPx = (16 * density + 0.5f).toInt()
             val params = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -94,12 +95,10 @@ class CustomHtmlFragment : Fragment() {
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
-        // Enable JavaScript, DOM storage, allow mixed content, etc.
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
-        // Provide a WebViewClient so that navigation/iframe loads happen inside this WebView
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
     }

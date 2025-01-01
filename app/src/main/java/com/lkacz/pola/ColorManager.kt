@@ -1,3 +1,4 @@
+// Filename: ColorManager.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -20,14 +21,22 @@ object ColorManager {
     private const val RESPONSE_TEXT_COLOR_KEY = "responseTextColor"
     private const val SCREEN_BACKGROUND_COLOR_KEY = "screenBackgroundColor"
 
-    // Default color values (ARGB), can be changed as desired
+    // New keys for CONTINUE buttons
+    private const val CONTINUE_TEXT_COLOR_KEY = "continueTextColor"
+    private const val CONTINUE_BACKGROUND_COLOR_KEY = "continueBackgroundColor"
+
+    // Default color values (ARGB)
     private const val DEFAULT_HEADER_TEXT_COLOR = Color.BLACK
     private const val DEFAULT_BODY_TEXT_COLOR = Color.DKGRAY
     private const val DEFAULT_BUTTON_TEXT_COLOR = Color.WHITE
-    private const val DEFAULT_BUTTON_BACKGROUND_COLOR = Color.BLUE // a purple
+    private const val DEFAULT_BUTTON_BACKGROUND_COLOR = Color.BLUE
     private const val DEFAULT_ITEM_TEXT_COLOR = Color.BLUE
     private const val DEFAULT_RESPONSE_TEXT_COLOR = Color.RED
     private const val DEFAULT_SCREEN_BACKGROUND_COLOR = Color.WHITE
+
+    // Defaults for CONTINUE buttons
+    private const val DEFAULT_CONTINUE_TEXT_COLOR = Color.WHITE
+    private const val DEFAULT_CONTINUE_BACKGROUND_COLOR = Color.DKGRAY
 
     fun getHeaderTextColor(context: Context): Int {
         return getSharedPrefs(context).getInt(HEADER_TEXT_COLOR_KEY, DEFAULT_HEADER_TEXT_COLOR)
@@ -83,6 +92,22 @@ object ColorManager {
 
     fun setScreenBackgroundColor(context: Context, color: Int) {
         getSharedPrefs(context).edit().putInt(SCREEN_BACKGROUND_COLOR_KEY, color).apply()
+    }
+
+    fun getContinueTextColor(context: Context): Int {
+        return getSharedPrefs(context).getInt(CONTINUE_TEXT_COLOR_KEY, DEFAULT_CONTINUE_TEXT_COLOR)
+    }
+
+    fun setContinueTextColor(context: Context, color: Int) {
+        getSharedPrefs(context).edit().putInt(CONTINUE_TEXT_COLOR_KEY, color).apply()
+    }
+
+    fun getContinueBackgroundColor(context: Context): Int {
+        return getSharedPrefs(context).getInt(CONTINUE_BACKGROUND_COLOR_KEY, DEFAULT_CONTINUE_BACKGROUND_COLOR)
+    }
+
+    fun setContinueBackgroundColor(context: Context, color: Int) {
+        getSharedPrefs(context).edit().putInt(CONTINUE_BACKGROUND_COLOR_KEY, color).apply()
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {

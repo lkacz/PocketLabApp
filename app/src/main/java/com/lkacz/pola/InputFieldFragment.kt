@@ -94,15 +94,23 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Continue button
+        // CONTINUE button
         val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
 
         continueButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButtonText)
-        continueButton.textSize = FontSizeManager.getButtonSize(requireContext())
-        continueButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
-        continueButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+        continueButton.textSize = FontSizeManager.getContinueSize(requireContext())
+        continueButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
+        continueButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        continueButton.setPadding(chPx, cvPx, chPx, cvPx)
+
         continueButton.setOnClickListener {
             fieldValues.forEach { (hint, value) ->
                 val isNumeric = value.toDoubleOrNull() != null

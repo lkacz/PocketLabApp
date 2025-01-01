@@ -92,10 +92,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // CONTINUE button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
-        nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
-        nextButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
-        nextButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+        nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
+        nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
+        nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        nextButton.setPadding(chPx, cvPx, chPx, cvPx)
+
         nextButton.visibility = View.INVISIBLE
 
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
@@ -184,9 +193,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {

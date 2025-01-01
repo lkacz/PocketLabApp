@@ -72,18 +72,30 @@ class InstructionFragment : Fragment() {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
+        // Header
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
+        // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // This is the CONTINUE button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
-        nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
-        nextButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
-        nextButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+        nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
+        nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
+        nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+
+        // Apply CONTINUE button padding
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        nextButton.setPadding(chPx, cvPx, chPx, cvPx)
+
         nextButton.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
         }
