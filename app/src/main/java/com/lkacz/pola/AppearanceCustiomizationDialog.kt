@@ -16,8 +16,8 @@ import androidx.core.graphics.red
 import androidx.fragment.app.DialogFragment
 
 /**
- * Dialog for customizing font sizes, UI colors, transitions, and response-button padding.
- * Timer-sound logic has been moved out into AlarmCustomizationDialog.
+ * Dialog for customizing font sizes, UI colors, transitions, button spacing (the margin between buttons),
+ * and button padding (space around the button text). Timer-sound logic has been moved out into AlarmCustomizationDialog.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
 
@@ -43,8 +43,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var sliderResponse: SeekBar
     private lateinit var tvResponseSizeValue: TextView
 
-    private lateinit var sliderResponsePadding: SeekBar
-    private lateinit var tvResponsePaddingValue: TextView
+    // Sliders for spacing (margin) and separate horizontal / vertical padding
+    private lateinit var sliderResponseMargin: SeekBar
+    private lateinit var tvResponseMarginValue: TextView
+    private lateinit var sliderResponsePaddingH: SeekBar
+    private lateinit var tvResponsePaddingHValue: TextView
+    private lateinit var sliderResponsePaddingV: SeekBar
+    private lateinit var tvResponsePaddingVValue: TextView
 
     private lateinit var headerColorPicker: View
     private lateinit var bodyColorPicker: View
@@ -54,7 +59,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var responseColorPicker: View
     private lateinit var screenBackgroundColorPicker: View
 
-    // Additional preview container with two stacked buttons for padding demonstration
+    // Additional preview container with two stacked buttons for demonstration
     private lateinit var previewPaddingButtonContainer: LinearLayout
     private lateinit var previewPaddingButton1: Button
     private lateinit var previewPaddingButton2: Button
@@ -121,8 +126,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderResponse = view.findViewById(R.id.sliderResponseSize)
         tvResponseSizeValue = view.findViewById(R.id.tvResponseSizeValue)
 
-        sliderResponsePadding = view.findViewById(R.id.sliderResponsePadding)
-        tvResponsePaddingValue = view.findViewById(R.id.tvResponsePaddingValue)
+        // New slider references for margin and padding
+        sliderResponseMargin = view.findViewById(R.id.sliderResponseMargin)
+        tvResponseMarginValue = view.findViewById(R.id.tvResponseMarginValue)
+        sliderResponsePaddingH = view.findViewById(R.id.sliderResponsePaddingH)
+        tvResponsePaddingHValue = view.findViewById(R.id.tvResponsePaddingHValue)
+        sliderResponsePaddingV = view.findViewById(R.id.sliderResponsePaddingV)
+        tvResponsePaddingVValue = view.findViewById(R.id.tvResponsePaddingVValue)
 
         // Color pickers
         headerColorPicker = view.findViewById(R.id.headerColorPicker)
@@ -213,6 +223,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(responseColorPicker, responseTextColor)
         applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
 
+        // Setup size sliders
         sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
             FontSizeManager.setHeaderSize(ctx, size.toFloat())
@@ -250,18 +261,47 @@ class AppearanceCustomizationDialog : DialogFragment() {
             tvResponseSizeValue.text = size.toString()
         })
 
-        // Handle response-button padding
-        val currentPaddingDp = SpacingManager.getResponseButtonPadding(ctx).toInt().coerceIn(0, 100)
-        sliderResponsePadding.max = 100
-        sliderResponsePadding.progress = currentPaddingDp
-        tvResponsePaddingValue.text = currentPaddingDp.toString()
-        applyResponseButtonMargin(currentPaddingDp)
+        // Setup spacing & padding sliders
+        // 1) Margin (space between buttons)
+        val currentMarginDp = SpacingManager.getResponseButtonMargin(ctx).toInt().coerceIn(0, 100)
+        sliderResponseMargin.max = 100
+        sliderResponseMargin.progress = currentMarginDp
+        tvResponseMarginValue.text = currentMarginDp.toString()
+        applyResponseButtonMargin(currentMarginDp)
 
-        sliderResponsePadding.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val pad = it.coerceIn(0, 100)
-            SpacingManager.setResponseButtonPadding(ctx, pad.toFloat())
-            tvResponsePaddingValue.text = pad.toString()
-            applyResponseButtonMargin(pad)
+        sliderResponseMargin.setOnSeekBarChangeListener(simpleSeekBarListener {
+            val marginDp = it.coerceIn(0, 100)
+            SpacingManager.setResponseButtonMargin(ctx, marginDp.toFloat())
+            tvResponseMarginValue.text = marginDp.toString()
+            applyResponseButtonMargin(marginDp)
+        })
+
+        // 2) Horizontal padding (left/right inside each button)
+        val currentPaddingH = SpacingManager.getResponseButtonPaddingHorizontal(ctx).toInt().coerceIn(0, 100)
+        sliderResponsePaddingH.max = 100
+        sliderResponsePaddingH.progress = currentPaddingH
+        tvResponsePaddingHValue.text = currentPaddingH.toString()
+        applyResponseButtonPadding()
+
+        sliderResponsePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
+            val ph = it.coerceIn(0, 100)
+            SpacingManager.setResponseButtonPaddingHorizontal(ctx, ph.toFloat())
+            tvResponsePaddingHValue.text = ph.toString()
+            applyResponseButtonPadding()
+        })
+
+        // 3) Vertical padding (top/bottom inside each button)
+        val currentPaddingV = SpacingManager.getResponseButtonPaddingVertical(ctx).toInt().coerceIn(0, 100)
+        sliderResponsePaddingV.max = 100
+        sliderResponsePaddingV.progress = currentPaddingV
+        tvResponsePaddingVValue.text = currentPaddingV.toString()
+        applyResponseButtonPadding()
+
+        sliderResponsePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
+            val pv = it.coerceIn(0, 100)
+            SpacingManager.setResponseButtonPaddingVertical(ctx, pv.toFloat())
+            tvResponsePaddingVValue.text = pv.toString()
+            applyResponseButtonPadding()
         })
 
         // Color pickers
@@ -338,12 +378,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val storedMode = TransitionManager.getTransitionMode(ctx)
         transitionsSpinner.setSelection(if (storedMode == "off") 0 else 1, false)
         transitionsSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                v: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 when (position) {
                     0 -> TransitionManager.setTransitionMode(ctx, "off")
                     1 -> TransitionManager.setTransitionMode(ctx, "slide")
@@ -374,17 +409,40 @@ class AppearanceCustomizationDialog : DialogFragment() {
         buttonsLayout?.addView(defaultsButton, buttonsLayout.indexOfChild(cancelButton))
     }
 
-    private fun applyResponseButtonMargin(padDp: Int) {
+    /**
+     * Set the margin between buttons (left, top, right, bottom).
+     */
+    private fun applyResponseButtonMargin(marginDp: Int) {
         val scale = resources.displayMetrics.density
-        val padPx = (padDp * scale + 0.5f).toInt()
+        val marginPx = (marginDp * scale + 0.5f).toInt()
 
         fun updateButtonMargin(button: Button) {
             val params = button.layoutParams as LinearLayout.LayoutParams
-            params.setMargins(padPx, padPx, padPx, padPx)
+            params.setMargins(marginPx, marginPx, marginPx, marginPx)
             button.layoutParams = params
         }
         updateButtonMargin(previewPaddingButton1)
         updateButtonMargin(previewPaddingButton2)
+    }
+
+    /**
+     * Set the internal horizontal and vertical padding inside each button.
+     */
+    private fun applyResponseButtonPadding() {
+        val ctx = requireContext()
+        val scale = resources.displayMetrics.density
+
+        val horizontalDp = SpacingManager.getResponseButtonPaddingHorizontal(ctx)
+        val verticalDp = SpacingManager.getResponseButtonPaddingVertical(ctx)
+        val horizontalPx = (horizontalDp * scale + 0.5f).toInt()
+        val verticalPx = (verticalDp * scale + 0.5f).toInt()
+
+        fun updateButtonPadding(button: Button) {
+            button.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
+        }
+
+        updateButtonPadding(previewPaddingButton1)
+        updateButtonPadding(previewPaddingButton2)
     }
 
     private fun applyColorPickerBoxColor(picker: View, color: Int) {
@@ -505,13 +563,21 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewResponseButton.setBackgroundColor(defaultButtonBgColor)
         previewContainer.setBackgroundColor(defaultScreenBgColor)
 
-        // Reset response-button padding
-        SpacingManager.setResponseButtonPadding(ctx, 0f)
-        sliderResponsePadding.progress = 0
-        tvResponsePaddingValue.text = "0"
+        // Reset margins and padding
+        SpacingManager.setResponseButtonMargin(ctx, 0f)
+        sliderResponseMargin.progress = 0
+        tvResponseMarginValue.text = "0"
         applyResponseButtonMargin(0)
 
-        // NO forced transitions set here anymore. (Removed hardcoded "slide" default)
+        SpacingManager.setResponseButtonPaddingHorizontal(ctx, 0f)
+        sliderResponsePaddingH.progress = 0
+        tvResponsePaddingHValue.text = "0"
+
+        SpacingManager.setResponseButtonPaddingVertical(ctx, 0f)
+        sliderResponsePaddingV.progress = 0
+        tvResponsePaddingVValue.text = "0"
+
+        applyResponseButtonPadding()
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =

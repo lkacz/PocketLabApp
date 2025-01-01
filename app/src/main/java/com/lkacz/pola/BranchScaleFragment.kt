@@ -91,9 +91,16 @@ class BranchScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
+        // Retrieve user-defined spacing and padding
         val density = resources.displayMetrics.density
-        val userPaddingPx = (userPaddingDp * density + 0.5f).toInt()
+        val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
+        val marginPx = (marginDp * density + 0.5f).toInt()
+
+        val paddingHdp = SpacingManager.getResponseButtonPaddingHorizontal(requireContext())
+        val paddingHpx = (paddingHdp * density + 0.5f).toInt()
+
+        val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
+        val paddingVpx = (paddingVdp * density + 0.5f).toInt()
 
         // Build each branch response as a button
         branchResponses.forEachIndexed { index, (displayText, label) ->
@@ -106,12 +113,17 @@ class BranchScaleFragment : Fragment() {
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+
+                // Apply margins
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(userPaddingPx, userPaddingPx, userPaddingPx, userPaddingPx)
+                    setMargins(marginPx, marginPx, marginPx, marginPx)
                 }
+                // Apply padding (horizontal & vertical)
+                setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
+
                 setOnClickListener {
                     selectedResponse.value = displayText
                     logger.logScaleFragment(

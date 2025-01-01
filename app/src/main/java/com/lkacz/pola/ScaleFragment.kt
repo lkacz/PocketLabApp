@@ -85,9 +85,17 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        val userPaddingDp = SpacingManager.getResponseButtonPadding(requireContext())
-        val scaleVal = resources.displayMetrics.density
-        val userPaddingPx = (userPaddingDp * scaleVal + 0.5f).toInt()
+        // Retrieve margin & padding from SpacingManager
+        val density = resources.displayMetrics.density
+
+        val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
+        val marginPx = (marginDp * density + 0.5f).toInt()
+
+        val paddingHdp = SpacingManager.getResponseButtonPaddingHorizontal(requireContext())
+        val paddingHpx = (paddingHdp * density + 0.5f).toInt()
+
+        val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
+        val paddingVpx = (paddingVdp * density + 0.5f).toInt()
 
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, resourcesFolderUri)
@@ -99,12 +107,18 @@ class ScaleFragment : Fragment() {
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+
+                // Set margin around the button (space between buttons)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(userPaddingPx, userPaddingPx, userPaddingPx, userPaddingPx)
+                    setMargins(marginPx, marginPx, marginPx, marginPx)
                 }
+
+                // Set internal horizontal/vertical padding
+                setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
+
                 setOnClickListener {
                     selectedResponse.value = response
                     logger.logScaleFragment(
