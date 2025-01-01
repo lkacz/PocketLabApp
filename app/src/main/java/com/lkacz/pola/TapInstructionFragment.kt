@@ -1,6 +1,7 @@
 // Filename: TapInstructionFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -12,10 +13,6 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.VideoView
 
-/**
- * Similar to InstructionFragment, but the continue button remains hidden until the user taps X times.
- * The "continue" button is still a CONTINUE button by style.
- */
 class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
     private var header: String? = null
@@ -48,8 +45,8 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
+
         videoView = view.findViewById(R.id.videoView2)
         val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
@@ -63,10 +60,8 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
-
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-
         val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         val refinedNextButton = checkAndLoadHtml(cleanNextButton, resourcesFolderUri)
 
@@ -75,17 +70,21 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
         // Header
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        headerTextView.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
 
         // Body
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
+        bodyTextView.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
         // Hidden CONTINUE button
-        nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
+        nextButton?.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
         nextButton?.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton?.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton?.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -150,7 +149,10 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
     private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
         if (resourcesFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
+            requireContext(),
+            resourcesFolderUri
+        )
             ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
@@ -165,7 +167,10 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
+            requireContext(),
+            resourcesFolderUri
+        )
             ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
@@ -179,6 +184,16 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
             }
         }
         return text.replace(matchedFull, "")
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {

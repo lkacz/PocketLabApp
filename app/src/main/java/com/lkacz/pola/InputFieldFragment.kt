@@ -1,6 +1,7 @@
 // Filename: InputFieldFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -13,11 +14,8 @@ import androidx.core.widget.addTextChangedListener
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
-/**
- * Fragment that displays text fields and collects input. The "Continue" button is used to proceed.
- * The continue button follows CONTINUE styling.
- */
 class InputFieldFragment : Fragment() {
+
     private var heading: String? = null
     private var body: String? = null
     private var buttonName: String? = null
@@ -67,6 +65,7 @@ class InputFieldFragment : Fragment() {
         headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeading)
         headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headingTextView)
 
         // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
@@ -203,6 +202,16 @@ class InputFieldFragment : Fragment() {
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
         webView.webChromeClient = WebChromeClient()
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {

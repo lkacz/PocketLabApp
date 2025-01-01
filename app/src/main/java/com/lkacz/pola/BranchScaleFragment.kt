@@ -1,9 +1,11 @@
 // Filename: BranchScaleFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,10 +20,6 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
-/**
- * A variant of SCALE that branches based on selected response.
- * Again, each branch response is considered a RESPONSE button.
- */
 class BranchScaleFragment : Fragment() {
 
     private var header: String? = null
@@ -76,8 +74,10 @@ class BranchScaleFragment : Fragment() {
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header ?: "", resourcesFolderUri)
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        // Apply dynamic header style
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
 
         // Body
         val cleanBody = parseAndPlayAudioIfAny(body ?: "", resourcesFolderUri)
@@ -95,7 +95,7 @@ class BranchScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // RESPONSE button spacing/padding
+        // Spacing/padding for response buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -103,6 +103,10 @@ class BranchScaleFragment : Fragment() {
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
+
+        // Additional spacing for consecutive responses
+        val extraSpacingDp = SpacingManager.getResponsesSpacing(requireContext())
+        val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
         // Build each branch response button
         branchResponses.forEachIndexed { index, (displayText, label) ->
@@ -120,7 +124,10 @@ class BranchScaleFragment : Fragment() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(marginPx, marginPx, marginPx, marginPx)
+                    topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
+                    bottomMargin = marginPx
+                    leftMargin = marginPx
+                    rightMargin = marginPx
                 }
                 setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
@@ -218,6 +225,16 @@ class BranchScaleFragment : Fragment() {
         if (!soundFile.exists() || !soundFile.isFile) return
         videoView.setVideoURI(soundFile.uri)
         videoView.setOnPreparedListener { mp -> mp.start() }
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {

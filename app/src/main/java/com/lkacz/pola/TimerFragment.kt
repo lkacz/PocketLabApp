@@ -1,10 +1,12 @@
 // Filename: TimerFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,10 +18,6 @@ import android.widget.TextView
 import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
 
-/**
- * Timer-based fragment. Once time expires, a CONTINUE button becomes visible.
- * The "continue" button uses separate styling from the "response" style.
- */
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private var header: String? = null
@@ -45,7 +43,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         if (timeInSeconds == null || timeInSeconds!! < 0) {
             timeInSeconds = 0
         }
-
         alarmHelper = AlarmHelper(requireContext())
         logger = Logger.getInstance(requireContext())
         logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
@@ -61,8 +58,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
+
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
         webView.visibility = View.GONE
@@ -77,10 +74,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
-
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-
         val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
@@ -92,13 +87,14 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
 
         // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // CONTINUE button styling
+        // CONTINUE button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -110,13 +106,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         nextButton.setPadding(chPx, cvPx, chPx, cvPx)
-
         nextButton.visibility = View.INVISIBLE
 
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
         timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // Start countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -141,7 +135,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onTouchThresholdReached() {
-        // If user quickly taps a certain number of times, forcibly end the timer
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
@@ -225,6 +218,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
         return text.replace(matchedFull, "")
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {

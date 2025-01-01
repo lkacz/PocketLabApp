@@ -1,6 +1,7 @@
 // Filename: InstructionFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -14,9 +15,6 @@ import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
-/**
- * Simple fragment that shows instructions and a single CONTINUE button.
- */
 class InstructionFragment : Fragment() {
 
     private var header: String? = null
@@ -48,7 +46,6 @@ class InstructionFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
@@ -64,10 +61,8 @@ class InstructionFragment : Fragment() {
 
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
-
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-
         val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
@@ -76,17 +71,21 @@ class InstructionFragment : Fragment() {
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
         // Header
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        headerTextView.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
 
         // Body
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
+        bodyTextView.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // CONTINUE button styling
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
+        // CONTINUE (Next) button styling
+        nextButton.text =
+            HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -157,8 +156,8 @@ class InstructionFragment : Fragment() {
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
-
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+        val parentFolder =
+            DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -172,6 +171,16 @@ class InstructionFragment : Fragment() {
             }
         }
         return text.replace(matchedFull, "")
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {

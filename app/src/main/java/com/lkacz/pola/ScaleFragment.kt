@@ -1,9 +1,11 @@
 // Filename: ScaleFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,9 +20,6 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
-/**
- * A standard SCALE fragment, where each response is considered a "RESPONSE button."
- */
 class ScaleFragment : Fragment() {
 
     private var header: String? = null
@@ -71,6 +70,7 @@ class ScaleFragment : Fragment() {
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
 
         // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
@@ -97,6 +97,10 @@ class ScaleFragment : Fragment() {
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
 
+        // Additional vertical spacing
+        val extraSpacingDp = SpacingManager.getResponsesSpacing(requireContext())
+        val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
+
         // Build response buttons
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, resourcesFolderUri)
@@ -113,7 +117,10 @@ class ScaleFragment : Fragment() {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(marginPx, marginPx, marginPx, marginPx)
+                    topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
+                    bottomMargin = marginPx
+                    leftMargin = marginPx
+                    rightMargin = marginPx
                 }
                 setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
@@ -206,6 +213,16 @@ class ScaleFragment : Fragment() {
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
         videoView.setOnPreparedListener { mp -> mp.start() }
+    }
+
+    private fun applyHeaderAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
     }
 
     companion object {
