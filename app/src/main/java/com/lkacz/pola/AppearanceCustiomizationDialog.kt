@@ -1,4 +1,3 @@
-// Filename: AppearanceCustomizationDialog.kt
 package com.lkacz.pola
 
 import android.app.AlertDialog
@@ -725,7 +724,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         bottomButtonRow.addView(btnCancel)
 
-        btnOk.setOnClickListener { dismiss() }
+        btnOk.setOnClickListener {
+            saveCurrentSelections()
+            dismiss()
+        }
         btnDefaults.setOnClickListener { restoreAllDefaults() }
         btnCancel.setOnClickListener { dismiss() }
 
@@ -871,7 +873,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 currentTransitionMode = if (position == 0) "off" else "slide"
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
@@ -1211,6 +1212,37 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderContinuePaddingV.progress = 0
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
+    }
+
+    private fun saveCurrentSelections() {
+        // Save final changes to managers
+        // Colors
+        ColorManager.setHeaderTextColor(requireContext(), headerTextColor)
+        ColorManager.setBodyTextColor(requireContext(), bodyTextColor)
+        ColorManager.setItemTextColor(requireContext(), itemTextColor)
+        ColorManager.setResponseTextColor(requireContext(), responseTextColor)
+        ColorManager.setButtonBackgroundColor(requireContext(), buttonBackgroundColorVar)
+        ColorManager.setButtonTextColor(requireContext(), buttonTextColorVar)
+        ColorManager.setContinueTextColor(requireContext(), continueTextColor)
+        ColorManager.setContinueBackgroundColor(requireContext(), continueBackgroundColor)
+        ColorManager.setScreenBackgroundColor(requireContext(), screenBgColor)
+
+        // Font sizes
+        FontSizeManager.setHeaderSize(requireContext(), headerTextSize)
+        FontSizeManager.setBodySize(requireContext(), bodyTextSize)
+        FontSizeManager.setItemSize(requireContext(), itemTextSize)
+        FontSizeManager.setResponseSize(requireContext(), responseTextSize)
+        FontSizeManager.setContinueSize(requireContext(), continueTextSize)
+
+        // Spacing
+        SpacingManager.setResponseButtonMargin(requireContext(), 0f) // fixed as in code? or keep zero
+        SpacingManager.setResponseButtonPaddingHorizontal(requireContext(), sliderResponsePaddingH.progress.toFloat())
+        SpacingManager.setResponseButtonPaddingVertical(requireContext(), sliderResponsePaddingV.progress.toFloat())
+        SpacingManager.setContinueButtonPaddingHorizontal(requireContext(), sliderContinuePaddingH.progress.toFloat())
+        SpacingManager.setContinueButtonPaddingVertical(requireContext(), sliderContinuePaddingV.progress.toFloat())
+
+        // Transitions
+        TransitionManager.setTransitionMode(requireContext(), if (currentTransitionMode == "off") "off" else "slide")
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
