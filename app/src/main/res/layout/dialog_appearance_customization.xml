@@ -1,70 +1,63 @@
-<!-- dialog_appearance_customization.xml -->
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/appearanceDialogRootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
 
+    <!-- Wrap all content in one LinearLayout -->
     <LinearLayout
-        android:id="@+id/previewContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
 
-        <!-- PREVIEWS -->
-        <TextView
-            android:id="@+id/previewHeaderTextView"
+        <!-- TOP PREVIEWS FOR HEADER, BODY, CONTINUE BTN -->
+        <LinearLayout
+            android:id="@+id/previewContainerTop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:gravity="center"
-            android:text="Header"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/previewBodyTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:gravity="center"
-            android:text="Body"
-            android:textSize="16sp" />
+            <!-- Header preview -->
+            <TextView
+                android:id="@+id/previewHeaderTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Header"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
 
-        <Button
-            android:id="@+id/previewButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="Continue Button"
-            android:textSize="16sp" />
+            <!-- Body preview -->
+            <TextView
+                android:id="@+id/previewBodyTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Body text, e.g. Lorem ipsum..."
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:id="@+id/previewItemTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:gravity="center"
-            android:text="Scale Items"
-            android:textSize="16sp" />
+            <!-- Continue button preview -->
+            <Button
+                android:id="@+id/previewContinueButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Continue Button"
+                android:layout_gravity="right"
+                android:layout_marginBottom="8dp" />
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/previewResponseButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="Response Buttons"
-            android:textSize="16sp" />
-
-        <!-- FONT SIZE + COLOR PICKERS -->
-
-        <!-- Header Row -->
+        <!-- SLIDERS / PICKERS BELOW -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -77,30 +70,31 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvHeaderSizeValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="60" />
+                android:text="24"
+                android:layout_marginStart="4dp" />
 
-            <!-- Header color picker box -->
             <View
                 android:id="@+id/headerColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"/>
         </LinearLayout>
 
-        <!-- Body Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -113,71 +107,191 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvBodySizeValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="24" />
+                android:text="16"
+                android:layout_marginStart="4dp" />
 
-            <!-- Body color picker box -->
             <View
                 android:id="@+id/bodyColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"/>
         </LinearLayout>
 
-        <!-- Button Row -->
+        <!-- CONTINUE BTN SLIDER -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Button:"
+                android:text="Continue BTN:"
                 android:textStyle="bold" />
 
             <SeekBar
-                android:id="@+id/sliderButtonSize"
+                android:id="@+id/sliderContinue"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
-                android:id="@+id/tvButtonSizeValue"
+                android:id="@+id/tvContinueSizeValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="20" />
+                android:text="18"
+                android:layout_marginStart="4dp" />
 
-            <!-- Button text color picker -->
             <View
-                android:id="@+id/buttonTextColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
+                android:id="@+id/continueTextColorPicker"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp" />
 
-            <!-- Button background color picker -->
             <View
-                android:id="@+id/buttonBackgroundColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
+                android:id="@+id/continueBackgroundColorPicker"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp" />
         </LinearLayout>
 
-        <!-- Item Row -->
+        <!-- CONTINUE BTN PADDING (Left/Right) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Continue Padding (L/R):"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderContinuePaddingH"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:layout_marginStart="4dp" />
+
+            <TextView
+                android:id="@+id/tvContinuePaddingHValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- CONTINUE BTN PADDING (Top/Bottom) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Continue Padding (T/B):"
+                android:textStyle="bold" />
+
+            <SeekBar
+                android:id="@+id/sliderContinuePaddingV"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:layout_marginStart="4dp" />
+
+            <TextView
+                android:id="@+id/tvContinuePaddingVValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:layout_marginStart="4dp" />
+        </LinearLayout>
+
+        <!-- (spacer) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp" />
+
+        <!-- PREVIEW FOR SCALE ITEM, RESPONSE BUTTONS -->
+        <LinearLayout
+            android:id="@+id/previewContainerScaleAndResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:id="@+id/previewItemTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="SCALE ITEM"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/previewResponseButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="RESPONSE BUTTON 1"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Container for multiple response buttons (use same slider for margin/padding) -->
+            <LinearLayout
+                android:id="@+id/previewPaddingButtonContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/previewPaddingButton1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Response 2"
+                    android:layout_marginBottom="4dp" />
+
+                <Button
+                    android:id="@+id/previewPaddingButton2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Response 3" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ITEM SLIDER -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -192,28 +306,30 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvItemSizeValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="50" />
+                android:text="16"
+                android:layout_marginStart="4dp" />
 
-            <!-- Item color picker box -->
             <View
                 android:id="@+id/itemColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"/>
         </LinearLayout>
 
-        <!-- Response Row -->
+        <!-- RESPONSE SLIDER -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -228,107 +344,46 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvResponseSizeValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="8" />
+                android:text="16"
+                android:layout_marginStart="4dp" />
 
-            <!-- Response color picker box -->
+            <!-- Response text color and background color pickers -->
             <View
                 android:id="@+id/responseColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp"/>
-        </LinearLayout>
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"/>
 
-        <!-- Continue Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Continue:"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/sliderContinue"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:max="100" />
-
-            <TextView
-                android:id="@+id/tvContinueSizeValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <View
+                android:id="@+id/buttonTextColorPicker"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginStart="8dp"
-                android:text="18" />
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/buttonBackgroundColorPicker"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp" />
         </LinearLayout>
 
-        <!-- Continue Text / Background color pickers -->
+        <!-- RESPONSE MARGIN -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Continue Text Color:"
-                android:textStyle="bold" />
-
-            <View
-                android:id="@+id/continueTextColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="32dp"
-                android:text="BG:"
-                android:textStyle="bold" />
-
-            <View
-                android:id="@+id/continueBackgroundColorPicker"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginStart="10dp" />
-        </LinearLayout>
-
-        <!-- Screen Background Color -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Background:"
-            android:textStyle="bold" />
-
-        <View
-            android:id="@+id/screenBackgroundColorPicker"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="8dp" />
-
-        <!-- Response Margin Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -341,23 +396,26 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvResponseMarginValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="0" />
+                android:text="0"
+                android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <!-- Response Padding Horizontal -->
+        <!-- RESPONSE PADDING (Left/Right) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -370,23 +428,26 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvResponsePaddingHValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="0" />
+                android:text="0"
+                android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <!-- Response Padding Vertical -->
+        <!-- RESPONSE PADDING (Top/Bottom) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -399,80 +460,58 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:max="100" />
+                android:max="100"
+                android:layout_marginStart="4dp" />
 
             <TextView
                 android:id="@+id/tvResponsePaddingVValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="0" />
+                android:text="0"
+                android:layout_marginStart="4dp" />
         </LinearLayout>
 
-        <!-- "Continue Padding Horizontal" -->
+        <!-- (spacer/separator) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp" />
+
+        <!-- Background color picker -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginTop="4dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Continue Padding (Left/Right):"
+                android:text="Background:"
                 android:textStyle="bold" />
 
-            <SeekBar
-                android:id="@+id/sliderContinuePaddingH"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:max="100" />
-
-            <TextView
-                android:id="@+id/tvContinuePaddingHValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="0" />
+            <View
+                android:id="@+id/screenBackgroundColorPicker"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp" />
         </LinearLayout>
 
-        <!-- "Continue Padding Vertical" -->
-        <LinearLayout
+        <!-- (spacer/separator) -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Continue Padding (Top/Bottom):"
-                android:textStyle="bold" />
-
-            <SeekBar
-                android:id="@+id/sliderContinuePaddingV"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:max="100" />
-
-            <TextView
-                android:id="@+id/tvContinuePaddingVValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="0" />
-        </LinearLayout>
-
-
-        <!-- TIMER SOUND (unchanged logic) -->
+        <!-- Timer Sound (unchanged) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
             android:text="Timer Sound:"
             android:textStyle="bold" />
 
@@ -480,6 +519,8 @@
             android:id="@+id/timerSoundEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:hint="mytimersound.mp3" />
 
         <Button
@@ -487,12 +528,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:text="Preview Sound" />
 
         <!-- Transitions Spinner -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:text="Transitions:"
             android:textStyle="bold" />
@@ -501,15 +545,17 @@
             android:id="@+id/spinnerTransitions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_marginBottom="16dp" />
 
-        <!-- OK / Cancel + Defaults Buttons Row -->
+        <!-- BOTTOM ROW: OK | DEFAULTS | CANCEL -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
             <Button
                 android:id="@+id/btnOk"
@@ -518,19 +564,19 @@
                 android:text="OK" />
 
             <Button
+                android:id="@+id/btnDefaults"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Defaults"
+                android:layout_marginStart="16dp" />
+
+            <Button
                 android:id="@+id/btnCancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Cancel" />
+                android:text="Cancel"
+                android:layout_marginStart="16dp" />
         </LinearLayout>
-
-        <!-- Extra sample TextView -->
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Buttons Preview" />
 
     </LinearLayout>
 </ScrollView>
