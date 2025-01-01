@@ -2,7 +2,7 @@
 package com.lkacz.pola
 
 import android.content.Context
-import androidx.fragment.app.Fragment
+import com.lkacz.pola.SpacingManager
 import java.io.BufferedReader
 
 class FragmentLoader(
@@ -24,7 +24,7 @@ class FragmentLoader(
         }
     }
 
-    fun loadNextFragment(): Fragment {
+    fun loadNextFragment(): androidx.fragment.app.Fragment {
         while (true) {
             currentIndex++
             if (currentIndex >= lines.size) {
@@ -64,14 +64,12 @@ class FragmentLoader(
                     continue
                 }
                 "HEADER_COLOR" -> {
-                    // e.g. HEADER_COLOR;#FF0000
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setHeaderTextColor(getContext(), colorInt)
                     continue
                 }
                 "RESPONSES_SPACING" -> {
-                    // e.g. RESPONSES_SPACING;12
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
                     SpacingManager.setResponsesSpacing(getContext(), spacingVal)
                     continue
@@ -119,7 +117,7 @@ class FragmentLoader(
         }
     }
 
-    fun jumpToLabelAndLoad(label: String): Fragment {
+    fun jumpToLabelAndLoad(label: String): androidx.fragment.app.Fragment {
         jumpToLabel(label)
         return loadNextFragment()
     }
@@ -133,7 +131,7 @@ class FragmentLoader(
         currentIndex = targetIndex
     }
 
-    private fun createBranchScaleFragment(parts: List<String>): Fragment {
+    private fun createBranchScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val item = parts.getOrNull(3)
@@ -153,14 +151,14 @@ class FragmentLoader(
         return BranchScaleFragment.newInstance(header, body, item, branchResponses)
     }
 
-    private fun createInstructionFragment(parts: List<String>): Fragment {
+    private fun createInstructionFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
         return InstructionFragment.newInstance(header, body, buttonText)
     }
 
-    private fun createTimerFragment(parts: List<String>): Fragment {
+    private fun createTimerFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
@@ -168,14 +166,14 @@ class FragmentLoader(
         return TimerFragment.newInstance(header, body, buttonText, timeSeconds)
     }
 
-    private fun createTapInstructionFragment(parts: List<String>): Fragment {
+    private fun createTapInstructionFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
         return TapInstructionFragment.newInstance(header, body, buttonText)
     }
 
-    private fun createScaleFragment(parts: List<String>): Fragment {
+    private fun createScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val item = parts.getOrNull(3)
@@ -183,7 +181,7 @@ class FragmentLoader(
         return ScaleFragment.newInstance(header, body, item, responses)
     }
 
-    private fun createInputFieldFragment(parts: List<String>): Fragment {
+    private fun createInputFieldFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val heading = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonName = parts.getOrNull(3)
@@ -191,7 +189,7 @@ class FragmentLoader(
         return InputFieldFragment.newInstance(heading, body, buttonName, fields)
     }
 
-    private fun createCustomHtmlFragment(parts: List<String>): Fragment {
+    private fun createCustomHtmlFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val fileName = parts.getOrNull(1).orEmpty()
         return CustomHtmlFragment.newInstance(fileName)
     }
