@@ -71,9 +71,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var buttonBackgroundColorPicker: View
     private lateinit var screenBackgroundColorPicker: View
 
-    // Timer sound
-    private lateinit var timerSoundEditText: EditText
-
     // Spinner for transitions
     private lateinit var spinnerTransitions: Spinner
 
@@ -662,48 +659,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         })
 
-        // =============== 16) Timer sound label & EditText ===============
-        val timerSoundLabel = TextView(requireContext()).apply {
-            text = "Timer Sound:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                leftMargin = dpToPx(16)
-                topMargin = dpToPx(4)
-            }
-        }
-        mainLinearLayout.addView(timerSoundLabel)
-
-        timerSoundEditText = EditText(requireContext()).apply {
-            hint = "mytimersound.mp3"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                leftMargin = dpToPx(16)
-                rightMargin = dpToPx(16)
-            }
-        }
-        mainLinearLayout.addView(timerSoundEditText)
-
-        val btnPreviewSound = Button(requireContext()).apply {
-            text = "Preview Sound"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = dpToPx(8)
-                leftMargin = dpToPx(16)
-                rightMargin = dpToPx(16)
-            }
-        }
-        mainLinearLayout.addView(btnPreviewSound)
-
         // =============== 17) Transitions Spinner ===============
         val transitionsLabel = TextView(requireContext()).apply {
-            text = "Transitions:"
+            text = "Slides transition style:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -1260,7 +1218,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 onValueChanged(progress)
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         }
