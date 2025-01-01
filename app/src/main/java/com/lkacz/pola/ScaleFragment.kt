@@ -77,6 +77,7 @@ class ScaleFragment : Fragment() {
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
+        applyBodyAlignment(bodyTextView) // <-- Newly added for BODY_ALIGNMENT
 
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
@@ -211,6 +212,17 @@ class ScaleFragment : Fragment() {
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
+    // New method for BODY_ALIGNMENT
+    private fun applyBodyAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
         when (alignment) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END

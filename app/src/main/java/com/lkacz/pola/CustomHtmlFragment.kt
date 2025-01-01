@@ -1,6 +1,7 @@
 // Filename: CustomHtmlFragment.kt
 package com.lkacz.pola
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.Gravity
@@ -58,21 +59,24 @@ class CustomHtmlFragment : Fragment() {
             val cvPx = (cv * density + 0.5f).toInt()
             setPadding(chPx, cvPx, chPx, cvPx)
 
+            // Initially place in bottom-end (we will further adjust alignment below).
             val marginPx = (16 * density + 0.5f).toInt()
-            val params = FrameLayout.LayoutParams(
+            layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM or Gravity.END
             ).apply {
                 setMargins(marginPx, marginPx, marginPx, marginPx)
             }
-            layoutParams = params
 
             setOnClickListener {
                 (activity as? MainActivity)?.loadNextFragment()
             }
         }
         frameLayout.addView(continueButton)
+
+        // Now apply final alignment preference from ProtocolPrefs
+        applyContinueAlignment(continueButton)
 
         return frameLayout
     }
@@ -139,6 +143,21 @@ class CustomHtmlFragment : Fragment() {
                 "text/html",
                 "UTF-8"
             )
+        }
+    }
+
+    private fun applyContinueAlignment(button: Button) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
+
+        val layoutParams = button.layoutParams
+        if (layoutParams is FrameLayout.LayoutParams) {
+            layoutParams.gravity = when (alignment) {
+                "LEFT" -> Gravity.BOTTOM or Gravity.START
+                "RIGHT" -> Gravity.BOTTOM or Gravity.END
+                else -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            }
+            button.layoutParams = layoutParams
         }
     }
 

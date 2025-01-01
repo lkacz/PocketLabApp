@@ -10,6 +10,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.VideoView
 
@@ -77,6 +78,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
+        applyBodyAlignment(bodyTextView)
 
         nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
         nextButton?.textSize = FontSizeManager.getContinueSize(requireContext())
@@ -89,6 +91,8 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         nextButton?.setPadding(chPx, cvPx, chPx, cvPx)
+
+        applyContinueAlignment(nextButton)
 
         nextButton?.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
@@ -185,6 +189,35 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
+    private fun applyBodyAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
+    private fun applyContinueAlignment(button: Button?) {
+        if (button == null) return
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
+
+        val parentLayoutParams = button.layoutParams
+        if (parentLayoutParams is ViewGroup.MarginLayoutParams) {
+            // If the parent is a LinearLayout, for instance:
+            if (parentLayoutParams is LinearLayout.LayoutParams) {
+                when (alignment) {
+                    "LEFT" -> parentLayoutParams.gravity = Gravity.START
+                    "RIGHT" -> parentLayoutParams.gravity = Gravity.END
+                    else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
+                }
+                button.layoutParams = parentLayoutParams
+            }
         }
     }
 

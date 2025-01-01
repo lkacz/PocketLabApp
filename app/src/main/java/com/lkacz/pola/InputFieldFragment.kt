@@ -72,6 +72,7 @@ class InputFieldFragment : Fragment() {
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
+        applyBodyAlignment(bodyTextView)
 
         inputFields?.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
@@ -109,6 +110,9 @@ class InputFieldFragment : Fragment() {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         continueButton.setPadding(chPx, cvPx, chPx, cvPx)
+
+        // Align the entire button.
+        applyContinueAlignment(continueButton)
 
         continueButton.setOnClickListener {
             fieldValues.forEach { (hint, value) ->
@@ -206,6 +210,32 @@ class InputFieldFragment : Fragment() {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
+    private fun applyBodyAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
+        when (alignment) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
+    private fun applyContinueAlignment(button: Button) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
+
+        // Typically the parent is a LinearLayout; set layout gravity.
+        val parentLayoutParams = button.layoutParams
+        if (parentLayoutParams is LinearLayout.LayoutParams) {
+            when (alignment) {
+                "LEFT" -> parentLayoutParams.gravity = Gravity.START
+                "RIGHT" -> parentLayoutParams.gravity = Gravity.END
+                else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
+            }
+            button.layoutParams = parentLayoutParams
         }
     }
 

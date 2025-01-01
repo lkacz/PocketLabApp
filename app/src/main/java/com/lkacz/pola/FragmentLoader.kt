@@ -1,10 +1,11 @@
+// Filename: FragmentLoader.kt
 package com.lkacz.pola
 
 import android.content.Context
 import java.io.BufferedReader
 
 class FragmentLoader(
-    private val bufferedReader: BufferedReader,
+    bufferedReader: BufferedReader,
     private val logger: Logger
 ) {
     private val lines = mutableListOf<String>()
@@ -64,6 +65,33 @@ class FragmentLoader(
                     ColorManager.setHeaderTextColor(getContext(), colorInt)
                     continue
                 }
+                // ---------------- New directives for BODY ----------------
+                "BODY_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setBodyTextColor(getContext(), colorInt)
+                    continue
+                }
+                "BODY_ALIGNMENT" -> {
+                    val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("BODY_ALIGNMENT", alignValue).apply()
+                    continue
+                }
+                // ---------------- New directives for CONTINUE button ----------------
+                "CONTINUE_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setContinueTextColor(getContext(), colorInt)
+                    continue
+                }
+                "CONTINUE_ALIGNMENT" -> {
+                    val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("CONTINUE_ALIGNMENT", alignValue).apply()
+                    continue
+                }
+                // -------------------------------------------------------
                 "RESPONSES_SPACING" -> {
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
                     SpacingManager.setResponsesSpacing(getContext(), spacingVal)
