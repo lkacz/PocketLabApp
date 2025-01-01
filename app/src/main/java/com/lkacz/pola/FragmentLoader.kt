@@ -65,7 +65,6 @@ class FragmentLoader(
                     ColorManager.setHeaderTextColor(getContext(), colorInt)
                     continue
                 }
-                // ---------------- New directives for BODY ----------------
                 "BODY_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
@@ -78,11 +77,16 @@ class FragmentLoader(
                         .edit().putString("BODY_ALIGNMENT", alignValue).apply()
                     continue
                 }
-                // ---------------- New directives for CONTINUE button ----------------
-                "CONTINUE_COLOR" -> {
+                "CONTINUE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setContinueTextColor(getContext(), colorInt)
+                    continue
+                }
+                "CONTINUE_BACKGROUND_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setContinueBackgroundColor(getContext(), colorInt)
                     continue
                 }
                 "CONTINUE_ALIGNMENT" -> {
@@ -91,7 +95,6 @@ class FragmentLoader(
                         .edit().putString("CONTINUE_ALIGNMENT", alignValue).apply()
                     continue
                 }
-                // -------------------------------------------------------
                 "RESPONSES_SPACING" -> {
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
                     SpacingManager.setResponsesSpacing(getContext(), spacingVal)

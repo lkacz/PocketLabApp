@@ -16,40 +16,38 @@ TIMER_SOUND;sound.wav
 // HEADER_COLOR;#FF0000
 // BODY_ALIGNMENT;CENTER
 // BODY_COLOR;green
-
 // ITEM_SIZE;20
 // RESPONSE_SIZE;24
 // TRANSITIONS;slide
 
-// CONTINUE_COLOR;GREEN
+// CONTINUE_TEXT_COLOR;#ff0000
+// CONTINUE_BACKGROUND_COLOR;#00ff00
 // CONTINUE_ALIGNMENT;LEFT
-
-
 
 // NOT WORKING:
 // ITEM_COLOR;#00ff00
 // BODY_COLOR;#00ff00
-// CONTINUE_BUTTON_COLOR;#555555
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
-
-
-CONTINUE_COLOR;GREEN
-CONTINUE_ALIGNMENT;LEFT
-INSTRUCTION;Header;Body;DALEJ
-
-CONTINUE_COLOR;GREY
-CONTINUE_ALIGNMENT;CENTER
-INSTRUCTION;Header;Body;DALEJ
 
 
 
 ITEM_COLOR;#00ff00
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
-
 ITEM_COLOR;#0000ff
 SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+
+
+INSTRUCTION;Header;Body;DALEJ
+
+CONTINUE_TEXT_COLOR;#0000ff
+CONTINUE_BACKGROUND_COLOR;#ff0000
+INSTRUCTION;Header;Body;DALEJ
+
+
+
 
 
 
