@@ -61,7 +61,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         val headerTextView: TextView = view.findViewById(R.id.headerTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
-        // Hide WebView by default
         webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
@@ -70,30 +69,30 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
         setupWebView()
 
-        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+        val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
-        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
+        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
 
-        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
 
-        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
-        val refinedNextText = checkAndLoadHtml(cleanNextText, mediaFolderUri)
+        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
-        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
+        checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
+        checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedNextText)
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -156,16 +155,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         webView.webChromeClient = WebChromeClient()
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
-            mediaFolderUri = mediaFolderUri,
+            mediaFolderUri = resourcesFolderUri,
             mediaPlayers = mediaPlayers
         )
     }
 
-    private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
+    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
@@ -176,12 +175,12 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
         videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, mediaFolderUri)
+        playVideoFile(fileName, volume, resourcesFolderUri)
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
-        if (mediaFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
+    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
+        if (resourcesFolderUri == null) return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
@@ -190,20 +189,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
     }
 
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
+    private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
+        if (text.isBlank() || resourcesFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
-                    // Make WebView visible only if we can load HTML
                     webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }

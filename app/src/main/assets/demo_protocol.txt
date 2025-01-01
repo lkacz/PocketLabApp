@@ -1,13 +1,20 @@
 // Participant ID Entry
 
-HEADER_SIZE;48
-BODY_SIZE;32
+HEADER_SIZE;40
+BODY_SIZE;20
 BUTTON_SIZE;24
 ITEM_SIZE;30
 RESPONSE_SIZE;24
-TIMER_SOUND;sound.wav
-CUSTOM_HTML;mycode.html
+TIMER_SOUND;sound.wa
+CUSTOM_HTML;mycode.tml
 
+
+MULTISCALE;Multiscale;This is sound<sound.mp3>;[Pierwszy item,Drugi item,Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia
+
+
+RANDOMIZATION_OFF
+
+RANDOMIZATION_ON
 
 TIMER_SOUND;sound.mp3
 TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
@@ -15,9 +22,13 @@ TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>g
 TIMER_SOUND;sound.wav
 TIMER;Timer 2 no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
 
+INSTRUCTION;Tere fere.;DALEJ
 
 
-TRANSITIONS;off
+SCALE;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+
+TRANSITIONS;off;
 
 CUSTOM_HTML;pola_snake.html
 
@@ -56,14 +67,16 @@ SCALE;State no vid no script;This is <b>bold</b>. This is <font color ='green'>g
 
 INPUTFIELD;Inputfield no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
 
-TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
+TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;
+TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;90000
+
 
 INSTRUCTION;Instruction no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE
 
 TAP_INSTRUCTION;Instruction no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE
 
 
-
+RANDOMIZATION_ON
 
 
 

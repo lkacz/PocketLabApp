@@ -2,7 +2,6 @@
 package com.lkacz.pola
 
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.webkit.WebChromeClient
@@ -14,7 +13,7 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 /**
- * Fragment that loads a custom HTML/JS file from the selected media folder.
+ * Fragment that loads a custom HTML/JS file from the selected resources folder.
  * Once done, user can click a "Continue" button to proceed.
  */
 class CustomHtmlFragment : Fragment() {
@@ -36,11 +35,9 @@ class CustomHtmlFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
         }
 
-        // Programmatically create WebView, hidden by default
         webView = WebView(requireContext())
         webView.visibility = View.GONE
 
-        // Add some margins for the WebView
         val scaleVal = resources.displayMetrics.density
         val marginPx = (16 * scaleVal + 0.5f).toInt()
         val webViewParams = LinearLayout.LayoutParams(
@@ -59,9 +56,13 @@ class CustomHtmlFragment : Fragment() {
                 (activity as? MainActivity)?.loadNextFragment()
             }
         }
-        layout.addView(continueButton, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        ))
+        layout.addView(
+            continueButton,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
         return layout
     }
 
@@ -84,23 +85,22 @@ class CustomHtmlFragment : Fragment() {
     }
 
     private fun loadCustomHtml() {
-        val mediaUri = MediaFolderManager(requireContext()).getMediaFolderUri()
-        if (mediaUri == null || fileName.isNullOrBlank()) {
+        val resourcesUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
+        if (resourcesUri == null || fileName.isNullOrBlank()) {
             webView.loadData("<html><body><h2>File not found or invalid name.</h2></body></html>", "text/html", "UTF-8")
             return
         }
 
-        val folder = DocumentFile.fromTreeUri(requireContext(), mediaUri) ?: return
+        val folder = DocumentFile.fromTreeUri(requireContext(), resourcesUri) ?: return
         val htmlFile = folder.findFile(fileName!!)
         if (htmlFile == null || !htmlFile.exists() || !htmlFile.isFile) {
-            webView.loadData("<html><body><h2>HTML file not found in folder.</h2></body></html>", "text/html", "UTF-8")
+            webView.loadData("<html><body><h2>HTML file not found in resources folder.</h2></body></html>", "text/html", "UTF-8")
             return
         }
 
         try {
             requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                 val htmlContent = inputStream.bufferedReader().readText()
-                // Make WebView visible if content is found
                 webView.visibility = View.VISIBLE
                 webView.loadDataWithBaseURL(
                     null,

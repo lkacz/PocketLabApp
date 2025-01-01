@@ -18,19 +18,19 @@ object InstructionUiHelper {
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         val nextButton: Button = view.findViewById(R.id.nextButton)
 
-        val mediaFolderUri = MediaFolderManager(view.context).getMediaFolderUri()
+        // Changed from MediaFolderManager(...) to ResourcesFolderManager(...)
+        val resourcesFolderUri = ResourcesFolderManager(view.context).getResourcesFolderUri()
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(view.context, mediaFolderUri, header)
-        // Apply user-defined font sizes
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(view.context, resourcesFolderUri, header)
         headerTextView.textSize = FontSizeManager.getHeaderSize(view.context)
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(view.context, mediaFolderUri, body)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(view.context, resourcesFolderUri, body)
         bodyTextView.textSize = FontSizeManager.getBodySize(view.context)
 
-        nextButton.text = if (!nextButtonText.isNullOrEmpty()) {
-            HtmlMediaHelper.toSpannedHtml(view.context, mediaFolderUri, nextButtonText)
+        if (!nextButtonText.isNullOrEmpty()) {
+            nextButton.text = HtmlMediaHelper.toSpannedHtml(view.context, resourcesFolderUri, nextButtonText)
         } else {
-            "Next"
+            nextButton.text = "Next"
         }
         nextButton.textSize = FontSizeManager.getButtonSize(view.context)
 

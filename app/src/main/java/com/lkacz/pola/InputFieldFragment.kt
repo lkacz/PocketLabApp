@@ -41,15 +41,11 @@ class InputFieldFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate our revised layout
         val view = inflater.inflate(R.layout.fragment_input_field, container, false)
-
-        // Screen background color
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
 
         val headingTextView: TextView = view.findViewById(R.id.headingTextView)
         webView = view.findViewById(R.id.htmlSnippetWebView)
-        // Hide WebView by default
         webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
@@ -58,32 +54,32 @@ class InputFieldFragment : Fragment() {
 
         setupWebView()
 
-        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+        val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
         // Heading
-        val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), mediaFolderUri)
-        val refinedHeading = checkAndLoadHtml(cleanHeading, mediaFolderUri)
-        checkAndPlayMp4(heading.orEmpty(), mediaFolderUri)
-        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeading)
+        val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
+        val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
+        checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
+        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeading)
         headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
         // Body
-        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
+        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
+        checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
         // Input fields
         inputFields?.forEach { fieldHint ->
-            val cleanHint = parseAndPlayAudioIfAny(fieldHint, mediaFolderUri)
-            val refinedHint = checkAndLoadHtml(cleanHint, mediaFolderUri)
-            checkAndPlayMp4(fieldHint, mediaFolderUri)
+            val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
+            val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
+            checkAndPlayMp4(fieldHint, resourcesFolderUri)
 
             val editText = EditText(context).apply {
-                hint = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHint)
+                hint = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHint)
                 textSize = FontSizeManager.getBodySize(requireContext())
                 setTextColor(ColorManager.getBodyTextColor(requireContext()))
                 layoutParams = LinearLayout.LayoutParams(
@@ -99,11 +95,11 @@ class InputFieldFragment : Fragment() {
         }
 
         // Continue button
-        val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), mediaFolderUri)
-        val refinedButtonText = checkAndLoadHtml(cleanButtonText, mediaFolderUri)
-        checkAndPlayMp4(buttonName.orEmpty(), mediaFolderUri)
+        val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
+        val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
+        checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
 
-        continueButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedButtonText)
+        continueButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButtonText)
         continueButton.textSize = FontSizeManager.getButtonSize(requireContext())
         continueButton.setTextColor(ColorManager.getButtonTextColor(requireContext()))
         continueButton.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -136,16 +132,16 @@ class InputFieldFragment : Fragment() {
         }
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
-            mediaFolderUri = mediaFolderUri,
+            mediaFolderUri = resourcesFolderUri,
             mediaPlayers = mediaPlayers
         )
     }
 
-    private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
+    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
@@ -156,12 +152,12 @@ class InputFieldFragment : Fragment() {
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
         videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, mediaFolderUri)
+        playVideoFile(fileName, volume, resourcesFolderUri)
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
-        if (mediaFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return
+    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
+        if (resourcesFolderUri == null) return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
@@ -170,20 +166,19 @@ class InputFieldFragment : Fragment() {
         }
     }
 
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
+    private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
+        if (text.isBlank() || resourcesFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
                 requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                     val htmlContent = inputStream.bufferedReader().readText()
-                    // Make WebView visible only if we can load HTML
                     webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }

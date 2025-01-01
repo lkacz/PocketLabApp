@@ -59,15 +59,15 @@ class AlarmCustomizationDialog : DialogFragment() {
             val enteredSound = timerSoundEditText.text.toString().trim()
             prefs.edit().putString("CUSTOM_TIMER_SOUND", enteredSound).apply()
 
-            val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
-            if (mediaFolderUri == null) {
-                Toast.makeText(requireContext(), "No media folder selected", Toast.LENGTH_SHORT).show()
+            val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
+            if (resourcesFolderUri == null) {
+                Toast.makeText(requireContext(), "No resources folder selected", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
             val soundFile = parentFolder?.findFile(enteredSound)
             if (soundFile == null || !soundFile.isFile) {
-                Toast.makeText(requireContext(), "Sound file not found in media folder", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Sound file not found in resources folder", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

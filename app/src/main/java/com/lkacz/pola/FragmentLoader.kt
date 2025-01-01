@@ -5,9 +5,6 @@ import androidx.fragment.app.Fragment
 import java.io.BufferedReader
 
 /**
- * Revised FragmentLoader that supports existing commands plus dynamic commands like
- * TRANSITIONS;off/slide, TIMER_SOUND;..., HEADER_SIZE;..., BODY_SIZE;..., etc.
- *
  * Each time one of these directives is encountered during protocol execution,
  * it updates the corresponding settings (SharedPreferences, in-memory managers),
  * then proceeds to the next line. No fragment is returned for these lines.

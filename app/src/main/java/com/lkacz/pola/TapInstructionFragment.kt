@@ -55,30 +55,30 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
         setupWebView()
 
-        val mediaFolderUri = MediaFolderManager(requireContext()).getMediaFolderUri()
+        val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), mediaFolderUri)
-        val refinedHeader = checkAndLoadHtml(cleanHeader, mediaFolderUri)
+        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
 
-        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), mediaFolderUri)
-        val refinedBody = checkAndLoadHtml(cleanBody, mediaFolderUri)
+        val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
+        val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
 
-        val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), mediaFolderUri)
-        val refinedNextButton = checkAndLoadHtml(cleanNextButton, mediaFolderUri)
+        val cleanNextButton = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        val refinedNextButton = checkAndLoadHtml(cleanNextButton, resourcesFolderUri)
 
-        checkAndPlayMp4(header.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(body.orEmpty(), mediaFolderUri)
-        checkAndPlayMp4(nextButtonText.orEmpty(), mediaFolderUri)
+        checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
+        checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
+        checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedHeader)
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
-        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedBody)
+        bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), mediaFolderUri, refinedNextButton)
+        nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
         nextButton?.textSize = FontSizeManager.getButtonSize(requireContext())
         nextButton?.setTextColor(ColorManager.getButtonTextColor(requireContext()))
         nextButton?.setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
@@ -110,16 +110,16 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         webView.webChromeClient = WebChromeClient()
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, mediaFolderUri: Uri?): String {
+    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
-            mediaFolderUri = mediaFolderUri,
+            mediaFolderUri = resourcesFolderUri,
             mediaPlayers = mediaPlayers
         )
     }
 
-    private fun checkAndPlayMp4(text: String, mediaFolderUri: Uri?) {
+    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
@@ -130,12 +130,12 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
         videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, mediaFolderUri)
+        playVideoFile(fileName, volume, resourcesFolderUri)
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, mediaFolderUri: Uri?) {
-        if (mediaFolderUri == null) return
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
+        if (resourcesFolderUri == null) return
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
             ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
@@ -145,14 +145,14 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         }
     }
 
-    private fun checkAndLoadHtml(text: String, mediaFolderUri: Uri?): String {
-        if (text.isBlank() || mediaFolderUri == null) return text
+    private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
+        if (text.isBlank() || resourcesFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), mediaFolderUri)
+        val parentFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
             ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {

@@ -1,3 +1,4 @@
+// Filename: AlarmHelper.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -14,7 +15,7 @@ class AlarmHelper(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
 
     /**
-     * Starts the alarm sound (either a custom sound from the media folder if specified,
+     * Starts the alarm sound (either a custom sound from the resources folder if specified,
      * or the default resource).
      * Vibration also starts, repeating until [stopAlarm] is called.
      */
@@ -88,12 +89,12 @@ class AlarmHelper(private val context: Context) {
     }
 
     /**
-     * Attempts to find a file named [fileName] in the user-selected media folder
+     * Attempts to find a file named [fileName] in the user-selected resources folder
      * (document tree). Returns its [Uri] if found and valid, otherwise null.
      */
     private fun findSoundUri(fileName: String): Uri? {
-        val mediaFolderUri = MediaFolderManager(context).getMediaFolderUri() ?: return null
-        val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri) ?: return null
+        val resourcesFolderUri = ResourcesFolderManager(context).getResourcesFolderUri() ?: return null
+        val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return null
         val soundFile = parentFolder.findFile(fileName) ?: return null
         if (!soundFile.exists() || !soundFile.isFile) return null
         return soundFile.uri
