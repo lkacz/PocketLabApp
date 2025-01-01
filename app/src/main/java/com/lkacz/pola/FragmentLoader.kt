@@ -1,16 +1,10 @@
 // Filename: FragmentLoader.kt
 package com.lkacz.pola
 
+import android.content.Context
 import androidx.fragment.app.Fragment
 import java.io.BufferedReader
 
-/**
- * Each time one of these directives is encountered during protocol execution,
- * it updates the corresponding settings (SharedPreferences, in-memory managers),
- * then proceeds to the next line. No fragment is returned for these lines.
- *
- * LABEL and GOTO remain exceptions that allow jumping around in the protocol.
- */
 class FragmentLoader(
     private val bufferedReader: BufferedReader,
     private val logger: Logger
@@ -21,25 +15,15 @@ class FragmentLoader(
 
     init {
         val rawLines = bufferedReader.readLines()
-        rawLines.forEach { line ->
-            lines.add(line.trim())
-        }
-
-        // Build label map for GOTO jumps
+        rawLines.forEach { line -> lines.add(line.trim()) }
         lines.forEachIndexed { index, line ->
             if (line.startsWith("LABEL;")) {
                 val labelName = line.split(";").getOrNull(1)?.trim().orEmpty()
-                if (labelName.isNotEmpty()) {
-                    labelMap[labelName] = index
-                }
+                if (labelName.isNotEmpty()) labelMap[labelName] = index
             }
         }
     }
 
-    /**
-     * Loads the next valid Fragment (skipping or processing special commands).
-     * Returns EndFragment if we hit the end of the list.
-     */
     fun loadNextFragment(): Fragment {
         while (true) {
             currentIndex++
@@ -53,51 +37,61 @@ class FragmentLoader(
             val directive = parts.firstOrNull()?.uppercase() ?: ""
 
             when (directive) {
-                "LABEL" -> {
-                    // Just skip label lines in normal flow
-                    continue
-                }
-
+                "LABEL" -> continue
                 "GOTO" -> {
                     jumpToLabel(parts.getOrNull(1).orEmpty())
                     continue
                 }
 
-                // === Dynamically updated commands below ===
+                // Existing dynamic commands
                 "TRANSITIONS" -> {
-                    // e.g.  TRANSITIONS;off   or   TRANSITIONS;slide
                     val mode = parts.getOrNull(1)?.lowercase() ?: "off"
                     TransitionManager.setTransitionMode(getContext(), mode)
                     continue
                 }
-
                 "TIMER_SOUND" -> {
-                    // e.g.  TIMER_SOUND;mytimersound.mp3
                     val filename = parts.getOrNull(1)?.trim().orEmpty()
-                    getContext().getSharedPreferences("ProtocolPrefs",
-                        android.content.Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("CUSTOM_TIMER_SOUND", filename)
-                        .apply()
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("CUSTOM_TIMER_SOUND", filename).apply()
+                    continue
+                }
+
+                // New dynamic commands for appearance
+                "HEADER_ALIGNMENT" -> {
+                    val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("HEADER_ALIGNMENT", alignValue).apply()
+                    continue
+                }
+                "HEADER_COLOR" -> {
+                    // e.g. HEADER_COLOR;#FF0000
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setHeaderTextColor(getContext(), colorInt)
+                    continue
+                }
+                "RESPONSES_SPACING" -> {
+                    // e.g. RESPONSES_SPACING;12
+                    val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
+                    SpacingManager.setResponsesSpacing(getContext(), spacingVal)
                     continue
                 }
 
                 "HEADER_SIZE", "BODY_SIZE", "BUTTON_SIZE", "ITEM_SIZE", "RESPONSE_SIZE" -> {
-                    // e.g.  HEADER_SIZE;48
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
                         when (directive) {
-                            "HEADER_SIZE"   -> FontSizeManager.setHeaderSize(getContext(), sizeValue)
-                            "BODY_SIZE"     -> FontSizeManager.setBodySize(getContext(), sizeValue)
-                            "BUTTON_SIZE"   -> FontSizeManager.setButtonSize(getContext(), sizeValue)
-                            "ITEM_SIZE"     -> FontSizeManager.setItemSize(getContext(), sizeValue)
+                            "HEADER_SIZE" -> FontSizeManager.setHeaderSize(getContext(), sizeValue)
+                            "BODY_SIZE" -> FontSizeManager.setBodySize(getContext(), sizeValue)
+                            "BUTTON_SIZE" -> FontSizeManager.setButtonSize(getContext(), sizeValue)
+                            "ITEM_SIZE" -> FontSizeManager.setItemSize(getContext(), sizeValue)
                             "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(getContext(), sizeValue)
                         }
                     }
                     continue
                 }
 
-                // === Actual fragment-producing commands below ===
+                // Fragments
                 "BRANCH_SCALE" -> {
                     return createBranchScaleFragment(parts)
                 }
@@ -120,17 +114,11 @@ class FragmentLoader(
                     return createCustomHtmlFragment(parts)
                 }
 
-                else -> {
-                    // If we encounter an unknown or unhandled directive, just skip it
-                    continue
-                }
+                else -> continue
             }
         }
     }
 
-    /**
-     * Jumps to a label and then continues protocol execution.
-     */
     fun jumpToLabelAndLoad(label: String): Fragment {
         jumpToLabel(label)
         return loadNextFragment()
@@ -139,14 +127,11 @@ class FragmentLoader(
     private fun jumpToLabel(label: String) {
         val targetIndex = labelMap[label] ?: -1
         if (targetIndex == -1) {
-            // Label not found, jump to end
             currentIndex = lines.size
             return
         }
         currentIndex = targetIndex
     }
-
-    // ---------- Private fragment creation helpers ---------------
 
     private fun createBranchScaleFragment(parts: List<String>): Fragment {
         val header = parts.getOrNull(1)
@@ -211,12 +196,16 @@ class FragmentLoader(
         return CustomHtmlFragment.newInstance(fileName)
     }
 
-    private fun getContext() = logger.let {
-        // For convenience, we just get the context from logger (which is a singleton).
-        // Or retrieve from your Activity if you prefer an alternative approach.
-        it.javaClass
-            .getDeclaredField("context")
-            .apply { isAccessible = true }
-            .get(it) as android.content.Context
+    private fun safeParseColor(colorStr: String): Int {
+        return try {
+            android.graphics.Color.parseColor(colorStr)
+        } catch (_: Exception) {
+            android.graphics.Color.BLACK
+        }
     }
+
+    private fun getContext() = logger.javaClass
+        .getDeclaredField("context")
+        .apply { isAccessible = true }
+        .get(logger) as android.content.Context
 }

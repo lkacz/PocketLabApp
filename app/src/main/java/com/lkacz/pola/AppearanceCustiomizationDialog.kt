@@ -1,3 +1,4 @@
+// Filename: AppearanceCustomizationDialog.kt
 package com.lkacz.pola
 
 import android.app.AlertDialog
@@ -1235,7 +1236,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         FontSizeManager.setContinueSize(requireContext(), continueTextSize)
 
         // Spacing
-        SpacingManager.setResponseButtonMargin(requireContext(), 0f) // fixed as in code? or keep zero
+        SpacingManager.setResponseButtonMargin(requireContext(), 0f)
         SpacingManager.setResponseButtonPaddingHorizontal(requireContext(), sliderResponsePaddingH.progress.toFloat())
         SpacingManager.setResponseButtonPaddingVertical(requireContext(), sliderResponsePaddingV.progress.toFloat())
         SpacingManager.setContinueButtonPaddingHorizontal(requireContext(), sliderContinuePaddingH.progress.toFloat())

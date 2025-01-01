@@ -4,10 +4,6 @@ package com.lkacz.pola
 import android.content.Context
 import android.content.SharedPreferences
 
-/**
- * Stores and retrieves the user-selected margin and padding values (in dp) for RESPONSE buttons,
- * and now also for CONTINUE buttons.
- */
 object SpacingManager {
 
     private const val SPACING_PREFS = "SpacingPrefs"
@@ -15,15 +11,17 @@ object SpacingManager {
     private const val RESPONSE_BUTTON_MARGIN_KEY = "responseButtonMargin"
     private const val RESPONSE_BUTTON_PADDING_H_KEY = "responseButtonPaddingH"
     private const val RESPONSE_BUTTON_PADDING_V_KEY = "responseButtonPaddingV"
-
-    // Keys for CONTINUE button padding
     private const val CONTINUE_BUTTON_PADDING_H_KEY = "continueButtonPaddingH"
     private const val CONTINUE_BUTTON_PADDING_V_KEY = "continueButtonPaddingV"
 
-    // Default values (in dp)
+    // New global “responsesSpacing” key
+    private const val RESPONSES_SPACING_KEY = "responsesSpacing"
+
+    // Defaults
     private const val DEFAULT_BUTTON_MARGIN = 0f
     private const val DEFAULT_BUTTON_PADDING_H = 0f
     private const val DEFAULT_BUTTON_PADDING_V = 0f
+    private const val DEFAULT_RESPONSES_SPACING = 0f
 
     fun getResponseButtonMargin(context: Context): Float {
         return getSharedPrefs(context).getFloat(RESPONSE_BUTTON_MARGIN_KEY, DEFAULT_BUTTON_MARGIN)
@@ -73,6 +71,17 @@ object SpacingManager {
         getSharedPrefs(context).edit()
             .putFloat(CONTINUE_BUTTON_PADDING_V_KEY, paddingDp)
             .apply()
+    }
+
+    // New public methods for overall responses spacing
+    fun setResponsesSpacing(context: Context, spacingDp: Float) {
+        getSharedPrefs(context).edit()
+            .putFloat(RESPONSES_SPACING_KEY, spacingDp)
+            .apply()
+    }
+
+    fun getResponsesSpacing(context: Context): Float {
+        return getSharedPrefs(context).getFloat(RESPONSES_SPACING_KEY, DEFAULT_RESPONSES_SPACING)
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {
