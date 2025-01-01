@@ -12,8 +12,8 @@ object SpacingManager {
     private const val SPACING_PREFS = "SpacingPrefs"
     private const val RESPONSE_BUTTON_PADDING_KEY = "responseButtonPadding"
 
-    // Default padding = 0 dp
-    private const val DEFAULT_RESPONSE_BUTTON_PADDING = 0f
+    // Default padding = 1 dp
+    private const val DEFAULT_RESPONSE_BUTTON_PADDING = 1f
 
     fun getResponseButtonPadding(context: Context): Float {
         return getSharedPrefs(context).getFloat(RESPONSE_BUTTON_PADDING_KEY, DEFAULT_RESPONSE_BUTTON_PADDING)

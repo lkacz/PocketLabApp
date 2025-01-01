@@ -8,24 +8,6 @@ import android.text.Spanned
 import androidx.core.text.HtmlCompat
 import androidx.documentfile.provider.DocumentFile
 
-/**
- * Revised to restore the simpler, previously working image loading approach without
- * unwanted transformations or forced centering. Also preserves optional width/height
- * if specified as attributes within <img> tags.
- *
- * Changes Made (compared to the recent version):
- * 1) Removed subfolder recursion and fancy short-image pattern conversions; we just
- *    look for the file directly under the user-selected media folder.
- * 2) Retained the ability to parse width/height from <img width="X" height="Y"> and
- *    store them in [imageSizeMap], applying them if found.
- * 3) Simplified getDrawable() to behave like it did in the older version, ensuring
- *    images appear as they did previously.
- *
- * Reasoning:
- * - Some advanced logic (recursive lookups, special <filename.png,100,200> patterns)
- *   caused confusion or broke direct <img> usage. This reverts to simpler code that
- *   was known to work in the past, letting standard <img src="..."> load images.
- */
 class HtmlImageLoader private constructor(
     private val context: Context,
     private val parentFolderUri: Uri?

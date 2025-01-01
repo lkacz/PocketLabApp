@@ -28,10 +28,6 @@ class ResourcesFolderManager(private val context: Context) {
         return Uri.parse(uriString)
     }
 
-    fun clearResourcesFolderUri() {
-        sharedPref.edit().remove(RESOURCES_FOLDER_URI_KEY).apply()
-    }
-
     /**
      * Launches the folder picker for selecting a resources folder.
      */

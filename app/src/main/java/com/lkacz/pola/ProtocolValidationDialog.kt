@@ -4,7 +4,6 @@ package com.lkacz.pola
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
@@ -136,7 +135,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
-            setStretchAllColumns(true)
+            isStretchAllColumns = true
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)

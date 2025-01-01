@@ -10,7 +10,6 @@ import java.io.StringReader
 import kotlin.random.Random
 
 class ProtocolManager(private val context: Context) {
-    var studyId: String? = null
 
     private var sharedPref: SharedPreferences =
         context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
