@@ -14,8 +14,8 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 /**
- * Fragment that loads a custom HTML/JS file from the selected resources folder.
- * Once done, user can click a "Continue" button to proceed.
+ * Fragment that loads a custom HTML file.
+ * The main user navigation is a CONTINUE button at the bottom.
  */
 class CustomHtmlFragment : Fragment() {
 
@@ -49,7 +49,7 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        // Create a 'continue' button with distinct styling
+        // CONTINUE button
         val continueButton = Button(requireContext()).apply {
             text = "Continue"
             textSize = FontSizeManager.getContinueSize(requireContext())
@@ -78,6 +78,7 @@ class CustomHtmlFragment : Fragment() {
             }
         }
         frameLayout.addView(continueButton)
+
         return frameLayout
     }
 

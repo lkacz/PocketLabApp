@@ -5,8 +5,8 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * Stores and retrieves the user-selected margin and padding values (in dp) for response buttons,
- * and now also for continue buttons.
+ * Stores and retrieves the user-selected margin and padding values (in dp) for RESPONSE buttons,
+ * and now also for CONTINUE buttons.
  */
 object SpacingManager {
 
@@ -16,7 +16,7 @@ object SpacingManager {
     private const val RESPONSE_BUTTON_PADDING_H_KEY = "responseButtonPaddingH"
     private const val RESPONSE_BUTTON_PADDING_V_KEY = "responseButtonPaddingV"
 
-    // New keys for CONTINUE button padding
+    // Keys for CONTINUE button padding
     private const val CONTINUE_BUTTON_PADDING_H_KEY = "continueButtonPaddingH"
     private const val CONTINUE_BUTTON_PADDING_V_KEY = "continueButtonPaddingV"
 
@@ -55,7 +55,6 @@ object SpacingManager {
             .apply()
     }
 
-    // CONTINUE button padding
     fun getContinueButtonPaddingHorizontal(context: Context): Float {
         return getSharedPrefs(context).getFloat(CONTINUE_BUTTON_PADDING_H_KEY, DEFAULT_BUTTON_PADDING_H)
     }

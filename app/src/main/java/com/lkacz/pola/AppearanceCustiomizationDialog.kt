@@ -17,40 +17,37 @@ import androidx.fragment.app.DialogFragment
 
 /**
  * Dialog for customizing font sizes, UI colors, transitions, button spacing/padding, etc.
- * Timer-sound logic was moved out into AlarmCustomizationDialog.
+ * Revised to remove references to external managers (FontSizeManager, ColorManager, etc.).
+ * Instead, it uses local variables and placeholders for storing/loading.
  */
 class AppearanceCustomizationDialog : DialogFragment() {
 
+    // Preview elements
     private lateinit var previewContainer: LinearLayout
     private lateinit var previewHeaderTextView: TextView
     private lateinit var previewBodyTextView: TextView
     private lateinit var previewButton: Button
     private lateinit var previewItemTextView: TextView
     private lateinit var previewResponseButton: Button
-
-    // We add a second "continue button" preview
     private lateinit var previewContinueButton: Button
 
+    // Sliders for font sizes
     private lateinit var sliderHeader: SeekBar
     private lateinit var tvHeaderSizeValue: TextView
-
     private lateinit var sliderBody: SeekBar
     private lateinit var tvBodySizeValue: TextView
-
     private lateinit var sliderButton: SeekBar
     private lateinit var tvButtonSizeValue: TextView
-
     private lateinit var sliderItem: SeekBar
     private lateinit var tvItemSizeValue: TextView
-
     private lateinit var sliderResponse: SeekBar
     private lateinit var tvResponseSizeValue: TextView
 
-    // CONTINUE button slider
+    // Newly placed in XML for consistency
     private lateinit var sliderContinue: SeekBar
     private lateinit var tvContinueSizeValue: TextView
 
-    // Sliders for spacing (margin) and separate horizontal/vertical padding for response
+    // Sliders for response margin/padding
     private lateinit var sliderResponseMargin: SeekBar
     private lateinit var tvResponseMarginValue: TextView
     private lateinit var sliderResponsePaddingH: SeekBar
@@ -58,12 +55,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var sliderResponsePaddingV: SeekBar
     private lateinit var tvResponsePaddingVValue: TextView
 
-    // New sliders for CONTINUE button padding
+    // Sliders for continue button padding
     private lateinit var sliderContinuePaddingH: SeekBar
     private lateinit var tvContinuePaddingHValue: TextView
     private lateinit var sliderContinuePaddingV: SeekBar
     private lateinit var tvContinuePaddingVValue: TextView
 
+    // Color pickers
     private lateinit var headerColorPicker: View
     private lateinit var bodyColorPicker: View
     private lateinit var buttonTextColorPicker: View
@@ -72,29 +70,35 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var responseColorPicker: View
     private lateinit var screenBackgroundColorPicker: View
 
-    // New color pickers for CONTINUE button
+    // If also added in XML:
     private lateinit var continueTextColorPicker: View
     private lateinit var continueBackgroundColorPicker: View
 
+    // Extra preview container for multiple response buttons
     private lateinit var previewPaddingButtonContainer: LinearLayout
     private lateinit var previewPaddingButton1: Button
     private lateinit var previewPaddingButton2: Button
 
-    // Current colors
-    private var headerTextColor: Int = Color.BLACK
-    private var bodyTextColor: Int = Color.DKGRAY
-    private var buttonTextColor: Int = Color.WHITE
-    private var buttonBackgroundColor: Int = Color.BLUE
-    private var itemTextColor: Int = Color.BLUE
-    private var responseTextColor: Int = Color.RED
-    private var screenBgColor: Int = Color.WHITE
+    // In-memory default values (replace with your own load/store logic)
+    private var headerTextSize = 24f
+    private var bodyTextSize = 16f
+    private var buttonTextSize = 16f
+    private var itemTextSize = 16f
+    private var responseTextSize = 16f
+    private var continueTextSize = 18f
 
-    // CONTINUE defaults
-    private var continueTextColor: Int = Color.WHITE
-    private var continueBackgroundColor: Int = Color.parseColor("#008577")
+    private var headerTextColor = Color.BLACK
+    private var bodyTextColor = Color.DKGRAY
+    private var buttonTextColor = Color.WHITE
+    private var buttonBackgroundColor = Color.BLUE
+    private var itemTextColor = Color.BLUE
+    private var responseTextColor = Color.RED
+    private var screenBgColor = Color.WHITE
+    private var continueTextColor = Color.WHITE
+    private var continueBackgroundColor = Color.parseColor("#008577")
 
-    // Transitions spinner
-    private lateinit var transitionsSpinner: Spinner
+    // Example transition mode
+    private var currentTransitionMode = "off"
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -122,7 +126,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Previews
+        // Previews (static elements in layout)
         previewContainer = view.findViewById(R.id.previewContainer)
         previewHeaderTextView = view.findViewById(R.id.previewHeaderTextView)
         previewBodyTextView = view.findViewById(R.id.previewBodyTextView)
@@ -130,47 +134,25 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewItemTextView = view.findViewById(R.id.previewItemTextView)
         previewResponseButton = view.findViewById(R.id.previewResponseButton)
 
-        // We'll add a preview for the continue button
+        // Dynamically add a 'continue' preview button
         previewContinueButton = Button(requireContext()).apply {
             text = "Continue Button"
         }
         previewContainer.addView(previewContinueButton)
 
-        // Sliders
+        // Sliders from XML
         sliderHeader = view.findViewById(R.id.sliderHeaderSize)
         tvHeaderSizeValue = view.findViewById(R.id.tvHeaderSizeValue)
-
         sliderBody = view.findViewById(R.id.sliderBodySize)
         tvBodySizeValue = view.findViewById(R.id.tvBodySizeValue)
-
         sliderButton = view.findViewById(R.id.sliderButtonSize)
         tvButtonSizeValue = view.findViewById(R.id.tvButtonSizeValue)
-
         sliderItem = view.findViewById(R.id.sliderItemSize)
         tvItemSizeValue = view.findViewById(R.id.tvItemSizeValue)
-
         sliderResponse = view.findViewById(R.id.sliderResponseSize)
         tvResponseSizeValue = view.findViewById(R.id.tvResponseSizeValue)
-
-        // New slider references for continue
-        sliderContinue = SeekBar(requireContext())
-        tvContinueSizeValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        // We place the continue slider below the response slider in the existing layout
-        val sliderContainer = view.findViewById<LinearLayout>(R.id.previewContainer)
-        sliderContainer.addView(TextView(requireContext()).apply {
-            text = "Continue Size:"
-            setTextColor(Color.BLACK)
-            textSize = 14f
-        })
-        sliderContainer.addView(sliderContinue)
-        sliderContainer.addView(tvContinueSizeValue)
+        sliderContinue = view.findViewById(R.id.sliderContinue)
+        tvContinueSizeValue = view.findViewById(R.id.tvContinueSizeValue)
 
         // Response margin/padding
         sliderResponseMargin = view.findViewById(R.id.sliderResponseMargin)
@@ -180,33 +162,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderResponsePaddingV = view.findViewById(R.id.sliderResponsePaddingV)
         tvResponsePaddingVValue = view.findViewById(R.id.tvResponsePaddingVValue)
 
-        // We also add continue padding references
-        sliderContinuePaddingH = SeekBar(requireContext())
-        tvContinuePaddingHValue = TextView(requireContext()).apply {
-            text = "0"
-        }
-        sliderContinuePaddingV = SeekBar(requireContext())
-        tvContinuePaddingVValue = TextView(requireContext()).apply {
-            text = "0"
-        }
+        // Continue button padding
+        sliderContinuePaddingH = view.findViewById(R.id.sliderContinuePaddingH)
+        tvContinuePaddingHValue = view.findViewById(R.id.tvContinuePaddingHValue)
+        sliderContinuePaddingV = view.findViewById(R.id.sliderContinuePaddingV)
+        tvContinuePaddingVValue = view.findViewById(R.id.tvContinuePaddingVValue)
 
-        sliderContainer.addView(TextView(requireContext()).apply {
-            text = "Continue Padding (Left/Right):"
-            setTextColor(Color.BLACK)
-            textSize = 14f
-        })
-        sliderContainer.addView(sliderContinuePaddingH)
-        sliderContainer.addView(tvContinuePaddingHValue)
-
-        sliderContainer.addView(TextView(requireContext()).apply {
-            text = "Continue Padding (Top/Bottom):"
-            setTextColor(Color.BLACK)
-            textSize = 14f
-        })
-        sliderContainer.addView(sliderContinuePaddingV)
-        sliderContainer.addView(tvContinuePaddingVValue)
-
-        // Color pickers
+        // Color picker views
         headerColorPicker = view.findViewById(R.id.headerColorPicker)
         bodyColorPicker = view.findViewById(R.id.bodyColorPicker)
         buttonTextColorPicker = view.findViewById(R.id.buttonTextColorPicker)
@@ -214,23 +176,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         itemColorPicker = view.findViewById(R.id.itemColorPicker)
         responseColorPicker = view.findViewById(R.id.responseColorPicker)
         screenBackgroundColorPicker = view.findViewById(R.id.screenBackgroundColorPicker)
+        continueTextColorPicker = view.findViewById(R.id.continueTextColorPicker)
+        continueBackgroundColorPicker = view.findViewById(R.id.continueBackgroundColorPicker)
 
-        // We'll add two new color pickers for continue text & background, placed similarly
-        continueTextColorPicker = View(requireContext())
-        continueBackgroundColorPicker = View(requireContext())
-        sliderContainer.addView(TextView(requireContext()).apply {
-            text = "Continue Text Color:"
-            setTextColor(Color.BLACK)
-        })
-        sliderContainer.addView(continueTextColorPicker, 100, 100)
-
-        sliderContainer.addView(TextView(requireContext()).apply {
-            text = "Continue Background Color:"
-            setTextColor(Color.BLACK)
-        })
-        sliderContainer.addView(continueBackgroundColorPicker, 100, 100)
-
-        // Extra preview container with two stacked buttons
+        // Container with two sample response buttons
         previewPaddingButtonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -241,25 +190,23 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
         previewContainer.addView(previewPaddingButtonContainer)
-
-        previewPaddingButton1 = Button(requireContext()).apply {
-            text = "Response 1"
-        }
-        previewPaddingButton2 = Button(requireContext()).apply {
-            text = "Response 2"
-        }
+        previewPaddingButton1 = Button(requireContext()).apply { text = "Response 1" }
+        previewPaddingButton2 = Button(requireContext()).apply { text = "Response 2" }
         previewPaddingButtonContainer.addView(previewPaddingButton1)
         previewPaddingButtonContainer.addView(previewPaddingButton2)
 
-        val ctx = requireContext()
+        // -------------------------------
+        // Load “stored” sizes (placeholder logic)
+        // -------------------------------
+        // In a real app, you’d fetch from SharedPreferences or database.
+        // Here we simply use local fields that may be changed before the dialog shows.
 
-        // Load stored sizes
-        sliderHeader.progress = FontSizeManager.getHeaderSize(ctx).toInt().coerceIn(8, 100)
-        sliderBody.progress = FontSizeManager.getBodySize(ctx).toInt().coerceIn(8, 100)
-        sliderButton.progress = FontSizeManager.getButtonSize(ctx).toInt().coerceIn(8, 100)
-        sliderItem.progress = FontSizeManager.getItemSize(ctx).toInt().coerceIn(8, 100)
-        sliderResponse.progress = FontSizeManager.getResponseSize(ctx).toInt().coerceIn(8, 100)
-        sliderContinue.progress = FontSizeManager.getContinueSize(ctx).toInt().coerceIn(8, 100)
+        sliderHeader.progress = headerTextSize.toInt().coerceIn(8, 100)
+        sliderBody.progress = bodyTextSize.toInt().coerceIn(8, 100)
+        sliderButton.progress = buttonTextSize.toInt().coerceIn(8, 100)
+        sliderItem.progress = itemTextSize.toInt().coerceIn(8, 100)
+        sliderResponse.progress = responseTextSize.toInt().coerceIn(8, 100)
+        sliderContinue.progress = continueTextSize.toInt().coerceIn(8, 100)
 
         tvHeaderSizeValue.text = sliderHeader.progress.toString()
         tvBodySizeValue.text = sliderBody.progress.toString()
@@ -268,7 +215,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvResponseSizeValue.text = sliderResponse.progress.toString()
         tvContinueSizeValue.text = sliderContinue.progress.toString()
 
-        // Apply to preview
+        // Apply to previews
         previewHeaderTextView.textSize = sliderHeader.progress.toFloat()
         previewBodyTextView.textSize = sliderBody.progress.toFloat()
         previewButton.textSize = sliderButton.progress.toFloat()
@@ -278,17 +225,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton2.textSize = sliderResponse.progress.toFloat()
         previewContinueButton.textSize = sliderContinue.progress.toFloat()
 
-        // Load colors
-        headerTextColor = ColorManager.getHeaderTextColor(ctx)
-        bodyTextColor = ColorManager.getBodyTextColor(ctx)
-        buttonTextColor = ColorManager.getButtonTextColor(ctx)
-        buttonBackgroundColor = ColorManager.getButtonBackgroundColor(ctx)
-        itemTextColor = ColorManager.getItemTextColor(ctx)
-        responseTextColor = ColorManager.getResponseTextColor(ctx)
-        screenBgColor = ColorManager.getScreenBackgroundColor(ctx)
-        continueTextColor = ColorManager.getContinueTextColor(ctx)
-        continueBackgroundColor = ColorManager.getContinueBackgroundColor(ctx)
+        // -------------------------------
+        // Load “stored” colors (placeholder logic)
+        // -------------------------------
+        // In a real app, you’d fetch from SharedPreferences or database.
+        // Here we simply use local fields defined above.
 
+        // Apply colors to previews
         previewHeaderTextView.setTextColor(headerTextColor)
         previewBodyTextView.setTextColor(bodyTextColor)
         previewButton.setTextColor(buttonTextColor)
@@ -300,6 +243,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.setBackgroundColor(continueBackgroundColor)
         previewContainer.setBackgroundColor(screenBgColor)
 
+        // Update color picker backgrounds
         applyColorPickerBoxColor(headerColorPicker, headerTextColor)
         applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
         applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColor)
@@ -310,65 +254,62 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(continueTextColorPicker, continueTextColor)
         applyColorPickerBoxColor(continueBackgroundColorPicker, continueBackgroundColor)
 
-        // Set up spacing & padding for response
-        val currentMarginDp = SpacingManager.getResponseButtonMargin(ctx).toInt().coerceIn(0, 100)
+        // -------------------------------
+        // Load “stored” spacing (placeholder logic)
+        // -------------------------------
         sliderResponseMargin.max = 100
-        sliderResponseMargin.progress = currentMarginDp
-        tvResponseMarginValue.text = currentMarginDp.toString()
-        applyResponseButtonMargin(currentMarginDp)
+        sliderResponseMargin.progress = 0
+        tvResponseMarginValue.text = "0"
+        applyResponseButtonMargin(0)
 
-        val currentPaddingH = SpacingManager.getResponseButtonPaddingHorizontal(ctx).toInt().coerceIn(0, 100)
         sliderResponsePaddingH.max = 100
-        sliderResponsePaddingH.progress = currentPaddingH
-        tvResponsePaddingHValue.text = currentPaddingH.toString()
+        sliderResponsePaddingH.progress = 0
+        tvResponsePaddingHValue.text = "0"
 
-        val currentPaddingV = SpacingManager.getResponseButtonPaddingVertical(ctx).toInt().coerceIn(0, 100)
         sliderResponsePaddingV.max = 100
-        sliderResponsePaddingV.progress = currentPaddingV
-        tvResponsePaddingVValue.text = currentPaddingV.toString()
+        sliderResponsePaddingV.progress = 0
+        tvResponsePaddingVValue.text = "0"
         applyResponseButtonPadding()
 
-        // Set up padding for continue
         sliderContinuePaddingH.max = 100
-        sliderContinuePaddingH.progress =
-            SpacingManager.getContinueButtonPaddingHorizontal(ctx).toInt().coerceIn(0, 100)
-        tvContinuePaddingHValue.text = sliderContinuePaddingH.progress.toString()
+        sliderContinuePaddingH.progress = 0
+        tvContinuePaddingHValue.text = "0"
 
         sliderContinuePaddingV.max = 100
-        sliderContinuePaddingV.progress =
-            SpacingManager.getContinueButtonPaddingVertical(ctx).toInt().coerceIn(0, 100)
-        tvContinuePaddingVValue.text = sliderContinuePaddingV.progress.toString()
-
+        sliderContinuePaddingV.progress = 0
+        tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
 
-        // Setup size sliders
+        // -------------------------------
+        // Handle slider changes
+        // -------------------------------
         sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setHeaderSize(ctx, size.toFloat())
+            headerTextSize = size.toFloat()  // Placeholder “store”
             previewHeaderTextView.textSize = size.toFloat()
             tvHeaderSizeValue.text = size.toString()
         })
         sliderBody.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setBodySize(ctx, size.toFloat())
+            bodyTextSize = size.toFloat()  // Placeholder “store”
             previewBodyTextView.textSize = size.toFloat()
             tvBodySizeValue.text = size.toString()
         })
         sliderButton.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setButtonSize(ctx, size.toFloat())
+            buttonTextSize = size.toFloat()  // Placeholder “store”
             previewButton.textSize = size.toFloat()
             tvButtonSizeValue.text = size.toString()
         })
         sliderItem.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setItemSize(ctx, size.toFloat())
+            itemTextSize = size.toFloat()  // Placeholder “store”
             previewItemTextView.textSize = size.toFloat()
             tvItemSizeValue.text = size.toString()
         })
         sliderResponse.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setResponseSize(ctx, size.toFloat())
+            responseTextSize = size.toFloat()  // Placeholder “store”
             previewResponseButton.textSize = size.toFloat()
             previewPaddingButton1.textSize = size.toFloat()
             previewPaddingButton2.textSize = size.toFloat()
@@ -376,27 +317,24 @@ class AppearanceCustomizationDialog : DialogFragment() {
         })
         sliderContinue.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
-            FontSizeManager.setContinueSize(ctx, size.toFloat())
+            continueTextSize = size.toFloat()  // Placeholder “store”
             previewContinueButton.textSize = size.toFloat()
             tvContinueSizeValue.text = size.toString()
         })
 
-        // Response margin & padding
+        // Response margin/padding
         sliderResponseMargin.setOnSeekBarChangeListener(simpleSeekBarListener {
             val marginDp = it.coerceIn(0, 100)
-            SpacingManager.setResponseButtonMargin(ctx, marginDp.toFloat())
             tvResponseMarginValue.text = marginDp.toString()
             applyResponseButtonMargin(marginDp)
         })
         sliderResponsePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
             val ph = it.coerceIn(0, 100)
-            SpacingManager.setResponseButtonPaddingHorizontal(ctx, ph.toFloat())
             tvResponsePaddingHValue.text = ph.toString()
             applyResponseButtonPadding()
         })
         sliderResponsePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
             val pv = it.coerceIn(0, 100)
-            SpacingManager.setResponseButtonPaddingVertical(ctx, pv.toFloat())
             tvResponsePaddingVValue.text = pv.toString()
             applyResponseButtonPadding()
         })
@@ -404,23 +342,22 @@ class AppearanceCustomizationDialog : DialogFragment() {
         // Continue button padding
         sliderContinuePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
             val ph = it.coerceIn(0, 100)
-            SpacingManager.setContinueButtonPaddingHorizontal(ctx, ph.toFloat())
             tvContinuePaddingHValue.text = ph.toString()
             applyContinueButtonPadding()
         })
         sliderContinuePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
             val pv = it.coerceIn(0, 100)
-            SpacingManager.setContinueButtonPaddingVertical(ctx, pv.toFloat())
             tvContinuePaddingVValue.text = pv.toString()
             applyContinueButtonPadding()
         })
 
+        // -------------------------------
         // Color pickers
+        // -------------------------------
         headerColorPicker.setOnClickListener {
             openColorPicker(headerTextColor) { chosenColor ->
                 headerTextColor = chosenColor
                 applyColorPickerBoxColor(headerColorPicker, chosenColor)
-                ColorManager.setHeaderTextColor(ctx, chosenColor)
                 previewHeaderTextView.setTextColor(chosenColor)
             }
         }
@@ -428,7 +365,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(bodyTextColor) { chosenColor ->
                 bodyTextColor = chosenColor
                 applyColorPickerBoxColor(bodyColorPicker, chosenColor)
-                ColorManager.setBodyTextColor(ctx, chosenColor)
                 previewBodyTextView.setTextColor(chosenColor)
             }
         }
@@ -436,7 +372,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(buttonTextColor) { chosenColor ->
                 buttonTextColor = chosenColor
                 applyColorPickerBoxColor(buttonTextColorPicker, chosenColor)
-                ColorManager.setButtonTextColor(ctx, chosenColor)
                 previewButton.setTextColor(chosenColor)
             }
         }
@@ -444,7 +379,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(buttonBackgroundColor) { chosenColor ->
                 buttonBackgroundColor = chosenColor
                 applyColorPickerBoxColor(buttonBackgroundColorPicker, chosenColor)
-                ColorManager.setButtonBackgroundColor(ctx, chosenColor)
+                // Also recolor the response preview
                 previewButton.setBackgroundColor(chosenColor)
                 previewResponseButton.setBackgroundColor(chosenColor)
                 previewPaddingButton1.setBackgroundColor(chosenColor)
@@ -455,7 +390,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(itemTextColor) { chosenColor ->
                 itemTextColor = chosenColor
                 applyColorPickerBoxColor(itemColorPicker, chosenColor)
-                ColorManager.setItemTextColor(ctx, chosenColor)
                 previewItemTextView.setTextColor(chosenColor)
             }
         }
@@ -463,7 +397,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(responseTextColor) { chosenColor ->
                 responseTextColor = chosenColor
                 applyColorPickerBoxColor(responseColorPicker, chosenColor)
-                ColorManager.setResponseTextColor(ctx, chosenColor)
                 previewResponseButton.setTextColor(chosenColor)
                 previewPaddingButton1.setTextColor(chosenColor)
                 previewPaddingButton2.setTextColor(chosenColor)
@@ -473,7 +406,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(screenBgColor) { chosenColor ->
                 screenBgColor = chosenColor
                 applyColorPickerBoxColor(screenBackgroundColorPicker, chosenColor)
-                ColorManager.setScreenBackgroundColor(ctx, chosenColor)
                 previewContainer.setBackgroundColor(chosenColor)
             }
         }
@@ -481,7 +413,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(continueTextColor) { chosenColor ->
                 continueTextColor = chosenColor
                 applyColorPickerBoxColor(continueTextColorPicker, chosenColor)
-                ColorManager.setContinueTextColor(ctx, chosenColor)
                 previewContinueButton.setTextColor(chosenColor)
             }
         }
@@ -489,27 +420,27 @@ class AppearanceCustomizationDialog : DialogFragment() {
             openColorPicker(continueBackgroundColor) { chosenColor ->
                 continueBackgroundColor = chosenColor
                 applyColorPickerBoxColor(continueBackgroundColorPicker, chosenColor)
-                ColorManager.setContinueBackgroundColor(ctx, chosenColor)
                 previewContinueButton.setBackgroundColor(chosenColor)
             }
         }
 
-        // Transitions Spinner
-        transitionsSpinner = view.findViewById(R.id.spinnerTransitions)
+        // -------------------------------
+        // Spinner for transitions (placeholder logic)
+        // -------------------------------
+        val transitionsSpinner = view.findViewById<Spinner>(R.id.spinnerTransitions)
         val transitionOptions = listOf("No transition", "Slide to left")
-        val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, transitionOptions)
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, transitionOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         transitionsSpinner.adapter = adapter
 
-        val storedMode = TransitionManager.getTransitionMode(ctx)
-        transitionsSpinner.setSelection(if (storedMode == "off") 0 else 1, false)
+        // Example: pick first item if “off”, second if “slide”
+        transitionsSpinner.setSelection(
+            if (currentTransitionMode == "off") 0 else 1,
+            false
+        )
         transitionsSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
-                if (position == 0) {
-                    TransitionManager.setTransitionMode(ctx, "off")
-                } else {
-                    TransitionManager.setTransitionMode(ctx, "slide")
-                }
+                currentTransitionMode = if (position == 0) "off" else "slide"
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -517,25 +448,25 @@ class AppearanceCustomizationDialog : DialogFragment() {
         // OK / Cancel
         val okButton = view.findViewById<Button>(R.id.btnOk)
         okButton.setOnClickListener {
+            // In a real app, you'd persist everything to SharedPreferences or a database here
             dismiss()
         }
         val cancelButton = view.findViewById<Button>(R.id.btnCancel)
-        cancelButton.setOnClickListener {
-            dismiss()
-        }
+        cancelButton.setOnClickListener { dismiss() }
 
         // "Defaults" Button
         val buttonsLayout = cancelButton.parent as? LinearLayout
         val defaultsButton = Button(requireContext()).apply {
             id = View.generateViewId()
             text = "Defaults"
-            setOnClickListener {
-                restoreAllDefaults(ctx)
-            }
+            setOnClickListener { restoreAllDefaults() }
         }
         buttonsLayout?.addView(defaultsButton, buttonsLayout.indexOfChild(cancelButton))
     }
 
+    /**
+     * Applies a margin in dp to the two "response" preview buttons.
+     */
     private fun applyResponseButtonMargin(marginDp: Int) {
         val scale = resources.displayMetrics.density
         val marginPx = (marginDp * scale + 0.5f).toInt()
@@ -548,15 +479,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         updateButtonMargin(previewPaddingButton2)
     }
 
+    /**
+     * Applies the stored horizontal/vertical padding to the "response" preview buttons.
+     * For now, just uses the slider values (placeholder).
+     */
     private fun applyResponseButtonPadding() {
-        val ctx = requireContext()
         val scale = resources.displayMetrics.density
-
-        val horizontalDp = SpacingManager.getResponseButtonPaddingHorizontal(ctx)
-        val verticalDp = SpacingManager.getResponseButtonPaddingVertical(ctx)
-        val horizontalPx = (horizontalDp * scale + 0.5f).toInt()
-        val verticalPx = (verticalDp * scale + 0.5f).toInt()
-
+        val horizontalPx = (sliderResponsePaddingH.progress * scale + 0.5f).toInt()
+        val verticalPx = (sliderResponsePaddingV.progress * scale + 0.5f).toInt()
         fun updateButtonPadding(button: Button) {
             button.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
         }
@@ -565,18 +495,19 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewResponseButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
+    /**
+     * Applies the stored horizontal/vertical padding to the "continue" preview button.
+     */
     private fun applyContinueButtonPadding() {
-        val ctx = requireContext()
         val scale = resources.displayMetrics.density
-        val horizontalDp = SpacingManager.getContinueButtonPaddingHorizontal(ctx)
-        val verticalDp = SpacingManager.getContinueButtonPaddingVertical(ctx)
-
-        val horizontalPx = (horizontalDp * scale + 0.5f).toInt()
-        val verticalPx = (verticalDp * scale + 0.5f).toInt()
-
+        val horizontalPx = (sliderContinuePaddingH.progress * scale + 0.5f).toInt()
+        val verticalPx = (sliderContinuePaddingV.progress * scale + 0.5f).toInt()
         previewContinueButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
+    /**
+     * Updates the background of a color picker “box” to show the chosen color.
+     */
     private fun applyColorPickerBoxColor(picker: View, color: Int) {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
         if (drawable is GradientDrawable) {
@@ -585,6 +516,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
     }
 
+    /**
+     * Displays a simple RGB color picker, with OK/Cancel.
+     */
     private fun openColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
         val dialogView = layoutInflater.inflate(R.layout.color_picker_dialog, null)
         val seekRed = dialogView.findViewById<SeekBar>(R.id.seekRed)
@@ -621,14 +555,19 @@ class AppearanceCustomizationDialog : DialogFragment() {
             .show()
     }
 
-    private fun restoreAllDefaults(ctx: Context) {
-        val defaultHeaderSize = 48f
-        val defaultBodySize = 18f
-        val defaultButtonSize = 18f
-        val defaultItemSize = 22f
+    /**
+     * Restores everything to defaults (in-memory). Replace with real logic if needed.
+     */
+    private fun restoreAllDefaults() {
+        // Default text sizes
+        val defaultHeaderSize = 24f
+        val defaultBodySize = 16f
+        val defaultButtonSize = 16f
+        val defaultItemSize = 16f
         val defaultResponseSize = 16f
         val defaultContinueSize = 18f
 
+        // Default colors
         val defaultHeaderColor = Color.parseColor("#37474F")
         val defaultBodyColor = Color.parseColor("#616161")
         val defaultButtonTextColor = Color.WHITE
@@ -639,43 +578,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultContinueTextColor = Color.WHITE
         val defaultContinueBgColor = Color.parseColor("#008577")
 
-        FontSizeManager.setHeaderSize(ctx, defaultHeaderSize)
-        FontSizeManager.setBodySize(ctx, defaultBodySize)
-        FontSizeManager.setButtonSize(ctx, defaultButtonSize)
-        FontSizeManager.setItemSize(ctx, defaultItemSize)
-        FontSizeManager.setResponseSize(ctx, defaultResponseSize)
-        FontSizeManager.setContinueSize(ctx, defaultContinueSize)
-
-        sliderHeader.progress = defaultHeaderSize.toInt()
-        sliderBody.progress = defaultBodySize.toInt()
-        sliderButton.progress = defaultButtonSize.toInt()
-        sliderItem.progress = defaultItemSize.toInt()
-        sliderResponse.progress = defaultResponseSize.toInt()
-        sliderContinue.progress = defaultContinueSize.toInt()
-
-        tvHeaderSizeValue.text = sliderHeader.progress.toString()
-        tvBodySizeValue.text = sliderBody.progress.toString()
-        tvButtonSizeValue.text = sliderButton.progress.toString()
-        tvItemSizeValue.text = sliderItem.progress.toString()
-        tvResponseSizeValue.text = sliderResponse.progress.toString()
-        tvContinueSizeValue.text = sliderContinue.progress.toString()
-
-        previewHeaderTextView.textSize = defaultHeaderSize
-        previewBodyTextView.textSize = defaultBodySize
-        previewButton.textSize = defaultButtonSize
-        previewItemTextView.textSize = defaultItemSize
-        previewResponseButton.textSize = defaultResponseSize
-        previewContinueButton.textSize = defaultContinueSize
-
-        ColorManager.setHeaderTextColor(ctx, defaultHeaderColor)
-        ColorManager.setBodyTextColor(ctx, defaultBodyColor)
-        ColorManager.setButtonTextColor(ctx, defaultButtonTextColor)
-        ColorManager.setButtonBackgroundColor(ctx, defaultButtonBgColor)
-        ColorManager.setItemTextColor(ctx, defaultItemColor)
-        ColorManager.setResponseTextColor(ctx, defaultResponseColor)
-        ColorManager.setScreenBackgroundColor(ctx, defaultScreenBgColor)
-        ColorManager.setContinueTextColor(ctx, defaultContinueTextColor)
-        ColorManager.setContinueBackgroundColor(ctx, defaultContinueBgColor)
+        // Reset local fields
+        headerTextSize = defaultHeaderSize
+        bodyTextSize = defaultBodySize
+        buttonTextSize = defaultButtonSize
+        itemTextSize = defaultItemSize
+        responseTextSize = defaultResponseSize
+        continueTextSize = defaultContinueSize
 
         headerTextColor = defaultHeaderColor
         bodyTextColor = defaultBodyColor
@@ -687,52 +596,70 @@ class AppearanceCustomizationDialog : DialogFragment() {
         continueTextColor = defaultContinueTextColor
         continueBackgroundColor = defaultContinueBgColor
 
-        applyColorPickerBoxColor(headerColorPicker, defaultHeaderColor)
-        applyColorPickerBoxColor(bodyColorPicker, defaultBodyColor)
-        applyColorPickerBoxColor(buttonTextColorPicker, defaultButtonTextColor)
-        applyColorPickerBoxColor(buttonBackgroundColorPicker, defaultButtonBgColor)
-        applyColorPickerBoxColor(itemColorPicker, defaultItemColor)
-        applyColorPickerBoxColor(responseColorPicker, defaultResponseColor)
-        applyColorPickerBoxColor(screenBackgroundColorPicker, defaultScreenBgColor)
-        applyColorPickerBoxColor(continueTextColorPicker, defaultContinueTextColor)
-        applyColorPickerBoxColor(continueBackgroundColorPicker, defaultContinueBgColor)
+        // Apply to sliders and previews
+        sliderHeader.progress = headerTextSize.toInt()
+        sliderBody.progress = bodyTextSize.toInt()
+        sliderButton.progress = buttonTextSize.toInt()
+        sliderItem.progress = itemTextSize.toInt()
+        sliderResponse.progress = responseTextSize.toInt()
+        sliderContinue.progress = continueTextSize.toInt()
 
-        previewHeaderTextView.setTextColor(defaultHeaderColor)
-        previewBodyTextView.setTextColor(defaultBodyColor)
-        previewButton.setTextColor(defaultButtonTextColor)
-        previewButton.setBackgroundColor(defaultButtonBgColor)
-        previewItemTextView.setTextColor(defaultItemColor)
-        previewResponseButton.setTextColor(defaultResponseColor)
-        previewResponseButton.setBackgroundColor(defaultButtonBgColor)
-        previewContinueButton.setTextColor(defaultContinueTextColor)
-        previewContinueButton.setBackgroundColor(defaultContinueBgColor)
-        previewContainer.setBackgroundColor(defaultScreenBgColor)
+        tvHeaderSizeValue.text = sliderHeader.progress.toString()
+        tvBodySizeValue.text = sliderBody.progress.toString()
+        tvButtonSizeValue.text = sliderButton.progress.toString()
+        tvItemSizeValue.text = sliderItem.progress.toString()
+        tvResponseSizeValue.text = sliderResponse.progress.toString()
+        tvContinueSizeValue.text = sliderContinue.progress.toString()
 
-        // Reset margins/padding
-        SpacingManager.setResponseButtonMargin(ctx, 0f)
+        previewHeaderTextView.textSize = headerTextSize
+        previewBodyTextView.textSize = bodyTextSize
+        previewButton.textSize = buttonTextSize
+        previewItemTextView.textSize = itemTextSize
+        previewResponseButton.textSize = responseTextSize
+        previewContinueButton.textSize = continueTextSize
+
+        applyColorPickerBoxColor(headerColorPicker, headerTextColor)
+        applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
+        applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColor)
+        applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColor)
+        applyColorPickerBoxColor(itemColorPicker, itemTextColor)
+        applyColorPickerBoxColor(responseColorPicker, responseTextColor)
+        applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+        applyColorPickerBoxColor(continueTextColorPicker, continueTextColor)
+        applyColorPickerBoxColor(continueBackgroundColorPicker, continueBackgroundColor)
+
+        previewHeaderTextView.setTextColor(headerTextColor)
+        previewBodyTextView.setTextColor(bodyTextColor)
+        previewButton.setTextColor(buttonTextColor)
+        previewButton.setBackgroundColor(buttonBackgroundColor)
+        previewItemTextView.setTextColor(itemTextColor)
+        previewResponseButton.setTextColor(responseTextColor)
+        previewResponseButton.setBackgroundColor(buttonBackgroundColor)
+        previewContinueButton.setTextColor(continueTextColor)
+        previewContinueButton.setBackgroundColor(continueBackgroundColor)
+        previewContainer.setBackgroundColor(screenBgColor)
+
+        // Reset margins/padding to zero
         sliderResponseMargin.progress = 0
         tvResponseMarginValue.text = "0"
         applyResponseButtonMargin(0)
 
-        SpacingManager.setResponseButtonPaddingHorizontal(ctx, 0f)
         sliderResponsePaddingH.progress = 0
         tvResponsePaddingHValue.text = "0"
-
-        SpacingManager.setResponseButtonPaddingVertical(ctx, 0f)
         sliderResponsePaddingV.progress = 0
         tvResponsePaddingVValue.text = "0"
         applyResponseButtonPadding()
 
-        SpacingManager.setContinueButtonPaddingHorizontal(ctx, 0f)
         sliderContinuePaddingH.progress = 0
         tvContinuePaddingHValue.text = "0"
-
-        SpacingManager.setContinueButtonPaddingVertical(ctx, 0f)
         sliderContinuePaddingV.progress = 0
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
     }
 
+    /**
+     * Simple SeekBar listener to reduce boilerplate
+     */
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
         object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {

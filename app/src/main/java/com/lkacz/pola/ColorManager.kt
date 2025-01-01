@@ -25,7 +25,7 @@ object ColorManager {
     private const val CONTINUE_TEXT_COLOR_KEY = "continueTextColor"
     private const val CONTINUE_BACKGROUND_COLOR_KEY = "continueBackgroundColor"
 
-    // Default color values (ARGB)
+    // Default color values
     private const val DEFAULT_HEADER_TEXT_COLOR = Color.BLACK
     private const val DEFAULT_BODY_TEXT_COLOR = Color.DKGRAY
     private const val DEFAULT_BUTTON_TEXT_COLOR = Color.WHITE

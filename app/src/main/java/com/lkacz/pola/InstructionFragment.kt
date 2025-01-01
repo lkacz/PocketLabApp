@@ -14,6 +14,9 @@ import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
+/**
+ * Simple fragment that shows instructions and a single CONTINUE button.
+ */
 class InstructionFragment : Fragment() {
 
     private var header: String? = null
@@ -82,13 +85,12 @@ class InstructionFragment : Fragment() {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // This is the CONTINUE button
+        // CONTINUE button styling
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
 
-        // Apply CONTINUE button padding
         val density = resources.displayMetrics.density
         val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
         val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())

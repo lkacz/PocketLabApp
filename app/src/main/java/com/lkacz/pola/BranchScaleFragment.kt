@@ -18,6 +18,10 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
+/**
+ * A variant of SCALE that branches based on selected response.
+ * Again, each branch response is considered a RESPONSE button.
+ */
 class BranchScaleFragment : Fragment() {
 
     private var header: String? = null
@@ -91,18 +95,16 @@ class BranchScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Retrieve user-defined spacing and padding
+        // RESPONSE button spacing/padding
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
-
         val paddingHdp = SpacingManager.getResponseButtonPaddingHorizontal(requireContext())
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
-
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
 
-        // Build each branch response as a button
+        // Build each branch response button
         branchResponses.forEachIndexed { index, (displayText, label) ->
             val cleanResponse = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
             val refinedResponse = checkAndLoadHtml(cleanResponse, resourcesFolderUri)
@@ -114,14 +116,12 @@ class BranchScaleFragment : Fragment() {
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
 
-                // Apply margins
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
                     setMargins(marginPx, marginPx, marginPx, marginPx)
                 }
-                // Apply padding (horizontal & vertical)
                 setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
                 setOnClickListener {
@@ -214,10 +214,9 @@ class BranchScaleFragment : Fragment() {
     private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
         if (resourcesFolderUri == null) return
         val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val videoFile = parentFolder.findFile(fileName) ?: return
-        if (!videoFile.exists() || !videoFile.isFile) return
-        val videoUri = videoFile.uri
-        videoView.setVideoURI(videoUri)
+        val soundFile = parentFolder.findFile(fileName) ?: return
+        if (!soundFile.exists() || !soundFile.isFile) return
+        videoView.setVideoURI(soundFile.uri)
         videoView.setOnPreparedListener { mp -> mp.start() }
     }
 

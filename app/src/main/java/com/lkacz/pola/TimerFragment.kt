@@ -16,6 +16,10 @@ import android.widget.TextView
 import android.widget.VideoView
 import androidx.documentfile.provider.DocumentFile
 
+/**
+ * Timer-based fragment. Once time expires, a CONTINUE button becomes visible.
+ * The "continue" button uses separate styling from the "response" style.
+ */
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private var header: String? = null
@@ -84,15 +88,17 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
+        // Header
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
 
+        // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // CONTINUE button
+        // CONTINUE button styling
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -110,6 +116,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
         timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
+        // Start countdown
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -134,6 +141,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onTouchThresholdReached() {
+        // If user quickly taps a certain number of times, forcibly end the timer
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."

@@ -12,6 +12,10 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.VideoView
 
+/**
+ * Similar to InstructionFragment, but the continue button remains hidden until the user taps X times.
+ * The "continue" button is still a CONTINUE button by style.
+ */
 class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
 
     private var header: String? = null
@@ -80,7 +84,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
-        // CONTINUE button (hidden until threshold reached)
+        // Hidden CONTINUE button
         nextButton?.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextButton)
         nextButton?.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton?.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -151,9 +155,7 @@ class TapInstructionFragment : BaseTouchAwareFragment(1000, 3) {
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {

@@ -18,17 +18,15 @@ object FontSizeManager {
     private const val ITEM_SIZE_KEY = "itemSize"
     private const val RESPONSE_SIZE_KEY = "responseSize"
 
-    // New key for CONTINUE buttons
+    // Key for CONTINUE buttons
     private const val CONTINUE_SIZE_KEY = "continueSize"
 
-    // Default sizes:
+    // Default sizes
     private const val DEFAULT_HEADER_SIZE = 60f
     private const val DEFAULT_BODY_SIZE = 24f
     private const val DEFAULT_BUTTON_SIZE = 20f
     private const val DEFAULT_ITEM_SIZE = 50f
     private const val DEFAULT_RESPONSE_SIZE = 8f
-
-    // Default for CONTINUE
     private const val DEFAULT_CONTINUE_SIZE = 18f
 
     fun getHeaderSize(context: Context): Float {

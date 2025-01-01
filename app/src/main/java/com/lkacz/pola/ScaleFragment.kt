@@ -18,6 +18,9 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
+/**
+ * A standard SCALE fragment, where each response is considered a "RESPONSE button."
+ */
 class ScaleFragment : Fragment() {
 
     private var header: String? = null
@@ -85,18 +88,16 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Retrieve margin & padding from SpacingManager
+        // Prepare spacing/padding for "RESPONSE" buttons
         val density = resources.displayMetrics.density
-
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
-
         val paddingHdp = SpacingManager.getResponseButtonPaddingHorizontal(requireContext())
         val paddingHpx = (paddingHdp * density + 0.5f).toInt()
-
         val paddingVdp = SpacingManager.getResponseButtonPaddingVertical(requireContext())
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
 
+        // Build response buttons
         responses?.forEachIndexed { index, response ->
             val buttonText = parseAndPlayAudioIfAny(response, resourcesFolderUri)
             val refinedButton = checkAndLoadHtml(buttonText, resourcesFolderUri)
@@ -108,15 +109,12 @@ class ScaleFragment : Fragment() {
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
 
-                // Set margin around the button (space between buttons)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
                     setMargins(marginPx, marginPx, marginPx, marginPx)
                 }
-
-                // Set internal horizontal/vertical padding
                 setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
                 setOnClickListener {

@@ -13,6 +13,10 @@ import androidx.core.widget.addTextChangedListener
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
+/**
+ * Fragment that displays text fields and collects input. The "Continue" button is used to proceed.
+ * The continue button follows CONTINUE styling.
+ */
 class InputFieldFragment : Fragment() {
     private var heading: String? = null
     private var body: String? = null
@@ -169,9 +173,7 @@ class InputFieldFragment : Fragment() {
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
         videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-        }
+        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
