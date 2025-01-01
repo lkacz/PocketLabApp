@@ -1,4 +1,3 @@
-// Filename: ProtocolValidationDialog.kt
 package com.lkacz.pola
 
 import android.app.Dialog
@@ -16,9 +15,6 @@ import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
 
-    /**
-     * Commands recognized by default.
-     */
     private val recognizedCommands = setOf(
         "BRANCH_SCALE",
         "INSTRUCTION",
@@ -36,23 +32,18 @@ class ProtocolValidationDialog : DialogFragment() {
         "TIMER_SOUND",
         "HEADER_SIZE",
         "BODY_SIZE",
-        "BUTTON_SIZE",
         "ITEM_SIZE",
         "RESPONSE_SIZE",
         "LOG",
         "END",
-        "RANDOMIZATION_ON",
-        "RANDOMIZATION_OFF",
-        "STUDY_ID"
+        "RANDOMIZE_ON",
+        "RANDOMIZE_OFF",
+        "STUDY_ID",
+        "CONTINUE_SIZE"
     )
 
-    // Tracks unclosed randomization blocks
     private var randomizationLevel = 0
-
-    // Collect global errors (e.g., unclosed randomization blocks)
     private val globalErrors = mutableListOf<String>()
-
-    // Keep track of previous command for randomization checks
     private var lastCommand: String? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -75,7 +66,6 @@ class ProtocolValidationDialog : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Root layout for pinned header + scrollable content
         val rootLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -84,22 +74,17 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Build the header-only table
         val headerTable = buildHeaderTable()
-
-        // Build the scrollable content table
         val scrollView = ScrollView(requireContext())
         val contentTable = buildContentTable(getProtocolContent())
 
-        // After processing lines, check if randomization is unclosed
         if (randomizationLevel > 0) {
             globalErrors.add("RANDOMIZATION_ON not closed by matching RANDOMIZATION_OFF")
         }
 
-        // If global errors exist, append them as a final row
         if (globalErrors.isNotEmpty()) {
             val row = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFEEEE")) // slight red background
+                setBackgroundColor(Color.parseColor("#FFEEEE"))
                 setPadding(16, 8, 16, 8)
             }
             val cell = createBodyCell(
@@ -109,25 +94,17 @@ class ProtocolValidationDialog : DialogFragment() {
                 setTextColor(Color.RED)
                 setTypeface(null, Typeface.BOLD)
             }
-            // Span across all columns (3 columns total)
             cell.layoutParams = TableRow.LayoutParams().apply { span = 3 }
             row.addView(cell)
             contentTable.addView(row)
         }
 
-        // Add the content table to the scroll view
         scrollView.addView(contentTable)
-
-        // Add header table and scrollable content to the root layout
         rootLayout.addView(headerTable)
         rootLayout.addView(scrollView)
-
         return rootLayout
     }
 
-    /**
-     * Builds the pinned header (one row) in its own TableLayout.
-     */
     private fun buildHeaderTable(): TableLayout {
         val context = requireContext()
         return TableLayout(context).apply {
@@ -139,7 +116,6 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)
-            // Three header cells: "Line", "Command", "Error(s)"
             headerRow.addView(createHeaderCell("Line", 0.1f))
             headerRow.addView(createHeaderCell("Command", 0.6f))
             headerRow.addView(createHeaderCell("Error(s)", 0.3f))
@@ -148,12 +124,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    /**
-     * Builds the main (scrollable) table rows (excluding header).
-     *
-     * NOTE: We now keep the *entire* file's lines (including empty and comment lines),
-     * to preserve their numbering for display in "Line" column.
-     */
     private fun buildContentTable(fileContent: String): TableLayout {
         val context = requireContext()
         val tableLayout = TableLayout(context).apply {
@@ -165,29 +135,18 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
         }
 
-        // 1) Split all lines, do *not* skip anything at first
         val allLines = fileContent.split("\n")
-
-        // 2) Pre-calculate label occurrences among all lines
         val labelOccurrences = findLabelOccurrences(allLines)
 
-        // 3) Iterate over each line with real lineNumber
         allLines.forEachIndexed { index, rawLine ->
             val realLineNumber = index + 1
             val trimmedLine = rawLine.trim()
-
-            // Validate the line (even if empty or comment) so randomization checks remain correct
             val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
 
-            // We *only* add a row to the table if the line is not empty/comment
             if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("//")) {
-                // Highlight recognized/unrecognized commands + empty HTML tags
                 val highlightedLine = highlightLine(trimmedLine, errorMessage, warningMessage)
-
-                // Combine errors & warnings
                 val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
-                // Create row
                 val row = TableRow(context).apply {
                     val backgroundColor = if (index % 2 == 0) {
                         Color.parseColor("#FFFFFF")
@@ -197,17 +156,12 @@ class ProtocolValidationDialog : DialogFragment() {
                     setBackgroundColor(backgroundColor)
                     setPadding(16, 8, 16, 8)
                 }
-
-                // Column: real line number
                 row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
-                // Column: command content
                 row.addView(createBodyCell(highlightedLine, 0.6f))
-                // Column: combined errors/warnings
                 row.addView(createBodyCell(
                     text = combinedIssuesSpannable,
                     weight = 0.3f
                 ))
-
                 tableLayout.addView(row)
             }
         }
@@ -215,9 +169,6 @@ class ProtocolValidationDialog : DialogFragment() {
         return tableLayout
     }
 
-    /**
-     * Creates a header cell (centered, bold) with specified weight.
-     */
     private fun createHeaderCell(headerText: String, weight: Float): TextView {
         return TextView(requireContext()).apply {
             text = headerText
@@ -229,9 +180,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    /**
-     * Creates a body cell. If text is a Spannable, uses that. Otherwise uses plain string.
-     */
     private fun createBodyCell(
         text: CharSequence,
         weight: Float
@@ -248,14 +196,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    // =====================================================================================
-    //                             VALIDATION LOGIC
-    // =====================================================================================
-    /**
-     * Validate each line => returns a pair (errorMessage, warningMessage).
-     * We do this for all lines, even if they're empty or comment lines,
-     * so that randomization checks remain consistent.
-     */
     private fun validateLine(
         lineNumber: Int,
         line: String,
@@ -264,30 +204,20 @@ class ProtocolValidationDialog : DialogFragment() {
         var errorMessage = ""
         var warningMessage = ""
 
-        // If line is empty or comment, skip standard checks but still do randomization logic if we want
-        // Typically we won't parse commands from empty or comment lines, but let's see:
-        // "We do not skip the logic entirely because randomization state might get updated if the user typed something"
-        // However, if line is empty/comment, it won't have a recognized command. So let's handle that.
         if (line.isEmpty() || line.startsWith("//")) {
-            // There's no command to parse, but let's finalize lastCommand if needed
-            // Actually we won't do anything except set lastCommand to null if line is blank or comment.
             lastCommand = null
             return Pair(errorMessage, warningMessage)
         }
 
-        // 1) No trailing semicolon
         if (line.endsWith(";")) {
             errorMessage = appendError(errorMessage, "Line ends with stray semicolon")
         }
 
-        // 2) Split at semicolons, identify command
         val parts = line.split(";")
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        // 3) Randomization logic
         if (commandRaw == "RANDOMIZATION_ON") {
-            // Check if lastCommand was also RANDOMIZATION_ON => not allowed
             if (lastCommand?.uppercase() == "RANDOMIZATION_ON") {
                 errorMessage = appendError(
                     errorMessage,
@@ -296,7 +226,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             randomizationLevel++
         } else if (commandRaw == "RANDOMIZATION_OFF") {
-            // Must be preceded by an ON (and not another OFF)
             if (lastCommand?.uppercase() == "RANDOMIZATION_OFF") {
                 errorMessage = appendError(
                     errorMessage,
@@ -313,7 +242,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // 4) Command recognition
         if (!commandRecognized) {
             errorMessage = appendError(errorMessage, "Unrecognized command")
         } else {
@@ -329,7 +257,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 "CUSTOM_HTML" -> customHtmlValidation(parts).forEach {
                     errorMessage = appendError(errorMessage, it)
                 }
-                "HEADER_SIZE", "BODY_SIZE", "BUTTON_SIZE", "ITEM_SIZE", "RESPONSE_SIZE" -> {
+                "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                     val (err, warn) = sizeValidation(commandRaw, parts)
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
@@ -345,19 +273,18 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
-                "MULTISCALE" -> multiScaleValidation(line).forEach { pair ->
-                    // pair can be error or warning => let's assume we prefix them with "ERR:" or "WARN:"
-                    // or we can just store them separately
-                    if (pair.first == "ERROR") {
-                        errorMessage = appendError(errorMessage, pair.second)
-                    } else {
-                        warningMessage = appendWarning(warningMessage, pair.second)
+                "MULTISCALE" -> {
+                    multiScaleValidation(line).forEach { pair ->
+                        if (pair.first == "ERROR") {
+                            errorMessage = appendError(errorMessage, pair.second)
+                        } else {
+                            warningMessage = appendWarning(warningMessage, pair.second)
+                        }
                     }
                 }
             }
         }
 
-        // 5) Check for empty HTML tags => warnings
         val foundEmptyTags = findEmptyHtmlTags(line)
         if (foundEmptyTags.isNotEmpty()) {
             foundEmptyTags.forEach { tag ->
@@ -365,15 +292,10 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Update last command
         lastCommand = commandRaw
-
         return Pair(errorMessage, warningMessage)
     }
 
-    /**
-     * Validate label duplication and single-word constraints.
-     */
     private fun labelValidation(
         lineNumber: Int,
         line: String,
@@ -442,7 +364,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun scaleValidation(line: String): List<String> {
         val errors = mutableListOf<String>()
-        // Must contain at least 4 semicolons => 5 segments
         val semicolonCount = line.count { it == ';' }
         if (semicolonCount < 4) {
             errors.add("SCALE must have at least 4 semicolons (5 segments)")
@@ -452,7 +373,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun instructionValidation(line: String): List<String> {
         val errors = mutableListOf<String>()
-        // Must contain exactly 3 semicolons => 4 segments
         val semicolonCount = line.count { it == ';' }
         if (semicolonCount != 3) {
             errors.add("INSTRUCTION must have exactly 3 semicolons (4 segments)")
@@ -477,10 +397,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun multiScaleValidation(line: String): List<Pair<String, String>> {
-        // Return list of (type, message) => type in {"ERROR","WARNING"}
         val output = mutableListOf<Pair<String, String>>()
-
-        // Must contain bracketed items => e.g. MULTISCALE;Header;Body;[Item1;Item2];Resp1;...
         val bracketStart = line.indexOf("[")
         val bracketEnd = line.indexOf("]")
         if (bracketStart < 0 || bracketEnd < 0 || bracketEnd < bracketStart) {
@@ -502,13 +419,58 @@ class ProtocolValidationDialog : DialogFragment() {
         return output
     }
 
-    // =====================================================================================
-    //                           HIGHLIGHTING & OUTPUT
-    // =====================================================================================
-    /**
-     * Partially highlight recognized commands (dark green), unrecognized (red),
-     * empty HTML tags (orange), etc.
-     */
+    private fun findLabelOccurrences(lines: List<String>): MutableMap<String, MutableList<Int>> {
+        val labelOccurrences = mutableMapOf<String, MutableList<Int>>()
+        lines.forEachIndexed { index, rawLine ->
+            val trimmed = rawLine.trim()
+            if (trimmed.uppercase().startsWith("LABEL;")) {
+                val parts = trimmed.split(";")
+                val labelName = parts.getOrNull(1)?.trim().orEmpty()
+                if (labelName.isNotEmpty()) {
+                    labelOccurrences
+                        .computeIfAbsent(labelName) { mutableListOf() }
+                        .add(index + 1)
+                }
+            }
+        }
+        return labelOccurrences
+    }
+
+    private fun findEmptyHtmlTags(line: String): List<String> {
+        val results = mutableListOf<String>()
+        val pattern1 = Pattern.compile("<([a-zA-Z]+)>\\s*</\\1>")
+        val matcher1 = pattern1.matcher(line)
+        while (matcher1.find()) {
+            results.add(matcher1.group() ?: "")
+        }
+        val pattern2 = Pattern.compile("<\\s*>")
+        val matcher2 = pattern2.matcher(line)
+        while (matcher2.find()) {
+            results.add(matcher2.group() ?: "")
+        }
+        return results
+    }
+
+    private fun setSpanColor(spannable: SpannableString, start: Int, end: Int, color: Int) {
+        if (start < 0 || end <= start || end > spannable.length) return
+        spannable.setSpan(
+            ForegroundColorSpan(color),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+
+    private fun setSpanBold(spannable: SpannableString, start: Int, end: Int) {
+        if (start < 0 || end <= start || end > spannable.length) return
+        spannable.setSpan(
+            StyleSpan(Typeface.BOLD),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+
     private fun highlightLine(
         line: String,
         errorMessage: String,
@@ -519,21 +481,16 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandPart = parts[0]
         val cmdIsRecognized = recognizedCommands.contains(commandPart.uppercase())
 
-        // 1) Color recognized vs unrecognized command
         val startCmd = 0
         val endCmd = commandPart.length
         if (cmdIsRecognized) {
-            // Dark green
             setSpanColor(combined, startCmd, endCmd, Color.rgb(0, 100, 0))
         } else {
-            // Red
             setSpanColor(combined, startCmd, endCmd, Color.RED)
         }
 
-        // 2) If LABEL is invalid => highlight label portion in red
         if (commandPart.uppercase() == "LABEL") {
             if (errorMessage.contains("duplicated") || errorMessage.contains("Label is not a single word")) {
-                // highlight everything after "LABEL;" in red
                 val offset = commandPart.length
                 if (offset < line.length) {
                     setSpanColor(combined, offset, line.length, Color.RED)
@@ -541,7 +498,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // 3) Color empty HTML tags => orange
         val emptyTags = findEmptyHtmlTags(line)
         for (tag in emptyTags) {
             val startIndex = line.indexOf(tag)
@@ -554,9 +510,6 @@ class ProtocolValidationDialog : DialogFragment() {
         return combined
     }
 
-    /**
-     * Combine errors (red) and warnings (orange) in one Spannable string.
-     */
     private fun combineIssues(errorMessage: String, warningMessage: String): SpannableString {
         val combinedText = buildString {
             if (errorMessage.isNotEmpty()) append(errorMessage)
@@ -565,14 +518,12 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val spannable = SpannableString(combinedText)
-        // Color errors in red
         if (errorMessage.isNotEmpty()) {
             val errorStart = 0
             val errorEnd = errorStart + errorMessage.length
             setSpanColor(spannable, errorStart, errorEnd, Color.RED)
             setSpanBold(spannable, errorStart, errorEnd)
         }
-        // Color warnings in orange
         if (warningMessage.isNotEmpty()) {
             val warnStart = combinedText.indexOf(warningMessage)
             val warnEnd = warnStart + warningMessage.length
@@ -583,92 +534,14 @@ class ProtocolValidationDialog : DialogFragment() {
         return spannable
     }
 
-    // =====================================================================================
-    //                           HELPER FUNCTIONS
-    // =====================================================================================
-    /**
-     * Finds label occurrences for duplicates, among *all* lines (including empty & comment).
-     */
-    private fun findLabelOccurrences(lines: List<String>): MutableMap<String, MutableList<Int>> {
-        val labelOccurrences = mutableMapOf<String, MutableList<Int>>()
-        lines.forEachIndexed { index, rawLine ->
-            val trimmed = rawLine.trim()
-            if (trimmed.uppercase().startsWith("LABEL;")) {
-                val parts = trimmed.split(";")
-                val labelName = parts.getOrNull(1)?.trim().orEmpty()
-                if (labelName.isNotEmpty()) {
-                    labelOccurrences
-                        .computeIfAbsent(labelName) { mutableListOf() }
-                        .add(index + 1) // real line number
-                }
-            }
-        }
-        return labelOccurrences
-    }
-
-    /**
-     * Regex approach to finding empty HTML tags: <tag></tag> or <>
-     */
-    private fun findEmptyHtmlTags(line: String): List<String> {
-        val results = mutableListOf<String>()
-        // Pattern 1: <tag></tag> with no content
-        val pattern1 = Pattern.compile("<([a-zA-Z]+)>\\s*</\\1>")
-        val matcher1 = pattern1.matcher(line)
-        while (matcher1.find()) {
-            results.add(matcher1.group() ?: "")
-        }
-        // Pattern 2: <>
-        val pattern2 = Pattern.compile("<\\s*>")
-        val matcher2 = pattern2.matcher(line)
-        while (matcher2.find()) {
-            results.add(matcher2.group() ?: "")
-        }
-        return results
-    }
-
-    /**
-     * Sets color on (start..end) in a SpannableString.
-     */
-    private fun setSpanColor(spannable: SpannableString, start: Int, end: Int, color: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            ForegroundColorSpan(color),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-    }
-
-    /**
-     * Sets text bold on (start..end).
-     */
-    private fun setSpanBold(spannable: SpannableString, start: Int, end: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            StyleSpan(Typeface.BOLD),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-    }
-
-    /**
-     * Appends a new error with semicolon separation if needed.
-     */
     private fun appendError(current: String, newError: String): String {
         return if (current.isEmpty()) newError else "$current; $newError"
     }
 
-    /**
-     * Appends a new warning with semicolon separation if needed.
-     */
     private fun appendWarning(current: String, newWarning: String): String {
         return if (current.isEmpty()) newWarning else "$current; $newWarning"
     }
 
-    /**
-     * Retrieve content from either shared prefs or assets.
-     */
     private fun getProtocolContent(): String {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         val mode = prefs.getString("CURRENT_MODE", null)

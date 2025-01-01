@@ -1,12 +1,64 @@
 // Participant ID Entry
 
-HEADER_SIZE;40
-BODY_SIZE;20
-BUTTON_SIZE;24
-ITEM_SIZE;30
-RESPONSE_SIZE;24
+//HEADER_SIZE;40
+//BODY_SIZE;20
+//BUTTON_SIZE;24
+//ITEM_SIZE;30
+// RESPONSE_SIZE;24
+
+
 TIMER_SOUND;sound.wav
-CUSTOM_HTML;mycode.tml
+
+
+// VERIFIED:
+// RESPONSES_SPACING;1
+// HEADER_ALIGNMENT;RIGHT
+// HEADER_COLOR;#FF0000
+// ITEM_SIZE;20
+// RESPONSE_SIZE;24
+// TRANSITIONS;slide
+
+// NOT WORKING:
+// ITEM_COLOR;#00ff00
+// BODY_COLOR;#00ff00
+// CONTINUE_BUTTON_COLOR;#555555
+// SCREEN_BACKGROUND_COLOR;#F5F5F5
+// CONTINUE_BUTTON_ALIGNMENT;LEFT
+// BODY_ALIGNMENT;RIGHT
+
+
+
+
+BODY_ALIGNMENT;RIGHT
+CONTINUE_BUTTON_ALIGNMENT;RIGHT
+CONTINUE_BACKGROUND_COLOR;#008577
+CONTINUE_BUTTON_COLOR;#555555
+INSTRUCTION;Header;Body;DALEJ
+
+CONTINUE_BUTTON_ALIGNMENT;RIGHT
+CONTINUE_BACKGROUND_COLOR;#FF8577
+CONTINUE_BUTTON_COLOR;ff0000
+INSTRUCTION;Header;Body;DALEJ
+
+
+
+ITEM_COLOR;#00ff00
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+
+ITEM_COLOR;#0000ff
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+
+
+
+
+TRANSITIONS;off
+RESPONSE_SIZE;14
+
+TRANSITIONS;slide
+RESPONSE_SIZE;24
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 
 CUSTOM_HTML;wiki.html
@@ -14,9 +66,9 @@ CUSTOM_HTML;wiki.html
 MULTISCALE;Multiscale;This is sound<sound.mp3>;[Pierwszy item,Drugi item,Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia
 
 
-RANDOMIZATION_OFF
+RANDOMIZE_OFF
 
-RANDOMIZATION_ON
+RANDOMIZE_ON
 
 TIMER_SOUND;sound.mp3
 TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
@@ -24,7 +76,6 @@ TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>g
 TIMER_SOUND;sound.wav
 TIMER;Timer 2 no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
 
-INSTRUCTION;Tere fere.;DALEJ
 
 
 SCALE;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive

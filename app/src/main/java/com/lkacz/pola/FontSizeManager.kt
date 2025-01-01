@@ -1,4 +1,3 @@
-// Filename: FontSizeManager.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -10,14 +9,12 @@ object FontSizeManager {
 
     private const val HEADER_SIZE_KEY = "headerSize"
     private const val BODY_SIZE_KEY = "bodySize"
-    private const val BUTTON_SIZE_KEY = "buttonSize"
     private const val ITEM_SIZE_KEY = "itemSize"
     private const val RESPONSE_SIZE_KEY = "responseSize"
     private const val CONTINUE_SIZE_KEY = "continueSize"
 
     private const val DEFAULT_HEADER_SIZE = 60f
     private const val DEFAULT_BODY_SIZE = 24f
-    private const val DEFAULT_BUTTON_SIZE = 20f
     private const val DEFAULT_ITEM_SIZE = 50f
     private const val DEFAULT_RESPONSE_SIZE = 8f
     private const val DEFAULT_CONTINUE_SIZE = 18f
@@ -36,14 +33,6 @@ object FontSizeManager {
 
     fun setBodySize(context: Context, newSize: Float) {
         getSharedPrefs(context).edit().putFloat(BODY_SIZE_KEY, newSize).apply()
-    }
-
-    fun getButtonSize(context: Context): Float {
-        return getSharedPrefs(context).getFloat(BUTTON_SIZE_KEY, DEFAULT_BUTTON_SIZE)
-    }
-
-    fun setButtonSize(context: Context, newSize: Float) {
-        getSharedPrefs(context).edit().putFloat(BUTTON_SIZE_KEY, newSize).apply()
     }
 
     fun getItemSize(context: Context): Float {

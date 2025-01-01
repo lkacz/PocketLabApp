@@ -1,10 +1,7 @@
-// Filename: FragmentLoader.kt
 package com.lkacz.pola
 
 import android.content.Context
-import com.lkacz.pola.SpacingManager
 import java.io.BufferedReader
-import java.io.StringReader
 
 class FragmentLoader(
     private val bufferedReader: BufferedReader,
@@ -72,15 +69,15 @@ class FragmentLoader(
                     SpacingManager.setResponsesSpacing(getContext(), spacingVal)
                     continue
                 }
-                "HEADER_SIZE", "BODY_SIZE", "BUTTON_SIZE", "ITEM_SIZE", "RESPONSE_SIZE" -> {
+                "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
                         when (directive) {
                             "HEADER_SIZE" -> FontSizeManager.setHeaderSize(getContext(), sizeValue)
                             "BODY_SIZE" -> FontSizeManager.setBodySize(getContext(), sizeValue)
-                            "BUTTON_SIZE" -> FontSizeManager.setButtonSize(getContext(), sizeValue)
                             "ITEM_SIZE" -> FontSizeManager.setItemSize(getContext(), sizeValue)
                             "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(getContext(), sizeValue)
+                            "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(getContext(), sizeValue)
                         }
                     }
                     continue
