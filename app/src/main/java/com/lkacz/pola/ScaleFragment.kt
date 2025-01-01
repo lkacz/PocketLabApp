@@ -25,7 +25,13 @@ class ScaleFragment : Fragment() {
     private var header: String? = null
     private var body: String? = null
     private var item: String? = null
-    private var responses: List<String>? = null
+
+    /**
+     * Holds either simple responses (normal scale) or branching ones.
+     * Each entry is a Pair(displayText, branchLabel?), where branchLabel is null if not branching.
+     */
+    private var responses: List<Pair<String, String?>> = emptyList()
+
     private lateinit var logger: Logger
     private val selectedResponse = MutableLiveData<String>()
 
@@ -35,13 +41,28 @@ class ScaleFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            header = it.getString("HEADER")
-            body = it.getString("BODY")
-            item = it.getString("ITEM")
-            responses = it.getStringArrayList("RESPONSES")
-        }
         logger = Logger.getInstance(requireContext())
+        arguments?.let {
+            header = it.getString(ARG_HEADER)
+            body = it.getString(ARG_BODY)
+            item = it.getString(ARG_ITEM)
+            // Unify both normal & branch responses into a single list of pairs
+            val isBranch = it.getBoolean(ARG_IS_BRANCH, false)
+            if (isBranch) {
+                // If branching is enabled, read them as "display||optionalLabel"
+                val rawList = it.getStringArrayList(ARG_BRANCH_RESPONSES) ?: arrayListOf()
+                responses = rawList.map { raw ->
+                    val split = raw.split("||")
+                    val disp = split.getOrNull(0) ?: ""
+                    val lbl = split.getOrNull(1)?.ifEmpty { null }
+                    disp to lbl
+                }
+            } else {
+                // Normal scale uses a simple list of strings
+                val normalList = it.getStringArrayList(ARG_NORMAL_RESPONSES) ?: arrayListOf()
+                responses = normalList.map { resp -> resp to null }
+            }
+        }
     }
 
     override fun onCreateView(
@@ -63,6 +84,7 @@ class ScaleFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -71,6 +93,7 @@ class ScaleFragment : Fragment() {
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
+        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -79,6 +102,7 @@ class ScaleFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
+        // Item
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
         checkAndPlayMp4(item.orEmpty(), resourcesFolderUri)
@@ -86,6 +110,7 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
+        // Build responses as buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -96,17 +121,16 @@ class ScaleFragment : Fragment() {
         val extraSpacingDp = SpacingManager.getResponseSpacing(requireContext())
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
-        responses?.forEachIndexed { index, response ->
-            val buttonText = parseAndPlayAudioIfAny(response, resourcesFolderUri)
+        responses.forEachIndexed { index, (displayText, label) ->
+            val buttonText = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
             val refinedButton = checkAndLoadHtml(buttonText, resourcesFolderUri)
-            checkAndPlayMp4(response, resourcesFolderUri)
+            checkAndPlayMp4(displayText, resourcesFolderUri)
 
             val button = Button(context).apply {
                 text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButton)
                 textSize = FontSizeManager.getResponseSize(requireContext())
                 setTextColor(ColorManager.getResponseTextColor(requireContext()))
                 setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
-
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -119,15 +143,22 @@ class ScaleFragment : Fragment() {
                 setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
                 setOnClickListener {
-                    selectedResponse.value = response
+                    selectedResponse.value = displayText
                     logger.logScaleFragment(
                         header ?: "Default Header",
                         body ?: "Default Body",
                         item ?: "Default Item",
                         index + 1,
-                        response
+                        displayText
                     )
-                    (activity as MainActivity).loadNextFragment()
+                    val mainActivity = activity as? MainActivity
+                    if (label.isNullOrEmpty()) {
+                        // Normal scale flow
+                        mainActivity?.loadNextFragment()
+                    } else {
+                        // Branching if a label is provided
+                        mainActivity?.loadFragmentByLabel(label)
+                    }
                 }
             }
             buttonContainer.addView(button)
@@ -170,7 +201,8 @@ class ScaleFragment : Fragment() {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -230,18 +262,51 @@ class ScaleFragment : Fragment() {
     }
 
     companion object {
+        private const val ARG_HEADER = "ARG_HEADER"
+        private const val ARG_BODY = "ARG_BODY"
+        private const val ARG_ITEM = "ARG_ITEM"
+        private const val ARG_IS_BRANCH = "ARG_IS_BRANCH"
+        private const val ARG_NORMAL_RESPONSES = "ARG_NORMAL_RESPONSES"
+        private const val ARG_BRANCH_RESPONSES = "ARG_BRANCH_RESPONSES"
+
+        /**
+         * Creates a ScaleFragment for normal (non-branch) usage.
+         */
         @JvmStatic
         fun newInstance(
             header: String?,
             body: String?,
             item: String?,
-            responses: List<String>?
+            responses: List<String>
         ) = ScaleFragment().apply {
             arguments = Bundle().apply {
-                putString("HEADER", header)
-                putString("BODY", body)
-                putString("ITEM", item)
-                putStringArrayList("RESPONSES", ArrayList(responses ?: emptyList()))
+                putString(ARG_HEADER, header)
+                putString(ARG_BODY, body)
+                putString(ARG_ITEM, item)
+                putBoolean(ARG_IS_BRANCH, false)
+                putStringArrayList(ARG_NORMAL_RESPONSES, ArrayList(responses))
+            }
+        }
+
+        /**
+         * Creates a ScaleFragment for branch usage.
+         * Each response is "display text" + optional label in a pair.
+         */
+        @JvmStatic
+        fun newBranchInstance(
+            header: String?,
+            body: String?,
+            item: String?,
+            branchResponses: List<Pair<String, String?>>
+        ) = ScaleFragment().apply {
+            arguments = Bundle().apply {
+                putString(ARG_HEADER, header)
+                putString(ARG_BODY, body)
+                putString(ARG_ITEM, item)
+                putBoolean(ARG_IS_BRANCH, true)
+                // Convert pairs into ["display||label", ...]
+                val rawList = branchResponses.map { "${it.first}||${it.second ?: ""}" }
+                putStringArrayList(ARG_BRANCH_RESPONSES, ArrayList(rawList))
             }
         }
     }

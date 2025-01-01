@@ -30,6 +30,38 @@ TIMER_SOUND;sound.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
+
+
+SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+
+// Emotions Scale After Walking With a Friend
+MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+RANDOMIZED_MULTISCALE;Randomized multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+
+// Emotions Scale After Walking With a Friend
+BRANCH_SCALE;Branching Scale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+
+LABEL;Version1
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version2
+INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;Version3
+INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
+GOTO;AFTER_VERSIONS
+
+LABEL;AFTER_VERSIONS
+
+
+
+
+
+
 CONTINUE_TEXT_COLOR;#000000
 CONTINUE_BACKGROUND_COLOR;#FFFFFF
 INSTRUCTION;Header;Body;DALEJ
@@ -52,7 +84,6 @@ CONTINUE_BACKGROUND_COLOR;#FFFFFF
 INSTRUCTION;Header;Body;DALEJ
 
 
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 
 
@@ -121,24 +152,6 @@ HEADER_SIZE;8
 // Emotions Scale After Walking With a Friend
 MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Branching Scale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-
-LABEL;AFTER_VERSIONS
-
 SCALE;State no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
 INPUTFIELD;Inputfield no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
@@ -166,27 +179,10 @@ RANDOMIZATION_ON
 
 
 
-RANDOMIZED_MULTISCALE;Randomized multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
 // Emotions Scale After Walking With a Friend
 MULTISCALE;Multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
 
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Branching Scale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has HTML<custom.html>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRuUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
 
 SCALE;State no vid;This is <b>bold</b>. This is <font color ='green'></font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
@@ -202,23 +198,6 @@ RANDOMIZED_MULTISCALE;Randomized multiscale;This is <b>bold</b>. This is <font c
 
 // Emotions Scale After Walking With a Friend
 MULTISCALE;Multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Branching Scale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
 
 SCALE;State;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
 
@@ -326,24 +305,6 @@ INSTRUCTION;Thank You;Thank you for participating in the study. Your contributio
 // Log Study End
 // Syntax: LOG;Text
 LOG;The study ended at this moment.
-
-LABEL;START
-
-// Emotions Scale After Walking With a Friend
-BRANCH_SCALE;Wybierz;Wybierz coś sobie.;Wersja;Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-GOTO;START
 
 // Timer for 30 Minutes Walk With Friend
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
