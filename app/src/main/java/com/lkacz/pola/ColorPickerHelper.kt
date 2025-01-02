@@ -1,29 +1,18 @@
 // Filename: ColorPickerHelper.kt
 package com.lkacz.pola
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Typeface
-import android.text.Editable
-import android.view.Gravity
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 
-/**
- * A helper class to show a color picker dialog (with three sliders for R, G, B).
- * Factored out from AppearanceCustomizationDialog for better modularity.
- */
 object ColorPickerHelper {
 
     /**
-     * Shows a color picker dialog that allows users to adjust the R, G, B components.
-     * Calls [onColorSelected] once the user confirms the color choice.
+     * Shows a dialog with three SeekBars for selecting R, G, B values of a color.
+     * The [onColorSelected] callback returns the chosen color upon "OK".
      */
     fun showColorPickerDialog(
         context: Context,
@@ -32,108 +21,96 @@ object ColorPickerHelper {
     ) {
         val dialogLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+            setPadding(dpToPx(context, 20), dpToPx(context, 20), dpToPx(context, 20), dpToPx(context, 20))
         }
-        val titleText = TextView(context).apply {
-            text = "Pick a Color"
-            setTypeface(typeface, Typeface.BOLD)
+
+        val previewText = TextView(context).apply {
+            text = "Color Preview"
             textSize = 16f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(initialColor)
+            setPadding(dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16))
         }
-        dialogLayout.addView(titleText)
+        dialogLayout.addView(previewText)
 
-        // R row
-        val redRow = createColorRow(context, "R:")
-        val seekRed = SeekBar(context).apply { max = 255 }
-        redRow.addView(seekRed)
-        dialogLayout.addView(redRow)
+        var red = (initialColor shr 16) and 0xFF
+        var green = (initialColor shr 8) and 0xFF
+        var blue = (initialColor) and 0xFF
 
-        // G row
-        val greenRow = createColorRow(context, "G:")
-        val seekGreen = SeekBar(context).apply { max = 255 }
-        greenRow.addView(seekGreen)
-        dialogLayout.addView(greenRow)
-
-        // B row
-        val blueRow = createColorRow(context, "B:")
-        val seekBlue = SeekBar(context).apply { max = 255 }
-        blueRow.addView(seekBlue)
-        dialogLayout.addView(blueRow)
-
-        // Color preview
-        val colorPreview = View(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(context, 80)
-            ).apply { topMargin = dpToPx(context, 12) }
+        // Red SeekBar
+        val redBar = makeColorSeekBar(context, "R", red) { newValue ->
+            red = newValue
+            previewText.setBackgroundColor(Color.rgb(red, green, blue))
         }
-        dialogLayout.addView(colorPreview)
+        dialogLayout.addView(redBar)
 
-        // Initialize
-        val initR = initialColor.red
-        val initG = initialColor.green
-        val initB = initialColor.blue
-        seekRed.progress = initR
-        seekGreen.progress = initG
-        seekBlue.progress = initB
-        colorPreview.setBackgroundColor(Color.rgb(initR, initG, initB))
-
-        val updatePreview = {
-            val newC = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-            colorPreview.setBackgroundColor(newC)
+        // Green SeekBar
+        val greenBar = makeColorSeekBar(context, "G", green) { newValue ->
+            green = newValue
+            previewText.setBackgroundColor(Color.rgb(red, green, blue))
         }
+        dialogLayout.addView(greenBar)
 
-        // Listeners for preview
-        seekRed.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekGreen.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekBlue.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
+        // Blue SeekBar
+        val blueBar = makeColorSeekBar(context, "B", blue) { newValue ->
+            blue = newValue
+            previewText.setBackgroundColor(Color.rgb(red, green, blue))
+        }
+        dialogLayout.addView(blueBar)
 
         AlertDialog.Builder(context)
+            .setTitle("Choose a color")
             .setView(dialogLayout)
             .setPositiveButton("OK") { _, _ ->
-                val chosenColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-                onColorSelected(chosenColor)
+                onColorSelected(Color.rgb(red, green, blue))
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
     /**
-     * Creates a simple row (horizontal layout) for the color label + SeekBar.
+     * Creates a labeled horizontal layout with a text label and a SeekBar for color channel.
      */
-    private fun createColorRow(context: Context, labelText: String): LinearLayout {
-        return LinearLayout(context).apply {
+    private fun makeColorSeekBar(
+        context: Context,
+        label: String,
+        initialValue: Int,
+        onProgressChanged: (Int) -> Unit
+    ): LinearLayout {
+        val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dpToPx(context, 8) }
-            val label = TextView(context).apply {
-                text = labelText
-                setTypeface(typeface, Typeface.BOLD)
-            }
-            addView(label)
+            setPadding(0, dpToPx(context, 8), 0, dpToPx(context, 8))
         }
+
+        val labelView = TextView(context).apply {
+            text = "$label:"
+            textSize = 14f
+            setPadding(0, 0, dpToPx(context, 8), 0)
+        }
+        container.addView(labelView)
+
+        val seekBar = SeekBar(context).apply {
+            max = 255
+            progress = initialValue
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
+                    onProgressChanged(p)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+        }
+        container.addView(seekBar)
+
+        return container
     }
 
-    /**
-     * A simple utility for SeekBar change listener that only cares about onProgressChanged.
-     */
-    private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
-        object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                onValueChanged(progress)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        }
-
     private fun dpToPx(context: Context, dp: Int): Int {
-        val density = context.resources.displayMetrics.density
-        return (dp * density + 0.5f).toInt()
+        return (dp * context.resources.displayMetrics.density + 0.5f).toInt()
     }
 }
