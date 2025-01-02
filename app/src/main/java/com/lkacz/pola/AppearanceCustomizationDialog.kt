@@ -56,8 +56,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var screenBackgroundColorPicker: View
     private lateinit var spinnerTransitions: Spinner
 
-    // New spinner for Continue Button Alignment
     private lateinit var spinnerContinueAlignment: Spinner
+
+    // New spinners for Header Alignment & Body Alignment
+    private lateinit var spinnerHeaderAlignment: Spinner
+    private lateinit var spinnerBodyAlignment: Spinner
 
     private var headerTextSize = 24f
     private var bodyTextSize = 16f
@@ -76,8 +79,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var screenBgColor = Color.WHITE
     private var currentTransitionMode = "off"
 
-    // Hold selected continue-button alignment in memory
     private var currentContinueAlignment = "CENTER"
+    private var currentHeaderAlignment = "CENTER"
+    private var currentBodyAlignment = "CENTER"
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -332,7 +336,53 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         continuePaddingVRow.addView(tvContinuePaddingVValue)
 
-        // ---- New spinner row for Continue Button Alignment ----
+        // New row for Header Alignment
+        val headerAlignRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(headerAlignRow)
+
+        val headerAlignLabel = TextView(requireContext()).apply {
+            text = "Header Alignment:"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        headerAlignRow.addView(headerAlignLabel)
+
+        spinnerHeaderAlignment = Spinner(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(16)
+            }
+        }
+        headerAlignRow.addView(spinnerHeaderAlignment)
+
+        // New row for Body Alignment
+        val bodyAlignRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(bodyAlignRow)
+
+        val bodyAlignLabel = TextView(requireContext()).apply {
+            text = "Body Alignment:"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        bodyAlignRow.addView(bodyAlignLabel)
+
+        spinnerBodyAlignment = Spinner(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(16)
+            }
+        }
+        bodyAlignRow.addView(spinnerBodyAlignment)
+
+        // Continue alignment row
         val continueAlignRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -805,18 +855,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // Setup alignment spinner
         val alignmentOptions = listOf("Left", "Center", "Right")
+
+        // Continue alignment spinner
         val alignAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, alignmentOptions)
         alignAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerContinueAlignment.adapter = alignAdapter
 
-        // Load saved preference for continue alignment
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         val savedAlign = prefs.getString("CONTINUE_ALIGNMENT", "CENTER") ?: "CENTER"
         currentContinueAlignment = savedAlign.uppercase()
-
-        // Set spinner selection
         spinnerContinueAlignment.setSelection(
             when (currentContinueAlignment) {
                 "LEFT" -> 0
@@ -825,13 +873,56 @@ class AppearanceCustomizationDialog : DialogFragment() {
             },
             false
         )
-
         spinnerContinueAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 currentContinueAlignment = alignmentOptions[position].uppercase()
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+
+        // Header alignment spinner
+        spinnerHeaderAlignment.adapter = alignAdapter
+        val savedHeaderAlign = prefs.getString("HEADER_ALIGNMENT", "CENTER") ?: "CENTER"
+        currentHeaderAlignment = savedHeaderAlign.uppercase()
+        spinnerHeaderAlignment.setSelection(
+            when (currentHeaderAlignment) {
+                "LEFT" -> 0
+                "RIGHT" -> 2
+                else -> 1
+            },
+            false
+        )
+        spinnerHeaderAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                currentHeaderAlignment = alignmentOptions[position].uppercase()
+                applyHeaderAlignmentToPreview()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Body alignment spinner
+        spinnerBodyAlignment.adapter = alignAdapter
+        val savedBodyAlign = prefs.getString("BODY_ALIGNMENT", "CENTER") ?: "CENTER"
+        currentBodyAlignment = savedBodyAlign.uppercase()
+        spinnerBodyAlignment.setSelection(
+            when (currentBodyAlignment) {
+                "LEFT" -> 0
+                "RIGHT" -> 2
+                else -> 1
+            },
+            false
+        )
+        spinnerBodyAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                currentBodyAlignment = alignmentOptions[position].uppercase()
+                applyBodyAlignmentToPreview()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // Immediately apply current alignment to preview
+        applyHeaderAlignmentToPreview()
+        applyBodyAlignmentToPreview()
     }
 
     private fun newRowLayout(): LinearLayout {
@@ -887,9 +978,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
-    /**
-     * Updated to call ColorPickerHelper's color picker dialog instead of directly implementing it.
-     */
     private fun applyColorPickerBoxColor(picker: View, color: Int) {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
         if (drawable is GradientDrawable) {
@@ -977,6 +1065,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
         buttonBackgroundColorVar = defaultButtonBgColor
         screenBgColor = defaultScreenBgColor
         currentContinueAlignment = "CENTER"
+        currentHeaderAlignment = "CENTER"
+        currentBodyAlignment = "CENTER"
 
         sliderHeader.progress = headerTextSize.toInt()
         sliderBody.progress = bodyTextSize.toInt()
@@ -1035,8 +1125,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
 
-        // Reset the spinner to "Center"
         spinnerContinueAlignment.setSelection(1, false)
+        spinnerHeaderAlignment.setSelection(1, false)
+        spinnerBodyAlignment.setSelection(1, false)
+
+        applyHeaderAlignmentToPreview()
+        applyBodyAlignmentToPreview()
     }
 
     private fun saveCurrentSelections() {
@@ -1066,9 +1160,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         TransitionManager.setTransitionMode(requireContext(), if (currentTransitionMode == "off") "off" else "slide")
 
-        // Save new continue alignment setting
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
+        prefs.edit().putString("HEADER_ALIGNMENT", currentHeaderAlignment).apply()
+        prefs.edit().putString("BODY_ALIGNMENT", currentBodyAlignment).apply()
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
@@ -1079,4 +1174,20 @@ class AppearanceCustomizationDialog : DialogFragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         }
+
+    private fun applyHeaderAlignmentToPreview() {
+        when (currentHeaderAlignment) {
+            "LEFT" -> previewHeaderTextView.gravity = Gravity.START
+            "RIGHT" -> previewHeaderTextView.gravity = Gravity.END
+            else -> previewHeaderTextView.gravity = Gravity.CENTER
+        }
+    }
+
+    private fun applyBodyAlignmentToPreview() {
+        when (currentBodyAlignment) {
+            "LEFT" -> previewBodyTextView.gravity = Gravity.START
+            "RIGHT" -> previewBodyTextView.gravity = Gravity.END
+            else -> previewBodyTextView.gravity = Gravity.CENTER
+        }
+    }
 }
