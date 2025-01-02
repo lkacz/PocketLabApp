@@ -17,14 +17,11 @@ import java.util.regex.Pattern
 class ProtocolValidationDialog : DialogFragment() {
 
     private val recognizedCommands = setOf(
-        "BRANCH_SCALE",
+        // Removed MULTISCALE, RANDOMIZED_MULTISCALE, BRANCH_SCALE
+        "SCALE",
         "INSTRUCTION",
         "TIMER",
         "TAP_INSTRUCTION",
-        "SCALE",
-        "MULTISCALE",
-        "RANDOMIZED_MULTISCALE",
-        "BRANCH_SCALE",
         "INPUTFIELD",
         "CUSTOM_HTML",
         "LABEL",
@@ -35,14 +32,14 @@ class ProtocolValidationDialog : DialogFragment() {
         "BODY_SIZE",
         "ITEM_SIZE",
         "RESPONSE_SIZE",
+        "CONTINUE_SIZE",
+        "RESPONSE_TEXT_COLOR",
+        "RESPONSE_BACKGROUND_COLOR",
         "LOG",
         "END",
         "RANDOMIZE_ON",
         "RANDOMIZE_OFF",
-        "STUDY_ID",
-        "CONTINUE_SIZE",
-        "RESPONSE_TEXT_COLOR",
-        "RESPONSE_BACKGROUND_COLOR"
+        "STUDY_ID"
     )
 
     private var randomizationLevel = 0
@@ -220,25 +217,26 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        if (commandRaw == "RANDOMIZATION_ON") {
-            if (lastCommand?.uppercase() == "RANDOMIZATION_ON") {
+        // Handle randomization-level counters
+        if (commandRaw == "RANDOMIZE_ON") {
+            if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
                 errorMessage = appendError(
                     errorMessage,
-                    "RANDOMIZATION_ON cannot be followed by another RANDOMIZATION_ON without an intervening RANDOMIZATION_OFF"
+                    "RANDOMIZE_ON cannot be followed by another RANDOMIZE_ON without an intervening RANDOMIZE_OFF"
                 )
             }
             randomizationLevel++
-        } else if (commandRaw == "RANDOMIZATION_OFF") {
-            if (lastCommand?.uppercase() == "RANDOMIZATION_OFF") {
+        } else if (commandRaw == "RANDOMIZE_OFF") {
+            if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
                 errorMessage = appendError(
                     errorMessage,
-                    "RANDOMIZATION_OFF should be preceded by RANDOMIZATION_ON (not another RANDOMIZATION_OFF)"
+                    "RANDOMIZE_OFF should be preceded by RANDOMIZE_ON (not another RANDOMIZE_OFF)"
                 )
             }
             if (randomizationLevel <= 0) {
                 errorMessage = appendError(
                     errorMessage,
-                    "RANDOMIZATION_OFF without matching RANDOMIZATION_ON"
+                    "RANDOMIZE_OFF without matching RANDOMIZE_ON"
                 )
             } else {
                 randomizationLevel--
@@ -265,25 +263,23 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
-                "SCALE" -> scaleValidation(line).forEach {
-                    errorMessage = appendError(errorMessage, it)
+                "SCALE" -> {
+                    // We only check minimal semicolons for single-scale usage; multi-scale expansions happen in ProtocolManager
+                    // If it has fewer than 2 semicolons, it might be missing body or item, but we won't be too strict here
+                    if (parts.size < 2) {
+                        errorMessage = appendError(errorMessage, "SCALE must have at least 1 semicolon after 'SCALE'")
+                    }
                 }
-                "INSTRUCTION" -> instructionValidation(line).forEach {
-                    errorMessage = appendError(errorMessage, it)
+                "INSTRUCTION" -> {
+                    val semicolonCount = line.count { it == ';' }
+                    if (semicolonCount != 3) {
+                        errorMessage = appendError(errorMessage, "INSTRUCTION must have exactly 3 semicolons (4 segments)")
+                    }
                 }
                 "TIMER" -> {
                     val (err, warn) = timerValidation(parts)
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
-                }
-                "MULTISCALE" -> {
-                    multiScaleValidation(line).forEach { pair ->
-                        if (pair.first == "ERROR") {
-                            errorMessage = appendError(errorMessage, pair.second)
-                        } else {
-                            warningMessage = appendWarning(warningMessage, pair.second)
-                        }
-                    }
                 }
             }
         }
@@ -365,24 +361,6 @@ class ProtocolValidationDialog : DialogFragment() {
         return Pair(err, warn)
     }
 
-    private fun scaleValidation(line: String): List<String> {
-        val errors = mutableListOf<String>()
-        val semicolonCount = line.count { it == ';' }
-        if (semicolonCount < 4) {
-            errors.add("SCALE must have at least 4 semicolons (5 segments)")
-        }
-        return errors
-    }
-
-    private fun instructionValidation(line: String): List<String> {
-        val errors = mutableListOf<String>()
-        val semicolonCount = line.count { it == ';' }
-        if (semicolonCount != 3) {
-            errors.add("INSTRUCTION must have exactly 3 semicolons (4 segments)")
-        }
-        return errors
-    }
-
     private fun timerValidation(parts: List<String>): Pair<String, String> {
         var err = ""
         var warn = ""
@@ -397,29 +375,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
         return Pair(err, warn)
-    }
-
-    private fun multiScaleValidation(line: String): List<Pair<String, String>> {
-        val output = mutableListOf<Pair<String, String>>()
-        val bracketStart = line.indexOf("[")
-        val bracketEnd = line.indexOf("]")
-        if (bracketStart < 0 || bracketEnd < 0 || bracketEnd < bracketStart) {
-            output.add("ERROR" to "MULTISCALE is missing bracketed items [ITEM1;ITEM2;...]")
-        } else {
-            val bracketContent = line.substring(bracketStart + 1, bracketEnd).trim()
-            if (bracketContent.isEmpty()) {
-                output.add("ERROR" to "MULTISCALE has empty bracketed items []")
-            } else {
-                if (bracketContent.contains(",")) {
-                    output.add("ERROR" to "Items in brackets must be separated by semicolons only (no commas)")
-                }
-                val items = bracketContent.split(";").filter { it.isNotBlank() }
-                if (items.size == 1) {
-                    output.add("WARNING" to "Only one item in MULTISCALE bracket. Consider using SCALE instead")
-                }
-            }
-        }
-        return output
     }
 
     private fun findLabelOccurrences(lines: List<String>): MutableMap<String, MutableList<Int>> {

@@ -1,49 +1,79 @@
+// Filename: MultiScaleHelper.kt
 package com.lkacz.pola
 
 import kotlin.random.Random
 
 /**
- * Handles parsing lines starting with MULTISCALE or RANDOMIZED_MULTISCALE,
- * expanding them into individual SCALE instructions.
+ * Handles expansion for lines that start with "SCALE" or "SCALE[RANDOMIZED]"
+ * and have a bracketed list. If multiple bracketed items exist, it returns
+ * multiple lines (one item each). If [RANDOMIZED], it shuffles them first.
  */
 object MultiScaleHelper {
 
     /**
-     * Expands a single MULTISCALE or RANDOMIZED_MULTISCALE line into multiple SCALE instructions.
+     * If [originalLine] is "SCALE" (or "SCALE[RANDOMIZED]") with multiple
+     * bracketed items, expand them into multiple single-item lines. Otherwise
+     * return the line as-is.
      *
-     * @param line The raw line from the protocol (e.g., MULTISCALE;HEADER;INTRO;[item1;item2;item3];Possible;Responses).
-     * @return A list of SCALE instructions, optionally randomized if RANDOMIZED_MULTISCALE.
+     * For example:
+     *   SCALE[RANDOMIZED];Header;Body;[ItemA;ItemB];RespX;RespY
+     * can be expanded into multiple lines (one per bracketed item).
      */
-    fun expandMultiScaleLine(line: String): List<String> {
-        val linesToAdd = mutableListOf<String>()
-        val isRandom = line.trim().startsWith("RANDOMIZED_MULTISCALE")
+    fun expandScaleLine(originalLine: String): List<String> {
+        val trimmed = originalLine.trim()
 
-        val bracketStart = line.indexOf('[')
-        val bracketEnd = line.indexOf(']')
-        if (bracketStart < 0 || bracketEnd < 0 || bracketEnd <= bracketStart) return listOf(line)
+        // Check if line starts with "SCALE" ignoring case
+        if (!trimmed.uppercase().startsWith("SCALE")) {
+            return listOf(originalLine)
+        }
 
-        val preBracket = line.substring(0, bracketStart).split(';')
-        val multiItems = line.substring(bracketStart + 1, bracketEnd).split(';')
-        val postBracket = line.substring(bracketEnd + 1).split(';').drop(1)  // Drop leading empty string after bracket
+        // Determine if it's a randomized scale
+        val isRandom = trimmed.uppercase().startsWith("SCALE[RANDOMIZED]")
 
-        val header = preBracket.getOrNull(1).orEmpty()
-        val introduction = preBracket.getOrNull(2).orEmpty()
-        val responses = postBracket.joinToString(";")
+        // Use custom splitting to preserve bracketed semicolons
+        val parts = ParsingUtils.customSplitSemicolons(trimmed).map { it.trim() }
+        if (parts.size < 4) {
+            // Not enough parts to treat as a standard SCALE line
+            return listOf(originalLine)
+        }
 
-        for (item in multiItems) {
-            val trimmedItem = item.trim()
-            if (trimmedItem.isNotEmpty()) {
-                // Create a SCALE instruction
-                val newLine = "SCALE;$header;$introduction;$trimmedItem;$responses"
-                linesToAdd.add(newLine)
+        // The bracketed portion is typically at index 3
+        val itemCandidate = parts[3]
+        if (!itemCandidate.startsWith("[") || !itemCandidate.endsWith("]")) {
+            // No bracket => single-scale
+            return listOf(originalLine)
+        }
+
+        // Extract items inside the brackets
+        val bracketContent = itemCandidate.substring(1, itemCandidate.length - 1).trim()
+        val items = bracketContent.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+
+        // If only 0 or 1 item found, no expansion needed
+        if (items.size <= 1) {
+            return listOf(originalLine)
+        }
+
+        // We'll proceed with expansion
+        // Shuffle if needed
+        val itemList = items.toMutableList()
+        if (isRandom) {
+            itemList.shuffle(Random)
+        }
+
+        // Recreate lines. For example, everything up to index=3 is directive+header+body
+        val prefix = parts.take(3).joinToString(";")
+        // Everything beyond index=3 is the responses
+        val suffix = if (parts.size > 4) parts.drop(4).joinToString(";") else ""
+        // Updated directive for each expanded line
+        val newDirective = if (isRandom) "SCALE[RANDOMIZED]" else "SCALE"
+
+        // Build lines for each item
+        return itemList.map { singleItem ->
+            if (suffix.isNotBlank()) {
+                "$newDirective;${parts[1]};${parts[2]};$singleItem;$suffix"
+            } else {
+                "$newDirective;${parts[1]};${parts[2]};$singleItem"
             }
         }
-
-        if (isRandom) {
-            // Randomize the expanded SCALE instructions
-            linesToAdd.shuffle(Random)
-        }
-
-        return linesToAdd
     }
 }

@@ -2,14 +2,14 @@
 package com.lkacz.pola
 
 import android.content.Context
-import java.io.BufferedReader
 
 /**
- * Updated to remove 'BRANCH_SCALE' references and to unify
- * them under 'SCALE' with optional labels (handled by ScaleFragment).
+ * Updated to unify SCALE, and to prevent the item from being included
+ * in responses. If the bracketed portion has multiple items, we expand
+ * them inside [MultiScaleHelper], then parse normally here.
  */
 class FragmentLoader(
-    bufferedReader: BufferedReader,
+    bufferedReader: java.io.BufferedReader,
     private val logger: Logger
 ) {
     private val lines = mutableListOf<String>()
@@ -36,7 +36,8 @@ class FragmentLoader(
             val line = lines[currentIndex]
             if (line.isBlank()) continue
 
-            val parts = line.split(";").map { it.trim('"') }
+            // Use custom splitter that respects bracketed content
+            val parts = ParsingUtils.customSplitSemicolons(line).map { it.trim('"') }
             val directive = parts.firstOrNull()?.uppercase() ?: ""
 
             when (directive) {
@@ -129,7 +130,6 @@ class FragmentLoader(
                     ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
-                // Support for normal scale and branch scale with optional labels in a single fragment
                 "SCALE" -> {
                     return createScaleFragment(parts)
                 }
@@ -148,7 +148,6 @@ class FragmentLoader(
                 "CUSTOM_HTML" -> {
                     return createCustomHtmlFragment(parts)
                 }
-                // END / else
                 "END" -> {
                     return EndFragment()
                 }
@@ -177,32 +176,58 @@ class FragmentLoader(
     private fun createScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
-        val item = parts.getOrNull(3)
-        // After the first 4 semicolons, the rest are responses or possible label-encoded responses
+        val itemCandidate = parts.getOrNull(3)?.trim()
+
+        // Everything beyond index 3 is considered possible responses
         val rawResponses = parts.drop(4)
-        val branchResponses = mutableListOf<Pair<String, String?>>()
 
-        // If any response has optional [label], we treat it as branch
-        for (resp in rawResponses) {
-            val bracketStart = resp.indexOf('[')
-            val bracketEnd = resp.indexOf(']')
-            if (bracketStart in 0 until bracketEnd) {
-                val displayText = resp.substring(0, bracketStart).trim()
-                val label = resp.substring(bracketStart + 1, bracketEnd).trim()
-                branchResponses.add(displayText to label)
-            } else {
-                // normal scale response
-                branchResponses.add(resp to null)
+        // If itemCandidate is bracketed
+        if (itemCandidate != null && itemCandidate.startsWith("[") && itemCandidate.endsWith("]")) {
+            val stripped = itemCandidate.substring(1, itemCandidate.length - 1)
+            val splitted = stripped.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+
+            return when {
+                splitted.size > 1 -> {
+                    // multiple bracketed items
+                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+                    return if (hasLabels) {
+                        val branchPairs = makeBranchPairs(rawResponses)
+                        ScaleFragment.newBranchInstance(header, body, splitted.joinToString(" / "), branchPairs)
+                    } else {
+                        ScaleFragment.newInstance(header, body, splitted.joinToString(" / "), rawResponses)
+                    }
+                }
+                splitted.size == 1 -> {
+                    // Single bracketed item => single scale
+                    val singleItem = splitted[0]
+                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+                    return if (hasLabels) {
+                        val branchPairs = makeBranchPairs(rawResponses)
+                        ScaleFragment.newBranchInstance(header, body, singleItem, branchPairs)
+                    } else {
+                        ScaleFragment.newInstance(header, body, singleItem, rawResponses)
+                    }
+                }
+                else -> {
+                    // Empty bracket => treat as single scale with no real item
+                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+                    return if (hasLabels) {
+                        val branchPairs = makeBranchPairs(rawResponses)
+                        ScaleFragment.newBranchInstance(header, body, "", branchPairs)
+                    } else {
+                        ScaleFragment.newInstance(header, body, "", rawResponses)
+                    }
+                }
             }
-        }
-
-        // If any label was found, we’ll use newBranchInstance; otherwise, normal newInstance
-        val hasAnyLabel = branchResponses.any { it.second != null }
-        return if (hasAnyLabel) {
-            ScaleFragment.newBranchInstance(header, body, item, branchResponses)
         } else {
-            val justDisplayTexts = branchResponses.map { it.first }
-            ScaleFragment.newInstance(header, body, item, justDisplayTexts)
+            // normal single-scale (no bracket or bracket is malformed)
+            val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+            return if (hasLabels) {
+                val branchPairs = makeBranchPairs(rawResponses)
+                ScaleFragment.newBranchInstance(header, body, itemCandidate.orEmpty(), branchPairs)
+            } else {
+                ScaleFragment.newInstance(header, body, itemCandidate.orEmpty(), rawResponses)
+            }
         }
     }
 
@@ -247,6 +272,26 @@ class FragmentLoader(
         } catch (_: Exception) {
             android.graphics.Color.BLACK
         }
+    }
+
+    /**
+     * Converts each response from "displayText[SomeLabel]" into Pair("displayText", "SomeLabel").
+     * Otherwise, it becomes Pair("displayText", null).
+     */
+    private fun makeBranchPairs(raw: List<String>): List<Pair<String, String?>> {
+        val branchResponses = mutableListOf<Pair<String, String?>>()
+        for (resp in raw) {
+            val bracketStart = resp.indexOf('[')
+            val bracketEnd = resp.indexOf(']')
+            if (bracketStart in 0 until bracketEnd) {
+                val displayText = resp.substring(0, bracketStart).trim()
+                val label = resp.substring(bracketStart + 1, bracketEnd).trim()
+                branchResponses.add(displayText to label)
+            } else {
+                branchResponses.add(resp to null)
+            }
+        }
+        return branchResponses
     }
 
     private fun getContext() = logger.javaClass

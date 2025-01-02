@@ -11,7 +11,7 @@ import kotlin.random.Random
 
 class ProtocolManager(private val context: Context) {
 
-    private var sharedPref: SharedPreferences =
+    private val sharedPref: SharedPreferences =
         context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
 
     fun readOriginalProtocol(uri: Uri? = null) {
@@ -37,43 +37,44 @@ class ProtocolManager(private val context: Context) {
     }
 
     private fun performManipulations() {
-        val lines = originalProtocol?.lines()
+        val rawLines = originalProtocol?.lines() ?: emptyList()
         val newLines = mutableListOf<String>()
         var randomize = false
         val randomSection = mutableListOf<String>()
 
-        lines?.forEach { line ->
+        for (line in rawLines) {
+            val trimmed = line.trim()
             when {
-                line.trim() == "RANDOMIZE_ON" -> {
+                trimmed == "RANDOMIZE_ON" -> {
                     randomize = true
                 }
-                line.trim() == "RANDOMIZE_OFF" -> {
+                trimmed == "RANDOMIZE_OFF" -> {
                     randomize = false
+                    // finalize randomSection
                     randomSection.shuffle(Random)
-                    newLines.addAll(randomSection)
-                    randomSection.clear()
-                }
-                line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
-                    val expanded = MultiScaleHelper.expandMultiScaleLine(line)
-                    if (randomize) {
-                        randomSection.addAll(expanded)
-                    } else {
-                        newLines.addAll(expanded)
+                    randomSection.forEach { randomLine ->
+                        newLines.addAll(MultiScaleHelper.expandScaleLine(randomLine))
                     }
+                    randomSection.clear()
                 }
                 else -> {
                     if (randomize) {
                         randomSection.add(line)
                     } else {
-                        newLines.add(line)
+                        // expand right away
+                        val expanded = MultiScaleHelper.expandScaleLine(line)
+                        newLines.addAll(expanded)
                     }
                 }
             }
         }
 
+        // If randomize was still on, do final flush
         if (randomize) {
             randomSection.shuffle(Random)
-            newLines.addAll(randomSection)
+            randomSection.forEach { randomLine ->
+                newLines.addAll(MultiScaleHelper.expandScaleLine(randomLine))
+            }
             randomSection.clear()
         }
 
