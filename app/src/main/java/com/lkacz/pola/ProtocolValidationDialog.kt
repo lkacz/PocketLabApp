@@ -17,7 +17,6 @@ import java.util.regex.Pattern
 class ProtocolValidationDialog : DialogFragment() {
 
     private val recognizedCommands = setOf(
-        // Removed MULTISCALE, RANDOMIZED_MULTISCALE, BRANCH_SCALE
         "SCALE",
         "INSTRUCTION",
         "TIMER",
