@@ -142,18 +142,26 @@ object ColorPickerHelper {
 
             valueInput.addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
-                    val parsedValue = s?.toString()?.toIntOrNull()
-                    if (parsedValue == null) {
-                        if (valueInput.text.toString() != seekBar.progress.toString()) {
-                            valueInput.setText(seekBar.progress.toString())
+                    // Only run logic if user is editing this field
+                    if (valueInput.isFocused) {
+                        val parsedValue = s?.toString()?.toIntOrNull()
+                        if (parsedValue == null) {
+                            if (valueInput.text.toString() != seekBar.progress.toString()) {
+                                valueInput.setText(seekBar.progress.toString())
+                            }
+                            return
                         }
-                        return
+                        val clampedValue = parsedValue.coerceIn(0, 255)
+                        if (clampedValue != seekBar.progress) {
+                            seekBar.progress = clampedValue
+                        }
+                        // Update displayed text if user typed a value > 255 or < 0
+                        if (parsedValue != clampedValue) {
+                            valueInput.setText(clampedValue.toString())
+                            valueInput.setSelection(valueInput.text.length)
+                        }
+                        hexInput.setText(colorToHexString(Color.rgb(red, green, blue)))
                     }
-                    val clampedValue = parsedValue.coerceIn(0, 255)
-                    if (clampedValue != seekBar.progress) {
-                        seekBar.progress = clampedValue
-                    }
-                    hexInput.setText(colorToHexString(Color.rgb(red, green, blue)))
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
