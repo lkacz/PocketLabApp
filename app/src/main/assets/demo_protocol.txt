@@ -6,9 +6,10 @@
 //ITEM_SIZE;30
 // RESPONSE_SIZE;24
 
-
 TIMER_SOUND;sound.wav
 
+
+SCREEN_BACKGROUND_COLOR;#000000
 
 // VERIFIED:
 // RESPONSES_SPACING;1
@@ -30,9 +31,9 @@ TIMER_SOUND;sound.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
-
-
-INSTRUCTION;Header;Body;DALEJ
+INSTRUCTION;Header1;Body;DALEJ
+INSTRUCTION;Header2;Body;DALEJ
+INSTRUCTION;Header3;Body;DALEJ
 
 INPUTFIELD;Inputfield testing;Let's test how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 

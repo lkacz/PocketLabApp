@@ -17,28 +17,38 @@ import java.util.regex.Pattern
 class ProtocolValidationDialog : DialogFragment() {
 
     private val recognizedCommands = setOf(
-        "SCALE",
-        "INSTRUCTION",
-        "TIMER",
-        "TAP_INSTRUCTION",
-        "INPUTFIELD",
-        "CUSTOM_HTML",
-        "LABEL",
-        "GOTO",
-        "TRANSITIONS",
-        "TIMER_SOUND",
-        "HEADER_SIZE",
+        "BODY_ALIGNMENT",
+        "BODY_COLOR",
         "BODY_SIZE",
-        "ITEM_SIZE",
-        "RESPONSE_SIZE",
+        "CONTINUE_TEXT_COLOR",
+        "CONTINUE_ALIGNMENT",
+        "CONTINUE_BACKGROUND_COLOR",
         "CONTINUE_SIZE",
-        "RESPONSE_TEXT_COLOR",
-        "RESPONSE_BACKGROUND_COLOR",
-        "LOG",
+        "CUSTOM_HTML",
         "END",
-        "RANDOMIZE_ON",
+        "GOTO",
+        "HEADER_ALIGNMENT",
+        "HEADER_COLOR",
+        "HEADER_SIZE",
+        "INPUTFIELD",
+        "INPUTFIELD[RANDOMIZED]",
+        "INSTRUCTION",
+        "ITEM_SIZE",
+        "LABEL",
+        "LOG",
         "RANDOMIZE_OFF",
-        "STUDY_ID"
+        "RANDOMIZE_ON",
+        "RESPONSE_BACKGROUND_COLOR",
+        "RESPONSE_SIZE",
+        "RESPONSE_TEXT_COLOR",
+        "SCALE",
+        "SCALE[RANDOMIZED]",
+        "SCREEN_BACKGROUND_COLOR",
+        "STUDY_ID",
+        "TAP_INSTRUCTION",
+        "TIMER",
+        "TIMER_SOUND",
+        "TRANSITIONS"
     )
 
     private var randomizationLevel = 0
@@ -263,22 +273,57 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
                 "SCALE" -> {
-                    // We only check minimal semicolons for single-scale usage; multi-scale expansions happen in ProtocolManager
-                    // If it has fewer than 2 semicolons, it might be missing body or item, but we won't be too strict here
                     if (parts.size < 2) {
-                        errorMessage = appendError(errorMessage, "SCALE must have at least 1 semicolon after 'SCALE'")
+                        errorMessage = appendError(
+                            errorMessage,
+                            "SCALE must have at least 1 semicolon after 'SCALE'"
+                        )
                     }
                 }
                 "INSTRUCTION" -> {
                     val semicolonCount = line.count { it == ';' }
                     if (semicolonCount != 3) {
-                        errorMessage = appendError(errorMessage, "INSTRUCTION must have exactly 3 semicolons (4 segments)")
+                        errorMessage = appendError(
+                            errorMessage,
+                            "INSTRUCTION must have exactly 3 semicolons (4 segments)"
+                        )
                     }
                 }
                 "TIMER" -> {
                     val (err, warn) = timerValidation(parts)
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
+                }
+                "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR",
+                "BUTTON_TEXT_COLOR", "BUTTON_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR" -> {
+                    if (parts.size < 2 || parts[1].isBlank()) {
+                        errorMessage = appendError(
+                            errorMessage,
+                            "$commandRaw missing color value"
+                        )
+                    } else {
+                        val colorStr = parts[1].trim()
+                        if (!isValidColor(colorStr)) {
+                            errorMessage = appendError(
+                                errorMessage,
+                                "$commandRaw has invalid color format"
+                            )
+                        }
+                    }
+                }
+                "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
+                    if (parts.size < 2 || parts[1].isBlank()) {
+                        errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
+                    } else {
+                        val alignValue = parts[1].uppercase().trim()
+                        val allowedAlignments = setOf("LEFT", "CENTER", "RIGHT")
+                        if (!allowedAlignments.contains(alignValue)) {
+                            errorMessage = appendError(
+                                errorMessage,
+                                "$commandRaw must be one of: ${allowedAlignments.joinToString(", ")}"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -321,8 +366,10 @@ class ProtocolValidationDialog : DialogFragment() {
             errors.add("TIMER_SOUND missing filename")
         } else {
             val filename = parts[1].trim()
-            if (!(filename.endsWith(".wav", ignoreCase = true) ||
-                        filename.endsWith(".mp3", ignoreCase = true))) {
+            if (
+                !filename.endsWith(".wav", ignoreCase = true) &&
+                !filename.endsWith(".mp3", ignoreCase = true)
+            ) {
                 errors.add("TIMER_SOUND must be *.wav or *.mp3")
             }
         }
@@ -512,6 +559,15 @@ class ProtocolValidationDialog : DialogFragment() {
             ProtocolReader().readFromAssets(requireContext(), "tutorial_protocol.txt")
         } else {
             ProtocolReader().readFromAssets(requireContext(), "demo_protocol.txt")
+        }
+    }
+
+    private fun isValidColor(colorStr: String): Boolean {
+        return try {
+            android.graphics.Color.parseColor(colorStr)
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 }
