@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.ViewGroup
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -95,18 +96,27 @@ object ColorPickerHelper {
      * - row in [1..4] blends from white -> hue
      * - row = 5 is the hue at full brightness
      * - row in [6..9] blends from hue -> black (up to 80% black at row=9)
+     *
+     * Each column is weighted equally so the cells fill the dialog width.
      */
     private fun createExtendedColorGrid(
         context: Context,
         onColorSelected: (Int) -> Unit
     ): GridLayout {
-        // We display 9 rows visually (since we skip row=0 & row=10), with 11 columns
         val gridLayout = GridLayout(context).apply {
-            rowCount = 9      // We'll fill in 9 rows
-            columnCount = 11  // Keep 11 columns
+            // We display 9 rows visually (rows=1..9), with 11 columns
+            rowCount = 9
+            columnCount = 11
+            // Match the parent width so the columns can fill horizontally
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             setPadding(dpToPx(context, 8))
         }
-        val cellSize = dpToPx(context, 20)
+
+        // We'll keep the height for each row at some fixed dp (e.g. 28dp)
+        val cellHeight = dpToPx(context, 28)
 
         // Loop from row=1..9 (inclusive), skipping row=0 and row=10
         for (row in 1 until 10) {
@@ -136,9 +146,13 @@ object ColorPickerHelper {
 
                 val colorView = TextView(context).apply {
                     setBackgroundColor(colorInCell)
-                    layoutParams = GridLayout.LayoutParams().apply {
-                        width = cellSize
-                        height = cellSize
+                    // Weight each column equally to fill horizontal space
+                    layoutParams = GridLayout.LayoutParams(
+                        GridLayout.spec(row - 1),          // row index in the new grid
+                        GridLayout.spec(col, 1f)           // column spec with weight=1
+                    ).apply {
+                        width = 0
+                        height = cellHeight
                     }
                     setOnClickListener {
                         onColorSelected(colorInCell)
