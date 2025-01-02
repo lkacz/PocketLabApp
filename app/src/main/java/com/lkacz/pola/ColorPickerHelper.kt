@@ -16,7 +16,8 @@ object ColorPickerHelper {
 
     /**
      * Shows a dialog with three SeekBars for selecting R, G, B values of a color,
-     * plus a 16x16 color grid that transitions from white -> full color -> black in each column.
+     * plus an 11x9 color grid (since top & bottom rows are removed) transitioning
+     * from white -> hue -> black.
      * The [onColorSelected] callback returns the chosen color upon "OK".
      */
     fun showColorPickerDialog(
@@ -45,7 +46,7 @@ object ColorPickerHelper {
         var green = Color.green(initialColor)
         var blue = Color.blue(initialColor)
 
-        // The 16x16 grid for quick color selection (now effectively 16x14 displayed)
+        // The color grid omitting the top & bottom rows
         val colorGrid = createExtendedColorGrid(
             context = context,
             onColorSelected = { gridColor ->
@@ -88,41 +89,47 @@ object ColorPickerHelper {
     }
 
     /**
-     * Creates a color grid that *skips the first and last row*. So you effectively
-     * see rows 1..14 out of the 16 total, giving 14 rows and 16 columns.
-     * Each column represents a hue (0-360) at full saturation.
-     * The top portion blends toward white, the bottom portion blends toward black.
+     * Creates an 11-column grid of color swatches, but omits row=0 and row=10,
+     * so only rows 1..9 are displayed (9 rows total).
+     *
+     * - row in [1..4] blends from white -> hue
+     * - row = 5 is the hue at full brightness
+     * - row in [6..9] blends from hue -> black (up to 80% black at row=9)
      */
     private fun createExtendedColorGrid(
         context: Context,
         onColorSelected: (Int) -> Unit
     ): GridLayout {
-        // We declare 14 rows (instead of 16) because we skip row=0 and row=15
+        // We display 9 rows visually (since we skip row=0 & row=10), with 11 columns
         val gridLayout = GridLayout(context).apply {
-            rowCount = 14
-            columnCount = 16
+            rowCount = 9      // We'll fill in 9 rows
+            columnCount = 11  // Keep 11 columns
             setPadding(dpToPx(context, 8))
         }
         val cellSize = dpToPx(context, 20)
 
-        // Skip row=0 and row=15
-        for (row in 1 until 15) {
-            for (col in 0 until 16) {
-                // Hue from 0..360
-                val hue = (col * (360f / 16f)) % 360f
-                // The “middle color” is full hue, full saturation, full brightness
+        // Loop from row=1..9 (inclusive), skipping row=0 and row=10
+        for (row in 1 until 10) {
+            for (col in 0 until 11) {
+                // Hue from 0..360 (depending on column)
+                val hue = (col * (360f / 11f)) % 360f
+                // The full hue (saturation=1, brightness=1)
                 val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
 
-                // Decide if we are in top half (blend with white) or bottom half (blend with black)
+                // Determine the blend:
+                //   - rows 1..4 => blend from white to hue (fraction row/5)
+                //   - row=5 => pure hue
+                //   - rows 6..9 => blend from hue to black (fraction (row-5)/5)
                 val colorInCell = when {
-                    row < 8 -> {
-                        // Top half: row=1 to 7 => fraction = row/7
-                        val fraction = row / 7f
+                    row < 5 -> {
+                        val fraction = row / 5f
                         blendColors(Color.WHITE, fullColor, fraction)
                     }
+                    row == 5 -> {
+                        fullColor
+                    }
                     else -> {
-                        // Bottom half: row=8 to 14 => fraction=(row-8)/7
-                        val fraction = (row - 8) / 7f
+                        val fraction = (row - 5) / 5f
                         blendColors(fullColor, Color.BLACK, fraction)
                     }
                 }
