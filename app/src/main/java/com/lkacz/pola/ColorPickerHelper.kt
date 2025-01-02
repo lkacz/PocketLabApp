@@ -45,7 +45,7 @@ object ColorPickerHelper {
         var green = Color.green(initialColor)
         var blue = Color.blue(initialColor)
 
-        // The 16x16 grid for quick color selection
+        // The 16x16 grid for quick color selection (now effectively 16x14 displayed)
         val colorGrid = createExtendedColorGrid(
             context = context,
             onColorSelected = { gridColor ->
@@ -88,22 +88,25 @@ object ColorPickerHelper {
     }
 
     /**
-     * Creates a 16x16 grid of color swatches, where each column represents a hue (0-360)
-     * at full saturation. The middle row is the hue at full saturation & brightness,
-     * the top rows blend toward white, and the bottom rows blend toward black.
+     * Creates a color grid that *skips the first and last row*. So you effectively
+     * see rows 1..14 out of the 16 total, giving 14 rows and 16 columns.
+     * Each column represents a hue (0-360) at full saturation.
+     * The top portion blends toward white, the bottom portion blends toward black.
      */
     private fun createExtendedColorGrid(
         context: Context,
         onColorSelected: (Int) -> Unit
     ): GridLayout {
+        // We declare 14 rows (instead of 16) because we skip row=0 and row=15
         val gridLayout = GridLayout(context).apply {
-            rowCount = 16
+            rowCount = 14
             columnCount = 16
             setPadding(dpToPx(context, 8))
         }
         val cellSize = dpToPx(context, 20)
 
-        for (row in 0 until 16) {
+        // Skip row=0 and row=15
+        for (row in 1 until 15) {
             for (col in 0 until 16) {
                 // Hue from 0..360
                 val hue = (col * (360f / 16f)) % 360f
@@ -113,12 +116,12 @@ object ColorPickerHelper {
                 // Decide if we are in top half (blend with white) or bottom half (blend with black)
                 val colorInCell = when {
                     row < 8 -> {
-                        // Top half: row=0 to 7 => fraction = row/7
+                        // Top half: row=1 to 7 => fraction = row/7
                         val fraction = row / 7f
                         blendColors(Color.WHITE, fullColor, fraction)
                     }
                     else -> {
-                        // Bottom half: row=8 to 15 => fraction=(row-8)/7
+                        // Bottom half: row=8 to 14 => fraction=(row-8)/7
                         val fraction = (row - 8) / 7f
                         blendColors(fullColor, Color.BLACK, fraction)
                     }
