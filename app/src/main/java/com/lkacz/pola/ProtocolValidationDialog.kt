@@ -712,7 +712,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun isValidColor(colorStr: String): Boolean {
         return try {
-            android.graphics.Color.parseColor(colorStr)
+            Color.parseColor(colorStr)
             true
         } catch (_: Exception) {
             false
