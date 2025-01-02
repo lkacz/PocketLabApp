@@ -6,7 +6,7 @@
 //ITEM_SIZE;30
 // RESPONSE_SIZE;24
 
-TIMER_SOUND;sound.wav
+TIMER_SOUND;sound9.wav
 
 
 // VERIFIED:
@@ -30,14 +30,14 @@ TIMER_SOUND;sound.wav
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
 
-INPUTFIELD;Inputfield testing;Let's test how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
+INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 
-INPUTFIELD[RANDOMIZED];Randomized inputfield testing;Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
+INPUTFIELD[RANDOMIZED];Randomized inputfield testing;<fupa.mp3>Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 
-SCALE[RANDOMIZED];Randomized scale test;This scale has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
+SCALE[RANDOMIZED];Randomized scale test;This scale<codas.html> has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
 
 // version with bracket that is allowed despite only one item inside the brakcets
-SCALE;Single item scale test;This scale has only one item. Check how this works.;[Pierwszy i jedyny item];Response 1;Response 2;Response 3
+SCALE;Single item scale test;This scale has only one<ruch.mp4>item. Check how this works.;[Pierwszy i jedyny item];Response 1;Response 2;Response 3
 
 // version without brackets that is also allowed
 SCALE;Single item scale test;This scale has only one item. Check how this works.;Pierwszy i jedyny item;Response 1;Response 2;Response 3

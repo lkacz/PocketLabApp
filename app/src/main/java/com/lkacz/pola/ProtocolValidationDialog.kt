@@ -13,6 +13,10 @@ import android.text.style.StyleSpan
 import android.view.*
 import android.widget.*
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
@@ -55,10 +59,11 @@ class ProtocolValidationDialog : DialogFragment() {
     private var randomizationLevel = 0
     private val globalErrors = mutableListOf<String>()
     private var lastCommand: String? = null
+    private var allLines: List<String> = emptyList()
 
-    /**
-     * Provide resource folder URI or null if not yet chosen.
-     */
+    // This holds bracketed references -> whether or not they exist in the resources folder
+    private val resourceExistenceMap = mutableMapOf<String, Boolean>()
+
     private val resourcesFolderUri: Uri? by lazy {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
     }
@@ -91,9 +96,65 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
+        // Build an initial minimal view: only a ProgressBar or similar
+        val progressBar = ProgressBar(requireContext()).apply {
+            isIndeterminate = true
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+        }
+        rootLayout.addView(progressBar)
+
+        // Load content in the background
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            // Gather all lines
+            val fileContent = getProtocolContent()
+            allLines = fileContent.split("\n")
+
+            // Collect bracketed references in all lines
+            val bracketedReferences = mutableSetOf<String>()
+            for (line in allLines) {
+                ResourceFileChecker.findBracketedFiles(line).forEach {
+                    bracketedReferences.add(it)
+                }
+            }
+            // Asynchronously check if each file exists
+            if (resourcesFolderUri != null) {
+                for (fileRef in bracketedReferences) {
+                    val doesExist = ResourceFileChecker.fileExistsInResources(
+                        requireContext(), fileRef
+                    )
+                    resourceExistenceMap[fileRef] = doesExist
+                }
+            }
+
+            // Once done, switch to Main thread and build the final UI
+            withContext(Dispatchers.Main) {
+                rootLayout.removeAllViews()
+                val finalView = buildCompletedView(fileContent)
+                rootLayout.addView(finalView)
+            }
+        }
+
+        return rootLayout
+    }
+
+    private fun buildCompletedView(fileContent: String): View {
+        // Build the header table + scrollable content
+        val containerLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
         val headerTable = buildHeaderTable()
         val scrollView = ScrollView(requireContext())
-        val contentTable = buildContentTable(getProtocolContent())
+        val contentTable = buildContentTable(fileContent)
 
         if (randomizationLevel > 0) {
             globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
@@ -117,9 +178,9 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         scrollView.addView(contentTable)
-        rootLayout.addView(headerTable)
-        rootLayout.addView(scrollView)
-        return rootLayout
+        containerLayout.addView(headerTable)
+        containerLayout.addView(scrollView)
+        return containerLayout
     }
 
     private fun buildHeaderTable(): TableLayout {
@@ -152,7 +213,6 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
         }
 
-        val allLines = fileContent.split("\n")
         val labelOccurrences = findLabelOccurrences(allLines)
 
         allLines.forEachIndexed { index, rawLine ->
@@ -222,13 +282,10 @@ class ProtocolValidationDialog : DialogFragment() {
         var errorMessage = ""
         var warningMessage = ""
 
-        // Skip empty or commented-out lines
         if (line.isEmpty() || line.startsWith("//")) {
             lastCommand = null
             return Pair(errorMessage, warningMessage)
         }
-
-        // Check for trailing semicolons
         if (line.endsWith(";")) {
             errorMessage = appendError(errorMessage, "Line ends with stray semicolon")
         }
@@ -237,7 +294,6 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        // Manage randomization
         if (commandRaw == "RANDOMIZE_ON") {
             if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
                 errorMessage = appendError(
@@ -276,12 +332,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     timerSoundValidation(parts).forEach {
                         errorMessage = appendError(errorMessage, it)
                     }
-                    // Check if file exists
                     if (parts.size >= 2 && parts[1].isNotBlank()) {
                         val soundFile = parts[1].trim()
                         if (resourcesFolderUri != null && soundFile.isNotEmpty()) {
-                            if (!ResourceFileChecker.fileExistsInResources(requireContext(), soundFile)) {
-                                errorMessage = appendError(errorMessage, "File '$soundFile' not found in resources folder.")
+                            val found = resourceExistenceMap[soundFile]
+                            if (found == false) {
+                                errorMessage = appendError(
+                                    errorMessage,
+                                    "File '$soundFile' not found in resources folder."
+                                )
                             }
                         }
                     }
@@ -290,12 +349,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     customHtmlValidation(parts).forEach {
                         errorMessage = appendError(errorMessage, it)
                     }
-                    // Check if file exists
                     if (parts.size >= 2 && parts[1].isNotBlank()) {
                         val htmlFileName = parts[1].trim()
                         if (resourcesFolderUri != null && htmlFileName.isNotEmpty()) {
-                            if (!ResourceFileChecker.fileExistsInResources(requireContext(), htmlFileName)) {
-                                errorMessage = appendError(errorMessage, "File '$htmlFileName' not found in resources folder.")
+                            val found = resourceExistenceMap[htmlFileName]
+                            if (found == false) {
+                                errorMessage = appendError(
+                                    errorMessage,
+                                    "File '$htmlFileName' not found in resources folder."
+                                )
                             }
                         }
                     }
@@ -335,7 +397,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
-                // Color-based commands
                 "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
                 "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
                 "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
@@ -354,7 +415,6 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                     }
                 }
-                // Alignment commands
                 "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
@@ -370,31 +430,26 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
                 "STUDY_ID" -> {
-                    // Requires at least one param (the ID)
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
                     }
                 }
                 "GOTO" -> {
-                    // Must reference a label
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(errorMessage, "GOTO missing label name")
                     }
                 }
                 "LOG" -> {
-                    // Typically at least one param
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
                     }
                 }
                 "END" -> {
-                    // Should be alone (no extra parts)
                     if (parts.size > 1 && parts[1].isNotBlank()) {
                         warningMessage = appendWarning(warningMessage, "END command should not have parameters")
                     }
                 }
                 "TRANSITIONS" -> {
-                    // Off or slide
                     val mode = parts.getOrNull(1)?.lowercase()?.trim()
                     if (mode.isNullOrEmpty()) {
                         errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
@@ -410,17 +465,17 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Check for angled-bracket file references in this line (any type .mp3, .wav, .html, .mp4, etc.)
+        // Here we match bracketed references. If the resource is known missing, note it.
         val bracketedFiles = ResourceFileChecker.findBracketedFiles(line)
         if (resourcesFolderUri != null && bracketedFiles.isNotEmpty()) {
             bracketedFiles.forEach { fileRef ->
-                if (!ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)) {
+                val found = resourceExistenceMap[fileRef]
+                if (found == false) {
                     errorMessage = appendError(errorMessage, "File '$fileRef' not found in resources folder.")
                 }
             }
         }
 
-        // Check for empty HTML tags
         val foundEmptyTags = findEmptyHtmlTags(line)
         if (foundEmptyTags.isNotEmpty()) {
             foundEmptyTags.forEach { tag ->
@@ -594,7 +649,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Highlight any empty tags
         val emptyTags = findEmptyHtmlTags(line)
         for (tag in emptyTags) {
             val startIndex = line.indexOf(tag)
@@ -658,7 +712,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun isValidColor(colorStr: String): Boolean {
         return try {
-            Color.parseColor(colorStr)
+            android.graphics.Color.parseColor(colorStr)
             true
         } catch (_: Exception) {
             false
