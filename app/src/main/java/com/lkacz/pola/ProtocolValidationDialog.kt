@@ -167,14 +167,15 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
                 row.addView(createBodyCell(highlightedLine, 0.6f))
-                row.addView(createBodyCell(
-                    text = combinedIssuesSpannable,
-                    weight = 0.3f
-                ))
+                row.addView(
+                    createBodyCell(
+                        text = combinedIssuesSpannable,
+                        weight = 0.3f
+                    )
+                )
                 tableLayout.addView(row)
             }
         }
-
         return tableLayout
     }
 
@@ -218,6 +219,7 @@ class ProtocolValidationDialog : DialogFragment() {
             return Pair(errorMessage, warningMessage)
         }
 
+        // Check for trailing semicolons
         if (line.endsWith(";")) {
             errorMessage = appendError(errorMessage, "Line ends with stray semicolon")
         }
@@ -226,7 +228,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        // Handle randomization-level counters
+        // Manage randomization levels
         if (commandRaw == "RANDOMIZE_ON") {
             if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
                 errorMessage = appendError(
@@ -272,20 +274,28 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
-                "SCALE" -> {
+                "SCALE", "SCALE[RANDOMIZED]" -> {
                     if (parts.size < 2) {
                         errorMessage = appendError(
                             errorMessage,
-                            "SCALE must have at least 1 semicolon after 'SCALE'"
+                            "$commandRaw must have at least one parameter after the command"
                         )
                     }
                 }
-                "INSTRUCTION" -> {
+                "INSTRUCTION", "TAP_INSTRUCTION" -> {
                     val semicolonCount = line.count { it == ';' }
                     if (semicolonCount != 3) {
                         errorMessage = appendError(
                             errorMessage,
-                            "INSTRUCTION must have exactly 3 semicolons (4 segments)"
+                            "$commandRaw must have exactly 3 semicolons (4 segments)"
+                        )
+                    }
+                }
+                "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                    if (parts.size < 4) {
+                        errorMessage = appendError(
+                            errorMessage,
+                            "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;heading;body;button;field1..."
                         )
                     }
                 }
@@ -294,8 +304,10 @@ class ProtocolValidationDialog : DialogFragment() {
                     if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                     if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
                 }
-                "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR",
-                "BUTTON_TEXT_COLOR", "BUTTON_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR" -> {
+                // Color-based commands
+                "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
+                "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
+                "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(
                             errorMessage,
@@ -311,6 +323,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                     }
                 }
+                // Alignment commands
                 "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
                     if (parts.size < 2 || parts[1].isBlank()) {
                         errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
@@ -325,9 +338,48 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                     }
                 }
+                "STUDY_ID" -> {
+                    // Requires at least one param (the ID)
+                    if (parts.size < 2 || parts[1].isBlank()) {
+                        errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
+                    }
+                }
+                "GOTO" -> {
+                    // Must reference a label
+                    if (parts.size < 2 || parts[1].isBlank()) {
+                        errorMessage = appendError(errorMessage, "GOTO missing label name")
+                    }
+                }
+                "LOG" -> {
+                    // Typically at least one param
+                    if (parts.size < 2 || parts[1].isBlank()) {
+                        errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
+                    }
+                }
+                "END" -> {
+                    // Should be alone (no extra parts)
+                    if (parts.size > 1 && parts[1].isNotBlank()) {
+                        warningMessage = appendWarning(warningMessage, "END command should not have parameters")
+                    }
+                }
+                "TRANSITIONS" -> {
+                    // Off or slide (or maybe other modes if future expansions)
+                    val mode = parts.getOrNull(1)?.lowercase()?.trim()
+                    if (mode.isNullOrEmpty()) {
+                        errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
+                    } else {
+                        if (mode != "off" && mode != "slide") {
+                            errorMessage = appendError(
+                                errorMessage,
+                                "TRANSITIONS mode must be either 'off' or 'slide'"
+                            )
+                        }
+                    }
+                }
             }
         }
 
+        // Check for empty HTML tags
         val foundEmptyTags = findEmptyHtmlTags(line)
         if (foundEmptyTags.isNotEmpty()) {
             foundEmptyTags.forEach { tag ->
@@ -411,11 +463,11 @@ class ProtocolValidationDialog : DialogFragment() {
         var err = ""
         var warn = ""
         if (parts.size < 2) {
-            err = "TIMER missing numeric value"
+            err = "TIMER missing numeric value or parameters"
         } else {
             val timeVal = parts.last().trim().toIntOrNull()
             if (timeVal == null || timeVal < 0) {
-                err = "TIMER must have non-negative integer"
+                err = "TIMER must have a non-negative integer"
             } else if (timeVal > 3600) {
                 warn = "TIMER = $timeVal (over 3600s, is that intentional?)"
             }
@@ -530,7 +582,7 @@ class ProtocolValidationDialog : DialogFragment() {
         if (warningMessage.isNotEmpty()) {
             val warnStart = combinedText.indexOf(warningMessage)
             val warnEnd = warnStart + warningMessage.length
-            setSpanColor(spannable, warnStart, warnEnd, Color.rgb(255,165,0))
+            setSpanColor(spannable, warnStart, warnEnd, Color.rgb(255, 165, 0))
             setSpanBold(spannable, warnStart, warnEnd)
         }
 
@@ -564,7 +616,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun isValidColor(colorStr: String): Boolean {
         return try {
-            android.graphics.Color.parseColor(colorStr)
+            Color.parseColor(colorStr)
             true
         } catch (_: Exception) {
             false

@@ -130,6 +130,13 @@ class FragmentLoader(
                     ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
+                // Newly added directive:
+                "SCREEN_BACKGROUND_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setScreenBackgroundColor(getContext(), colorInt)
+                    continue
+                }
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     return createScaleFragment(parts)
                 }
