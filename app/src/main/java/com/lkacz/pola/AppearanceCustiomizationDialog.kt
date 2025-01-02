@@ -1,18 +1,13 @@
 // Filename: AppearanceCustomizationDialog.kt
 package com.lkacz.pola
 
-import android.app.AlertDialog
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.*
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import androidx.fragment.app.DialogFragment
 
 class AppearanceCustomizationDialog : DialogFragment() {

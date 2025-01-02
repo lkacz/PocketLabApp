@@ -17,26 +17,16 @@ import androidx.core.view.setPadding
 
 object ColorPickerHelper {
 
-    /**
-     * Shows a dialog with three SeekBars for selecting R, G, B values of a color,
-     * plus an extended grid that omits the top & bottom row for the hue-based columns,
-     * and adds one extra column (col=11) transitioning from white (top) to black (bottom).
-     * When a grid cell is tapped, the preview and the sliders are updated accordingly.
-     * The [onColorSelected] callback returns the chosen color upon "OK".
-     */
     fun showColorPickerDialog(
         context: Context,
         initialColor: Int,
         onColorSelected: (Int) -> Unit
     ) {
-        // Root container (vertical)
         val dialogLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dpToPx(context, 20))
         }
 
-        // A simple View to preview the selected color, with a black stroke.
-        // Note: We keep a reference to the GradientDrawable so we can update its fill color more directly.
         val outlineDrawable = GradientDrawable().apply {
             setColor(initialColor)
             setStroke(dpToPx(context, 2), Color.BLACK)
@@ -51,50 +41,42 @@ object ColorPickerHelper {
         }
         dialogLayout.addView(previewView)
 
-        // Internal tracking of color channels
         var red = Color.red(initialColor)
         var green = Color.green(initialColor)
         var blue = Color.blue(initialColor)
 
-        // We define references for the SeekBars and EditTexts so we can update them later
         lateinit var redBar: SeekBar
         lateinit var greenBar: SeekBar
         lateinit var blueBar: SeekBar
         lateinit var redInput: EditText
         lateinit var greenInput: EditText
         lateinit var blueInput: EditText
+        lateinit var hexInput: EditText
 
-        // Function to update the preview color
         fun updatePreview() {
             outlineDrawable.setColor(Color.rgb(red, green, blue))
         }
 
-        // The color grid omitting the top & bottom rows, plus an extra grayscale column
-        // We'll pass a callback that updates red/green/blue and also updates the SeekBars and EditTexts
         val colorGrid = createExtendedColorGrid(
             context = context,
             onColorSelected = { gridColor ->
                 red = Color.red(gridColor)
                 green = Color.green(gridColor)
                 blue = Color.blue(gridColor)
-
-                // Refresh preview
                 updatePreview()
 
-                // Update the SeekBars with the new RGB values
                 redBar.progress = red
                 greenBar.progress = green
                 blueBar.progress = blue
 
-                // Update the numeric fields as well
                 redInput.setText(red.toString())
                 greenInput.setText(green.toString())
                 blueInput.setText(blue.toString())
+                hexInput.setText(colorToHexString(gridColor))
             }
         )
         dialogLayout.addView(colorGrid)
 
-        // Helper to build each color row: label, seekBar, numeric box
         fun makeColorSeekBar(
             label: String,
             initialValue: Int,
@@ -126,7 +108,6 @@ object ColorPickerHelper {
             }
             container.addView(seekBar)
 
-            // Numeric input box so user can directly type values
             val valueInput = EditText(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     dpToPx(context, 56),
@@ -141,11 +122,16 @@ object ColorPickerHelper {
             }
             container.addView(valueInput)
 
-            // Listeners: keep slider & text in sync
+            // Select all text on focus
+            valueInput.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    valueInput.post { valueInput.selectAll() }
+                }
+            }
+
             seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
                     if (fromUser) {
-                        // Update the text field only if user changed slider
                         valueInput.setText(p.toString())
                     }
                     onProgressChanged(p)
@@ -154,25 +140,20 @@ object ColorPickerHelper {
                 override fun onStopTrackingTouch(sb: SeekBar?) {}
             })
 
-            // When user edits the numeric value, update the slider and color preview
             valueInput.addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     val parsedValue = s?.toString()?.toIntOrNull()
-
-                    // Graceful handling if user clears the box or enters invalid text
                     if (parsedValue == null) {
-                        // Optionally set to 0 or revert to current slider value
-                        // For clarity, let's revert to the current slider value:
                         if (valueInput.text.toString() != seekBar.progress.toString()) {
                             valueInput.setText(seekBar.progress.toString())
                         }
                         return
                     }
-
                     val clampedValue = parsedValue.coerceIn(0, 255)
                     if (clampedValue != seekBar.progress) {
                         seekBar.progress = clampedValue
                     }
+                    hexInput.setText(colorToHexString(Color.rgb(red, green, blue)))
                 }
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -181,7 +162,6 @@ object ColorPickerHelper {
             return Triple(container, seekBar, valueInput)
         }
 
-        // Create the container + SeekBar for each color
         val (redLayout, rSeekBar, rInput) = makeColorSeekBar("R", red) { newValue ->
             red = newValue
             updatePreview()
@@ -206,7 +186,66 @@ object ColorPickerHelper {
         blueBar = bSeekBar
         blueInput = bInput
 
-        // Show the alert dialog
+        val hexLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            val verticalPadding = dpToPx(context, 8)
+            setPadding(0, verticalPadding, 0, verticalPadding)
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val hexLabel = TextView(context).apply {
+            text = "HEX:"
+            textSize = 14f
+            setPadding(0, 0, dpToPx(context, 8), 0)
+        }
+        hexLayout.addView(hexLabel)
+
+        var lastValidHex = colorToHexString(Color.rgb(red, green, blue))
+        hexInput = EditText(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dpToPx(context, 100),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also {
+                it.setMargins(dpToPx(context, 8), 0, 0, 0)
+            }
+            inputType = InputType.TYPE_CLASS_TEXT
+            gravity = Gravity.CENTER
+            textSize = 14f
+            setText(lastValidHex)
+        }
+        // Select all text on focus
+        hexInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                hexInput.post { hexInput.selectAll() }
+            } else {
+                val hexString = hexInput.text.toString().trim().uppercase()
+                val normalized = if (!hexString.startsWith("#")) "#$hexString" else hexString
+                if (normalized.length == 7) {
+                    try {
+                        val colorValue = Color.parseColor(normalized)
+                        red = Color.red(colorValue)
+                        green = Color.green(colorValue)
+                        blue = Color.blue(colorValue)
+                        redBar.progress = red
+                        greenBar.progress = green
+                        blueBar.progress = blue
+                        redInput.setText(red.toString())
+                        greenInput.setText(green.toString())
+                        blueInput.setText(blue.toString())
+                        updatePreview()
+                        lastValidHex = normalized
+                    } catch (_: Exception) {
+                        hexInput.setText(lastValidHex)
+                        hexInput.setSelection(hexInput.text.length)
+                    }
+                } else {
+                    hexInput.setText(lastValidHex)
+                    hexInput.setSelection(hexInput.text.length)
+                }
+            }
+        }
+        hexLayout.addView(hexInput)
+        dialogLayout.addView(hexLayout)
+
         AlertDialog.Builder(context)
             .setTitle("Choose a color")
             .setView(dialogLayout)
@@ -217,27 +256,12 @@ object ColorPickerHelper {
             .show()
     }
 
-    /**
-     * Creates a grid with:
-     *  - rows=9 visible (skipping row=0 and row=10),
-     *  - columns=12 total, where columns 0..10 show hue transitions,
-     *    and column=11 is a pure white->black gradient.
-     *
-     * For the hue columns:
-     *  - row in [1..4] blends from white -> hue
-     *  - row=5 is the hue at full brightness
-     *  - row in [6..9] blends from hue -> black
-     *
-     * The last column (col=11) is a grayscale gradient from white at row=1 to black at row=9.
-     */
     private fun createExtendedColorGrid(
         context: Context,
         onColorSelected: (Int) -> Unit
     ): GridLayout {
         val gridLayout = GridLayout(context).apply {
-            // We display 9 rows visually (rows=1..9)
             rowCount = 9
-            // We now have 12 columns: 11 hue columns + 1 grayscale column
             columnCount = 12
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -245,17 +269,11 @@ object ColorPickerHelper {
             )
             setPadding(dpToPx(context, 8))
         }
-
-        // Fixed cell height for each row
         val cellHeight = dpToPx(context, 28)
-
-        // Loop from row=1..9 (inclusive), skipping row=0 and row=10
         for (row in 1..9) {
             for (col in 0 until 12) {
                 val colorInCell = if (col < 11) {
-                    // Hue-based columns 0..10
                     val hue = (col * (360f / 11f)) % 360f
-                    // The full hue (saturation=1, brightness=1)
                     val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
                     when {
                         row < 5 -> {
@@ -271,21 +289,18 @@ object ColorPickerHelper {
                         }
                     }
                 } else {
-                    // col == 11 => grayscale gradient from white (row=1) to black (row=9)
                     val fraction = (row - 1) / 8f
                     blendColors(Color.WHITE, Color.BLACK, fraction)
                 }
-
                 val colorView = TextView(context).apply {
                     setBackgroundColor(colorInCell)
                     layoutParams = GridLayout.LayoutParams(
                         GridLayout.spec(row - 1),
-                        GridLayout.spec(col, 1f) // Weighted column
+                        GridLayout.spec(col, 1f)
                     ).apply {
-                        width = 0    // let weight handle the width distribution
+                        width = 0
                         height = cellHeight
                     }
-                    // On click, notify that this color was chosen
                     setOnClickListener {
                         onColorSelected(colorInCell)
                     }
@@ -293,19 +308,13 @@ object ColorPickerHelper {
                 gridLayout.addView(colorView)
             }
         }
-
         return gridLayout
     }
 
-    /**
-     * Blends two colors (c1, c2) in RGB space by [fraction].
-     * fraction = 0.0 gives c1, fraction = 1.0 gives c2.
-     */
     private fun blendColors(c1: Int, c2: Int, fraction: Float): Int {
         val r1 = Color.red(c1)
         val g1 = Color.green(c1)
         val b1 = Color.blue(c1)
-
         val r2 = Color.red(c2)
         val g2 = Color.green(c2)
         val b2 = Color.blue(c2)
@@ -313,8 +322,11 @@ object ColorPickerHelper {
         val rOut = (r1 + fraction * (r2 - r1)).toInt().coerceIn(0, 255)
         val gOut = (g1 + fraction * (g2 - g1)).toInt().coerceIn(0, 255)
         val bOut = (b1 + fraction * (b2 - b1)).toInt().coerceIn(0, 255)
-
         return Color.rgb(rOut, gOut, bOut)
+    }
+
+    private fun colorToHexString(color: Int): String {
+        return String.format("#%02X%02X%02X", Color.red(color), Color.green(color), Color.blue(color))
     }
 
     private fun dpToPx(context: Context, dp: Int): Int {
@@ -325,9 +337,6 @@ object ColorPickerHelper {
         ).toInt()
     }
 
-    /**
-     * Overload for easier setting uniform padding if needed.
-     */
     private fun LinearLayout.setPadding(pixels: Int) {
         setPadding(pixels, pixels, pixels, pixels)
     }
