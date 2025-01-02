@@ -835,6 +835,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
+    /**
+     * Updated to call ColorPickerHelper's color picker dialog instead of directly implementing it.
+     */
     private fun applyColorPickerBoxColor(picker: View, color: Int) {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
         if (drawable is GradientDrawable) {
@@ -842,7 +845,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
             picker.background = drawable
         }
         picker.setOnClickListener {
-            openColorPicker(color) { chosenColor ->
+            ColorPickerHelper.showColorPickerDialog(requireContext(), color) { chosenColor ->
                 when (picker) {
                     headerColorPicker -> {
                         headerTextColor = chosenColor
@@ -887,88 +890,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 applyColorPickerBoxColor(picker, chosenColor)
             }
         }
-    }
-
-    private fun openColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
-        val dialogLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        val titleText = TextView(requireContext()).apply {
-            text = "Pick a Color"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            textSize = 16f
-        }
-        dialogLayout.addView(titleText)
-
-        val redRow = newColorRow("R:")
-        val seekRed = SeekBar(requireContext()).apply { max = 255 }
-        redRow.addView(seekRed)
-        dialogLayout.addView(redRow)
-
-        val greenRow = newColorRow("G:")
-        val seekGreen = SeekBar(requireContext()).apply { max = 255 }
-        greenRow.addView(seekGreen)
-        dialogLayout.addView(greenRow)
-
-        val blueRow = newColorRow("B:")
-        val seekBlue = SeekBar(requireContext()).apply { max = 255 }
-        blueRow.addView(seekBlue)
-        dialogLayout.addView(blueRow)
-
-        val colorPreview = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(80)
-            ).apply { topMargin = dpToPx(12) }
-        }
-        dialogLayout.addView(colorPreview)
-
-        val initR = initialColor.red
-        val initG = initialColor.green
-        val initB = initialColor.blue
-        seekRed.progress = initR
-        seekGreen.progress = initG
-        seekBlue.progress = initB
-        colorPreview.setBackgroundColor(Color.rgb(initR, initG, initB))
-
-        val updatePreview = {
-            val newC = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-            colorPreview.setBackgroundColor(newC)
-        }
-        seekRed.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekGreen.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekBlue.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-
-        AlertDialog.Builder(requireContext())
-            .setView(dialogLayout)
-            .setPositiveButton("OK") { _, _ ->
-                val chosenColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-                onColorSelected(chosenColor)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun newColorRow(labelText: String): LinearLayout {
-        val row = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dpToPx(8) }
-        }
-        val label = TextView(requireContext()).apply {
-            text = labelText
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        row.addView(label)
-        return row
     }
 
     private fun restoreAllDefaults() {
