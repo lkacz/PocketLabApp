@@ -2,11 +2,11 @@
 package com.lkacz.pola
 
 import android.content.Context
+import androidx.fragment.app.Fragment
 
 /**
- * Updated to unify SCALE, and to prevent the item from being included
- * in responses. If the bracketed portion has multiple items, we expand
- * them inside [MultiScaleHelper], then parse normally here.
+ * Updated to handle both SCALE (including SCALE[RANDOMIZED]) and INPUTFIELD (including INPUTFIELD[RANDOMIZED]).
+ * Retains existing logic for other directives.
  */
 class FragmentLoader(
     bufferedReader: java.io.BufferedReader,
@@ -27,7 +27,7 @@ class FragmentLoader(
         }
     }
 
-    fun loadNextFragment(): androidx.fragment.app.Fragment {
+    fun loadNextFragment(): Fragment {
         while (true) {
             currentIndex++
             if (currentIndex >= lines.size) {
@@ -143,7 +143,10 @@ class FragmentLoader(
                     return createTapInstructionFragment(parts)
                 }
                 "INPUTFIELD" -> {
-                    return createInputFieldFragment(parts)
+                    return createInputFieldFragment(parts, isRandom = false)
+                }
+                "INPUTFIELD[RANDOMIZED]" -> {
+                    return createInputFieldFragment(parts, isRandom = true)
                 }
                 "CUSTOM_HTML" -> {
                     return createCustomHtmlFragment(parts)
@@ -159,7 +162,7 @@ class FragmentLoader(
         }
     }
 
-    fun jumpToLabelAndLoad(label: String): androidx.fragment.app.Fragment {
+    fun jumpToLabelAndLoad(label: String): Fragment {
         jumpToLabel(label)
         return loadNextFragment()
     }
@@ -173,72 +176,29 @@ class FragmentLoader(
         currentIndex = targetIndex
     }
 
-    private fun createScaleFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createScaleFragment(parts: List<String>): Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val itemCandidate = parts.getOrNull(3)?.trim()
-
-        // Everything beyond index 3 is considered possible responses
         val rawResponses = parts.drop(4)
 
-        // If itemCandidate is bracketed
-        if (itemCandidate != null && itemCandidate.startsWith("[") && itemCandidate.endsWith("]")) {
-            val stripped = itemCandidate.substring(1, itemCandidate.length - 1)
-            val splitted = stripped.split(";").map { it.trim() }.filter { it.isNotEmpty() }
-
-            return when {
-                splitted.size > 1 -> {
-                    // multiple bracketed items
-                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
-                    return if (hasLabels) {
-                        val branchPairs = makeBranchPairs(rawResponses)
-                        ScaleFragment.newBranchInstance(header, body, splitted.joinToString(" / "), branchPairs)
-                    } else {
-                        ScaleFragment.newInstance(header, body, splitted.joinToString(" / "), rawResponses)
-                    }
-                }
-                splitted.size == 1 -> {
-                    // Single bracketed item => single scale
-                    val singleItem = splitted[0]
-                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
-                    return if (hasLabels) {
-                        val branchPairs = makeBranchPairs(rawResponses)
-                        ScaleFragment.newBranchInstance(header, body, singleItem, branchPairs)
-                    } else {
-                        ScaleFragment.newInstance(header, body, singleItem, rawResponses)
-                    }
-                }
-                else -> {
-                    // Empty bracket => treat as single scale with no real item
-                    val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
-                    return if (hasLabels) {
-                        val branchPairs = makeBranchPairs(rawResponses)
-                        ScaleFragment.newBranchInstance(header, body, "", branchPairs)
-                    } else {
-                        ScaleFragment.newInstance(header, body, "", rawResponses)
-                    }
-                }
-            }
+        val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+        return if (hasLabels) {
+            val branchPairs = makeBranchPairs(rawResponses)
+            ScaleFragment.newBranchInstance(header, body, itemCandidate.orEmpty(), branchPairs)
         } else {
-            // normal single-scale (no bracket or bracket is malformed)
-            val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
-            return if (hasLabels) {
-                val branchPairs = makeBranchPairs(rawResponses)
-                ScaleFragment.newBranchInstance(header, body, itemCandidate.orEmpty(), branchPairs)
-            } else {
-                ScaleFragment.newInstance(header, body, itemCandidate.orEmpty(), rawResponses)
-            }
+            ScaleFragment.newInstance(header, body, itemCandidate.orEmpty(), rawResponses)
         }
     }
 
-    private fun createInstructionFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createInstructionFragment(parts: List<String>): Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
         return InstructionFragment.newInstance(header, body, buttonText)
     }
 
-    private fun createTimerFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createTimerFragment(parts: List<String>): Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
@@ -246,22 +206,37 @@ class FragmentLoader(
         return TimerFragment.newInstance(header, body, buttonText, timeSeconds)
     }
 
-    private fun createTapInstructionFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createTapInstructionFragment(parts: List<String>): Fragment {
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonText = parts.getOrNull(3)
         return TapInstructionFragment.newInstance(header, body, buttonText)
     }
 
-    private fun createInputFieldFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    /**
+     * Updated to handle normal or randomized input fields.
+     */
+    private fun createInputFieldFragment(
+        parts: List<String>,
+        isRandom: Boolean
+    ): Fragment {
         val heading = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonName = parts.getOrNull(3)
+
+        // All subsequent elements are input fields
         val fields = parts.drop(4)
-        return InputFieldFragment.newInstance(heading, body, buttonName, fields)
+
+        return InputFieldFragment.newInstance(
+            heading,
+            body,
+            buttonName,
+            fields,
+            isRandom
+        )
     }
 
-    private fun createCustomHtmlFragment(parts: List<String>): androidx.fragment.app.Fragment {
+    private fun createCustomHtmlFragment(parts: List<String>): Fragment {
         val fileName = parts.getOrNull(1).orEmpty()
         return CustomHtmlFragment.newInstance(fileName)
     }
@@ -275,8 +250,7 @@ class FragmentLoader(
     }
 
     /**
-     * Converts each response from "displayText[SomeLabel]" into Pair("displayText", "SomeLabel").
-     * Otherwise, it becomes Pair("displayText", null).
+     * For scale branching only; re-used from existing logic.
      */
     private fun makeBranchPairs(raw: List<String>): List<Pair<String, String?>> {
         val branchResponses = mutableListOf<Pair<String, String?>>()
@@ -297,5 +271,5 @@ class FragmentLoader(
     private fun getContext() = logger.javaClass
         .getDeclaredField("context")
         .apply { isAccessible = true }
-        .get(logger) as android.content.Context
+        .get(logger) as Context
 }

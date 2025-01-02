@@ -14,12 +14,17 @@ import androidx.core.widget.addTextChangedListener
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
+/**
+ * Updated to optionally shuffle input fields if the directive was INPUTFIELD[RANDOMIZED].
+ */
 class InputFieldFragment : Fragment() {
 
     private var heading: String? = null
     private var body: String? = null
     private var buttonName: String? = null
     private var inputFields: List<String>? = null
+    private var isRandom: Boolean = false
+
     private lateinit var logger: Logger
     private val fieldValues = mutableMapOf<String, String>()
 
@@ -34,6 +39,7 @@ class InputFieldFragment : Fragment() {
             body = it.getString("TEXT")
             buttonName = it.getString("BUTTON")
             inputFields = it.getStringArrayList("INPUTFIELDS")
+            isRandom = it.getBoolean("IS_RANDOM", false)
         }
         logger = Logger.getInstance(requireContext())
     }
@@ -58,6 +64,7 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Handle heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -66,6 +73,7 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
+        // Handle body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -74,7 +82,15 @@ class InputFieldFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        inputFields?.forEach { fieldHint ->
+        // Possibly shuffle the input fields if isRandom == true
+        val actualFields = if (isRandom) {
+            inputFields?.shuffled() ?: emptyList()
+        } else {
+            inputFields ?: emptyList()
+        }
+
+        // Create EditTexts for each field
+        for (fieldHint in actualFields) {
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
             checkAndPlayMp4(fieldHint, resourcesFolderUri)
@@ -95,6 +111,7 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
+        // Continue button
         val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
@@ -110,11 +127,10 @@ class InputFieldFragment : Fragment() {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         continueButton.setPadding(chPx, cvPx, chPx, cvPx)
-
-        // Align the entire button.
         applyContinueAlignment(continueButton)
 
         continueButton.setOnClickListener {
+            // Log all field entries
             fieldValues.forEach { (hint, value) ->
                 val isNumeric = value.toDoubleOrNull() != null
                 logger.logInputFieldFragment(
@@ -127,6 +143,7 @@ class InputFieldFragment : Fragment() {
             }
             (activity as MainActivity).loadNextFragment()
         }
+
         return view
     }
 
@@ -157,6 +174,7 @@ class InputFieldFragment : Fragment() {
         val group = match.groupValues[1]
         val segments = group.split(",")
         val fileName = segments[0].trim()
+        // If there is a volume specified, parse it; otherwise default to 1.0
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
@@ -170,6 +188,7 @@ class InputFieldFragment : Fragment() {
         val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
         val videoFile = parentFolder.findFile(fileName) ?: return
         if (!videoFile.exists() || !videoFile.isFile) return
+
         videoView.setVideoURI(videoFile.uri)
         videoView.setOnPreparedListener { mp -> mp.start() }
     }
@@ -227,7 +246,6 @@ class InputFieldFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
 
-        // Typically the parent is a LinearLayout; set layout gravity.
         val parentLayoutParams = button.layoutParams
         if (parentLayoutParams is LinearLayout.LayoutParams) {
             when (alignment) {
@@ -240,18 +258,23 @@ class InputFieldFragment : Fragment() {
     }
 
     companion object {
+        /**
+         * Extended to include isRandom, so we know whether to shuffle input fields.
+         */
         @JvmStatic
         fun newInstance(
             heading: String?,
             text: String?,
             buttonName: String?,
-            inputFields: List<String>?
+            inputFields: List<String>?,
+            isRandom: Boolean
         ) = InputFieldFragment().apply {
             arguments = Bundle().apply {
                 putString("HEADING", heading)
                 putString("TEXT", text)
                 putString("BUTTON", buttonName)
                 putStringArrayList("INPUTFIELDS", ArrayList(inputFields ?: emptyList()))
+                putBoolean("IS_RANDOM", isRandom)
             }
         }
     }
