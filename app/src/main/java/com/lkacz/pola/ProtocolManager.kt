@@ -53,14 +53,6 @@ class ProtocolManager(private val context: Context) {
                     newLines.addAll(randomSection)
                     randomSection.clear()
                 }
-                line.trim().startsWith("MULTISCALE") || line.trim().startsWith("RANDOMIZED_MULTISCALE") -> {
-                    val expanded = MultiScaleHelper.expandMultiScaleLine(line)
-                    if (randomize) {
-                        randomSection.addAll(expanded)
-                    } else {
-                        newLines.addAll(expanded)
-                    }
-                }
                 else -> {
                     if (randomize) {
                         randomSection.add(line)

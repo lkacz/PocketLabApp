@@ -32,15 +32,18 @@ TIMER_SOUND;sound.wav
 
 
 
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+// version with bracket that is allowed despite only one item inside the brakcets
+SCALE;Single item scale test;This scale has only one item. Check how this works.;[Pierwszy i jedyny item];Response 1;Response 2;Response 3
 
-// Emotions Scale After Walking With a Friend
-MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia;Również wersja trzecia
+// version without brackets that is also allowed
+SCALE;Single item scale test;This scale has only one item. Check how this works.;Pierwszy i jedyny item;Response 1;Response 2;Response 3
 
-RANDOMIZED_MULTISCALE;Randomized multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia;Również wersja trzecia
+SCALE;Multiscale test;This scale has serveral items that will be presented in the same order as they are typed in. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
 
-MULTISCALE;BRANCH Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+SCALE[RANDOMIZED];Randomized scale test;This scale has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
 
+// mind that for multiscale with several items only the first will be presented in most cases, co you can throw it as a warning.
+SCALE;Branching test;This scale has only one item. But allows to skip based on your response. Check how this works.;Wybierz co ci pasuje;Response 1[Version1];Response 2[Version2];Response 3[Version3]
 
 LABEL;Version1
 INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
