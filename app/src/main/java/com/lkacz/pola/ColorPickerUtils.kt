@@ -105,6 +105,7 @@ object ColorPickerUtils {
 
     /**
      * Utility method to create a small row containing a label and a SeekBar.
+     * The SeekBar uses a weighted layout param so it expands to fill remaining space.
      */
     private fun newColorRow(context: Context, labelText: String): LinearLayout {
         val row = LinearLayout(context).apply {
@@ -119,8 +120,15 @@ object ColorPickerUtils {
         val label = TextView(context).apply {
             text = labelText
             setTypeface(typeface, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
         row.addView(label)
+
+        // Make the SeekBar fill the rest of the row’s width.
+        // We'll insert it at runtime in openColorPicker(...).
         return row
     }
 
