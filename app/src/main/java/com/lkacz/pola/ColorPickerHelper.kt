@@ -4,14 +4,19 @@ package com.lkacz.pola
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
+import android.util.TypedValue
+import android.view.Gravity
+import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.core.view.setPadding
 
 object ColorPickerHelper {
 
     /**
-     * Shows a dialog with three SeekBars for selecting R, G, B values of a color.
+     * Shows a dialog with three SeekBars for selecting R, G, B values of a color,
+     * plus a 16x16 color grid that transitions from white -> full color -> black in each column.
      * The [onColorSelected] callback returns the chosen color upon "OK".
      */
     fun showColorPickerDialog(
@@ -19,45 +24,59 @@ object ColorPickerHelper {
         initialColor: Int,
         onColorSelected: (Int) -> Unit
     ) {
+        // Root container (vertical)
         val dialogLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(context, 20), dpToPx(context, 20), dpToPx(context, 20), dpToPx(context, 20))
+            setPadding(dpToPx(context, 20))
         }
 
+        // Text preview to show the selected color
         val previewText = TextView(context).apply {
             text = "Color Preview"
             textSize = 16f
             setTextColor(Color.WHITE)
             setBackgroundColor(initialColor)
-            setPadding(dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16), dpToPx(context, 16))
+            setPadding(dpToPx(context, 16))
         }
         dialogLayout.addView(previewText)
 
-        var red = (initialColor shr 16) and 0xFF
-        var green = (initialColor shr 8) and 0xFF
-        var blue = (initialColor) and 0xFF
+        // Internal tracking of color channels
+        var red = Color.red(initialColor)
+        var green = Color.green(initialColor)
+        var blue = Color.blue(initialColor)
 
-        // Red SeekBar
+        // The 16x16 grid for quick color selection
+        val colorGrid = createExtendedColorGrid(
+            context = context,
+            onColorSelected = { gridColor ->
+                red = Color.red(gridColor)
+                green = Color.green(gridColor)
+                blue = Color.blue(gridColor)
+                previewText.setBackgroundColor(gridColor)
+            }
+        )
+        dialogLayout.addView(colorGrid)
+
+        // Sliders for Red, Green, Blue
         val redBar = makeColorSeekBar(context, "R", red) { newValue ->
             red = newValue
             previewText.setBackgroundColor(Color.rgb(red, green, blue))
         }
-        dialogLayout.addView(redBar)
-
-        // Green SeekBar
         val greenBar = makeColorSeekBar(context, "G", green) { newValue ->
             green = newValue
             previewText.setBackgroundColor(Color.rgb(red, green, blue))
         }
-        dialogLayout.addView(greenBar)
-
-        // Blue SeekBar
         val blueBar = makeColorSeekBar(context, "B", blue) { newValue ->
             blue = newValue
             previewText.setBackgroundColor(Color.rgb(red, green, blue))
         }
+
+        // Add them to the layout
+        dialogLayout.addView(redBar)
+        dialogLayout.addView(greenBar)
         dialogLayout.addView(blueBar)
 
+        // Show the alert dialog
         AlertDialog.Builder(context)
             .setTitle("Choose a color")
             .setView(dialogLayout)
@@ -69,7 +88,81 @@ object ColorPickerHelper {
     }
 
     /**
-     * Creates a labeled horizontal layout with a text label and a SeekBar for color channel.
+     * Creates a 16x16 grid of color swatches, where each column represents a hue (0-360)
+     * at full saturation. The middle row is the hue at full saturation & brightness,
+     * the top rows blend toward white, and the bottom rows blend toward black.
+     */
+    private fun createExtendedColorGrid(
+        context: Context,
+        onColorSelected: (Int) -> Unit
+    ): GridLayout {
+        val gridLayout = GridLayout(context).apply {
+            rowCount = 16
+            columnCount = 16
+            setPadding(dpToPx(context, 8))
+        }
+        val cellSize = dpToPx(context, 20)
+
+        for (row in 0 until 16) {
+            for (col in 0 until 16) {
+                // Hue from 0..360
+                val hue = (col * (360f / 16f)) % 360f
+                // The “middle color” is full hue, full saturation, full brightness
+                val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
+
+                // Decide if we are in top half (blend with white) or bottom half (blend with black)
+                val colorInCell = when {
+                    row < 8 -> {
+                        // Top half: row=0 to 7 => fraction = row/7
+                        val fraction = row / 7f
+                        blendColors(Color.WHITE, fullColor, fraction)
+                    }
+                    else -> {
+                        // Bottom half: row=8 to 15 => fraction=(row-8)/7
+                        val fraction = (row - 8) / 7f
+                        blendColors(fullColor, Color.BLACK, fraction)
+                    }
+                }
+
+                val colorView = TextView(context).apply {
+                    setBackgroundColor(colorInCell)
+                    layoutParams = GridLayout.LayoutParams().apply {
+                        width = cellSize
+                        height = cellSize
+                    }
+                    setOnClickListener {
+                        onColorSelected(colorInCell)
+                    }
+                }
+                gridLayout.addView(colorView)
+            }
+        }
+
+        return gridLayout
+    }
+
+    /**
+     * Blends two colors (c1, c2) in RGB space by [fraction].
+     * fraction = 0.0 gives c1, fraction = 1.0 gives c2.
+     */
+    private fun blendColors(c1: Int, c2: Int, fraction: Float): Int {
+        val r1 = Color.red(c1)
+        val g1 = Color.green(c1)
+        val b1 = Color.blue(c1)
+
+        val r2 = Color.red(c2)
+        val g2 = Color.green(c2)
+        val b2 = Color.blue(c2)
+
+        val rOut = (r1 + fraction * (r2 - r1)).toInt().coerceIn(0, 255)
+        val gOut = (g1 + fraction * (g2 - g1)).toInt().coerceIn(0, 255)
+        val bOut = (b1 + fraction * (b2 - b1)).toInt().coerceIn(0, 255)
+
+        return Color.rgb(rOut, gOut, bOut)
+    }
+
+    /**
+     * Creates a labeled horizontal layout with a text label and a SeekBar for a color channel.
      */
     private fun makeColorSeekBar(
         context: Context,
@@ -79,7 +172,9 @@ object ColorPickerHelper {
     ): LinearLayout {
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dpToPx(context, 8), 0, dpToPx(context, 8))
+            val verticalPadding = dpToPx(context, 8)
+            setPadding(0, verticalPadding, 0, verticalPadding)
+            gravity = Gravity.CENTER_VERTICAL
         }
 
         val labelView = TextView(context).apply {
@@ -111,6 +206,17 @@ object ColorPickerHelper {
     }
 
     private fun dpToPx(context: Context, dp: Int): Int {
-        return (dp * context.resources.displayMetrics.density + 0.5f).toInt()
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            context.resources.displayMetrics
+        ).toInt()
+    }
+
+    /**
+     * Overload for easier setting uniform padding if needed.
+     */
+    private fun LinearLayout.setPadding(pixels: Int) {
+        setPadding(pixels, pixels, pixels, pixels)
     }
 }
