@@ -4,13 +4,15 @@ package com.lkacz.pola
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
-import android.widget.GridLayout
-import android.widget.LinearLayout
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import androidx.core.view.setPadding
 
 object ColorPickerHelper {
@@ -33,37 +35,45 @@ object ColorPickerHelper {
             setPadding(dpToPx(context, 20))
         }
 
-        // Text preview to show the selected color
-        val previewText = TextView(context).apply {
-            text = "Color Preview"
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(initialColor)
-            setPadding(dpToPx(context, 16))
+        // A simple View to preview the selected color, with a black stroke.
+        // Note: We keep a reference to the GradientDrawable so we can update its fill color more directly.
+        val outlineDrawable = GradientDrawable().apply {
+            setColor(initialColor)
+            setStroke(dpToPx(context, 2), Color.BLACK)
+            cornerRadius = dpToPx(context, 4).toFloat()
         }
-        dialogLayout.addView(previewText)
+        val previewView = View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(context, 40)
+            )
+            background = outlineDrawable
+        }
+        dialogLayout.addView(previewView)
 
         // Internal tracking of color channels
         var red = Color.red(initialColor)
         var green = Color.green(initialColor)
         var blue = Color.blue(initialColor)
 
-        // We define references for the SeekBars so we can update them later
+        // We define references for the SeekBars and EditTexts so we can update them later
         lateinit var redBar: SeekBar
         lateinit var greenBar: SeekBar
         lateinit var blueBar: SeekBar
+        lateinit var redInput: EditText
+        lateinit var greenInput: EditText
+        lateinit var blueInput: EditText
 
         // Function to update the preview color
         fun updatePreview() {
-            previewText.setBackgroundColor(Color.rgb(red, green, blue))
+            outlineDrawable.setColor(Color.rgb(red, green, blue))
         }
 
         // The color grid omitting the top & bottom rows, plus an extra grayscale column
-        // We'll pass a callback that updates red/green/blue and also updates the SeekBars
+        // We'll pass a callback that updates red/green/blue and also updates the SeekBars and EditTexts
         val colorGrid = createExtendedColorGrid(
             context = context,
             onColorSelected = { gridColor ->
-                // Update our local red/green/blue tracking
                 red = Color.red(gridColor)
                 green = Color.green(gridColor)
                 blue = Color.blue(gridColor)
@@ -75,31 +85,126 @@ object ColorPickerHelper {
                 redBar.progress = red
                 greenBar.progress = green
                 blueBar.progress = blue
+
+                // Update the numeric fields as well
+                redInput.setText(red.toString())
+                greenInput.setText(green.toString())
+                blueInput.setText(blue.toString())
             }
         )
         dialogLayout.addView(colorGrid)
 
-        // Create the container + SeekBar for each color, add it to the dialog layout
-        val (redLayout, rSeekBar) = makeColorSeekBar(context, "R", red) { newValue ->
+        // Helper to build each color row: label, seekBar, numeric box
+        fun makeColorSeekBar(
+            label: String,
+            initialValue: Int,
+            onProgressChanged: (Int) -> Unit
+        ): Triple<LinearLayout, SeekBar, EditText> {
+
+            val container = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                val verticalPadding = dpToPx(context, 8)
+                setPadding(0, verticalPadding, 0, verticalPadding)
+                gravity = Gravity.CENTER_VERTICAL
+            }
+
+            val labelView = TextView(context).apply {
+                text = "$label:"
+                textSize = 14f
+                setPadding(0, 0, dpToPx(context, 8), 0)
+            }
+            container.addView(labelView)
+
+            val seekBar = SeekBar(context).apply {
+                max = 255
+                progress = initialValue
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            }
+            container.addView(seekBar)
+
+            // Numeric input box so user can directly type values
+            val valueInput = EditText(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    dpToPx(context, 56),
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also {
+                    it.setMargins(dpToPx(context, 8), 0, 0, 0)
+                }
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setText(initialValue.toString())
+                gravity = Gravity.CENTER
+                textSize = 14f
+            }
+            container.addView(valueInput)
+
+            // Listeners: keep slider & text in sync
+            seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        // Update the text field only if user changed slider
+                        valueInput.setText(p.toString())
+                    }
+                    onProgressChanged(p)
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+
+            // When user edits the numeric value, update the slider and color preview
+            valueInput.addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {
+                    val parsedValue = s?.toString()?.toIntOrNull()
+
+                    // Graceful handling if user clears the box or enters invalid text
+                    if (parsedValue == null) {
+                        // Optionally set to 0 or revert to current slider value
+                        // For clarity, let's revert to the current slider value:
+                        if (valueInput.text.toString() != seekBar.progress.toString()) {
+                            valueInput.setText(seekBar.progress.toString())
+                        }
+                        return
+                    }
+
+                    val clampedValue = parsedValue.coerceIn(0, 255)
+                    if (clampedValue != seekBar.progress) {
+                        seekBar.progress = clampedValue
+                    }
+                }
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
+
+            return Triple(container, seekBar, valueInput)
+        }
+
+        // Create the container + SeekBar for each color
+        val (redLayout, rSeekBar, rInput) = makeColorSeekBar("R", red) { newValue ->
             red = newValue
             updatePreview()
         }
         dialogLayout.addView(redLayout)
         redBar = rSeekBar
+        redInput = rInput
 
-        val (greenLayout, gSeekBar) = makeColorSeekBar(context, "G", green) { newValue ->
+        val (greenLayout, gSeekBar, gInput) = makeColorSeekBar("G", green) { newValue ->
             green = newValue
             updatePreview()
         }
         dialogLayout.addView(greenLayout)
         greenBar = gSeekBar
+        greenInput = gInput
 
-        val (blueLayout, bSeekBar) = makeColorSeekBar(context, "B", blue) { newValue ->
+        val (blueLayout, bSeekBar, bInput) = makeColorSeekBar("B", blue) { newValue ->
             blue = newValue
             updatePreview()
         }
         dialogLayout.addView(blueLayout)
         blueBar = bSeekBar
+        blueInput = bInput
 
         // Show the alert dialog
         AlertDialog.Builder(context)
@@ -148,7 +253,7 @@ object ColorPickerHelper {
         for (row in 1..9) {
             for (col in 0 until 12) {
                 val colorInCell = if (col < 11) {
-                    // Existing hue logic for columns 0..10
+                    // Hue-based columns 0..10
                     val hue = (col * (360f / 11f)) % 360f
                     // The full hue (saturation=1, brightness=1)
                     val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
@@ -177,7 +282,7 @@ object ColorPickerHelper {
                         GridLayout.spec(row - 1),
                         GridLayout.spec(col, 1f) // Weighted column
                     ).apply {
-                        width = 0    // let weights determine width
+                        width = 0    // let weight handle the width distribution
                         height = cellHeight
                     }
                     // On click, notify that this color was chosen
@@ -210,57 +315,6 @@ object ColorPickerHelper {
         val bOut = (b1 + fraction * (b2 - b1)).toInt().coerceIn(0, 255)
 
         return Color.rgb(rOut, gOut, bOut)
-    }
-
-    /**
-     * Creates and returns a horizontal [LinearLayout] that contains:
-     *   - a label ("R", "G", or "B")
-     *   - a SeekBar with [initialValue] as progress
-     * The function returns a Pair:
-     *   - first = the entire container layout
-     *   - second = the SeekBar, so you can set or read its progress easily
-     */
-    private fun makeColorSeekBar(
-        context: Context,
-        label: String,
-        initialValue: Int,
-        onProgressChanged: (Int) -> Unit
-    ): Pair<LinearLayout, SeekBar> {
-
-        val container = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            val verticalPadding = dpToPx(context, 8)
-            setPadding(0, verticalPadding, 0, verticalPadding)
-            gravity = Gravity.CENTER_VERTICAL
-        }
-
-        val labelView = TextView(context).apply {
-            text = "$label:"
-            textSize = 14f
-            setPadding(0, 0, dpToPx(context, 8), 0)
-        }
-        container.addView(labelView)
-
-        val seekBar = SeekBar(context).apply {
-            max = 255
-            progress = initialValue
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
-            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
-                    onProgressChanged(p)
-                }
-                override fun onStartTrackingTouch(sb: SeekBar?) {}
-                override fun onStopTrackingTouch(sb: SeekBar?) {}
-            })
-        }
-        container.addView(seekBar)
-
-        // Just return container + seekBar together; do NOT add container to any parent here
-        return Pair(container, seekBar)
     }
 
     private fun dpToPx(context: Context, dp: Int): Int {
