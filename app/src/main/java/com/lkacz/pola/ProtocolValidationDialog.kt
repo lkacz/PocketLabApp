@@ -4,6 +4,7 @@ package com.lkacz.pola
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
@@ -54,6 +55,13 @@ class ProtocolValidationDialog : DialogFragment() {
     private var randomizationLevel = 0
     private val globalErrors = mutableListOf<String>()
     private var lastCommand: String? = null
+
+    /**
+     * Provide resource folder URI or null if not yet chosen.
+     */
+    private val resourcesFolderUri: Uri? by lazy {
+        ResourcesFolderManager(requireContext()).getResourcesFolderUri()
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -214,6 +222,7 @@ class ProtocolValidationDialog : DialogFragment() {
         var errorMessage = ""
         var warningMessage = ""
 
+        // Skip empty or commented-out lines
         if (line.isEmpty() || line.startsWith("//")) {
             lastCommand = null
             return Pair(errorMessage, warningMessage)
@@ -228,7 +237,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        // Manage randomization levels
+        // Manage randomization
         if (commandRaw == "RANDOMIZE_ON") {
             if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
                 errorMessage = appendError(
@@ -263,11 +272,33 @@ class ProtocolValidationDialog : DialogFragment() {
                         errorMessage = appendError(errorMessage, it)
                     }
                 }
-                "TIMER_SOUND" -> timerSoundValidation(parts).forEach {
-                    errorMessage = appendError(errorMessage, it)
+                "TIMER_SOUND" -> {
+                    timerSoundValidation(parts).forEach {
+                        errorMessage = appendError(errorMessage, it)
+                    }
+                    // Check if file exists
+                    if (parts.size >= 2 && parts[1].isNotBlank()) {
+                        val soundFile = parts[1].trim()
+                        if (resourcesFolderUri != null && soundFile.isNotEmpty()) {
+                            if (!ResourceFileChecker.fileExistsInResources(requireContext(), soundFile)) {
+                                errorMessage = appendError(errorMessage, "File '$soundFile' not found in resources folder.")
+                            }
+                        }
+                    }
                 }
-                "CUSTOM_HTML" -> customHtmlValidation(parts).forEach {
-                    errorMessage = appendError(errorMessage, it)
+                "CUSTOM_HTML" -> {
+                    customHtmlValidation(parts).forEach {
+                        errorMessage = appendError(errorMessage, it)
+                    }
+                    // Check if file exists
+                    if (parts.size >= 2 && parts[1].isNotBlank()) {
+                        val htmlFileName = parts[1].trim()
+                        if (resourcesFolderUri != null && htmlFileName.isNotEmpty()) {
+                            if (!ResourceFileChecker.fileExistsInResources(requireContext(), htmlFileName)) {
+                                errorMessage = appendError(errorMessage, "File '$htmlFileName' not found in resources folder.")
+                            }
+                        }
+                    }
                 }
                 "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                     val (err, warn) = sizeValidation(commandRaw, parts)
@@ -363,7 +394,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
                 "TRANSITIONS" -> {
-                    // Off or slide (or maybe other modes if future expansions)
+                    // Off or slide
                     val mode = parts.getOrNull(1)?.lowercase()?.trim()
                     if (mode.isNullOrEmpty()) {
                         errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
@@ -375,6 +406,16 @@ class ProtocolValidationDialog : DialogFragment() {
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // Check for angled-bracket file references in this line (any type .mp3, .wav, .html, .mp4, etc.)
+        val bracketedFiles = ResourceFileChecker.findBracketedFiles(line)
+        if (resourcesFolderUri != null && bracketedFiles.isNotEmpty()) {
+            bracketedFiles.forEach { fileRef ->
+                if (!ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)) {
+                    errorMessage = appendError(errorMessage, "File '$fileRef' not found in resources folder.")
                 }
             }
         }
@@ -553,6 +594,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
+        // Highlight any empty tags
         val emptyTags = findEmptyHtmlTags(line)
         for (tag in emptyTags) {
             val startIndex = line.indexOf(tag)
@@ -603,7 +645,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val customUriString = prefs.getString("PROTOCOL_URI", null)
 
         if (!customUriString.isNullOrEmpty()) {
-            val uri = android.net.Uri.parse(customUriString)
+            val uri = Uri.parse(customUriString)
             return ProtocolReader().readFileContent(requireContext(), uri)
         }
 
