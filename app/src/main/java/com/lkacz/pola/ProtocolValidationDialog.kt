@@ -57,16 +57,21 @@ class ProtocolValidationDialog : DialogFragment() {
         "TRANSITIONS"
     )
 
+    private val allowedMediaCommands = setOf(
+        "INPUTFIELD",
+        "INPUTFIELD[RANDOMIZED]",
+        "INSTRUCTION",
+        "SCALE",
+        "SCALE[RANDOMIZED]",
+        "TAP_INSTRUCTION",
+        "TIMER"
+    )
+
     private var randomizationLevel = 0
     private val globalErrors = mutableListOf<String>()
     private var lastCommand: String? = null
 
-    /**
-     * Holds all lines from the currently loaded protocol, in mutable form so we can update them.
-     */
     private var allLines: MutableList<String> = mutableListOf()
-
-    // This holds bracketed references -> whether or not they exist in the resources folder
     private val resourceExistenceMap = mutableMapOf<String, Boolean>()
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -101,7 +106,6 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Initial minimal view: only a ProgressBar or similar
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
             layoutParams = LinearLayout.LayoutParams(
@@ -113,30 +117,26 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         rootLayout.addView(progressBar)
 
-        // Load content in the background
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val fileContent = getProtocolContent()
-            // Split by lines, store as mutable
             allLines = fileContent.split("\n").toMutableList()
 
-            // Collect bracketed references
             val bracketedReferences = mutableSetOf<String>()
             for (line in allLines) {
                 ResourceFileChecker.findBracketedFiles(line).forEach {
                     bracketedReferences.add(it)
                 }
             }
-            // Asynchronously check if each file exists
             if (resourcesFolderUri != null) {
                 for (fileRef in bracketedReferences) {
                     val doesExist = ResourceFileChecker.fileExistsInResources(
-                        requireContext(), fileRef
+                        requireContext(),
+                        fileRef
                     )
                     resourceExistenceMap[fileRef] = doesExist
                 }
             }
 
-            // Switch to Main thread and build final UI
             withContext(Dispatchers.Main) {
                 rootLayout.removeAllViews()
                 val finalView = buildCompletedView()
@@ -147,16 +147,11 @@ class ProtocolValidationDialog : DialogFragment() {
         return rootLayout
     }
 
-    /**
-     * After user edits a line, we update in-memory and refresh everything.
-     */
     private fun revalidateAndRefreshUI() {
-        // Clear out all ephemeral state
         randomizationLevel = 0
         globalErrors.clear()
         lastCommand = null
 
-        // Re-check bracketed references from scratch
         resourceExistenceMap.clear()
         val bracketedReferences = mutableSetOf<String>()
         for (line in allLines) {
@@ -171,7 +166,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Rebuild UI table
         val containerLayout = view as? LinearLayout ?: return
         containerLayout.removeAllViews()
         containerLayout.addView(buildCompletedView())
@@ -248,13 +242,11 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val labelOccurrences = findLabelOccurrences(allLines)
 
-        // Validate each line
         allLines.forEachIndexed { index, rawLine ->
             val realLineNumber = index + 1
             val trimmedLine = rawLine.trim()
             val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
 
-            // Skip empty lines or comment lines in the table
             if (trimmedLine.isEmpty() || trimmedLine.startsWith("//")) {
                 lastCommand = null
                 return@forEachIndexed
@@ -273,28 +265,20 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 8, 16, 8)
             }
 
-            // 1) Line number cell
             row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
 
-            // 2) Command cell - clickable to edit
             val commandCell = createBodyCell(highlightedLine, 0.6f)
             commandCell.setOnClickListener {
-                showEditLineDialog(index) // open dialog to edit this line
+                showEditLineDialog(index)
             }
             row.addView(commandCell)
 
-            // 3) Errors cell
             row.addView(createBodyCell(combinedIssuesSpannable, 0.3f))
-
             tableLayout.addView(row)
         }
         return tableLayout
     }
 
-    /**
-     * Displays a dialog allowing the user to edit the entire line at [lineIndex].
-     * After saving, the line is updated in [allLines], then validation re-runs.
-     */
     private fun showEditLineDialog(lineIndex: Int) {
         val context = requireContext()
         val originalLine = allLines[lineIndex]
@@ -339,7 +323,6 @@ class ProtocolValidationDialog : DialogFragment() {
             textSize = 14f
             isSingleLine = false
             setHorizontallyScrolling(false)
-            ellipsize = null
             gravity = Gravity.START
             setPadding(24, 8, 24, 8)
             layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, weight)
@@ -366,189 +349,55 @@ class ProtocolValidationDialog : DialogFragment() {
         val commandRaw = parts[0].uppercase()
         val commandRecognized = recognizedCommands.contains(commandRaw)
 
-        if (commandRaw == "RANDOMIZE_ON") {
-            if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
-                errorMessage = appendError(
-                    errorMessage,
-                    "RANDOMIZE_ON cannot be followed by another RANDOMIZE_ON without an intervening RANDOMIZE_OFF"
-                )
+        when (commandRaw) {
+            "RANDOMIZE_ON" -> {
+                if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "RANDOMIZE_ON cannot be followed by another RANDOMIZE_ON without an intervening RANDOMIZE_OFF"
+                    )
+                }
+                randomizationLevel++
             }
-            randomizationLevel++
-        } else if (commandRaw == "RANDOMIZE_OFF") {
-            if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
-                errorMessage = appendError(
-                    errorMessage,
-                    "RANDOMIZE_OFF should be preceded by RANDOMIZE_ON (not another RANDOMIZE_OFF)"
-                )
-            }
-            if (randomizationLevel <= 0) {
-                errorMessage = appendError(
-                    errorMessage,
-                    "RANDOMIZE_OFF without matching RANDOMIZE_ON"
-                )
-            } else {
-                randomizationLevel--
+            "RANDOMIZE_OFF" -> {
+                if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "RANDOMIZE_OFF should be preceded by RANDOMIZE_ON (not another RANDOMIZE_OFF)"
+                    )
+                }
+                if (randomizationLevel <= 0) {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "RANDOMIZE_OFF without matching RANDOMIZE_ON"
+                    )
+                } else {
+                    randomizationLevel--
+                }
             }
         }
 
         if (!commandRecognized) {
             errorMessage = appendError(errorMessage, "Unrecognized command")
         } else {
-            when (commandRaw) {
-                "LABEL" -> {
-                    labelValidation(lineNumber, line, labelOccurrences).forEach {
-                        errorMessage = appendError(errorMessage, it)
-                    }
-                }
-                "TIMER_SOUND" -> {
-                    timerSoundValidation(parts).forEach {
-                        errorMessage = appendError(errorMessage, it)
-                    }
-                    if (parts.size >= 2 && parts[1].isNotBlank()) {
-                        val soundFile = parts[1].trim()
-                        if (resourcesFolderUri != null && soundFile.isNotEmpty()) {
-                            val found = resourceExistenceMap[soundFile]
-                            if (found == false) {
-                                errorMessage = appendError(
-                                    errorMessage,
-                                    "File '$soundFile' not found in resources folder."
-                                )
-                            }
-                        }
-                    }
-                }
-                "CUSTOM_HTML" -> {
-                    customHtmlValidation(parts).forEach {
-                        errorMessage = appendError(errorMessage, it)
-                    }
-                    if (parts.size >= 2 && parts[1].isNotBlank()) {
-                        val htmlFileName = parts[1].trim()
-                        if (resourcesFolderUri != null && htmlFileName.isNotEmpty()) {
-                            val found = resourceExistenceMap[htmlFileName]
-                            if (found == false) {
-                                errorMessage = appendError(
-                                    errorMessage,
-                                    "File '$htmlFileName' not found in resources folder."
-                                )
-                            }
-                        }
-                    }
-                }
-                "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
-                    val (err, warn) = sizeValidation(commandRaw, parts)
-                    if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
-                    if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
-                }
-                "SCALE", "SCALE[RANDOMIZED]" -> {
-                    if (parts.size < 2) {
-                        errorMessage = appendError(
-                            errorMessage,
-                            "$commandRaw must have at least one parameter after the command"
-                        )
-                    }
-                }
-                "INSTRUCTION", "TAP_INSTRUCTION" -> {
-                    val semicolonCount = line.count { it == ';' }
-                    if (semicolonCount != 3) {
-                        errorMessage = appendError(
-                            errorMessage,
-                            "$commandRaw must have exactly 3 semicolons (4 segments)"
-                        )
-                    }
-                }
-                "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                    if (parts.size < 4) {
-                        errorMessage = appendError(
-                            errorMessage,
-                            "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;heading;body;button;field1..."
-                        )
-                    }
-                }
-                "TIMER" -> {
-                    val (err, warn) = timerValidation(parts)
-                    if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
-                    if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
-                }
-                "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
-                "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
-                "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
-                    if (parts.size < 2 || parts[1].isBlank()) {
-                        errorMessage = appendError(
-                            errorMessage,
-                            "$commandRaw missing color value"
-                        )
-                    } else {
-                        val colorStr = parts[1].trim()
-                        if (!isValidColor(colorStr)) {
-                            errorMessage = appendError(
-                                errorMessage,
-                                "$commandRaw has invalid color format"
-                            )
-                        }
-                    }
-                }
-                "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
-                    if (parts.size < 2 || parts[1].isBlank()) {
-                        errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
-                    } else {
-                        val alignValue = parts[1].uppercase().trim()
-                        val allowedAlignments = setOf("LEFT", "CENTER", "RIGHT")
-                        if (!allowedAlignments.contains(alignValue)) {
-                            errorMessage = appendError(
-                                errorMessage,
-                                "$commandRaw must be one of: ${allowedAlignments.joinToString(", ")}"
-                            )
-                        }
-                    }
-                }
-                "STUDY_ID" -> {
-                    if (parts.size < 2 || parts[1].isBlank()) {
-                        errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
-                    }
-                }
-                "GOTO" -> {
-                    if (parts.size < 2 || parts[1].isBlank()) {
-                        errorMessage = appendError(errorMessage, "GOTO missing label name")
-                    }
-                }
-                "LOG" -> {
-                    if (parts.size < 2 || parts[1].isBlank()) {
-                        errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
-                    }
-                }
-                "END" -> {
-                    if (parts.size > 1 && parts[1].isNotBlank()) {
-                        warningMessage = appendWarning(warningMessage, "END command should not have parameters")
-                    }
-                }
-                "TRANSITIONS" -> {
-                    val mode = parts.getOrNull(1)?.lowercase()?.trim()
-                    if (mode.isNullOrEmpty()) {
-                        errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
-                    } else {
-                        if (mode != "off" && mode != "slide") {
-                            errorMessage = appendError(
-                                errorMessage,
-                                "TRANSITIONS mode must be either 'off' or 'slide'"
-                            )
-                        }
-                    }
-                }
-            }
+            val result = handleKnownCommandValidations(commandRaw, parts, lineNumber, line, labelOccurrences, errorMessage, warningMessage)
+            errorMessage = result.first
+            warningMessage = result.second
         }
 
-        // Check bracketed references for missing files
         val bracketedFiles = ResourceFileChecker.findBracketedFiles(line)
-        if (resourcesFolderUri != null && bracketedFiles.isNotEmpty()) {
-            bracketedFiles.forEach { fileRef ->
-                val found = resourceExistenceMap[fileRef]
-                if (found == false) {
+        if (bracketedFiles.isNotEmpty()) {
+            for (fileRef in bracketedFiles) {
+                if (resourcesFolderUri != null && resourceExistenceMap[fileRef] == false) {
                     errorMessage = appendError(errorMessage, "File '$fileRef' not found in resources folder.")
                 }
+                val fileError = checkFileUsageRules(commandRaw, fileRef)
+                if (fileError.isNotEmpty()) {
+                    errorMessage = appendError(errorMessage, fileError)
+                }
             }
         }
 
-        // Check for empty HTML tags
         val foundEmptyTags = findEmptyHtmlTags(line)
         if (foundEmptyTags.isNotEmpty()) {
             foundEmptyTags.forEach { tag ->
@@ -558,6 +407,160 @@ class ProtocolValidationDialog : DialogFragment() {
 
         lastCommand = commandRaw
         return Pair(errorMessage, warningMessage)
+    }
+
+    private fun handleKnownCommandValidations(
+        commandRaw: String,
+        parts: List<String>,
+        lineNumber: Int,
+        line: String,
+        labelOccurrences: Map<String, List<Int>>,
+        existingError: String,
+        existingWarning: String
+    ): Pair<String, String> {
+        var errorMessage = existingError
+        var warningMessage = existingWarning
+
+        when (commandRaw) {
+            "LABEL" -> {
+                labelValidation(lineNumber, line, labelOccurrences).forEach {
+                    errorMessage = appendError(errorMessage, it)
+                }
+            }
+            "TIMER_SOUND" -> {
+                timerSoundValidation(parts).forEach {
+                    errorMessage = appendError(errorMessage, it)
+                }
+                if (parts.size > 1 && parts[1].isNotBlank()) {
+                    val fileRef = parts[1].trim()
+                    if (resourcesFolderUri != null) {
+                        val found = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                        if (!found) {
+                            errorMessage = appendError(
+                                errorMessage,
+                                "Sound file '$fileRef' not found in resources folder."
+                            )
+                        }
+                    }
+                }
+            }
+            "CUSTOM_HTML" -> {
+                customHtmlValidation(parts).forEach {
+                    errorMessage = appendError(errorMessage, it)
+                }
+            }
+            "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
+                val (err, warn) = sizeValidation(commandRaw, parts)
+                if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
+                if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
+            }
+            "SCALE", "SCALE[RANDOMIZED]" -> {
+                if (parts.size < 2) {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "$commandRaw must have at least one parameter after the command"
+                    )
+                }
+            }
+            "INSTRUCTION", "TAP_INSTRUCTION" -> {
+                val semicolonCount = line.count { it == ';' }
+                if (semicolonCount != 3) {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "$commandRaw must have exactly 3 semicolons (4 segments)"
+                    )
+                }
+            }
+            "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                if (parts.size < 4) {
+                    errorMessage = appendError(
+                        errorMessage,
+                        "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;heading;body;button;field1..."
+                    )
+                }
+            }
+            "TIMER" -> {
+                val (err, warn) = timerValidation(parts)
+                if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
+                if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
+            }
+            "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
+            "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
+            "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
+                if (parts.size < 2 || parts[1].isBlank()) {
+                    errorMessage = appendError(errorMessage, "$commandRaw missing color value")
+                } else {
+                    val colorStr = parts[1].trim()
+                    if (!isValidColor(colorStr)) {
+                        errorMessage = appendError(errorMessage, "$commandRaw has invalid color format")
+                    }
+                }
+            }
+            "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
+                if (parts.size < 2 || parts[1].isBlank()) {
+                    errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
+                } else {
+                    val alignValue = parts[1].uppercase().trim()
+                    val allowedAlignments = setOf("LEFT", "CENTER", "RIGHT")
+                    if (!allowedAlignments.contains(alignValue)) {
+                        errorMessage = appendError(
+                            errorMessage,
+                            "$commandRaw must be one of: ${allowedAlignments.joinToString(", ")}"
+                        )
+                    }
+                }
+            }
+            "STUDY_ID" -> {
+                if (parts.size < 2 || parts[1].isBlank()) {
+                    errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
+                }
+            }
+            "GOTO" -> {
+                if (parts.size < 2 || parts[1].isBlank()) {
+                    errorMessage = appendError(errorMessage, "GOTO missing label name")
+                }
+            }
+            "LOG" -> {
+                if (parts.size < 2 || parts[1].isBlank()) {
+                    errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
+                }
+            }
+            "END" -> {
+                if (parts.size > 1 && parts[1].isNotBlank()) {
+                    warningMessage = appendWarning(warningMessage, "END command should not have parameters")
+                }
+            }
+            "TRANSITIONS" -> {
+                val mode = parts.getOrNull(1)?.lowercase()?.trim()
+                if (mode.isNullOrEmpty()) {
+                    errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
+                } else if (mode != "off" && mode != "slide") {
+                    errorMessage = appendError(errorMessage, "TRANSITIONS mode must be either 'off' or 'slide'")
+                }
+            }
+        }
+        return errorMessage to warningMessage
+    }
+
+    private fun checkFileUsageRules(command: String, fileRef: String): String {
+        val lowerFile = fileRef.lowercase()
+        val knownExtensions = listOf(".mp3", ".wav", ".mp4", ".jpg", ".png", ".html")
+        val matchedExt = knownExtensions.firstOrNull { lowerFile.endsWith(it) } ?: return ""
+
+        val mainAllowed = allowedMediaCommands.contains(command)
+        val isCustomHtml = (command == "CUSTOM_HTML")
+        val isTimerSound = (command == "TIMER_SOUND")
+
+        if (!mainAllowed && !isCustomHtml && !isTimerSound) {
+            return "Command '$command' cannot reference media or .html files, found <$fileRef>"
+        }
+        if (isCustomHtml && matchedExt != ".html") {
+            return "CUSTOM_HTML only accepts .html files, found <$fileRef>"
+        }
+        if (isTimerSound && (matchedExt != ".mp3" && matchedExt != ".wav")) {
+            return "TIMER_SOUND only accepts .mp3 or .wav files, found <$fileRef>"
+        }
+        return ""
     }
 
     private fun labelValidation(
@@ -587,8 +590,7 @@ class ProtocolValidationDialog : DialogFragment() {
             errors.add("TIMER_SOUND missing filename")
         } else {
             val filename = parts[1].trim()
-            if (
-                !filename.endsWith(".wav", ignoreCase = true) &&
+            if (!filename.endsWith(".wav", ignoreCase = true) &&
                 !filename.endsWith(".mp3", ignoreCase = true)
             ) {
                 errors.add("TIMER_SOUND must be *.wav or *.mp3")
@@ -625,7 +627,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 warn = "$command = $num (is that intentional?)"
             }
         }
-        return Pair(err, warn)
+        return err to warn
     }
 
     private fun timerValidation(parts: List<String>): Pair<String, String> {
@@ -641,7 +643,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 warn = "TIMER = $timeVal (over 3600s, is that intentional?)"
             }
         }
-        return Pair(err, warn)
+        return err to warn
     }
 
     private fun findLabelOccurrences(lines: List<String>): MutableMap<String, MutableList<Int>> {
