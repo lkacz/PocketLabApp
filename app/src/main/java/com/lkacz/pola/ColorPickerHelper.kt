@@ -17,8 +17,9 @@ object ColorPickerHelper {
 
     /**
      * Shows a dialog with three SeekBars for selecting R, G, B values of a color,
-     * plus an 11x9 color grid (since top & bottom rows are removed) transitioning
-     * from white -> hue -> black.
+     * plus an extended grid that omits the top & bottom row for the hue-based columns,
+     * and adds one extra column (col=11) transitioning from white (top) to black (bottom).
+     * When a grid cell is tapped, the preview and the sliders are updated accordingly.
      * The [onColorSelected] callback returns the chosen color upon "OK".
      */
     fun showColorPickerDialog(
@@ -47,36 +48,58 @@ object ColorPickerHelper {
         var green = Color.green(initialColor)
         var blue = Color.blue(initialColor)
 
-        // The color grid omitting the top & bottom rows
+        // We define references for the SeekBars so we can update them later
+        lateinit var redBar: SeekBar
+        lateinit var greenBar: SeekBar
+        lateinit var blueBar: SeekBar
+
+        // Function to update the preview color
+        fun updatePreview() {
+            previewText.setBackgroundColor(Color.rgb(red, green, blue))
+        }
+
+        // The color grid omitting the top & bottom rows, plus an extra grayscale column
+        // We'll pass a callback that updates red/green/blue and also updates the SeekBars
         val colorGrid = createExtendedColorGrid(
             context = context,
             onColorSelected = { gridColor ->
+                // Update our local red/green/blue tracking
                 red = Color.red(gridColor)
                 green = Color.green(gridColor)
                 blue = Color.blue(gridColor)
-                previewText.setBackgroundColor(gridColor)
+
+                // Refresh preview
+                updatePreview()
+
+                // Update the SeekBars with the new RGB values
+                redBar.progress = red
+                greenBar.progress = green
+                blueBar.progress = blue
             }
         )
         dialogLayout.addView(colorGrid)
 
-        // Sliders for Red, Green, Blue
-        val redBar = makeColorSeekBar(context, "R", red) { newValue ->
+        // Create the container + SeekBar for each color, add it to the dialog layout
+        val (redLayout, rSeekBar) = makeColorSeekBar(context, "R", red) { newValue ->
             red = newValue
-            previewText.setBackgroundColor(Color.rgb(red, green, blue))
+            updatePreview()
         }
-        val greenBar = makeColorSeekBar(context, "G", green) { newValue ->
-            green = newValue
-            previewText.setBackgroundColor(Color.rgb(red, green, blue))
-        }
-        val blueBar = makeColorSeekBar(context, "B", blue) { newValue ->
-            blue = newValue
-            previewText.setBackgroundColor(Color.rgb(red, green, blue))
-        }
+        dialogLayout.addView(redLayout)
+        redBar = rSeekBar
 
-        // Add them to the layout
-        dialogLayout.addView(redBar)
-        dialogLayout.addView(greenBar)
-        dialogLayout.addView(blueBar)
+        val (greenLayout, gSeekBar) = makeColorSeekBar(context, "G", green) { newValue ->
+            green = newValue
+            updatePreview()
+        }
+        dialogLayout.addView(greenLayout)
+        greenBar = gSeekBar
+
+        val (blueLayout, bSeekBar) = makeColorSeekBar(context, "B", blue) { newValue ->
+            blue = newValue
+            updatePreview()
+        }
+        dialogLayout.addView(blueLayout)
+        blueBar = bSeekBar
 
         // Show the alert dialog
         AlertDialog.Builder(context)
@@ -90,24 +113,27 @@ object ColorPickerHelper {
     }
 
     /**
-     * Creates an 11-column grid of color swatches, but omits row=0 and row=10,
-     * so only rows 1..9 are displayed (9 rows total).
+     * Creates a grid with:
+     *  - rows=9 visible (skipping row=0 and row=10),
+     *  - columns=12 total, where columns 0..10 show hue transitions,
+     *    and column=11 is a pure white->black gradient.
      *
-     * - row in [1..4] blends from white -> hue
-     * - row = 5 is the hue at full brightness
-     * - row in [6..9] blends from hue -> black (up to 80% black at row=9)
+     * For the hue columns:
+     *  - row in [1..4] blends from white -> hue
+     *  - row=5 is the hue at full brightness
+     *  - row in [6..9] blends from hue -> black
      *
-     * Each column is weighted equally so the cells fill the dialog width.
+     * The last column (col=11) is a grayscale gradient from white at row=1 to black at row=9.
      */
     private fun createExtendedColorGrid(
         context: Context,
         onColorSelected: (Int) -> Unit
     ): GridLayout {
         val gridLayout = GridLayout(context).apply {
-            // We display 9 rows visually (rows=1..9), with 11 columns
+            // We display 9 rows visually (rows=1..9)
             rowCount = 9
-            columnCount = 11
-            // Match the parent width so the columns can fill horizontally
+            // We now have 12 columns: 11 hue columns + 1 grayscale column
+            columnCount = 12
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -115,45 +141,46 @@ object ColorPickerHelper {
             setPadding(dpToPx(context, 8))
         }
 
-        // We'll keep the height for each row at some fixed dp (e.g. 28dp)
+        // Fixed cell height for each row
         val cellHeight = dpToPx(context, 28)
 
         // Loop from row=1..9 (inclusive), skipping row=0 and row=10
-        for (row in 1 until 10) {
-            for (col in 0 until 11) {
-                // Hue from 0..360 (depending on column)
-                val hue = (col * (360f / 11f)) % 360f
-                // The full hue (saturation=1, brightness=1)
-                val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
-
-                // Determine the blend:
-                //   - rows 1..4 => blend from white to hue (fraction row/5)
-                //   - row=5 => pure hue
-                //   - rows 6..9 => blend from hue to black (fraction (row-5)/5)
-                val colorInCell = when {
-                    row < 5 -> {
-                        val fraction = row / 5f
-                        blendColors(Color.WHITE, fullColor, fraction)
+        for (row in 1..9) {
+            for (col in 0 until 12) {
+                val colorInCell = if (col < 11) {
+                    // Existing hue logic for columns 0..10
+                    val hue = (col * (360f / 11f)) % 360f
+                    // The full hue (saturation=1, brightness=1)
+                    val fullColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
+                    when {
+                        row < 5 -> {
+                            val fraction = row / 5f
+                            blendColors(Color.WHITE, fullColor, fraction)
+                        }
+                        row == 5 -> {
+                            fullColor
+                        }
+                        else -> {
+                            val fraction = (row - 5) / 5f
+                            blendColors(fullColor, Color.BLACK, fraction)
+                        }
                     }
-                    row == 5 -> {
-                        fullColor
-                    }
-                    else -> {
-                        val fraction = (row - 5) / 5f
-                        blendColors(fullColor, Color.BLACK, fraction)
-                    }
+                } else {
+                    // col == 11 => grayscale gradient from white (row=1) to black (row=9)
+                    val fraction = (row - 1) / 8f
+                    blendColors(Color.WHITE, Color.BLACK, fraction)
                 }
 
                 val colorView = TextView(context).apply {
                     setBackgroundColor(colorInCell)
-                    // Weight each column equally to fill horizontal space
                     layoutParams = GridLayout.LayoutParams(
-                        GridLayout.spec(row - 1),          // row index in the new grid
-                        GridLayout.spec(col, 1f)           // column spec with weight=1
+                        GridLayout.spec(row - 1),
+                        GridLayout.spec(col, 1f) // Weighted column
                     ).apply {
-                        width = 0
+                        width = 0    // let weights determine width
                         height = cellHeight
                     }
+                    // On click, notify that this color was chosen
                     setOnClickListener {
                         onColorSelected(colorInCell)
                     }
@@ -186,14 +213,20 @@ object ColorPickerHelper {
     }
 
     /**
-     * Creates a labeled horizontal layout with a text label and a SeekBar for a color channel.
+     * Creates and returns a horizontal [LinearLayout] that contains:
+     *   - a label ("R", "G", or "B")
+     *   - a SeekBar with [initialValue] as progress
+     * The function returns a Pair:
+     *   - first = the entire container layout
+     *   - second = the SeekBar, so you can set or read its progress easily
      */
     private fun makeColorSeekBar(
         context: Context,
         label: String,
         initialValue: Int,
         onProgressChanged: (Int) -> Unit
-    ): LinearLayout {
+    ): Pair<LinearLayout, SeekBar> {
+
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             val verticalPadding = dpToPx(context, 8)
@@ -226,7 +259,8 @@ object ColorPickerHelper {
         }
         container.addView(seekBar)
 
-        return container
+        // Just return container + seekBar together; do NOT add container to any parent here
+        return Pair(container, seekBar)
     }
 
     private fun dpToPx(context: Context, dp: Int): Int {
