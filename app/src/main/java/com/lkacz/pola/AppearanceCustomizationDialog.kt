@@ -57,8 +57,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var spinnerTransitions: Spinner
 
     private lateinit var spinnerContinueAlignment: Spinner
-
-    // New spinners for Header Alignment & Body Alignment
     private lateinit var spinnerHeaderAlignment: Spinner
     private lateinit var spinnerBodyAlignment: Spinner
 
@@ -155,6 +153,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         previewContainerTop.addView(previewBodyTextView)
 
+        // Continue button with default right alignment
         val continueBtnLp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -856,12 +855,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
 
         val alignmentOptions = listOf("Left", "Center", "Right")
-
-        // Continue alignment spinner
         val alignAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, alignmentOptions)
         alignAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerContinueAlignment.adapter = alignAdapter
 
+        // Continue alignment spinner
+        spinnerContinueAlignment.adapter = alignAdapter
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         val savedAlign = prefs.getString("CONTINUE_ALIGNMENT", "CENTER") ?: "CENTER"
         currentContinueAlignment = savedAlign.uppercase()
@@ -876,6 +874,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         spinnerContinueAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
                 currentContinueAlignment = alignmentOptions[position].uppercase()
+                applyContinueAlignmentToPreview()
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -923,6 +922,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         // Immediately apply current alignment to preview
         applyHeaderAlignmentToPreview()
         applyBodyAlignmentToPreview()
+        applyContinueAlignmentToPreview()
     }
 
     private fun newRowLayout(): LinearLayout {
@@ -1131,6 +1131,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         applyHeaderAlignmentToPreview()
         applyBodyAlignmentToPreview()
+        applyContinueAlignmentToPreview()
     }
 
     private fun saveCurrentSelections() {
@@ -1189,5 +1190,18 @@ class AppearanceCustomizationDialog : DialogFragment() {
             "RIGHT" -> previewBodyTextView.gravity = Gravity.END
             else -> previewBodyTextView.gravity = Gravity.CENTER
         }
+    }
+
+    /**
+     * Applies the selected continue button alignment to the preview.
+     */
+    private fun applyContinueAlignmentToPreview() {
+        val lp = previewContinueButton.layoutParams as? LinearLayout.LayoutParams ?: return
+        lp.gravity = when (currentContinueAlignment) {
+            "LEFT" -> Gravity.START
+            "RIGHT" -> Gravity.END
+            else -> Gravity.CENTER_HORIZONTAL
+        }
+        previewContinueButton.layoutParams = lp
     }
 }
