@@ -1,18 +1,11 @@
 // Filename: AppearanceCustomizationDialog.kt
 package com.lkacz.pola
 
-import android.app.AlertDialog
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.*
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import androidx.fragment.app.DialogFragment
 
 class AppearanceCustomizationDialog : DialogFragment() {
@@ -197,6 +190,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         headerRow.addView(headerColorPicker)
 
+        // Click to open color picker
+        headerColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, headerTextColor) { newColor ->
+                headerTextColor = newColor
+                previewHeaderTextView.setTextColor(headerTextColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), headerColorPicker, headerTextColor)
+            }
+        }
+
         val bodyRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -231,6 +233,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
         bodyRow.addView(bodyColorPicker)
+
+        bodyColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, bodyTextColor) { newColor ->
+                bodyTextColor = newColor
+                previewBodyTextView.setTextColor(bodyTextColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), bodyColorPicker, bodyTextColor)
+            }
+        }
 
         val continueRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
@@ -272,6 +282,22 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
         continueRow.addView(continueBackgroundColorPicker)
+
+        continueTextColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, continueTextColor) { newColor ->
+                continueTextColor = newColor
+                previewContinueButton.setTextColor(continueTextColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueTextColorPicker, continueTextColor)
+            }
+        }
+
+        continueBackgroundColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, continueBackgroundColor) { newColor ->
+                continueBackgroundColor = newColor
+                previewContinueButton.setBackgroundColor(continueBackgroundColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueBackgroundColorPicker, continueBackgroundColor)
+            }
+        }
 
         val continuePaddingHRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
@@ -422,6 +448,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         itemRow.addView(itemColorPicker)
 
+        itemColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, itemTextColor) { newColor ->
+                itemTextColor = newColor
+                previewItemTextView.setTextColor(itemTextColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), itemColorPicker, itemTextColor)
+            }
+        }
+
         val responseRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
@@ -471,6 +505,33 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
         responseRow.addView(buttonBackgroundColorPicker)
+
+        responseColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, responseTextColor) { newColor ->
+                responseTextColor = newColor
+                previewPaddingButton1.setTextColor(responseTextColor)
+                previewPaddingButton2.setTextColor(responseTextColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), responseColorPicker, responseTextColor)
+            }
+        }
+
+        buttonTextColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, buttonTextColorVar) { newColor ->
+                buttonTextColorVar = newColor
+                previewPaddingButton1.setTextColor(buttonTextColorVar)
+                previewPaddingButton2.setTextColor(buttonTextColorVar)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonTextColorPicker, buttonTextColorVar)
+            }
+        }
+
+        buttonBackgroundColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, buttonBackgroundColorVar) { newColor ->
+                buttonBackgroundColorVar = newColor
+                previewPaddingButton1.setBackgroundColor(buttonBackgroundColorVar)
+                previewPaddingButton2.setBackgroundColor(buttonBackgroundColorVar)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonBackgroundColorPicker, buttonBackgroundColorVar)
+            }
+        }
 
         val responseSpacingRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
@@ -581,6 +642,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         }
         bgRow.addView(screenBackgroundColorPicker)
 
+        screenBackgroundColorPicker.setOnClickListener {
+            ColorPickerUtils.openColorPicker(this, screenBgColor) { newColor ->
+                screenBgColor = newColor
+                view?.setBackgroundColor(screenBgColor)
+                ColorPickerUtils.applyColorPickerBoxColor(requireContext(), screenBackgroundColorPicker, screenBgColor)
+            }
+        }
+
         mainLinearLayout.addView(View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
@@ -684,15 +753,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton2.setTextColor(responseTextColor)
         previewPaddingButton2.setBackgroundColor(buttonBackgroundColorVar)
 
-        applyColorPickerBoxColor(headerColorPicker, headerTextColor)
-        applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
-        applyColorPickerBoxColor(continueTextColorPicker, continueTextColor)
-        applyColorPickerBoxColor(continueBackgroundColorPicker, continueBackgroundColor)
-        applyColorPickerBoxColor(itemColorPicker, itemTextColor)
-        applyColorPickerBoxColor(responseColorPicker, responseTextColor)
-        applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColorVar)
-        applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
-        applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), headerColorPicker, headerTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), bodyColorPicker, bodyTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueTextColorPicker, continueTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueBackgroundColorPicker, continueBackgroundColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), itemColorPicker, itemTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), responseColorPicker, responseTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonTextColorPicker, buttonTextColorVar)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonBackgroundColorPicker, buttonBackgroundColorVar)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), screenBackgroundColorPicker, screenBgColor)
 
         sliderResponseSpacing.max = 100
         sliderResponseSpacing.progress = 0
@@ -835,142 +904,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
-    private fun applyColorPickerBoxColor(picker: View, color: Int) {
-        val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
-        if (drawable is GradientDrawable) {
-            drawable.setColor(color)
-            picker.background = drawable
-        }
-        picker.setOnClickListener {
-            openColorPicker(color) { chosenColor ->
-                when (picker) {
-                    headerColorPicker -> {
-                        headerTextColor = chosenColor
-                        previewHeaderTextView.setTextColor(chosenColor)
-                    }
-                    bodyColorPicker -> {
-                        bodyTextColor = chosenColor
-                        previewBodyTextView.setTextColor(chosenColor)
-                    }
-                    continueTextColorPicker -> {
-                        continueTextColor = chosenColor
-                        previewContinueButton.setTextColor(chosenColor)
-                    }
-                    continueBackgroundColorPicker -> {
-                        continueBackgroundColor = chosenColor
-                        previewContinueButton.setBackgroundColor(chosenColor)
-                    }
-                    itemColorPicker -> {
-                        itemTextColor = chosenColor
-                        previewItemTextView.setTextColor(chosenColor)
-                    }
-                    responseColorPicker -> {
-                        responseTextColor = chosenColor
-                        previewPaddingButton1.setTextColor(chosenColor)
-                        previewPaddingButton2.setTextColor(chosenColor)
-                    }
-                    buttonTextColorPicker -> {
-                        buttonTextColorVar = chosenColor
-                        previewPaddingButton1.setTextColor(chosenColor)
-                        previewPaddingButton2.setTextColor(chosenColor)
-                    }
-                    buttonBackgroundColorPicker -> {
-                        buttonBackgroundColorVar = chosenColor
-                        previewPaddingButton1.setBackgroundColor(chosenColor)
-                        previewPaddingButton2.setBackgroundColor(chosenColor)
-                    }
-                    screenBackgroundColorPicker -> {
-                        screenBgColor = chosenColor
-                        (view as? ScrollView)?.setBackgroundColor(chosenColor)
-                    }
-                }
-                applyColorPickerBoxColor(picker, chosenColor)
-            }
-        }
-    }
-
-    private fun openColorPicker(initialColor: Int, onColorSelected: (Int) -> Unit) {
-        val dialogLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        val titleText = TextView(requireContext()).apply {
-            text = "Pick a Color"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            textSize = 16f
-        }
-        dialogLayout.addView(titleText)
-
-        val redRow = newColorRow("R:")
-        val seekRed = SeekBar(requireContext()).apply { max = 255 }
-        redRow.addView(seekRed)
-        dialogLayout.addView(redRow)
-
-        val greenRow = newColorRow("G:")
-        val seekGreen = SeekBar(requireContext()).apply { max = 255 }
-        greenRow.addView(seekGreen)
-        dialogLayout.addView(greenRow)
-
-        val blueRow = newColorRow("B:")
-        val seekBlue = SeekBar(requireContext()).apply { max = 255 }
-        blueRow.addView(seekBlue)
-        dialogLayout.addView(blueRow)
-
-        val colorPreview = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(80)
-            ).apply { topMargin = dpToPx(12) }
-        }
-        dialogLayout.addView(colorPreview)
-
-        val initR = initialColor.red
-        val initG = initialColor.green
-        val initB = initialColor.blue
-        seekRed.progress = initR
-        seekGreen.progress = initG
-        seekBlue.progress = initB
-        colorPreview.setBackgroundColor(Color.rgb(initR, initG, initB))
-
-        val updatePreview = {
-            val newC = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-            colorPreview.setBackgroundColor(newC)
-        }
-        seekRed.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekGreen.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-        seekBlue.setOnSeekBarChangeListener(simpleSeekBarListener { updatePreview() })
-
-        AlertDialog.Builder(requireContext())
-            .setView(dialogLayout)
-            .setPositiveButton("OK") { _, _ ->
-                val chosenColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
-                onColorSelected(chosenColor)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun newColorRow(labelText: String): LinearLayout {
-        val row = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dpToPx(8) }
-        }
-        val label = TextView(requireContext()).apply {
-            text = labelText
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        row.addView(label)
-        return row
-    }
-
     private fun restoreAllDefaults() {
         val defaultHeaderSize = 24f
         val defaultBodySize = 16f
@@ -1023,15 +956,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton1.textSize = responseTextSize
         previewPaddingButton2.textSize = responseTextSize
 
-        applyColorPickerBoxColor(headerColorPicker, headerTextColor)
-        applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
-        applyColorPickerBoxColor(continueTextColorPicker, continueTextColor)
-        applyColorPickerBoxColor(continueBackgroundColorPicker, continueBackgroundColor)
-        applyColorPickerBoxColor(itemColorPicker, itemTextColor)
-        applyColorPickerBoxColor(responseColorPicker, responseTextColor)
-        applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColorVar)
-        applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
-        applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), headerColorPicker, headerTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), bodyColorPicker, bodyTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueTextColorPicker, continueTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), continueBackgroundColorPicker, continueBackgroundColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), itemColorPicker, itemTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), responseColorPicker, responseTextColor)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonTextColorPicker, buttonTextColorVar)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), buttonBackgroundColorPicker, buttonBackgroundColorVar)
+        ColorPickerUtils.applyColorPickerBoxColor(requireContext(), screenBackgroundColorPicker, screenBgColor)
 
         previewHeaderTextView.setTextColor(headerTextColor)
         previewBodyTextView.setTextColor(bodyTextColor)
@@ -1080,7 +1013,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         FontSizeManager.setContinueSize(requireContext(), continueTextSize)
 
         SpacingManager.setResponseSpacing(requireContext(), sliderResponseSpacing.progress.toFloat())
-
         SpacingManager.setResponseButtonMargin(requireContext(), 0f)
         SpacingManager.setResponseButtonPaddingHorizontal(requireContext(), sliderResponsePaddingH.progress.toFloat())
         SpacingManager.setResponseButtonPaddingVertical(requireContext(), sliderResponsePaddingV.progress.toFloat())
