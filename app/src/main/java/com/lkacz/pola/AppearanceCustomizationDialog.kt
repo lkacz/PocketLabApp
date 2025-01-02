@@ -56,6 +56,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var screenBackgroundColorPicker: View
     private lateinit var spinnerTransitions: Spinner
 
+    // New spinner for Continue Button Alignment
+    private lateinit var spinnerContinueAlignment: Spinner
+
     private var headerTextSize = 24f
     private var bodyTextSize = 16f
     private var continueTextSize = 18f
@@ -72,6 +75,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var buttonBackgroundColorVar = Color.BLUE
     private var screenBgColor = Color.WHITE
     private var currentTransitionMode = "off"
+
+    // Hold selected continue-button alignment in memory
+    private var currentContinueAlignment = "CENTER"
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -325,6 +331,29 @@ class AppearanceCustomizationDialog : DialogFragment() {
             ).apply { leftMargin = dpToPx(4) }
         }
         continuePaddingVRow.addView(tvContinuePaddingVValue)
+
+        // ---- New spinner row for Continue Button Alignment ----
+        val continueAlignRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(continueAlignRow)
+
+        val continueAlignLabel = TextView(requireContext()).apply {
+            text = "Continue Alignment:"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        continueAlignRow.addView(continueAlignLabel)
+
+        spinnerContinueAlignment = Spinner(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(16)
+            }
+        }
+        continueAlignRow.addView(spinnerContinueAlignment)
 
         mainLinearLayout.addView(View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -775,6 +804,34 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+
+        // Setup alignment spinner
+        val alignmentOptions = listOf("Left", "Center", "Right")
+        val alignAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, alignmentOptions)
+        alignAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerContinueAlignment.adapter = alignAdapter
+
+        // Load saved preference for continue alignment
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+        val savedAlign = prefs.getString("CONTINUE_ALIGNMENT", "CENTER") ?: "CENTER"
+        currentContinueAlignment = savedAlign.uppercase()
+
+        // Set spinner selection
+        spinnerContinueAlignment.setSelection(
+            when (currentContinueAlignment) {
+                "LEFT" -> 0
+                "RIGHT" -> 2
+                else -> 1
+            },
+            false
+        )
+
+        spinnerContinueAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                currentContinueAlignment = alignmentOptions[position].uppercase()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 
     private fun newRowLayout(): LinearLayout {
@@ -919,6 +976,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         buttonTextColorVar = defaultButtonTextColor
         buttonBackgroundColorVar = defaultButtonBgColor
         screenBgColor = defaultScreenBgColor
+        currentContinueAlignment = "CENTER"
 
         sliderHeader.progress = headerTextSize.toInt()
         sliderBody.progress = bodyTextSize.toInt()
@@ -976,6 +1034,9 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderContinuePaddingV.progress = 0
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
+
+        // Reset the spinner to "Center"
+        spinnerContinueAlignment.setSelection(1, false)
     }
 
     private fun saveCurrentSelections() {
@@ -1004,6 +1065,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         SpacingManager.setContinueButtonPaddingVertical(requireContext(), sliderContinuePaddingV.progress.toFloat())
 
         TransitionManager.setTransitionMode(requireContext(), if (currentTransitionMode == "off") "off" else "slide")
+
+        // Save new continue alignment setting
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+        prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
