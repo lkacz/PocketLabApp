@@ -1,6 +1,7 @@
 // Filename: ProtocolValidationDialog.kt
 package com.lkacz.pola
 
+import android.app.AlertDialog
 import android.app.Dialog
 import android.graphics.Color
 import android.graphics.Typeface
@@ -59,7 +60,11 @@ class ProtocolValidationDialog : DialogFragment() {
     private var randomizationLevel = 0
     private val globalErrors = mutableListOf<String>()
     private var lastCommand: String? = null
-    private var allLines: List<String> = emptyList()
+
+    /**
+     * Holds all lines from the currently loaded protocol, in mutable form so we can update them.
+     */
+    private var allLines: MutableList<String> = mutableListOf()
 
     // This holds bracketed references -> whether or not they exist in the resources folder
     private val resourceExistenceMap = mutableMapOf<String, Boolean>()
@@ -96,7 +101,7 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Build an initial minimal view: only a ProgressBar or similar
+        // Initial minimal view: only a ProgressBar or similar
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
             layoutParams = LinearLayout.LayoutParams(
@@ -110,11 +115,11 @@ class ProtocolValidationDialog : DialogFragment() {
 
         // Load content in the background
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            // Gather all lines
             val fileContent = getProtocolContent()
-            allLines = fileContent.split("\n")
+            // Split by lines, store as mutable
+            allLines = fileContent.split("\n").toMutableList()
 
-            // Collect bracketed references in all lines
+            // Collect bracketed references
             val bracketedReferences = mutableSetOf<String>()
             for (line in allLines) {
                 ResourceFileChecker.findBracketedFiles(line).forEach {
@@ -131,10 +136,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
 
-            // Once done, switch to Main thread and build the final UI
+            // Switch to Main thread and build final UI
             withContext(Dispatchers.Main) {
                 rootLayout.removeAllViews()
-                val finalView = buildCompletedView(fileContent)
+                val finalView = buildCompletedView()
                 rootLayout.addView(finalView)
             }
         }
@@ -142,8 +147,37 @@ class ProtocolValidationDialog : DialogFragment() {
         return rootLayout
     }
 
-    private fun buildCompletedView(fileContent: String): View {
-        // Build the header table + scrollable content
+    /**
+     * After user edits a line, we update in-memory and refresh everything.
+     */
+    private fun revalidateAndRefreshUI() {
+        // Clear out all ephemeral state
+        randomizationLevel = 0
+        globalErrors.clear()
+        lastCommand = null
+
+        // Re-check bracketed references from scratch
+        resourceExistenceMap.clear()
+        val bracketedReferences = mutableSetOf<String>()
+        for (line in allLines) {
+            ResourceFileChecker.findBracketedFiles(line).forEach {
+                bracketedReferences.add(it)
+            }
+        }
+        if (resourcesFolderUri != null) {
+            bracketedReferences.forEach { fileRef ->
+                val doesExist = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                resourceExistenceMap[fileRef] = doesExist
+            }
+        }
+
+        // Rebuild UI table
+        val containerLayout = view as? LinearLayout ?: return
+        containerLayout.removeAllViews()
+        containerLayout.addView(buildCompletedView())
+    }
+
+    private fun buildCompletedView(): View {
         val containerLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -151,10 +185,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
-
         val headerTable = buildHeaderTable()
         val scrollView = ScrollView(requireContext())
-        val contentTable = buildContentTable(fileContent)
+        val contentTable = buildContentTable()
 
         if (randomizationLevel > 0) {
             globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
@@ -202,7 +235,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    private fun buildContentTable(fileContent: String): TableLayout {
+    private fun buildContentTable(): TableLayout {
         val context = requireContext()
         val tableLayout = TableLayout(context).apply {
             layoutParams = TableLayout.LayoutParams(
@@ -215,36 +248,75 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val labelOccurrences = findLabelOccurrences(allLines)
 
+        // Validate each line
         allLines.forEachIndexed { index, rawLine ->
             val realLineNumber = index + 1
             val trimmedLine = rawLine.trim()
             val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
 
-            if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("//")) {
-                val highlightedLine = highlightLine(trimmedLine, errorMessage)
-                val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
-
-                val row = TableRow(context).apply {
-                    val backgroundColor = if (index % 2 == 0) {
-                        Color.parseColor("#FFFFFF")
-                    } else {
-                        Color.parseColor("#EEEEEE")
-                    }
-                    setBackgroundColor(backgroundColor)
-                    setPadding(16, 8, 16, 8)
-                }
-                row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
-                row.addView(createBodyCell(highlightedLine, 0.6f))
-                row.addView(
-                    createBodyCell(
-                        text = combinedIssuesSpannable,
-                        weight = 0.3f
-                    )
-                )
-                tableLayout.addView(row)
+            // Skip empty lines or comment lines in the table
+            if (trimmedLine.isEmpty() || trimmedLine.startsWith("//")) {
+                lastCommand = null
+                return@forEachIndexed
             }
+
+            val highlightedLine = highlightLine(trimmedLine, errorMessage)
+            val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
+
+            val row = TableRow(context).apply {
+                val backgroundColor = if (index % 2 == 0) {
+                    Color.parseColor("#FFFFFF")
+                } else {
+                    Color.parseColor("#EEEEEE")
+                }
+                setBackgroundColor(backgroundColor)
+                setPadding(16, 8, 16, 8)
+            }
+
+            // 1) Line number cell
+            row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
+
+            // 2) Command cell - clickable to edit
+            val commandCell = createBodyCell(highlightedLine, 0.6f)
+            commandCell.setOnClickListener {
+                showEditLineDialog(index) // open dialog to edit this line
+            }
+            row.addView(commandCell)
+
+            // 3) Errors cell
+            row.addView(createBodyCell(combinedIssuesSpannable, 0.3f))
+
+            tableLayout.addView(row)
         }
         return tableLayout
+    }
+
+    /**
+     * Displays a dialog allowing the user to edit the entire line at [lineIndex].
+     * After saving, the line is updated in [allLines], then validation re-runs.
+     */
+    private fun showEditLineDialog(lineIndex: Int) {
+        val context = requireContext()
+        val originalLine = allLines[lineIndex]
+
+        val editText = EditText(context).apply {
+            setText(originalLine)
+            setSingleLine(false)
+            isFocusable = true
+            isFocusableInTouchMode = true
+            setPadding(16, 16, 16, 16)
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Edit Line #${lineIndex + 1}")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val newLine = editText.text.toString()
+                allLines[lineIndex] = newLine
+                revalidateAndRefreshUI()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun createHeaderCell(headerText: String, weight: Float): TextView {
@@ -465,7 +537,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Here we match bracketed references. If the resource is known missing, note it.
+        // Check bracketed references for missing files
         val bracketedFiles = ResourceFileChecker.findBracketedFiles(line)
         if (resourcesFolderUri != null && bracketedFiles.isNotEmpty()) {
             bracketedFiles.forEach { fileRef ->
@@ -476,6 +548,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
+        // Check for empty HTML tags
         val foundEmptyTags = findEmptyHtmlTags(line)
         if (foundEmptyTags.isNotEmpty()) {
             foundEmptyTags.forEach { tag ->
@@ -603,30 +676,7 @@ class ProtocolValidationDialog : DialogFragment() {
         return results
     }
 
-    private fun setSpanColor(spannable: SpannableString, start: Int, end: Int, color: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            ForegroundColorSpan(color),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-    }
-
-    private fun setSpanBold(spannable: SpannableString, start: Int, end: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            StyleSpan(Typeface.BOLD),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-    }
-
-    private fun highlightLine(
-        line: String,
-        errorMessage: String
-    ): SpannableString {
+    private fun highlightLine(line: String, errorMessage: String): SpannableString {
         val combined = SpannableString(line)
         val parts = line.split(";")
         val commandPart = parts[0]
@@ -685,6 +735,26 @@ class ProtocolValidationDialog : DialogFragment() {
         return spannable
     }
 
+    private fun setSpanColor(spannable: SpannableString, start: Int, end: Int, color: Int) {
+        if (start < 0 || end <= start || end > spannable.length) return
+        spannable.setSpan(
+            ForegroundColorSpan(color),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+
+    private fun setSpanBold(spannable: SpannableString, start: Int, end: Int) {
+        if (start < 0 || end <= start || end > spannable.length) return
+        spannable.setSpan(
+            StyleSpan(Typeface.BOLD),
+            start,
+            end,
+            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+
     private fun appendError(current: String, newError: String): String {
         return if (current.isEmpty()) newError else "$current; $newError"
     }
@@ -712,7 +782,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun isValidColor(colorStr: String): Boolean {
         return try {
-            Color.parseColor(colorStr)
+            android.graphics.Color.parseColor(colorStr)
             true
         } catch (_: Exception) {
             false
