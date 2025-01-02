@@ -130,7 +130,7 @@ class FragmentLoader(
                     ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
-                "SCALE" -> {
+                "SCALE", "SCALE[RANDOMIZED]" -> {
                     return createScaleFragment(parts)
                 }
                 "INSTRUCTION" -> {

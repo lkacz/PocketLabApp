@@ -31,6 +31,7 @@ TIMER_SOUND;sound.wav
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
 
+SCALE[RANDOMIZED];Randomized scale test;This scale has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
 
 // version with bracket that is allowed despite only one item inside the brakcets
 SCALE;Single item scale test;This scale has only one item. Check how this works.;[Pierwszy i jedyny item];Response 1;Response 2;Response 3
