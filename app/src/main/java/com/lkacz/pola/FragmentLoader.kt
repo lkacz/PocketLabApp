@@ -4,10 +4,6 @@ package com.lkacz.pola
 import android.content.Context
 import androidx.fragment.app.Fragment
 
-/**
- * Updated to handle both SCALE (including SCALE[RANDOMIZED]) and INPUTFIELD (including INPUTFIELD[RANDOMIZED]).
- * Retains existing logic for other directives.
- */
 class FragmentLoader(
     bufferedReader: java.io.BufferedReader,
     private val logger: Logger
@@ -243,9 +239,14 @@ class FragmentLoader(
         )
     }
 
+    /**
+     * **Revised**: Now extracts a potential third parameter for continue-button text.
+     * Defaults to "Continue" if not provided.
+     */
     private fun createCustomHtmlFragment(parts: List<String>): Fragment {
         val fileName = parts.getOrNull(1).orEmpty()
-        return CustomHtmlFragment.newInstance(fileName)
+        val buttonText = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Continue"
+        return CustomHtmlFragment.newInstance(fileName, buttonText)
     }
 
     private fun safeParseColor(colorStr: String): Int {

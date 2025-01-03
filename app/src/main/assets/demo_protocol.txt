@@ -31,6 +31,10 @@ TIMER_SOUND;sound9.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
+CUSTOM_HTML;pola_snake;Continue
+
+
+INSTRUCTION;;<wiki.html>;CONTINUE
 
 INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 

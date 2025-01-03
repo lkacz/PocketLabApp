@@ -17,12 +17,14 @@ import androidx.fragment.app.Fragment
 class CustomHtmlFragment : Fragment() {
 
     private var fileName: String? = null
+    private var continueButtonText: String? = null
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         fileName = arguments?.getString(ARG_HTML_FILE)
+        continueButtonText = arguments?.getString(ARG_BUTTON_TEXT, "Continue")
     }
 
     override fun onCreateView(
@@ -47,7 +49,7 @@ class CustomHtmlFragment : Fragment() {
         frameLayout.addView(webView)
 
         val continueButton = Button(requireContext()).apply {
-            text = "Continue"
+            text = continueButtonText ?: "Continue"
             textSize = FontSizeManager.getContinueSize(requireContext())
             setTextColor(ColorManager.getContinueTextColor(requireContext()))
             setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -75,7 +77,7 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(continueButton)
 
-        // Now apply final alignment preference from ProtocolPrefs
+        // Apply final alignment preference
         applyContinueAlignment(continueButton)
 
         return frameLayout
@@ -163,11 +165,16 @@ class CustomHtmlFragment : Fragment() {
 
     companion object {
         private const val ARG_HTML_FILE = "ARG_HTML_FILE"
+        private const val ARG_BUTTON_TEXT = "ARG_BUTTON_TEXT"
 
-        fun newInstance(fileName: String): CustomHtmlFragment {
+        /**
+         * Now includes a [buttonText] argument, defaulting to "Continue" if null.
+         */
+        fun newInstance(fileName: String, buttonText: String): CustomHtmlFragment {
             val fragment = CustomHtmlFragment()
             fragment.arguments = Bundle().apply {
                 putString(ARG_HTML_FILE, fileName)
+                putString(ARG_BUTTON_TEXT, buttonText)
             }
             return fragment
         }
