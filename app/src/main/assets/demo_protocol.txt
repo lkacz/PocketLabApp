@@ -99,19 +99,9 @@ SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very n
 
 INSTRUCTION;Header;Body;DALEJ
 
-
-
-
 CONTINUE_TEXT_COLOR;#0000ff
 CONTINUE_BACKGROUND_COLOR;#ff0000
 INSTRUCTION;Header;Body;DALEJ
-
-
-
-
-
-
-
 
 TRANSITIONS;off
 RESPONSE_SIZE;14
