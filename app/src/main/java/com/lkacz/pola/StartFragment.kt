@@ -45,6 +45,7 @@ class StartFragment : Fragment() {
         super.onAttach(context)
         listener = context as OnProtocolSelectedListener
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        // Load last-used protocol (if any) from SharedPreferences:
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
         resourcesFolderManager = ResourcesFolderManager(context)
     }
@@ -132,7 +133,7 @@ class StartFragment : Fragment() {
         updateProtocolNameDisplay(currentFileName)
         currentProtocolLayout.addView(tvSelectedProtocolName)
 
-        // "START" button (more distinguished)
+        // "START" button
         val btnStart = createMenuButton("START") {
             showStartStudyConfirmation()
         }.apply {
@@ -176,7 +177,31 @@ class StartFragment : Fragment() {
 
         rootLayout.addView(
             createMenuButton("Use Tutorial Protocol") {
-                handleProtocolChange("tutorial", "Tutorial Protocol")
+                // Now we store an asset-based Uri instead of removing PROTOCOL_URI:
+                showChangeProtocolConfirmation {
+                    val assetUriString = "file:///android_asset/tutorial_protocol.txt"
+                    sharedPref.edit()
+                        .putString("PROTOCOL_URI", assetUriString)
+                        .putString("CURRENT_MODE", "tutorial")
+                        .apply()
+                    protocolUri = Uri.parse(assetUriString)
+                    updateProtocolNameDisplay("Tutorial Protocol")
+                }
+            }
+        )
+
+        // Optionally add a "Use Demo Protocol" button if desired, for completeness:
+        rootLayout.addView(
+            createMenuButton("Use Demo Protocol") {
+                showChangeProtocolConfirmation {
+                    val assetUriString = "file:///android_asset/demo_protocol.txt"
+                    sharedPref.edit()
+                        .putString("PROTOCOL_URI", assetUriString)
+                        .putString("CURRENT_MODE", "demo")
+                        .apply()
+                    protocolUri = Uri.parse(assetUriString)
+                    updateProtocolNameDisplay("Demo Protocol")
+                }
             }
         )
 
@@ -205,7 +230,7 @@ class StartFragment : Fragment() {
         val spacerView = View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dpToPx(32) // Spacer height of 16dp
+                dpToPx(32)
             )
         }
         rootLayout.addView(spacerView)
@@ -255,17 +280,6 @@ class StartFragment : Fragment() {
             } else {
                 showToast("Select a .txt file for the protocol")
             }
-        }
-    }
-
-    private fun handleProtocolChange(mode: String, protocolName: String) {
-        showChangeProtocolConfirmation {
-            protocolUri = null
-            sharedPref.edit()
-                .remove("PROTOCOL_URI")
-                .putString("CURRENT_MODE", mode)
-                .apply()
-            updateProtocolNameDisplay(protocolName)
         }
     }
 
