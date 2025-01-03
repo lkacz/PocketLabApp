@@ -401,20 +401,16 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
         }
 
+        var currentLineNumber = 1
         val labelOccurrences = findLabelOccurrences(allLines)
-        val linesToShow = allLines.filterIndexed { idx, rawLine ->
-            lineMatchesCurrentFilter(idx, rawLine, labelOccurrences)
+        val linesToShow = allLines.filterIndexed { index, rawLine ->
+            lineMatchesCurrentFilter(index, rawLine, labelOccurrences)
         }
 
         linesToShow.forEachIndexed { visibleIndex, rawLine ->
-            val overallIndex = allLines.indexOf(rawLine)
-            val realLineNumber = overallIndex + 1
             val trimmedLine = rawLine.trim()
-            val (errorMessage, warningMessage) = validateLine(
-                realLineNumber,
-                trimmedLine,
-                labelOccurrences
-            )
+            val realLineNumber = currentLineNumber++
+            val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
             val highlightedLine = highlightLine(trimmedLine, errorMessage)
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
@@ -429,19 +425,18 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
             row.addView(createLineNumberCell(realLineNumber))
-
             val commandCell = createBodyCell(highlightedLine, 1.0f)
             commandCell.setOnClickListener {
-                showEditLineDialog(overallIndex)
+                showEditLineDialog(realLineNumber - 1)
             }
             row.addView(commandCell)
-
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
             tableLayout.addView(row)
         }
 
         return tableLayout
     }
+
 
     private fun lineMatchesCurrentFilter(
         index: Int,
