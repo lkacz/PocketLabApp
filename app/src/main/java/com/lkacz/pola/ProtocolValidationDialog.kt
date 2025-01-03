@@ -83,7 +83,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private var searchQuery: String? = null
-    private var filterOption: FilterOption = FilterOption.COMMANDS_ONLY
+    private var filterOption: FilterOption = FilterOption.HIDE_COMMENTS
 
     private var hasUnsavedChanges = false
         set(value) {
@@ -94,18 +94,15 @@ class ProtocolValidationDialog : DialogFragment() {
     private lateinit var btnSave: Button
     private lateinit var btnSaveAs: Button
 
-    // ActivityResultLauncher for "Save As" (CreateDocument)
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
             if (uri != null) {
-                // Write current contents to the newly created file
                 try {
                     requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                         FileOutputStream(pfd.fileDescriptor).use { fos ->
                             fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
                         }
                     }
-                    // Update ProtocolPrefs to reflect new file
                     val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
                     prefs.edit().putString("PROTOCOL_URI", uri.toString()).apply()
                     hasUnsavedChanges = false
@@ -205,7 +202,7 @@ class ProtocolValidationDialog : DialogFragment() {
             )
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             this.adapter = adapter
-            setSelection(FilterOption.COMMANDS_ONLY.ordinal, false)
+            setSelection(FilterOption.HIDE_COMMENTS.ordinal, false)
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
                     parent: AdapterView<*>?,
@@ -219,6 +216,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         revalidateAndRefreshUI()
                     }
                 }
+
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -229,7 +227,6 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
-        // Buttons row: OK, SAVE, SAVE AS
         val buttonRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 0)
@@ -256,7 +253,6 @@ class ProtocolValidationDialog : DialogFragment() {
         btnSaveAs = Button(requireContext()).apply {
             text = "SAVE AS"
             setOnClickListener {
-                // Use the system's file creation dialog
                 createDocumentLauncher.launch("protocol_modified.txt")
             }
         }
@@ -401,21 +397,25 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
         }
 
-        var currentLineNumber = 1
-        val labelOccurrences = findLabelOccurrences(allLines)
-        val linesToShow = allLines.filterIndexed { index, rawLine ->
-            lineMatchesCurrentFilter(index, rawLine, labelOccurrences)
+        val linesWithIndices = allLines.mapIndexed { index, line ->
+            (index + 1) to line
         }
 
-        linesToShow.forEachIndexed { visibleIndex, rawLine ->
+        val filteredLines = linesWithIndices.filter { (originalIndex, rawLine) ->
+            lineMatchesCurrentFilter(originalIndex - 1, rawLine, findLabelOccurrences(allLines))
+        }
+
+        val labelOccurrences = findLabelOccurrences(allLines)
+
+        filteredLines.forEach { (originalLineNumber, rawLine) ->
             val trimmedLine = rawLine.trim()
-            val realLineNumber = currentLineNumber++
-            val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
+            val (errorMessage, warningMessage) =
+                validateLine(originalLineNumber, trimmedLine, labelOccurrences)
             val highlightedLine = highlightLine(trimmedLine, errorMessage)
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
             val row = TableRow(context).apply {
-                val backgroundColor = if (visibleIndex % 2 == 0) {
+                val backgroundColor = if ((originalLineNumber % 2) == 0) {
                     Color.parseColor("#FFFFFF")
                 } else {
                     Color.parseColor("#EEEEEE")
@@ -424,10 +424,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 8, 16, 8)
             }
 
-            row.addView(createLineNumberCell(realLineNumber))
+            row.addView(createLineNumberCell(originalLineNumber))
             val commandCell = createBodyCell(highlightedLine, 1.0f)
             commandCell.setOnClickListener {
-                showEditLineDialog(realLineNumber - 1)
+                showEditLineDialog(originalLineNumber - 1)
             }
             row.addView(commandCell)
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
@@ -437,9 +437,8 @@ class ProtocolValidationDialog : DialogFragment() {
         return tableLayout
     }
 
-
     private fun lineMatchesCurrentFilter(
-        index: Int,
+        zeroBasedIndex: Int,
         rawLine: String,
         labelOccurrences: Map<String, List<Int>>
     ): Boolean {
@@ -449,20 +448,20 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
         val trimmedLine = rawLine.trim()
-        val lineNumber = index + 1
+        val lineNumber = zeroBasedIndex + 1
         val (errMsg, warnMsg) = validateLine(lineNumber, trimmedLine, labelOccurrences)
         val hasErrors = errMsg.isNotEmpty()
         val hasWarnings = warnMsg.isNotEmpty()
 
         return when (filterOption) {
             FilterOption.EVERYTHING -> true
-            FilterOption.COMMANDS_ONLY -> {
+            FilterOption.HIDE_COMMENTS -> {
                 if (trimmedLine.isBlank() || trimmedLine.startsWith("//")) {
                     false
                 } else {
                     val parts = trimmedLine.split(";")
                     val cmd = parts.firstOrNull()?.uppercase() ?: ""
-                    recognizedCommands.contains(cmd)
+                    recognizedCommands.contains(cmd) || true
                 }
             }
             FilterOption.ERRORS_WARNINGS_ONLY -> (hasErrors || hasWarnings)
@@ -659,8 +658,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     val fileRef = parts[1].trim()
                     if (resourcesFolderUri != null) {
-                        val found =
-                            ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                        val found = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                         if (!found) {
                             errorMessage = appendError(
                                 errorMessage,
@@ -1029,7 +1027,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private enum class FilterOption(val displayName: String) {
         EVERYTHING("Everything"),
-        COMMANDS_ONLY("Only Commands"),
+        HIDE_COMMENTS("Hide comments"),
         ERRORS_WARNINGS_ONLY("Errors & Warnings"),
         ERRORS_ONLY("Only Errors")
     }
