@@ -7,7 +7,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.text.*
+import android.text.Spannable
+import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
@@ -79,6 +80,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var searchQuery: String? = null
 
+    private var filterOption: FilterOption = FilterOption.COMMANDS_ONLY
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -107,7 +110,7 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Search section container
+        // -- Region: Search UI in the first row --
         val searchContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -123,7 +126,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
             )
-            hint = "Enter keyword to search"
+            hint = "Keyword"
         }
 
         val searchButton = Button(requireContext()).apply {
@@ -134,7 +137,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        // Newly added clear button
         val clearButton = Button(requireContext()).apply {
             text = "Clear"
             setOnClickListener {
@@ -148,6 +150,51 @@ class ProtocolValidationDialog : DialogFragment() {
         searchContainer.addView(searchButton)
         searchContainer.addView(clearButton)
         rootLayout.addView(searchContainer)
+        // -- EndRegion for search UI --
+
+        // -- Region: Filter UI in the second row (new line) --
+        val filterContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 0, 16, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val spinnerFilter = Spinner(requireContext()).apply {
+            val adapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                FilterOption.values().map { it.displayName }
+            )
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            this.adapter = adapter
+            setSelection(FilterOption.COMMANDS_ONLY.ordinal, false)
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    val selected = FilterOption.values()[position]
+                    if (selected != filterOption) {
+                        filterOption = selected
+                        revalidateAndRefreshUI()
+                    }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        filterContainer.addView(spinnerFilter)
+        rootLayout.addView(filterContainer)
+        // -- EndRegion for filter spinner UI --
 
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
@@ -164,6 +211,7 @@ class ProtocolValidationDialog : DialogFragment() {
             val fileContent = getProtocolContent()
             allLines = fileContent.split("\n").toMutableList()
 
+            // Collect bracketed references
             val bracketedReferences = mutableSetOf<String>()
             for (line in allLines) {
                 ResourceFileChecker.findBracketedFiles(line).forEach {
@@ -195,6 +243,7 @@ class ProtocolValidationDialog : DialogFragment() {
         globalErrors.clear()
         lastCommand = null
 
+        // Update resource existence in case lines changed:
         resourceExistenceMap.clear()
         val bracketedReferences = mutableSetOf<String>()
         for (line in allLines) {
@@ -210,9 +259,9 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        // Keep the first child (searchContainer), remove the rest
-        while (containerLayout.childCount > 1) {
-            containerLayout.removeViewAt(1)
+        // Keep the first two children (search row + filter row), remove everything else
+        while (containerLayout.childCount > 2) {
+            containerLayout.removeViewAt(2)
         }
         containerLayout.addView(buildCompletedView())
     }
@@ -287,26 +336,21 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val labelOccurrences = findLabelOccurrences(allLines)
-        val linesToDisplay = if (searchQuery.isNullOrBlank()) {
-            allLines
-        } else {
-            allLines.filter { it.contains(searchQuery!!, ignoreCase = true) }
+
+        val linesToShow = allLines.filterIndexed { idx, rawLine ->
+            lineMatchesCurrentFilter(idx, rawLine, labelOccurrences)
         }
 
-        linesToDisplay.forEachIndexed { visibleIndex, rawLine ->
+        linesToShow.forEachIndexed { visibleIndex, rawLine ->
             val overallIndex = allLines.indexOf(rawLine)
             val realLineNumber = overallIndex + 1
             val trimmedLine = rawLine.trim()
+
             val (errorMessage, warningMessage) = validateLine(
                 realLineNumber,
                 trimmedLine,
                 labelOccurrences
             )
-
-            if (trimmedLine.isEmpty() || trimmedLine.startsWith("//")) {
-                lastCommand = null
-                return@forEachIndexed
-            }
 
             val highlightedLine = highlightLine(trimmedLine, errorMessage)
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
@@ -332,7 +376,41 @@ class ProtocolValidationDialog : DialogFragment() {
             row.addView(createBodyCell(combinedIssuesSpannable, 0.3f))
             tableLayout.addView(row)
         }
+
         return tableLayout
+    }
+
+    private fun lineMatchesCurrentFilter(
+        index: Int,
+        rawLine: String,
+        labelOccurrences: Map<String, List<Int>>
+    ): Boolean {
+        if (!searchQuery.isNullOrBlank()) {
+            if (!rawLine.contains(searchQuery!!, ignoreCase = true)) {
+                return false
+            }
+        }
+
+        val trimmedLine = rawLine.trim()
+        val lineNumber = index + 1
+        val (errMsg, warnMsg) = validateLine(lineNumber, trimmedLine, labelOccurrences)
+        val hasErrors = errMsg.isNotEmpty()
+        val hasWarnings = warnMsg.isNotEmpty()
+
+        return when (filterOption) {
+            FilterOption.EVERYTHING -> true
+            FilterOption.COMMANDS_ONLY -> {
+                if (trimmedLine.isBlank() || trimmedLine.startsWith("//")) {
+                    false
+                } else {
+                    val parts = trimmedLine.split(";")
+                    val cmd = parts.firstOrNull()?.uppercase() ?: ""
+                    recognizedCommands.contains(cmd)
+                }
+            }
+            FilterOption.ERRORS_WARNINGS_ONLY -> (hasErrors || hasWarnings)
+            FilterOption.ERRORS_ONLY -> hasErrors
+        }
     }
 
     private fun showEditLineDialog(lineIndex: Int) {
@@ -393,7 +471,12 @@ class ProtocolValidationDialog : DialogFragment() {
         var errorMessage = ""
         var warningMessage = ""
 
-        if (line.isEmpty() || line.startsWith("//")) {
+        // Skip color/error for comment lines
+        if (line.startsWith("//")) {
+            lastCommand = null
+            return Pair(errorMessage, warningMessage)
+        }
+        if (line.isEmpty()) {
             lastCommand = null
             return Pair(errorMessage, warningMessage)
         }
@@ -662,7 +745,8 @@ class ProtocolValidationDialog : DialogFragment() {
             errors.add("TIMER_SOUND missing filename")
         } else {
             val filename = parts[1].trim()
-            if (!filename.endsWith(".wav", ignoreCase = true) &&
+            if (
+                !filename.endsWith(".wav", ignoreCase = true) &&
                 !filename.endsWith(".mp3", ignoreCase = true)
             ) {
                 errors.add("TIMER_SOUND must be *.wav or *.mp3")
@@ -752,18 +836,28 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun highlightLine(line: String, errorMessage: String): SpannableString {
         val combined = SpannableString(line)
+
+        // If line is commented, skip coloring:
+        if (line.startsWith("//")) {
+            return combined
+        }
+
         val parts = line.split(";")
         val commandPart = parts[0]
         val cmdIsRecognized = recognizedCommands.contains(commandPart.uppercase())
 
         val startCmd = 0
         val endCmd = commandPart.length
+
+        // Apply color and bold style if recognized command
         if (cmdIsRecognized) {
-            setSpanColor(combined, startCmd, endCmd, Color.rgb(0, 100, 0))
+            setSpanColor(combined, startCmd, endCmd, Color.parseColor("#006400")) // Dark green
+            setSpanBold(combined, startCmd, endCmd)
         } else {
             setSpanColor(combined, startCmd, endCmd, Color.RED)
         }
 
+        // Additional check for label errors, if any
         if (commandPart.uppercase() == "LABEL") {
             if (errorMessage.contains("duplicated") || errorMessage.contains("Label is not a single word")) {
                 val offset = commandPart.length
@@ -856,10 +950,17 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun isValidColor(colorStr: String): Boolean {
         return try {
-            android.graphics.Color.parseColor(colorStr)
+            Color.parseColor(colorStr)
             true
         } catch (_: Exception) {
             false
         }
+    }
+
+    private enum class FilterOption(val displayName: String) {
+        EVERYTHING("Everything"),
+        COMMANDS_ONLY("Only Commands"),
+        ERRORS_WARNINGS_ONLY("Errors & Warnings"),
+        ERRORS_ONLY("Only Errors")
     }
 }
