@@ -13,13 +13,15 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.widget.*
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.*
+import java.io.FileOutputStream
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
@@ -84,8 +86,38 @@ class ProtocolValidationDialog : DialogFragment() {
     private var filterOption: FilterOption = FilterOption.COMMANDS_ONLY
 
     private var hasUnsavedChanges = false
+        set(value) {
+            field = value
+            btnSave.isEnabled = value
+        }
+
     private lateinit var btnSave: Button
     private lateinit var btnSaveAs: Button
+
+    // ActivityResultLauncher for "Save As" (CreateDocument)
+    private val createDocumentLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            if (uri != null) {
+                // Write current contents to the newly created file
+                try {
+                    requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                        FileOutputStream(pfd.fileDescriptor).use { fos ->
+                            fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
+                        }
+                    }
+                    // Update ProtocolPrefs to reflect new file
+                    val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+                    prefs.edit().putString("PROTOCOL_URI", uri.toString()).apply()
+                    hasUnsavedChanges = false
+                    revalidateAndRefreshUI()
+                    Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(requireContext(), "Save As was cancelled.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -187,7 +219,6 @@ class ProtocolValidationDialog : DialogFragment() {
                         revalidateAndRefreshUI()
                     }
                 }
-
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -225,7 +256,8 @@ class ProtocolValidationDialog : DialogFragment() {
         btnSaveAs = Button(requireContext()).apply {
             text = "SAVE AS"
             setOnClickListener {
-                showSaveAsDialog()
+                // Use the system's file creation dialog
+                createDocumentLauncher.launch("protocol_modified.txt")
             }
         }
         buttonRow.addView(btnOk)
@@ -463,7 +495,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (newLine != originalLine) {
                     allLines[lineIndex] = newLine
                     hasUnsavedChanges = true
-                    btnSave.isEnabled = true
                 }
                 revalidateAndRefreshUI()
             }
@@ -1023,72 +1054,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             hasUnsavedChanges = false
-            btnSave.isEnabled = false
             revalidateAndRefreshUI()
             Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showSaveAsDialog() {
-        val input = EditText(requireContext()).apply {
-            hint = "Enter new filename"
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle("Save Protocol As")
-            .setView(input)
-            .setPositiveButton("OK") { _, _ ->
-                val newName = input.text?.toString()?.trim() ?: ""
-                if (newName.isBlank()) {
-                    Toast.makeText(requireContext(), "Filename cannot be empty.", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                saveAsNewFile(newName)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun saveAsNewFile(newName: String) {
-        // Must be a .txt or something – optionally ensure valid extension if desired
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
-        val customUriString = prefs.getString("PROTOCOL_URI", null)
-        if (customUriString.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Original file not set. Cannot copy content.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val folderUri = Uri.parse(customUriString).let { it.buildUpon().clearQuery().build() }
-        val docFile = folderUri.let { DocumentFile.fromSingleUri(requireContext(), it) }
-        val parent = docFile?.parentFile
-        if (parent == null || !parent.isDirectory) {
-            Toast.makeText(requireContext(), "Unable to access parent folder.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (parent.findFile(newName) != null) {
-            Toast.makeText(requireContext(), "File $newName already exists.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val newFile = parent.createFile("text/plain", newName)
-            ?: run {
-                Toast.makeText(requireContext(), "Unable to create $newName.", Toast.LENGTH_SHORT).show()
-                return
-            }
-        try {
-            requireContext().contentResolver.openFileDescriptor(newFile.uri, "rw")?.use { pfd ->
-                FileOutputStream(pfd.fileDescriptor).use { fos ->
-                    fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
-                }
-            }
-            val newUriString = newFile.uri.toString()
-            prefs.edit().putString("PROTOCOL_URI", newUriString).apply()
-            hasUnsavedChanges = false
-            btnSave.isEnabled = false
-            revalidateAndRefreshUI()
-            Toast.makeText(requireContext(), "Saved as $newName", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
         }
