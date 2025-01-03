@@ -79,7 +79,6 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private var searchQuery: String? = null
-
     private var filterOption: FilterOption = FilterOption.COMMANDS_ONLY
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -110,7 +109,6 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // -- Region: Search UI in the first row --
         val searchContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -132,7 +130,8 @@ class ProtocolValidationDialog : DialogFragment() {
         val searchButton = Button(requireContext()).apply {
             text = "Search"
             setOnClickListener {
-                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+                searchQuery =
+                    searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
                 revalidateAndRefreshUI()
             }
         }
@@ -150,9 +149,7 @@ class ProtocolValidationDialog : DialogFragment() {
         searchContainer.addView(searchButton)
         searchContainer.addView(clearButton)
         rootLayout.addView(searchContainer)
-        // -- EndRegion for search UI --
 
-        // -- Region: Filter UI in the second row (new line) --
         val filterContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 16)
@@ -194,7 +191,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
-        // -- EndRegion for filter spinner UI --
 
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
@@ -211,7 +207,6 @@ class ProtocolValidationDialog : DialogFragment() {
             val fileContent = getProtocolContent()
             allLines = fileContent.split("\n").toMutableList()
 
-            // Collect bracketed references
             val bracketedReferences = mutableSetOf<String>()
             for (line in allLines) {
                 ResourceFileChecker.findBracketedFiles(line).forEach {
@@ -242,9 +237,8 @@ class ProtocolValidationDialog : DialogFragment() {
         randomizationLevel = 0
         globalErrors.clear()
         lastCommand = null
-
-        // Update resource existence in case lines changed:
         resourceExistenceMap.clear()
+
         val bracketedReferences = mutableSetOf<String>()
         for (line in allLines) {
             ResourceFileChecker.findBracketedFiles(line).forEach {
@@ -259,7 +253,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        // Keep the first two children (search row + filter row), remove everything else
         while (containerLayout.childCount > 2) {
             containerLayout.removeViewAt(2)
         }
@@ -274,6 +267,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
+
         val headerTable = buildHeaderTable()
         val scrollView = ScrollView(requireContext())
         val contentTable = buildContentTable()
@@ -312,14 +306,13 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
-            isStretchAllColumns = true
+            isStretchAllColumns = false
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)
-            headerRow.addView(createHeaderCell("Line", 0.1f))
-            headerRow.addView(createHeaderCell("Command", 0.6f))
-            headerRow.addView(createHeaderCell("Error(s)", 0.3f))
-
+            headerRow.addView(createHeaderCell("Line"))
+            headerRow.addView(createHeaderCell("Command"))
+            headerRow.addView(createHeaderCell("Error(s)"))
             addView(headerRow)
         }
     }
@@ -331,12 +324,11 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
-            isStretchAllColumns = true
+            isStretchAllColumns = false
             setPadding(8, 8, 8, 8)
         }
 
         val labelOccurrences = findLabelOccurrences(allLines)
-
         val linesToShow = allLines.filterIndexed { idx, rawLine ->
             lineMatchesCurrentFilter(idx, rawLine, labelOccurrences)
         }
@@ -345,13 +337,11 @@ class ProtocolValidationDialog : DialogFragment() {
             val overallIndex = allLines.indexOf(rawLine)
             val realLineNumber = overallIndex + 1
             val trimmedLine = rawLine.trim()
-
             val (errorMessage, warningMessage) = validateLine(
                 realLineNumber,
                 trimmedLine,
                 labelOccurrences
             )
-
             val highlightedLine = highlightLine(trimmedLine, errorMessage)
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
@@ -365,15 +355,15 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 8, 16, 8)
             }
 
-            row.addView(createBodyCell(realLineNumber.toString(), 0.1f))
+            row.addView(createLineNumberCell(realLineNumber))
 
-            val commandCell = createBodyCell(highlightedLine, 0.6f)
+            val commandCell = createBodyCell(highlightedLine, 1.0f)
             commandCell.setOnClickListener {
                 showEditLineDialog(overallIndex)
             }
             row.addView(commandCell)
 
-            row.addView(createBodyCell(combinedIssuesSpannable, 0.3f))
+            row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
             tableLayout.addView(row)
         }
 
@@ -390,7 +380,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 return false
             }
         }
-
         val trimmedLine = rawLine.trim()
         val lineNumber = index + 1
         val (errMsg, warnMsg) = validateLine(lineNumber, trimmedLine, labelOccurrences)
@@ -408,6 +397,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     recognizedCommands.contains(cmd)
                 }
             }
+
             FilterOption.ERRORS_WARNINGS_ONLY -> (hasErrors || hasWarnings)
             FilterOption.ERRORS_ONLY -> hasErrors
         }
@@ -437,14 +427,31 @@ class ProtocolValidationDialog : DialogFragment() {
             .show()
     }
 
-    private fun createHeaderCell(headerText: String, weight: Float): TextView {
+    private fun createHeaderCell(headerText: String): TextView {
         return TextView(requireContext()).apply {
             text = headerText
             textSize = 16f
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(24, 16, 24, 16)
-            layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, weight)
+            layoutParams = TableRow.LayoutParams(
+                TableRow.LayoutParams.WRAP_CONTENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+            )
+        }
+    }
+
+    private fun createLineNumberCell(lineNumber: Int): TextView {
+        return TextView(requireContext()).apply {
+            text = lineNumber.toString()
+            textSize = 12f
+            setSingleLine(true)
+            gravity = Gravity.END
+            layoutParams = TableRow.LayoutParams(
+                TableRow.LayoutParams.WRAP_CONTENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(4, 4, 4, 4)
         }
     }
 
@@ -459,7 +466,12 @@ class ProtocolValidationDialog : DialogFragment() {
             setHorizontallyScrolling(false)
             gravity = Gravity.START
             setPadding(24, 8, 24, 8)
-            layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, weight)
+            layoutParams = TableRow.LayoutParams(
+                TableRow.LayoutParams.WRAP_CONTENT,
+                TableRow.LayoutParams.WRAP_CONTENT
+            ).apply {
+                this.weight = weight
+            }
         }
     }
 
@@ -471,12 +483,7 @@ class ProtocolValidationDialog : DialogFragment() {
         var errorMessage = ""
         var warningMessage = ""
 
-        // Skip color/error for comment lines
-        if (line.startsWith("//")) {
-            lastCommand = null
-            return Pair(errorMessage, warningMessage)
-        }
-        if (line.isEmpty()) {
+        if (line.startsWith("//") || line.isEmpty()) {
             lastCommand = null
             return Pair(errorMessage, warningMessage)
         }
@@ -498,6 +505,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 randomizationLevel++
             }
+
             "RANDOMIZE_OFF" -> {
                 if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
                     errorMessage = appendError(
@@ -575,6 +583,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
+
             "TIMER_SOUND" -> {
                 timerSoundValidation(parts).forEach {
                     errorMessage = appendError(errorMessage, it)
@@ -593,16 +602,19 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
+
             "CUSTOM_HTML" -> {
                 customHtmlValidation(parts).forEach {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
+
             "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                 val (err, warn) = sizeValidation(commandRaw, parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
+
             "SCALE", "SCALE[RANDOMIZED]" -> {
                 if (parts.size < 2) {
                     errorMessage = appendError(
@@ -611,6 +623,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
+
             "INSTRUCTION", "TAP_INSTRUCTION" -> {
                 val semicolonCount = line.count { it == ';' }
                 if (semicolonCount != 3) {
@@ -620,6 +633,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
+
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                 if (parts.size < 4) {
                     errorMessage = appendError(
@@ -628,11 +642,13 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
+
             "TIMER" -> {
                 val (err, warn) = timerValidation(parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
+
             "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
             "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
             "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
@@ -646,9 +662,11 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
+
             "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
-                    errorMessage = appendError(errorMessage, "$commandRaw missing alignment value")
+                    errorMessage =
+                        appendError(errorMessage, "$commandRaw missing alignment value")
                 } else {
                     val alignValue = parts[1].uppercase().trim()
                     val allowedAlignments = setOf("LEFT", "CENTER", "RIGHT")
@@ -660,27 +678,32 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
+
             "STUDY_ID" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
                 }
             }
+
             "GOTO" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "GOTO missing label name")
                 }
             }
+
             "LOG" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
                 }
             }
+
             "END" -> {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     warningMessage =
                         appendWarning(warningMessage, "END command should not have parameters")
                 }
             }
+
             "TRANSITIONS" -> {
                 val mode = parts.getOrNull(1)?.lowercase()?.trim()
                 if (mode.isNullOrEmpty()) {
@@ -836,12 +859,9 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun highlightLine(line: String, errorMessage: String): SpannableString {
         val combined = SpannableString(line)
-
-        // If line is commented, skip coloring:
         if (line.startsWith("//")) {
             return combined
         }
-
         val parts = line.split(";")
         val commandPart = parts[0]
         val cmdIsRecognized = recognizedCommands.contains(commandPart.uppercase())
@@ -849,15 +869,13 @@ class ProtocolValidationDialog : DialogFragment() {
         val startCmd = 0
         val endCmd = commandPart.length
 
-        // Apply color and bold style if recognized command
         if (cmdIsRecognized) {
-            setSpanColor(combined, startCmd, endCmd, Color.parseColor("#006400")) // Dark green
+            setSpanColor(combined, startCmd, endCmd, Color.parseColor("#006400"))
             setSpanBold(combined, startCmd, endCmd)
         } else {
             setSpanColor(combined, startCmd, endCmd, Color.RED)
         }
 
-        // Additional check for label errors, if any
         if (commandPart.uppercase() == "LABEL") {
             if (errorMessage.contains("duplicated") || errorMessage.contains("Label is not a single word")) {
                 val offset = commandPart.length
@@ -875,7 +893,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 setSpanColor(combined, startIndex, endIndex, Color.rgb(255, 165, 0))
             }
         }
-
         return combined
     }
 
@@ -899,7 +916,6 @@ class ProtocolValidationDialog : DialogFragment() {
             setSpanColor(spannable, warnStart, warnEnd, Color.rgb(255, 165, 0))
             setSpanBold(spannable, warnStart, warnEnd)
         }
-
         return spannable
     }
 
@@ -940,7 +956,6 @@ class ProtocolValidationDialog : DialogFragment() {
             val uri = Uri.parse(customUriString)
             return ProtocolReader().readFileContent(requireContext(), uri)
         }
-
         return if (mode == "tutorial") {
             ProtocolReader().readFromAssets(requireContext(), "tutorial_protocol.txt")
         } else {
