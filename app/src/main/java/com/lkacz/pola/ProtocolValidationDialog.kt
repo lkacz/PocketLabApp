@@ -91,28 +91,30 @@ class ProtocolValidationDialog : DialogFragment() {
             btnSave.isEnabled = value
         }
 
-    private lateinit var btnSave: Button
-    private lateinit var btnSaveAs: Button
+    private lateinit var btnSave: ImageButton
+    private lateinit var btnSaveAs: ImageButton
+    private lateinit var btnClose: ImageButton
 
-    // ActivityResultLauncher for "Save As" (CreateDocument)
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
             if (uri != null) {
-                // Write current contents to the newly created file
                 try {
                     requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                         FileOutputStream(pfd.fileDescriptor).use { fos ->
                             fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
                         }
                     }
-                    // Update ProtocolPrefs to reflect new file
                     val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
                     prefs.edit().putString("PROTOCOL_URI", uri.toString()).apply()
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
                     Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error saving file: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } else {
                 Toast.makeText(requireContext(), "Save As was cancelled.", Toast.LENGTH_SHORT).show()
@@ -147,9 +149,42 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
+        val topBarLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(16, 16, 16, 16)
+            gravity = Gravity.END
+        }
+
+        btnClose = ImageButton(requireContext()).apply {
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            setOnClickListener { dismiss() }
+        }
+
+        btnSave = ImageButton(requireContext()).apply {
+            setImageResource(R.drawable.ic_save)
+            isEnabled = false
+            setOnClickListener { confirmSaveAction() }
+        }
+
+        btnSaveAs = ImageButton(requireContext()).apply {
+            setImageResource(R.drawable.ic_save_as)
+            setOnClickListener {
+                createDocumentLauncher.launch("protocol_modified.txt")
+            }
+        }
+
+        topBarLayout.addView(btnClose)
+        topBarLayout.addView(btnSave)
+        topBarLayout.addView(btnSaveAs)
+        rootLayout.addView(topBarLayout)
+
         val searchContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 16, 16, 16)
+            setPadding(16, 0, 16, 16)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -168,8 +203,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val searchButton = Button(requireContext()).apply {
             text = "Search"
             setOnClickListener {
-                searchQuery =
-                    searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
                 revalidateAndRefreshUI()
             }
         }
@@ -229,42 +263,6 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
-        // Buttons row: OK, SAVE, SAVE AS
-        val buttonRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 0, 16, 0)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            gravity = Gravity.END
-        }
-
-        val btnOk = Button(requireContext()).apply {
-            text = "OK"
-            setOnClickListener {
-                dismiss()
-            }
-        }
-        btnSave = Button(requireContext()).apply {
-            text = "SAVE"
-            isEnabled = false
-            setOnClickListener {
-                saveProtocol()
-            }
-        }
-        btnSaveAs = Button(requireContext()).apply {
-            text = "SAVE AS"
-            setOnClickListener {
-                // Use the system's file creation dialog
-                createDocumentLauncher.launch("protocol_modified.txt")
-            }
-        }
-        buttonRow.addView(btnOk)
-        buttonRow.addView(btnSave)
-        buttonRow.addView(btnSaveAs)
-        rootLayout.addView(buttonRow)
-
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
             layoutParams = LinearLayout.LayoutParams(
@@ -288,10 +286,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             if (resourcesFolderUri != null) {
                 for (fileRef in bracketedReferences) {
-                    val doesExist = ResourceFileChecker.fileExistsInResources(
-                        requireContext(),
-                        fileRef
-                    )
+                    val doesExist = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                     resourceExistenceMap[fileRef] = doesExist
                 }
             }
@@ -326,8 +321,8 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        while (containerLayout.childCount > 3) {
-            containerLayout.removeViewAt(3)
+        while (containerLayout.childCount > 4) {
+            containerLayout.removeViewAt(4)
         }
         containerLayout.addView(buildCompletedView())
     }
@@ -664,8 +659,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     val fileRef = parts[1].trim()
                     if (resourcesFolderUri != null) {
-                        val found =
-                            ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                        val found = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                         if (!found) {
                             errorMessage = appendError(
                                 errorMessage,
@@ -1037,6 +1031,17 @@ class ProtocolValidationDialog : DialogFragment() {
         COMMANDS_ONLY("Only Commands"),
         ERRORS_WARNINGS_ONLY("Errors & Warnings"),
         ERRORS_ONLY("Only Errors")
+    }
+
+    private fun confirmSaveAction() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirm Save")
+            .setMessage("Are you sure you want to save and overwrite the current file?")
+            .setPositiveButton("Yes") { _, _ ->
+                saveProtocol()
+            }
+            .setNegativeButton("No", null)
+            .show()
     }
 
     private fun saveProtocol() {

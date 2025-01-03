@@ -2,9 +2,11 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.view.*
 import android.widget.Button
 import android.widget.TextView
@@ -27,10 +29,26 @@ class StartFragment : Fragment() {
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
     private lateinit var resourcesFolderManager: ResourcesFolderManager
 
-    private val filePicker =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let { handleFileUri(it) } ?: showToast("File selection was cancelled")
+    // Updated callback: now calls fileUriUtils.handleFileUri directly for persistable permission.
+    private val filePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            try {
+                // Use our utility function to take persistable URI permission and store it.
+                fileUriUtils.handleFileUri(requireContext(), uri, sharedPref)
+                val fileName = fileUriUtils.getFileName(requireContext(), uri)
+                if (fileName.endsWith(".txt", ignoreCase = true)) {
+                    protocolUri = uri
+                    updateProtocolNameDisplay(fileName)
+                } else {
+                    showToast("Select a .txt file for the protocol")
+                }
+            } catch (e: SecurityException) {
+                showToast("Unable to persist permissions: ${e.message}")
+            }
+        } else {
+            showToast("File selection was cancelled")
         }
+    }
 
     private val folderPicker =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -57,7 +75,16 @@ class StartFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_start, container, false)
         tvSelectedProtocolName = view.findViewById(R.id.tvSelectedProtocolName)
-        val fileName = protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) } ?: "None"
+
+        // If a URI is already stored, try to display the name
+        // (handleFileUri was presumably done before; we trust we have read perms).
+        val fileName = protocolUri?.let {
+            try {
+                fileUriUtils.getFileName(requireContext(), it)
+            } catch (e: SecurityException) {
+                "No Permission (Re-select)"
+            }
+        } ?: "None"
         updateProtocolNameDisplay(fileName)
 
         setupButtons(view)
@@ -75,6 +102,7 @@ class StartFragment : Fragment() {
 
         view.findViewById<Button>(R.id.btnSelectFile).setOnClickListener {
             showChangeProtocolConfirmation {
+                // Launch the OpenDocument flow to pick a .txt
                 filePicker.launch(arrayOf("text/plain"))
             }
         }
@@ -87,7 +115,6 @@ class StartFragment : Fragment() {
             handleProtocolChange("tutorial", "Tutorial Protocol")
         }
 
-        // Now referencing resources folder
         view.findViewById<Button>(R.id.btnSelectResourcesFolder).setOnClickListener {
             showChangeResourcesFolderConfirmation {
                 resourcesFolderManager.pickResourcesFolder(folderPicker)
@@ -111,19 +138,6 @@ class StartFragment : Fragment() {
         }
     }
 
-    private fun handleFileUri(uri: Uri) {
-        context?.let { ctx ->
-            val fileName = fileUriUtils.getFileName(ctx, uri)
-            if (fileName.endsWith(".txt")) {
-                fileUriUtils.handleFileUri(ctx, uri, sharedPref)
-                protocolUri = uri
-                updateProtocolNameDisplay(fileName)
-            } else {
-                showToast("Select a .txt file for the protocol")
-            }
-        }
-    }
-
     private fun handleProtocolChange(mode: String, protocolName: String) {
         showChangeProtocolConfirmation {
             protocolUri = null
@@ -142,11 +156,13 @@ class StartFragment : Fragment() {
     private fun showProtocolContentDialog() {
         val protocolName = tvSelectedProtocolName.text.toString()
         val fileContent = when (protocolName) {
-            "Demo Protocol" -> protocolReader.readFromAssets(requireContext(), "demo_protocol.txt")
-            "Tutorial Protocol" -> protocolReader.readFromAssets(requireContext(), "tutorial_protocol.txt")
-            else -> protocolUri?.let {
-                protocolReader.readFileContent(requireContext(), it)
-            } ?: "File content not available"
+            "Demo Protocol" ->
+                protocolReader.readFromAssets(requireContext(), "demo_protocol.txt")
+            "Tutorial Protocol" ->
+                protocolReader.readFromAssets(requireContext(), "tutorial_protocol.txt")
+            else ->
+                protocolUri?.let { protocolReader.readFileContent(requireContext(), it) }
+                    ?: "File content not available"
         }
         ProtocolContentDisplayer(requireContext()).showProtocolContent(protocolName, fileContent)
     }
