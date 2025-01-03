@@ -72,25 +72,7 @@ class StartFragment : Fragment() {
         }
         scrollView.addView(rootLinearLayout)
 
-        rootLinearLayout.addView(createHeaderSection())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createProtocolInfoSection())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createProtocolActionsSection())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createResourceFolderButton())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createCustomizationSection())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createValidationButton())
-        rootLinearLayout.addView(createDivider())
-        rootLinearLayout.addView(createAboutSection())
-
-        return scrollView
-    }
-
-    private fun createHeaderSection(): View {
-        val headerLayout = LinearLayout(requireContext()).apply {
+        val titleSection = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -98,24 +80,155 @@ class StartFragment : Fragment() {
             )
             gravity = Gravity.CENTER_HORIZONTAL
         }
+        rootLinearLayout.addView(titleSection)
 
         val tvAppName = TextView(requireContext()).apply {
-            text = "Pocket Lab App"
+            text = "Pocket Labb App"
             textSize = 34f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
         }
+        titleSection.addView(tvAppName)
 
         val tvAppVersion = TextView(requireContext()).apply {
-            text = "Version 0.2"
+            text = "Version 0.5.0"
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(0, dpToPx(4), 0, dpToPx(8))
         }
+        titleSection.addView(tvAppVersion)
 
-        headerLayout.addView(tvAppName)
-        headerLayout.addView(tvAppVersion)
-        return headerLayout
+        rootLinearLayout.addView(createDivider())
+
+        val protocolDisplaySection = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
+        rootLinearLayout.addView(protocolDisplaySection)
+
+        val tvSelectedLabel = TextView(requireContext()).apply {
+            text = "Current Protocol:"
+            textSize = 16f
+            gravity = Gravity.CENTER
+        }
+        protocolDisplaySection.addView(tvSelectedLabel)
+
+        tvSelectedProtocolName = TextView(requireContext()).apply {
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setPadding(0, dpToPx(4), 0, dpToPx(8))
+        }
+        val currentFileName = protocolUri?.let {
+            fileUriUtils.getFileName(requireContext(), it)
+        } ?: "None"
+        updateProtocolNameDisplay(currentFileName)
+        protocolDisplaySection.addView(tvSelectedProtocolName)
+
+        rootLinearLayout.addView(createDivider())
+
+        val mainActionsLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        rootLinearLayout.addView(mainActionsLayout)
+
+        val btnStart = createMenuButton("START") {
+            showStartStudyConfirmation()
+        }.apply {
+            textSize = 22f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, dpToPx(8), 0, dpToPx(24))
+        }
+        mainActionsLayout.addView(btnStart)
+
+        mainActionsLayout.addView(
+            createMenuButton("Load protocol file") {
+                showChangeProtocolConfirmation {
+                    filePicker.launch(arrayOf("text/plain"))
+                }
+            }
+        )
+
+        mainActionsLayout.addView(
+            createMenuButton("Review Protocol") {
+                ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
+            }
+        )
+
+        mainActionsLayout.addView(
+            createMenuButton("Load Tutorial Protocol") {
+                handleProtocolChange("tutorial", "Tutorial Protocol")
+            }
+        )
+
+        mainActionsLayout.addView(
+            createMenuButton("Select Resources Folder") {
+                showChangeResourcesFolderConfirmation {
+                    resourcesFolderManager.pickResourcesFolder(folderPicker)
+                }
+            }
+        )
+
+        rootLinearLayout.addView(createDivider())
+
+        val customizationLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        rootLinearLayout.addView(customizationLayout)
+
+        val tvCustomizationLabel = TextView(requireContext()).apply {
+            text = "Customization"
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dpToPx(8))
+        }
+        customizationLayout.addView(tvCustomizationLabel)
+
+        customizationLayout.addView(
+            createMenuButton("Layout") {
+                AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
+            }
+        )
+
+        customizationLayout.addView(
+            createMenuButton("Sounds") {
+                AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
+            }
+        )
+
+        rootLinearLayout.addView(createDivider())
+
+        val btnAbout = createMenuButton("About") {
+            showAboutContentDialog()
+        }
+        rootLinearLayout.addView(btnAbout)
+
+        return scrollView
+    }
+
+    private fun createMenuButton(textValue: String, onClick: () -> Unit): Button {
+        return Button(requireContext()).apply {
+            text = textValue
+            setOnClickListener { onClick() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(8)
+            }
+        }
     }
 
     private fun createDivider(): View {
@@ -128,162 +241,6 @@ class StartFragment : Fragment() {
                 it.bottomMargin = dpToPx(8)
             }
             setBackgroundColor(android.graphics.Color.LTGRAY)
-        }
-    }
-
-    private fun createProtocolInfoSection(): View {
-        val infoLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            gravity = Gravity.CENTER_HORIZONTAL
-        }
-
-        val tvSelectedLabel = TextView(requireContext()).apply {
-            text = "Current Protocol:"
-            textSize = 16f
-            gravity = Gravity.CENTER
-        }
-        tvSelectedProtocolName = TextView(requireContext()).apply {
-            textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            gravity = Gravity.CENTER
-            setPadding(0, dpToPx(4), 0, dpToPx(8))
-        }
-
-        val currentFileName = protocolUri?.let {
-            fileUriUtils.getFileName(requireContext(), it)
-        } ?: "None"
-        updateProtocolNameDisplay(currentFileName)
-
-        infoLayout.addView(tvSelectedLabel)
-        infoLayout.addView(tvSelectedProtocolName)
-        return infoLayout
-    }
-
-    private fun createProtocolActionsSection(): View {
-        val actionLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val btnShowProtocolContent = Button(requireContext()).apply {
-            text = "Show Protocol Content"
-            setOnClickListener { showProtocolContentDialog() }
-            setPadding(0, 0, 0, dpToPx(8))
-        }
-        actionLayout.addView(btnShowProtocolContent)
-
-        val btnStart = Button(requireContext()).apply {
-            text = "Start"
-            textSize = 22f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, dpToPx(8), 0, dpToPx(24))
-            setOnClickListener { showStartStudyConfirmation() }
-        }
-        actionLayout.addView(btnStart)
-
-        val btnSelectFile = Button(requireContext()).apply {
-            text = "Select Protocol File"
-            setPadding(0, dpToPx(8), 0, dpToPx(8))
-            setOnClickListener {
-                showChangeProtocolConfirmation {
-                    filePicker.launch(arrayOf("text/plain"))
-                }
-            }
-        }
-        actionLayout.addView(btnSelectFile)
-
-        val btnUseDemo = Button(requireContext()).apply {
-            text = "Use DEMO Protocol"
-            setPadding(0, dpToPx(8), 0, dpToPx(8))
-            setOnClickListener { handleProtocolChange("demo", "Demo Protocol") }
-        }
-        actionLayout.addView(btnUseDemo)
-
-        val btnUseTutorial = Button(requireContext()).apply {
-            text = "Use Tutorial Protocol"
-            setPadding(0, dpToPx(8), 0, dpToPx(8))
-            setOnClickListener { handleProtocolChange("tutorial", "Tutorial Protocol") }
-        }
-        actionLayout.addView(btnUseTutorial)
-
-        return actionLayout
-    }
-
-    private fun createResourceFolderButton(): View {
-        return Button(requireContext()).apply {
-            text = "Select Resources Folder"
-            setOnClickListener {
-                showChangeResourcesFolderConfirmation {
-                    resourcesFolderManager.pickResourcesFolder(folderPicker)
-                }
-            }
-            setPadding(0, dpToPx(8), 0, dpToPx(8))
-        }
-    }
-
-    private fun createCustomizationSection(): View {
-        val customizationLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val tvCustomizationLabel = TextView(requireContext()).apply {
-            text = "Customization"
-            textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, dpToPx(8))
-        }
-        customizationLayout.addView(tvCustomizationLabel)
-
-        val btnColorsAndSizes = Button(requireContext()).apply {
-            text = "Colors & Fonts"
-            setOnClickListener {
-                AppearanceCustomizationDialog().show(
-                    parentFragmentManager,
-                    "AppearanceCustomizationDialog"
-                )
-            }
-            setPadding(0, 0, 0, dpToPx(8))
-        }
-        customizationLayout.addView(btnColorsAndSizes)
-
-        val btnAlarm = Button(requireContext()).apply {
-            text = "Alarm Settings"
-            setOnClickListener {
-                AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
-            }
-            setPadding(0, 0, 0, dpToPx(8))
-        }
-        customizationLayout.addView(btnAlarm)
-
-        return customizationLayout
-    }
-
-    private fun createValidationButton(): View {
-        return Button(requireContext()).apply {
-            text = "Protocol Validation"
-            setPadding(0, 0, 0, dpToPx(8))
-            setOnClickListener {
-                ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
-            }
-        }
-    }
-
-    private fun createAboutSection(): View {
-        return Button(requireContext()).apply {
-            text = "About"
-            setPadding(0, dpToPx(8), 0, dpToPx(16))
-            setOnClickListener { showAboutContentDialog() }
         }
     }
 
@@ -311,28 +268,6 @@ class StartFragment : Fragment() {
         }
     }
 
-    private fun showProtocolContentDialog() {
-        val protocolName = tvSelectedProtocolName.text.toString()
-        val fileContent = when (protocolName) {
-            "Demo Protocol" ->
-                protocolReader.readFromAssets(requireContext(), "demo_protocol.txt")
-
-            "Tutorial Protocol" ->
-                protocolReader.readFromAssets(requireContext(), "tutorial_protocol.txt")
-
-            else ->
-                protocolUri?.let {
-                    protocolReader.readFileContent(requireContext(), it)
-                } ?: "File content not available"
-        }
-        ProtocolContentDisplayer(requireContext()).showProtocolContent(protocolName, fileContent)
-    }
-
-    private fun showAboutContentDialog() {
-        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
-        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
-    }
-
     private fun showStartStudyConfirmation() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
@@ -357,6 +292,11 @@ class StartFragment : Fragment() {
 
     private fun updateProtocolNameDisplay(protocolName: String) {
         tvSelectedProtocolName.text = protocolName
+    }
+
+    private fun showAboutContentDialog() {
+        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
+        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
 
     private fun showToast(message: String) {
