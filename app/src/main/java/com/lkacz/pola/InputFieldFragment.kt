@@ -1,3 +1,4 @@
+// Filename: InputFieldFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -13,10 +14,6 @@ import androidx.core.widget.addTextChangedListener
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
-/**
- * Updated to optionally shuffle input fields if the directive was INPUTFIELD[RANDOMIZED].
- * Also ensures the VideoView remains gone if the referenced MP4 file does not exist.
- */
 class InputFieldFragment : Fragment() {
 
     private var heading: String? = null
@@ -31,6 +28,11 @@ class InputFieldFragment : Fragment() {
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
     private lateinit var webView: WebView
+
+    // [TAP] logic
+    private var tapEnabled = false
+    private var tapCount = 0
+    private val tapThreshold = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +67,7 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Handle heading
+        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -74,7 +76,7 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
-        // Handle body
+        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -83,14 +85,10 @@ class InputFieldFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Possibly shuffle the input fields if isRandom == true
-        val actualFields = if (isRandom) {
-            inputFields?.shuffled() ?: emptyList()
-        } else {
-            inputFields ?: emptyList()
-        }
+        // Shuffle fields if isRandom
+        val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
 
-        // Create EditTexts for each field
+        // Create EditTexts
         for (fieldHint in actualFields) {
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
@@ -113,7 +111,10 @@ class InputFieldFragment : Fragment() {
         }
 
         // Continue button
-        val cleanButtonText = parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
+        val (cleanButtonText, isTap) = parseTapAttribute(
+            parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
+        )
+        tapEnabled = isTap
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
 
@@ -130,8 +131,24 @@ class InputFieldFragment : Fragment() {
         continueButton.setPadding(chPx, cvPx, chPx, cvPx)
         applyContinueAlignment(continueButton)
 
+        if (tapEnabled) {
+            continueButton.visibility = View.INVISIBLE
+            view.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    tapCount++
+                    if (tapCount >= tapThreshold) {
+                        continueButton.visibility = View.VISIBLE
+                        tapCount = 0
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+
         continueButton.setOnClickListener {
-            // Log all field entries
+            // Log all fields
             fieldValues.forEach { (hint, value) ->
                 val isNumeric = value.toDoubleOrNull() != null
                 logger.logInputFieldFragment(
@@ -169,10 +186,6 @@ class InputFieldFragment : Fragment() {
         )
     }
 
-    /**
-     * Checks for an MP4 placeholder; if found, attempts to locate the file.
-     * Only if the file is found, sets visibility to VISIBLE and plays it.
-     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -180,8 +193,7 @@ class InputFieldFragment : Fragment() {
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+            segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
         } else 1.0f
 
         if (resourcesFolderUri != null) {
@@ -209,7 +221,8 @@ class InputFieldFragment : Fragment() {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -233,8 +246,7 @@ class InputFieldFragment : Fragment() {
 
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
@@ -243,8 +255,7 @@ class InputFieldFragment : Fragment() {
 
     private fun applyBodyAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
@@ -253,23 +264,24 @@ class InputFieldFragment : Fragment() {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
+        when (prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()) {
+            "LEFT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.START
+            "RIGHT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.END
+            else -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.CENTER_HORIZONTAL
+        }
+    }
 
-        val parentLayoutParams = button.layoutParams
-        if (parentLayoutParams is LinearLayout.LayoutParams) {
-            when (alignment) {
-                "LEFT" -> parentLayoutParams.gravity = Gravity.START
-                "RIGHT" -> parentLayoutParams.gravity = Gravity.END
-                else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
-            }
-            button.layoutParams = parentLayoutParams
+    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
         }
     }
 
     companion object {
-        /**
-         * Extended to include isRandom, so we know whether to shuffle input fields.
-         */
         @JvmStatic
         fun newInstance(
             heading: String?,

@@ -1,3 +1,4 @@
+// Filename: TimerFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -24,6 +25,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private var body: String? = null
     private var nextButtonText: String? = null
     private var timeInSeconds: Int? = null
+
     private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
     private var timer: CountDownTimer? = null
@@ -31,6 +33,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var videoView: VideoView
     private lateinit var webView: WebView
+
+    // [TAP] logic
+    private var tapEnabled = false
+    private var tapCount = 0
+    private val tapThreshold = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,13 +80,18 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Parse for [TAP]
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        val (cleanNextText, isTap) = parseTapAttribute(
+            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        )
+        tapEnabled = isTap
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
+        // .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
@@ -94,7 +106,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // CONTINUE button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -106,10 +117,26 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         nextButton.setPadding(chPx, cvPx, chPx, cvPx)
-        nextButton.visibility = View.INVISIBLE
-
         applyContinueAlignment(nextButton)
 
+        // If [TAP] is present, hide until threshold
+        if (tapEnabled) {
+            nextButton.visibility = View.INVISIBLE
+            view.setOnTouchListener { _, event ->
+                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                    tapCount++
+                    if (tapCount >= tapThreshold) {
+                        nextButton.visibility = View.VISIBLE
+                        tapCount = 0
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+
+        // Timer text
         timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
         timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
 
@@ -137,6 +164,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onTouchThresholdReached() {
+        // If the user forcibly ends the timer by quick taps (from BaseTouchAwareFragment),
+        // we also show the button and start alarm
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
@@ -176,9 +205,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         )
     }
 
-    /**
-     * Checks for an MP4 placeholder. If the file is valid, sets the video visible and plays it.
-     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -186,8 +212,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+            segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
         } else 1.0f
 
         if (resourcesFolderUri != null) {
@@ -233,8 +258,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
@@ -243,8 +267,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun applyBodyAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
@@ -253,16 +276,20 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
+        when (prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()) {
+            "LEFT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.START
+            "RIGHT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.END
+            else -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.CENTER_HORIZONTAL
+        }
+    }
 
-        val parentLayoutParams = button.layoutParams
-        if (parentLayoutParams is LinearLayout.LayoutParams) {
-            when (alignment) {
-                "LEFT" -> parentLayoutParams.gravity = Gravity.START
-                "RIGHT" -> parentLayoutParams.gravity = Gravity.END
-                else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
-            }
-            button.layoutParams = parentLayoutParams
+    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
         }
     }
 

@@ -21,6 +21,11 @@ class CustomHtmlFragment : Fragment() {
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
+    // [TAP] logic
+    private var tapEnabled = false
+    private var tapCount = 0
+    private val tapThreshold = 3
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         fileName = arguments?.getString(ARG_HTML_FILE)
@@ -48,8 +53,12 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
+        // Check for [TAP]
+        val (cleanText, isTap) = parseTapAttribute(continueButtonText.orEmpty())
+        tapEnabled = isTap
+
         val continueButton = Button(requireContext()).apply {
-            text = continueButtonText ?: "Continue"
+            text = cleanText.ifBlank { "Continue" }
             textSize = FontSizeManager.getContinueSize(requireContext())
             setTextColor(ColorManager.getContinueTextColor(requireContext()))
             setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -61,7 +70,7 @@ class CustomHtmlFragment : Fragment() {
             val cvPx = (cv * density + 0.5f).toInt()
             setPadding(chPx, cvPx, chPx, cvPx)
 
-            // Initially place in bottom-end (we will further adjust alignment below).
+            // Initially place in bottom-end
             val marginPx = (16 * density + 0.5f).toInt()
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -77,7 +86,24 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(continueButton)
 
-        // Apply final alignment preference
+        // Hide the button if [TAP] is present
+        if (tapEnabled) {
+            continueButton.visibility = View.INVISIBLE
+            frameLayout.setOnTouchListener { _, event ->
+                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                    tapCount++
+                    if (tapCount >= tapThreshold) {
+                        continueButton.visibility = View.VISIBLE
+                        tapCount = 0
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+
+        // Apply alignment preference
         applyContinueAlignment(continueButton)
 
         return frameLayout
@@ -151,7 +177,6 @@ class CustomHtmlFragment : Fragment() {
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
-
         val layoutParams = button.layoutParams
         if (layoutParams is FrameLayout.LayoutParams) {
             layoutParams.gravity = when (alignment) {
@@ -163,13 +188,20 @@ class CustomHtmlFragment : Fragment() {
         }
     }
 
+    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
     companion object {
         private const val ARG_HTML_FILE = "ARG_HTML_FILE"
         private const val ARG_BUTTON_TEXT = "ARG_BUTTON_TEXT"
 
-        /**
-         * Now includes a [buttonText] argument, defaulting to "Continue" if null.
-         */
         fun newInstance(fileName: String, buttonText: String): CustomHtmlFragment {
             val fragment = CustomHtmlFragment()
             fragment.arguments = Bundle().apply {

@@ -4,10 +4,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -23,10 +20,18 @@ class InstructionFragment : Fragment() {
     private var header: String? = null
     private var body: String? = null
     private var nextButtonText: String? = null
+
     private lateinit var logger: Logger
     private lateinit var videoView: VideoView
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
+
+    // Tracks whether the [TAP] attribute is used in nextButtonText
+    private var tapEnabled = false
+
+    // For counting taps if [TAP] is present
+    private var tapCount = 0
+    private val tapThreshold = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,13 +68,18 @@ class InstructionFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Clean/parse input
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val cleanNextText = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        val (cleanNextText, isTap) = parseTapAttribute(
+            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        )
+        tapEnabled = isTap
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
+        // Handle .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
@@ -95,9 +105,27 @@ class InstructionFragment : Fragment() {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         nextButton.setPadding(chPx, cvPx, chPx, cvPx)
-
-        // Align entire button
         applyContinueAlignment(nextButton)
+
+        // If [TAP] is in the continue text, hide the button until threshold reached
+        if (tapEnabled) {
+            nextButton.visibility = View.INVISIBLE
+            // Listen for touches in the root view
+            view.setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    tapCount++
+                    if (tapCount >= tapThreshold) {
+                        nextButton.visibility = View.VISIBLE
+                        // Reset so repeated 3-taps won't hide it again
+                        tapCount = 0
+                    }
+                    // Eat the event
+                    true
+                } else {
+                    false
+                }
+            }
+        }
 
         nextButton.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
@@ -129,9 +157,6 @@ class InstructionFragment : Fragment() {
         )
     }
 
-    /**
-     * Now checks if the video file truly exists before making the VideoView visible.
-     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -139,8 +164,7 @@ class InstructionFragment : Fragment() {
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+            segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
         } else 1.0f
 
         if (resourcesFolderUri != null) {
@@ -187,8 +211,7 @@ class InstructionFragment : Fragment() {
 
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
@@ -197,28 +220,41 @@ class InstructionFragment : Fragment() {
 
     private fun applyBodyAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()
-        when (alignment) {
+        when (prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
         }
     }
 
+    /**
+     * Updated to cast to the correct LayoutParams type.
+     * If the parent is a LinearLayout, you can safely cast to LinearLayout.LayoutParams and set gravity.
+     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
-
-        val parentLayoutParams = button.layoutParams
-        if (parentLayoutParams is ViewGroup.MarginLayoutParams) {
-            if (parentLayoutParams is LinearLayout.LayoutParams) {
-                when (alignment) {
-                    "LEFT" -> parentLayoutParams.gravity = Gravity.START
-                    "RIGHT" -> parentLayoutParams.gravity = Gravity.END
-                    else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
-                }
-                button.layoutParams = parentLayoutParams
+        val layoutParams = button.layoutParams
+        if (layoutParams is LinearLayout.LayoutParams) {
+            layoutParams.gravity = when (alignment) {
+                "LEFT" -> Gravity.START
+                "RIGHT" -> Gravity.END
+                else -> Gravity.CENTER_HORIZONTAL
             }
+            button.layoutParams = layoutParams
+        }
+    }
+
+    /**
+     * Checks if the text ends with [TAP]. If it does, returns the text minus [TAP] and sets a flag.
+     */
+    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
         }
     }
 
