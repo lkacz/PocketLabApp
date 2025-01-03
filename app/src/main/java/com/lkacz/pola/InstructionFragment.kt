@@ -1,4 +1,3 @@
-// Filename: InstructionFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -57,6 +56,7 @@ class InstructionFragment : Fragment() {
         webView.visibility = View.GONE
         val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
+        videoView.visibility = View.GONE
         val nextButton = view.findViewById<Button>(R.id.nextButton)
 
         setupWebView()
@@ -129,6 +129,9 @@ class InstructionFragment : Fragment() {
         )
     }
 
+    /**
+     * Now checks if the video file truly exists before making the VideoView visible.
+     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -139,17 +142,23 @@ class InstructionFragment : Fragment() {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
-        videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, resourcesFolderUri)
+
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+            val videoFile = parentFolder.findFile(fileName)
+            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                videoView.visibility = View.VISIBLE
+                playVideoFile(videoFile.uri, volume)
+            }
+        }
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
-        if (resourcesFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val videoFile = parentFolder.findFile(fileName) ?: return
-        if (!videoFile.exists() || !videoFile.isFile) return
-        videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp -> mp.start() }
+    private fun playVideoFile(videoUri: Uri, volume: Float) {
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+            mp.setVolume(volume, volume)
+        }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
@@ -200,11 +209,8 @@ class InstructionFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
 
-        // By default, the layout might be a LinearLayout or something else in the XML.
         val parentLayoutParams = button.layoutParams
         if (parentLayoutParams is ViewGroup.MarginLayoutParams) {
-            // If it's a LinearLayout, we can set gravity; if it's RelativeLayout or something else, we can adjust rules differently.
-            // For demonstration, handle a common case (LinearLayout).
             if (parentLayoutParams is LinearLayout.LayoutParams) {
                 when (alignment) {
                     "LEFT" -> parentLayoutParams.gravity = Gravity.START

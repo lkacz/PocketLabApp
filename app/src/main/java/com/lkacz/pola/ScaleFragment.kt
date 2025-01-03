@@ -1,4 +1,3 @@
-// Filename: ScaleFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -46,10 +45,8 @@ class ScaleFragment : Fragment() {
             header = it.getString(ARG_HEADER)
             body = it.getString(ARG_BODY)
             item = it.getString(ARG_ITEM)
-            // Unify both normal & branch responses into a single list of pairs
             val isBranch = it.getBoolean(ARG_IS_BRANCH, false)
             if (isBranch) {
-                // If branching is enabled, read them as "display||optionalLabel"
                 val rawList = it.getStringArrayList(ARG_BRANCH_RESPONSES) ?: arrayListOf()
                 responses = rawList.map { raw ->
                     val split = raw.split("||")
@@ -58,7 +55,6 @@ class ScaleFragment : Fragment() {
                     disp to lbl
                 }
             } else {
-                // Normal scale uses a simple list of strings
                 val normalList = it.getStringArrayList(ARG_NORMAL_RESPONSES) ?: arrayListOf()
                 responses = normalList.map { resp -> resp to null }
             }
@@ -77,6 +73,7 @@ class ScaleFragment : Fragment() {
         webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
         videoView = view.findViewById(R.id.videoView2)
+        videoView.visibility = View.GONE
         val itemTextView: TextView = view.findViewById(R.id.itemTextView)
         val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
 
@@ -153,10 +150,8 @@ class ScaleFragment : Fragment() {
                     )
                     val mainActivity = activity as? MainActivity
                     if (label.isNullOrEmpty()) {
-                        // Normal scale flow
                         mainActivity?.loadNextFragment()
                     } else {
-                        // Branching if a label is provided
                         mainActivity?.loadFragmentByLabel(label)
                     }
                 }
@@ -194,6 +189,38 @@ class ScaleFragment : Fragment() {
         )
     }
 
+    /**
+     * Checks for .mp4 placeholders. If the file is found, sets the video to visible and plays it.
+     */
+    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
+        val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
+        val match = pattern.find(text) ?: return
+        val group = match.groupValues[1]
+        val segments = group.split(",")
+        val fileName = segments[0].trim()
+        val volume = if (segments.size > 1) {
+            val vol = segments[1].trim().toFloatOrNull()
+            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+        } else 1.0f
+
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+            val videoFile = parentFolder.findFile(fileName)
+            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                videoView.visibility = View.VISIBLE
+                playVideoFile(videoFile.uri, volume)
+            }
+        }
+    }
+
+    private fun playVideoFile(videoUri: Uri, volume: Float) {
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+            mp.setVolume(volume, volume)
+        }
+    }
+
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
         if (text.isBlank() || resourcesFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
@@ -216,29 +243,6 @@ class ScaleFragment : Fragment() {
             }
         }
         return text.replace(matchedFull, "")
-    }
-
-    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
-        val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
-        val match = pattern.find(text) ?: return
-        val group = match.groupValues[1]
-        val segments = group.split(",")
-        val fileName = segments[0].trim()
-        val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
-        } else 1.0f
-        videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, resourcesFolderUri)
-    }
-
-    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
-        if (resourcesFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val videoFile = parentFolder.findFile(fileName) ?: return
-        if (!videoFile.exists() || !videoFile.isFile) return
-        videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp -> mp.start() }
     }
 
     private fun applyHeaderAlignment(textView: TextView) {
@@ -269,9 +273,6 @@ class ScaleFragment : Fragment() {
         private const val ARG_NORMAL_RESPONSES = "ARG_NORMAL_RESPONSES"
         private const val ARG_BRANCH_RESPONSES = "ARG_BRANCH_RESPONSES"
 
-        /**
-         * Creates a ScaleFragment for normal (non-branch) usage.
-         */
         @JvmStatic
         fun newInstance(
             header: String?,
@@ -288,10 +289,6 @@ class ScaleFragment : Fragment() {
             }
         }
 
-        /**
-         * Creates a ScaleFragment for branch usage.
-         * Each response is "display text" + optional label in a pair.
-         */
         @JvmStatic
         fun newBranchInstance(
             header: String?,
@@ -304,7 +301,6 @@ class ScaleFragment : Fragment() {
                 putString(ARG_BODY, body)
                 putString(ARG_ITEM, item)
                 putBoolean(ARG_IS_BRANCH, true)
-                // Convert pairs into ["display||label", ...]
                 val rawList = branchResponses.map { "${it.first}||${it.second ?: ""}" }
                 putStringArrayList(ARG_BRANCH_RESPONSES, ArrayList(rawList))
             }

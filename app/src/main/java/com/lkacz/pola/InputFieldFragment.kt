@@ -1,4 +1,3 @@
-// Filename: InputFieldFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -16,6 +15,7 @@ import androidx.fragment.app.Fragment
 
 /**
  * Updated to optionally shuffle input fields if the directive was INPUTFIELD[RANDOMIZED].
+ * Also ensures the VideoView remains gone if the referenced MP4 file does not exist.
  */
 class InputFieldFragment : Fragment() {
 
@@ -57,6 +57,7 @@ class InputFieldFragment : Fragment() {
         webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
+        videoView.visibility = View.GONE
         val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
         val continueButton: Button = view.findViewById(R.id.continueButton)
 
@@ -168,29 +169,37 @@ class InputFieldFragment : Fragment() {
         )
     }
 
+    /**
+     * Checks for an MP4 placeholder; if found, attempts to locate the file.
+     * Only if the file is found, sets visibility to VISIBLE and plays it.
+     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
         val segments = group.split(",")
         val fileName = segments[0].trim()
-        // If there is a volume specified, parse it; otherwise default to 1.0
         val volume = if (segments.size > 1) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
-        videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, resourcesFolderUri)
+
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+            val videoFile = parentFolder.findFile(fileName)
+            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                videoView.visibility = View.VISIBLE
+                playVideoFile(videoFile.uri, volume)
+            }
+        }
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
-        if (resourcesFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val videoFile = parentFolder.findFile(fileName) ?: return
-        if (!videoFile.exists() || !videoFile.isFile) return
-
-        videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp -> mp.start() }
+    private fun playVideoFile(videoUri: Uri, volume: Float) {
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+            mp.setVolume(volume, volume)
+        }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {

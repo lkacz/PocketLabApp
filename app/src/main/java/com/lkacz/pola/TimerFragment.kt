@@ -1,4 +1,3 @@
-// Filename: TimerFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -66,6 +65,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         webView.visibility = View.GONE
         val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
         videoView = view.findViewById(R.id.videoView2)
+        videoView.visibility = View.GONE
         val nextButton: Button = view.findViewById(R.id.nextButton)
         val timerTextView: TextView = view.findViewById(R.id.timerTextView)
 
@@ -84,13 +84,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Header
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
@@ -178,6 +176,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         )
     }
 
+    /**
+     * Checks for an MP4 placeholder. If the file is valid, sets the video visible and plays it.
+     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -188,17 +189,23 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             val vol = segments[1].trim().toFloatOrNull()
             if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
         } else 1.0f
-        videoView.visibility = View.VISIBLE
-        playVideoFile(fileName, volume, resourcesFolderUri)
+
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+            val videoFile = parentFolder.findFile(fileName)
+            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                videoView.visibility = View.VISIBLE
+                playVideoFile(videoFile.uri, volume)
+            }
+        }
     }
 
-    private fun playVideoFile(fileName: String, volume: Float, resourcesFolderUri: Uri?) {
-        if (resourcesFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val videoFile = parentFolder.findFile(fileName) ?: return
-        if (!videoFile.exists() || !videoFile.isFile) return
-        videoView.setVideoURI(videoFile.uri)
-        videoView.setOnPreparedListener { mp -> mp.start() }
+    private fun playVideoFile(videoUri: Uri, volume: Float) {
+        videoView.setVideoURI(videoUri)
+        videoView.setOnPreparedListener { mp ->
+            mp.start()
+            mp.setVolume(volume, volume)
+        }
     }
 
     private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
@@ -249,16 +256,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
 
         val parentLayoutParams = button.layoutParams
-        if (parentLayoutParams is ViewGroup.MarginLayoutParams) {
-            // If it's a LinearLayout in the layout, we can do this:
-            if (parentLayoutParams is LinearLayout.LayoutParams) {
-                when (alignment) {
-                    "LEFT" -> parentLayoutParams.gravity = Gravity.START
-                    "RIGHT" -> parentLayoutParams.gravity = Gravity.END
-                    else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
-                }
-                button.layoutParams = parentLayoutParams
+        if (parentLayoutParams is LinearLayout.LayoutParams) {
+            when (alignment) {
+                "LEFT" -> parentLayoutParams.gravity = Gravity.START
+                "RIGHT" -> parentLayoutParams.gravity = Gravity.END
+                else -> parentLayoutParams.gravity = Gravity.CENTER_HORIZONTAL
             }
+            button.layoutParams = parentLayoutParams
         }
     }
 
