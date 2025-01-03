@@ -7,8 +7,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
+import android.text.*
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
@@ -78,6 +77,8 @@ class ProtocolValidationDialog : DialogFragment() {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
     }
 
+    private var searchQuery: String? = null
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -105,6 +106,48 @@ class ProtocolValidationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
+
+        // Search section container
+        val searchContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 16, 16, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val searchEditText = EditText(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+            hint = "Enter keyword to search"
+        }
+
+        val searchButton = Button(requireContext()).apply {
+            text = "Search"
+            setOnClickListener {
+                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+                revalidateAndRefreshUI()
+            }
+        }
+
+        // Newly added clear button
+        val clearButton = Button(requireContext()).apply {
+            text = "Clear"
+            setOnClickListener {
+                searchQuery = null
+                searchEditText.setText("")
+                revalidateAndRefreshUI()
+            }
+        }
+
+        searchContainer.addView(searchEditText)
+        searchContainer.addView(searchButton)
+        searchContainer.addView(clearButton)
+        rootLayout.addView(searchContainer)
 
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
@@ -138,7 +181,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
             withContext(Dispatchers.Main) {
-                rootLayout.removeAllViews()
+                rootLayout.removeView(progressBar)
                 val finalView = buildCompletedView()
                 rootLayout.addView(finalView)
             }
@@ -167,7 +210,10 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        containerLayout.removeAllViews()
+        // Keep the first child (searchContainer), remove the rest
+        while (containerLayout.childCount > 1) {
+            containerLayout.removeViewAt(1)
+        }
         containerLayout.addView(buildCompletedView())
     }
 
@@ -241,11 +287,21 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val labelOccurrences = findLabelOccurrences(allLines)
+        val linesToDisplay = if (searchQuery.isNullOrBlank()) {
+            allLines
+        } else {
+            allLines.filter { it.contains(searchQuery!!, ignoreCase = true) }
+        }
 
-        allLines.forEachIndexed { index, rawLine ->
-            val realLineNumber = index + 1
+        linesToDisplay.forEachIndexed { visibleIndex, rawLine ->
+            val overallIndex = allLines.indexOf(rawLine)
+            val realLineNumber = overallIndex + 1
             val trimmedLine = rawLine.trim()
-            val (errorMessage, warningMessage) = validateLine(realLineNumber, trimmedLine, labelOccurrences)
+            val (errorMessage, warningMessage) = validateLine(
+                realLineNumber,
+                trimmedLine,
+                labelOccurrences
+            )
 
             if (trimmedLine.isEmpty() || trimmedLine.startsWith("//")) {
                 lastCommand = null
@@ -256,7 +312,7 @@ class ProtocolValidationDialog : DialogFragment() {
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
             val row = TableRow(context).apply {
-                val backgroundColor = if (index % 2 == 0) {
+                val backgroundColor = if (visibleIndex % 2 == 0) {
                     Color.parseColor("#FFFFFF")
                 } else {
                     Color.parseColor("#EEEEEE")
@@ -269,7 +325,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val commandCell = createBodyCell(highlightedLine, 0.6f)
             commandCell.setOnClickListener {
-                showEditLineDialog(index)
+                showEditLineDialog(overallIndex)
             }
             row.addView(commandCell)
 
@@ -380,7 +436,15 @@ class ProtocolValidationDialog : DialogFragment() {
         if (!commandRecognized) {
             errorMessage = appendError(errorMessage, "Unrecognized command")
         } else {
-            val result = handleKnownCommandValidations(commandRaw, parts, lineNumber, line, labelOccurrences, errorMessage, warningMessage)
+            val result = handleKnownCommandValidations(
+                commandRaw,
+                parts,
+                lineNumber,
+                line,
+                labelOccurrences,
+                errorMessage,
+                warningMessage
+            )
             errorMessage = result.first
             warningMessage = result.second
         }
@@ -389,7 +453,8 @@ class ProtocolValidationDialog : DialogFragment() {
         if (bracketedFiles.isNotEmpty()) {
             for (fileRef in bracketedFiles) {
                 if (resourcesFolderUri != null && resourceExistenceMap[fileRef] == false) {
-                    errorMessage = appendError(errorMessage, "File '$fileRef' not found in resources folder.")
+                    errorMessage =
+                        appendError(errorMessage, "File '$fileRef' not found in resources folder.")
                 }
                 val fileError = checkFileUsageRules(commandRaw, fileRef)
                 if (fileError.isNotEmpty()) {
@@ -434,7 +499,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     val fileRef = parts[1].trim()
                     if (resourcesFolderUri != null) {
-                        val found = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                        val found =
+                            ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                         if (!found) {
                             errorMessage = appendError(
                                 errorMessage,
@@ -492,7 +558,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 } else {
                     val colorStr = parts[1].trim()
                     if (!isValidColor(colorStr)) {
-                        errorMessage = appendError(errorMessage, "$commandRaw has invalid color format")
+                        errorMessage =
+                            appendError(errorMessage, "$commandRaw has invalid color format")
                     }
                 }
             }
@@ -527,15 +594,20 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             "END" -> {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
-                    warningMessage = appendWarning(warningMessage, "END command should not have parameters")
+                    warningMessage =
+                        appendWarning(warningMessage, "END command should not have parameters")
                 }
             }
             "TRANSITIONS" -> {
                 val mode = parts.getOrNull(1)?.lowercase()?.trim()
                 if (mode.isNullOrEmpty()) {
-                    errorMessage = appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
+                    errorMessage =
+                        appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
                 } else if (mode != "off" && mode != "slide") {
-                    errorMessage = appendError(errorMessage, "TRANSITIONS mode must be either 'off' or 'slide'")
+                    errorMessage = appendError(
+                        errorMessage,
+                        "TRANSITIONS mode must be either 'off' or 'slide'"
+                    )
                 }
             }
         }
