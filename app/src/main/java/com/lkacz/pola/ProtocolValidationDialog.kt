@@ -13,11 +13,13 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.widget.*
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.*
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
@@ -80,6 +82,10 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var searchQuery: String? = null
     private var filterOption: FilterOption = FilterOption.COMMANDS_ONLY
+
+    private var hasUnsavedChanges = false
+    private lateinit var btnSave: Button
+    private lateinit var btnSaveAs: Button
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -192,6 +198,41 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
+        // Buttons row: OK, SAVE, SAVE AS
+        val buttonRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 0, 16, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            gravity = Gravity.END
+        }
+
+        val btnOk = Button(requireContext()).apply {
+            text = "OK"
+            setOnClickListener {
+                dismiss()
+            }
+        }
+        btnSave = Button(requireContext()).apply {
+            text = "SAVE"
+            isEnabled = false
+            setOnClickListener {
+                saveProtocol()
+            }
+        }
+        btnSaveAs = Button(requireContext()).apply {
+            text = "SAVE AS"
+            setOnClickListener {
+                showSaveAsDialog()
+            }
+        }
+        buttonRow.addView(btnOk)
+        buttonRow.addView(btnSave)
+        buttonRow.addView(btnSaveAs)
+        rootLayout.addView(buttonRow)
+
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
             layoutParams = LinearLayout.LayoutParams(
@@ -253,8 +294,8 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        while (containerLayout.childCount > 2) {
-            containerLayout.removeViewAt(2)
+        while (containerLayout.childCount > 3) {
+            containerLayout.removeViewAt(3)
         }
         containerLayout.addView(buildCompletedView())
     }
@@ -397,7 +438,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     recognizedCommands.contains(cmd)
                 }
             }
-
             FilterOption.ERRORS_WARNINGS_ONLY -> (hasErrors || hasWarnings)
             FilterOption.ERRORS_ONLY -> hasErrors
         }
@@ -420,7 +460,11 @@ class ProtocolValidationDialog : DialogFragment() {
             .setView(editText)
             .setPositiveButton("Save") { _, _ ->
                 val newLine = editText.text.toString()
-                allLines[lineIndex] = newLine
+                if (newLine != originalLine) {
+                    allLines[lineIndex] = newLine
+                    hasUnsavedChanges = true
+                    btnSave.isEnabled = true
+                }
                 revalidateAndRefreshUI()
             }
             .setNegativeButton("Cancel", null)
@@ -505,7 +549,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 randomizationLevel++
             }
-
             "RANDOMIZE_OFF" -> {
                 if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
                     errorMessage = appendError(
@@ -583,7 +626,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
-
             "TIMER_SOUND" -> {
                 timerSoundValidation(parts).forEach {
                     errorMessage = appendError(errorMessage, it)
@@ -602,19 +644,16 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
-
             "CUSTOM_HTML" -> {
                 customHtmlValidation(parts).forEach {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
-
             "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                 val (err, warn) = sizeValidation(commandRaw, parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
-
             "SCALE", "SCALE[RANDOMIZED]" -> {
                 if (parts.size < 2) {
                     errorMessage = appendError(
@@ -623,7 +662,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
-
             "INSTRUCTION", "TAP_INSTRUCTION" -> {
                 val semicolonCount = line.count { it == ';' }
                 if (semicolonCount != 3) {
@@ -633,7 +671,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
-
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                 if (parts.size < 4) {
                     errorMessage = appendError(
@@ -642,13 +679,11 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
-
             "TIMER" -> {
                 val (err, warn) = timerValidation(parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
-
             "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
             "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
             "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
@@ -662,7 +697,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
-
             "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage =
@@ -678,32 +712,27 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
-
             "STUDY_ID" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "STUDY_ID missing required value")
                 }
             }
-
             "GOTO" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "GOTO missing label name")
                 }
             }
-
             "LOG" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "LOG requires a message or parameter")
                 }
             }
-
             "END" -> {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     warningMessage =
                         appendWarning(warningMessage, "END command should not have parameters")
                 }
             }
-
             "TRANSITIONS" -> {
                 val mode = parts.getOrNull(1)?.lowercase()?.trim()
                 if (mode.isNullOrEmpty()) {
@@ -977,5 +1006,91 @@ class ProtocolValidationDialog : DialogFragment() {
         COMMANDS_ONLY("Only Commands"),
         ERRORS_WARNINGS_ONLY("Errors & Warnings"),
         ERRORS_ONLY("Only Errors")
+    }
+
+    private fun saveProtocol() {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+        val customUriString = prefs.getString("PROTOCOL_URI", null)
+        if (customUriString.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val uri = Uri.parse(customUriString)
+        try {
+            requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                FileOutputStream(pfd.fileDescriptor).use { fos ->
+                    fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
+                }
+            }
+            hasUnsavedChanges = false
+            btnSave.isEnabled = false
+            revalidateAndRefreshUI()
+            Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showSaveAsDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = "Enter new filename"
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Save Protocol As")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                val newName = input.text?.toString()?.trim() ?: ""
+                if (newName.isBlank()) {
+                    Toast.makeText(requireContext(), "Filename cannot be empty.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                saveAsNewFile(newName)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun saveAsNewFile(newName: String) {
+        // Must be a .txt or something – optionally ensure valid extension if desired
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+        val customUriString = prefs.getString("PROTOCOL_URI", null)
+        if (customUriString.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Original file not set. Cannot copy content.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val folderUri = Uri.parse(customUriString).let { it.buildUpon().clearQuery().build() }
+        val docFile = folderUri.let { DocumentFile.fromSingleUri(requireContext(), it) }
+        val parent = docFile?.parentFile
+        if (parent == null || !parent.isDirectory) {
+            Toast.makeText(requireContext(), "Unable to access parent folder.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (parent.findFile(newName) != null) {
+            Toast.makeText(requireContext(), "File $newName already exists.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val newFile = parent.createFile("text/plain", newName)
+            ?: run {
+                Toast.makeText(requireContext(), "Unable to create $newName.", Toast.LENGTH_SHORT).show()
+                return
+            }
+        try {
+            requireContext().contentResolver.openFileDescriptor(newFile.uri, "rw")?.use { pfd ->
+                FileOutputStream(pfd.fileDescriptor).use { fos ->
+                    fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
+                }
+            }
+            val newUriString = newFile.uri.toString()
+            prefs.edit().putString("PROTOCOL_URI", newUriString).apply()
+            hasUnsavedChanges = false
+            btnSave.isEnabled = false
+            revalidateAndRefreshUI()
+            Toast.makeText(requireContext(), "Saved as $newName", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 }
