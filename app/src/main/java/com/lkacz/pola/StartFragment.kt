@@ -62,7 +62,7 @@ class StartFragment : Fragment() {
             isFillViewport = true
         }
 
-        val rootLinearLayout = LinearLayout(requireContext()).apply {
+        val rootLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -70,8 +70,9 @@ class StartFragment : Fragment() {
             )
             setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
         }
-        scrollView.addView(rootLinearLayout)
+        scrollView.addView(rootLayout)
 
+        // Title section
         val titleSection = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -80,7 +81,7 @@ class StartFragment : Fragment() {
             )
             gravity = Gravity.CENTER_HORIZONTAL
         }
-        rootLinearLayout.addView(titleSection)
+        rootLayout.addView(titleSection)
 
         val tvAppName = TextView(requireContext()).apply {
             text = "Pocket Labb App"
@@ -91,16 +92,18 @@ class StartFragment : Fragment() {
         titleSection.addView(tvAppName)
 
         val tvAppVersion = TextView(requireContext()).apply {
-            text = "Version 0.5.0"
+            text = "(v0.5.0)"
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(0, dpToPx(4), 0, dpToPx(8))
         }
         titleSection.addView(tvAppVersion)
 
-        rootLinearLayout.addView(createDivider())
+        // Divider
+        rootLayout.addView(createDivider())
 
-        val protocolDisplaySection = LinearLayout(requireContext()).apply {
+        // Current Protocol display
+        val currentProtocolLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -108,14 +111,14 @@ class StartFragment : Fragment() {
             )
             gravity = Gravity.CENTER_HORIZONTAL
         }
-        rootLinearLayout.addView(protocolDisplaySection)
+        rootLayout.addView(currentProtocolLayout)
 
-        val tvSelectedLabel = TextView(requireContext()).apply {
+        val tvCurrentProtocolLabel = TextView(requireContext()).apply {
             text = "Current Protocol:"
             textSize = 16f
             gravity = Gravity.CENTER
         }
-        protocolDisplaySection.addView(tvSelectedLabel)
+        currentProtocolLayout.addView(tvCurrentProtocolLabel)
 
         tvSelectedProtocolName = TextView(requireContext()).apply {
             textSize = 16f
@@ -127,19 +130,9 @@ class StartFragment : Fragment() {
             fileUriUtils.getFileName(requireContext(), it)
         } ?: "None"
         updateProtocolNameDisplay(currentFileName)
-        protocolDisplaySection.addView(tvSelectedProtocolName)
+        currentProtocolLayout.addView(tvSelectedProtocolName)
 
-        rootLinearLayout.addView(createDivider())
-
-        val mainActionsLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        rootLinearLayout.addView(mainActionsLayout)
-
+        // "START" button (more distinguished)
         val btnStart = createMenuButton("START") {
             showStartStudyConfirmation()
         }.apply {
@@ -147,9 +140,19 @@ class StartFragment : Fragment() {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setPadding(0, dpToPx(8), 0, dpToPx(24))
         }
-        mainActionsLayout.addView(btnStart)
+        rootLayout.addView(btnStart)
 
-        mainActionsLayout.addView(
+        // ----- FILES -----
+        val tvFilesHeading = TextView(requireContext()).apply {
+            text = "FILES"
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setPadding(0, dpToPx(16), 0, dpToPx(8))
+        }
+        rootLayout.addView(tvFilesHeading)
+
+        rootLayout.addView(
             createMenuButton("Load protocol file") {
                 showChangeProtocolConfirmation {
                     filePicker.launch(arrayOf("text/plain"))
@@ -157,19 +160,7 @@ class StartFragment : Fragment() {
             }
         )
 
-        mainActionsLayout.addView(
-            createMenuButton("Review Protocol") {
-                ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
-            }
-        )
-
-        mainActionsLayout.addView(
-            createMenuButton("Load Tutorial Protocol") {
-                handleProtocolChange("tutorial", "Tutorial Protocol")
-            }
-        )
-
-        mainActionsLayout.addView(
+        rootLayout.addView(
             createMenuButton("Select Resources Folder") {
                 showChangeResourcesFolderConfirmation {
                     resourcesFolderManager.pickResourcesFolder(folderPicker)
@@ -177,43 +168,53 @@ class StartFragment : Fragment() {
             }
         )
 
-        rootLinearLayout.addView(createDivider())
+        rootLayout.addView(
+            createMenuButton("Review Protocol") {
+                ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
+            }
+        )
 
-        val customizationLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        rootLinearLayout.addView(customizationLayout)
+        rootLayout.addView(
+            createMenuButton("Use Tutorial Protocol") {
+                handleProtocolChange("tutorial", "Tutorial Protocol")
+            }
+        )
 
-        val tvCustomizationLabel = TextView(requireContext()).apply {
-            text = "Customization"
+        // ----- CUSTOMIZATION -----
+        val tvCustomizationHeading = TextView(requireContext()).apply {
+            text = "CUSTOMIZATION"
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, dpToPx(8))
+            gravity = Gravity.CENTER
+            setPadding(0, dpToPx(16), 0, dpToPx(8))
         }
-        customizationLayout.addView(tvCustomizationLabel)
+        rootLayout.addView(tvCustomizationHeading)
 
-        customizationLayout.addView(
+        rootLayout.addView(
             createMenuButton("Layout") {
                 AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
             }
         )
 
-        customizationLayout.addView(
+        rootLayout.addView(
             createMenuButton("Sounds") {
                 AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
             }
         )
 
-        rootLinearLayout.addView(createDivider())
+        val spacerView = View(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dpToPx(32) // Spacer height of 16dp
+            )
+        }
+        rootLayout.addView(spacerView)
 
+        // About
         val btnAbout = createMenuButton("About") {
             showAboutContentDialog()
         }
-        rootLinearLayout.addView(btnAbout)
+        rootLayout.addView(btnAbout)
 
         return scrollView
     }
