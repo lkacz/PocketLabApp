@@ -8,10 +8,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
-import android.transition.Slide
-import android.transition.TransitionSet
-import android.transition.Visibility
-import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -82,32 +78,42 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
         when (mode) {
             "off" -> {
-                // No animation.
                 supportFragmentManager.beginTransaction().apply {
                     setReorderingAllowed(true)
                     replace(fragmentContainerId, newFragment)
                     commit()
                 }
             }
+
             "slide" -> {
-                // Use SlideTransitionHelper for the 'slide' mode
                 currentFragment?.view?.startAnimation(SlideTransitionHelper.outLeftAnimation(350L))
-                // Replace the fragment as usual
                 supportFragmentManager.beginTransaction().apply {
                     setReorderingAllowed(true)
                     replace(fragmentContainerId, newFragment)
                     commit()
                 }
-                // Delay applying the in-animation just enough to ensure the view is created
                 newFragment.lifecycleScope.launch {
-                    delay(10) // small delay so newFragment.view is ready
+                    delay(10)
                     newFragment.view?.startAnimation(SlideTransitionHelper.inRightAnimation(350L))
                 }
             }
+
+            "slideLeft" -> {
+                currentFragment?.view?.startAnimation(SlideTransitionHelper.outRightAnimation(350L))
+                supportFragmentManager.beginTransaction().apply {
+                    setReorderingAllowed(true)
+                    replace(fragmentContainerId, newFragment)
+                    commit()
+                }
+                newFragment.lifecycleScope.launch {
+                    delay(10)
+                    newFragment.view?.startAnimation(SlideTransitionHelper.inLeftAnimation(350L))
+                }
+            }
+
             "dissolve" -> {
                 val dissolveOut = Fade().apply { duration = 350 }
                 val dissolveIn = Fade().apply { duration = 350 }
-
                 currentFragment?.exitTransition = dissolveOut
                 newFragment.enterTransition = dissolveIn
 
@@ -117,8 +123,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     commit()
                 }
             }
+
             "fade" -> {
-                val fadeOut = Fade().apply { duration = 350 }
+                val fadeOut = Fade().apply {
+                    duration = 350
+                }
                 val fadeIn = Fade().apply {
                     duration = 350
                     startDelay = 350
@@ -132,8 +141,8 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     commit()
                 }
             }
+
             else -> {
-                // Fall back to no animation if the mode is unrecognized
                 supportFragmentManager.beginTransaction().apply {
                     setReorderingAllowed(true)
                     replace(fragmentContainerId, newFragment)
@@ -161,6 +170,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     commit()
                 }
             }
+
             "slide" -> {
                 currentFragment?.view?.startAnimation(SlideTransitionHelper.outLeftAnimation(350L))
                 supportFragmentManager.beginTransaction().apply {
@@ -173,6 +183,20 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     newFragment.view?.startAnimation(SlideTransitionHelper.inRightAnimation(350L))
                 }
             }
+
+            "slideLeft" -> {
+                currentFragment?.view?.startAnimation(SlideTransitionHelper.outRightAnimation(350L))
+                supportFragmentManager.beginTransaction().apply {
+                    setReorderingAllowed(true)
+                    replace(fragmentContainerId, newFragment)
+                    commit()
+                }
+                newFragment.lifecycleScope.launch {
+                    delay(10)
+                    newFragment.view?.startAnimation(SlideTransitionHelper.inLeftAnimation(350L))
+                }
+            }
+
             "dissolve" -> {
                 val dissolveOut = Fade().apply { duration = 350 }
                 val dissolveIn = Fade().apply { duration = 350 }
@@ -185,8 +209,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     commit()
                 }
             }
+
             "fade" -> {
-                val fadeOut = Fade().apply { duration = 350 }
+                val fadeOut = Fade().apply {
+                    duration = 350
+                }
                 val fadeIn = Fade().apply {
                     duration = 350
                     startDelay = 350
@@ -200,6 +227,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     commit()
                 }
             }
+
             else -> {
                 supportFragmentManager.beginTransaction().apply {
                     setReorderingAllowed(true)

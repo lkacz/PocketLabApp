@@ -1,4 +1,3 @@
-// Filename: SlideTransitionHelper.kt
 package com.lkacz.pola
 
 import android.view.animation.AlphaAnimation
