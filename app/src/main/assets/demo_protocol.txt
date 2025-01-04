@@ -10,7 +10,6 @@
 
 TIMER_SOUND;sound9.wav
 
-
 // VERIFIED:
 // RESPONSES_SPACING;1
 // HEADER_ALIGNMENT;RIGHT
@@ -31,14 +30,17 @@ TIMER_SOUND;sound9.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
-CUSTOM_HTML;pola_snake;Continue
+
+CUSTOM_HTML;custom.html;CONTINUE
+INSTRUCTION;;<wiki.html>;CONTINUE[TAP]
 
 
-INSTRUCTION;;<wiki.html>;CONTINUE
+
+
 
 INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 
-INPUTFIELD[RANDOMIZED];Randomized inputfield testing;<fupa.mp3>Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
+INPUTFIELD[RANDOMIZED];Randomized inputfield testing;<fupa.mp3>Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;Participant ID;Interests;City of Origin;Nationality
 
 SCALE[RANDOMIZED];Randomized scale test;This scale<codas.html> has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
 
@@ -56,7 +58,7 @@ SCALE[RANDOMIZED];Randomized scale test;This scale has randomized items. Check h
 SCALE;Branching test;This scale has only one item. But allows to skip based on your response. Check how this works.;Wybierz co ci pasuje;Response 1[Version1];Response 2[Version2];Response 3[Version3]
 
 LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ
+INSTRUCTION;Werjsa 1;Tere fere.;DALEJ[TAP]
 GOTO;AFTER_VERSIONS
 
 LABEL;Version2
