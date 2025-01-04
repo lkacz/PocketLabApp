@@ -212,10 +212,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
-                val minutesLeft = millisUntilFinished / 60000
-                val secondsLeft = (millisUntilFinished % 60000) / 1000
-                timerTextView.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
+                val remainingSeconds = millisUntilFinished / 1000
+                if (remainingSeconds >= 3600) {
+                    val hoursLeft = remainingSeconds / 3600
+                    val minutesLeft = (remainingSeconds % 3600) / 60
+                    val secondsLeft = remainingSeconds % 60
+                    timerTextView.text = String.format("%02d:%02d:%02d", hoursLeft, minutesLeft, secondsLeft)
+                } else {
+                    val minutesLeft = remainingSeconds / 60
+                    val secondsLeft = remainingSeconds % 60
+                    timerTextView.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
+                }
             }
+
             override fun onFinish() {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
