@@ -41,77 +41,94 @@ class FragmentLoader(
                     jumpToLabel(parts.getOrNull(1).orEmpty())
                     continue
                 }
-
                 "TRANSITIONS" -> {
                     val mode = parts.getOrNull(1)?.lowercase() ?: "off"
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
                         .edit().putString("TRANSITION_MODE", mode).apply()
                     continue
                 }
-
                 "TIMER_SOUND" -> {
                     val filename = parts.getOrNull(1)?.trim().orEmpty()
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
                         .edit().putString("CUSTOM_TIMER_SOUND", filename).apply()
                     continue
                 }
-
                 "HEADER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
                         .edit().putString("HEADER_ALIGNMENT", alignValue).apply()
                     continue
                 }
-
                 "HEADER_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setHeaderTextColor(getContext(), colorInt)
                     continue
                 }
-
                 "BODY_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setBodyTextColor(getContext(), colorInt)
                     continue
                 }
-
                 "BODY_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
                         .edit().putString("BODY_ALIGNMENT", alignValue).apply()
                     continue
                 }
-
                 "CONTINUE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setContinueTextColor(getContext(), colorInt)
                     continue
                 }
-
                 "CONTINUE_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setContinueBackgroundColor(getContext(), colorInt)
                     continue
                 }
-
                 "CONTINUE_ALIGNMENT" -> {
-                    val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
+                    val arg1 = parts.getOrNull(1)?.uppercase()
+                    val arg2 = parts.getOrNull(2)?.uppercase()
+
+                    // Defaults
+                    var horizontal = "RIGHT"
+                    var vertical = "BOTTOM"
+
+                    val possibleHoriz = setOf("LEFT", "CENTER", "RIGHT")
+                    val possibleVert = setOf("TOP", "BOTTOM")
+
+                    // First argument
+                    if (!arg1.isNullOrEmpty()) {
+                        if (arg1 in possibleHoriz) {
+                            horizontal = arg1
+                        } else if (arg1 in possibleVert) {
+                            vertical = arg1
+                        }
+                    }
+                    // Second argument
+                    if (!arg2.isNullOrEmpty()) {
+                        if (arg2 in possibleHoriz) {
+                            horizontal = arg2
+                        } else if (arg2 in possibleVert) {
+                            vertical = arg2
+                        }
+                    }
+
                     getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-                        .edit().putString("CONTINUE_ALIGNMENT", alignValue).apply()
+                        .edit()
+                        .putString("CONTINUE_ALIGNMENT_HORIZONTAL", horizontal)
+                        .putString("CONTINUE_ALIGNMENT_VERTICAL", vertical)
+                        .apply()
                     continue
                 }
-
                 "RESPONSE_SPACING" -> {
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
                     SpacingManager.setResponseSpacing(getContext(), spacingVal)
                     continue
                 }
-
-                // Handle the timer-related new commands
                 "TIMER_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull() ?: 18f
                     FontSizeManager.setTimerSize(getContext(), sizeValue)
@@ -129,7 +146,6 @@ class FragmentLoader(
                         .edit().putString("TIMER_ALIGNMENT", alignValue).apply()
                     continue
                 }
-
                 "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
@@ -143,56 +159,45 @@ class FragmentLoader(
                     }
                     continue
                 }
-
                 "RESPONSE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setResponseTextColor(getContext(), colorInt)
                     continue
                 }
-
                 "RESPONSE_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setButtonBackgroundColor(getContext(), colorInt)
                     continue
                 }
-
                 "SCREEN_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
                     ColorManager.setScreenBackgroundColor(getContext(), colorInt)
                     continue
                 }
-
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     return createScaleFragment(parts)
                 }
-
                 "INSTRUCTION" -> {
                     return createInstructionFragment(parts)
                 }
-
                 "TIMER" -> {
                     return createTimerFragment(parts)
                 }
-
                 "INPUTFIELD" -> {
                     return createInputFieldFragment(parts, isRandom = false)
                 }
-
                 "INPUTFIELD[RANDOMIZED]" -> {
                     return createInputFieldFragment(parts, isRandom = true)
                 }
-
                 "CUSTOM_HTML" -> {
                     return createCustomHtmlFragment(parts)
                 }
-
                 "END" -> {
                     return EndFragment()
                 }
-
                 else -> {
                     continue
                 }
@@ -219,8 +224,8 @@ class FragmentLoader(
         val body = parts.getOrNull(2)
         val itemCandidate = parts.getOrNull(3)?.trim()
         val rawResponses = parts.drop(4)
-
         val hasLabels = rawResponses.any { it.contains('[') && it.contains(']') }
+
         return if (hasLabels) {
             val branchPairs = makeBranchPairs(rawResponses)
             ScaleFragment.newBranchInstance(header, body, itemCandidate.orEmpty(), branchPairs)
@@ -244,22 +249,12 @@ class FragmentLoader(
         return TimerFragment.newInstance(header, body, buttonText, timeSeconds)
     }
 
-    private fun createInputFieldFragment(
-        parts: List<String>,
-        isRandom: Boolean
-    ): Fragment {
+    private fun createInputFieldFragment(parts: List<String>, isRandom: Boolean): Fragment {
         val heading = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonName = parts.getOrNull(3)
         val fields = parts.drop(4)
-
-        return InputFieldFragment.newInstance(
-            heading,
-            body,
-            buttonName,
-            fields,
-            isRandom
-        )
+        return InputFieldFragment.newInstance(heading, body, buttonName, fields, isRandom)
     }
 
     private fun createCustomHtmlFragment(parts: List<String>): Fragment {

@@ -153,7 +153,6 @@ class InstructionFragment : Fragment() {
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
-
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
@@ -273,16 +272,20 @@ class InstructionFragment : Fragment() {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
-        val layoutParams = button.layoutParams
-        if (layoutParams is LinearLayout.LayoutParams) {
-            layoutParams.gravity = when (alignment) {
-                "LEFT" -> Gravity.START
-                "RIGHT" -> Gravity.END
-                else -> Gravity.CENTER_HORIZONTAL
-            }
-            button.layoutParams = layoutParams
+        val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
+        val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
+        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+        val hGravity = when (horiz) {
+            "LEFT" -> Gravity.START
+            "CENTER" -> Gravity.CENTER_HORIZONTAL
+            else -> Gravity.END
         }
+        val vGravity = when (vert) {
+            "TOP" -> Gravity.TOP
+            else -> Gravity.BOTTOM
+        }
+        lp.gravity = hGravity or vGravity
+        button.layoutParams = lp
     }
 
     private fun applyContinueButtonPadding(button: Button) {
