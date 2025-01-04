@@ -55,7 +55,6 @@ class ProtocolValidationDialog : DialogFragment() {
         "SCALE[RANDOMIZED]",
         "SCREEN_BACKGROUND_COLOR",
         "STUDY_ID",
-        "TAP_INSTRUCTION",
         "TIMER",
         "TIMER_SOUND",
         "TRANSITIONS"
@@ -67,7 +66,6 @@ class ProtocolValidationDialog : DialogFragment() {
         "INSTRUCTION",
         "SCALE",
         "SCALE[RANDOMIZED]",
-        "TAP_INSTRUCTION",
         "TIMER"
     )
 
@@ -686,7 +684,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 }
             }
-            "INSTRUCTION", "TAP_INSTRUCTION" -> {
+            "INSTRUCTION" -> {
                 val semicolonCount = line.count { it == ';' }
                 if (semicolonCount != 3) {
                     errorMessage = appendError(
