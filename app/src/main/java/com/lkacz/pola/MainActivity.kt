@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
@@ -17,24 +19,44 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private lateinit var logger: Logger
     private lateinit var protocolManager: ProtocolManager
 
+    // An ID we can use to refer to our FrameLayout container in transactions if needed.
+    private val fragmentContainerId = ViewGroup.generateViewId()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+
+        // Keep the screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        // Hide the action bar
         supportActionBar?.hide()
 
+        // Reset and initialize logger
         Logger.resetInstance()
         logger = Logger.getInstance(this)
 
+        // Programmatically create a container for fragments
+        val fragmentContainer = FrameLayout(this).apply {
+            id = fragmentContainerId
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        // Set this container as our main content view
+        setContentView(fragmentContainer)
+
+        // If first launch, load the StartFragment
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.fragmentContainer, StartFragment())
+                .replace(fragmentContainerId, StartFragment())
                 .commit()
         }
 
         createNotificationChannel()
 
+        // Start the foreground service
         val serviceIntent = Intent(this, MyForegroundService::class.java)
         startForegroundService(serviceIntent)
     }
@@ -64,7 +86,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 R.anim.slide_out_right
             )
         }
-        transaction.replace(R.id.fragmentContainer, fragment).commit()
+        transaction.replace(fragmentContainerId, fragment).commit()
     }
 
     fun loadFragmentByLabel(label: String) {
@@ -79,7 +101,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 R.anim.slide_out_right
             )
         }
-        transaction.replace(R.id.fragmentContainer, fragment).commit()
+        transaction.replace(fragmentContainerId, fragment).commit()
     }
 
     private fun createNotificationChannel() {
