@@ -26,8 +26,14 @@ class InputFieldFragment : Fragment() {
     private val fieldValues = mutableMapOf<String, String>()
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
-    private lateinit var videoView: VideoView
+    private lateinit var scrollView: ScrollView
+    private lateinit var mainLayout: LinearLayout
+    private lateinit var headingTextView: TextView
     private lateinit var webView: WebView
+    private lateinit var bodyTextView: TextView
+    private lateinit var videoView: VideoView
+    private lateinit var containerLayout: LinearLayout
+    private lateinit var continueButton: Button
 
     // [TAP] logic
     private var tapEnabled = false
@@ -50,19 +56,106 @@ class InputFieldFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_input_field, container, false)
+    ): View {
+        // Root container: a ScrollView to allow vertical scrolling
+        scrollView = ScrollView(requireContext()).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            isFillViewport = true
+        }
+
+        // Main vertical LinearLayout
+        mainLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+        scrollView.addView(mainLayout)
+
+        // 1) Heading
+        headingTextView = TextView(requireContext()).apply {
+            text = "Default Heading"
+            textSize = 20f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        mainLayout.addView(headingTextView)
+
+        // 2) WebView (hidden by default)
+        webView = WebView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        mainLayout.addView(webView)
+
+        // 3) Body text
+        bodyTextView = TextView(requireContext()).apply {
+            text = "Default Body"
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        mainLayout.addView(bodyTextView)
+
+        // 4) VideoView (hidden by default)
+        videoView = VideoView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(32)
+            }
+        }
+        mainLayout.addView(videoView)
+
+        // 5) Container for input fields
+        containerLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        mainLayout.addView(containerLayout)
+
+        // 6) Continue Button
+        continueButton = Button(requireContext()).apply {
+            text = "Continue"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        mainLayout.addView(continueButton)
+
+        return scrollView
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
-
-        val headingTextView: TextView = view.findViewById(R.id.headingTextView)
-        webView = view.findViewById(R.id.htmlSnippetWebView)
-        webView.visibility = View.GONE
-        val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
-        videoView = view.findViewById(R.id.videoView2)
-        videoView.visibility = View.GONE
-        val containerLayout: LinearLayout = view.findViewById(R.id.inputFieldContainer)
-        val continueButton: Button = view.findViewById(R.id.continueButton)
-
         setupWebView()
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -89,12 +182,12 @@ class InputFieldFragment : Fragment() {
         val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
 
         // Create EditTexts
-        for (fieldHint in actualFields) {
+        actualFields.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
             checkAndPlayMp4(fieldHint, resourcesFolderUri)
 
-            val editText = EditText(context).apply {
+            val editText = EditText(requireContext()).apply {
                 hint = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHint)
                 textSize = FontSizeManager.getBodySize(requireContext())
                 setTextColor(ColorManager.getBodyTextColor(requireContext()))
@@ -103,17 +196,13 @@ class InputFieldFragment : Fragment() {
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
             }
-            editText.addTextChangedListener {
-                fieldValues[fieldHint] = it.toString()
-            }
+            editText.addTextChangedListener { fieldValues[fieldHint] = it.toString() }
             fieldValues[fieldHint] = ""
             containerLayout.addView(editText)
         }
 
         // Continue button
-        val (cleanButtonText, isTap) = parseTapAttribute(
-            parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
-        )
+        val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
         tapEnabled = isTap
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
@@ -161,8 +250,6 @@ class InputFieldFragment : Fragment() {
             }
             (activity as MainActivity).loadNextFragment()
         }
-
-        return view
     }
 
     override fun onDestroyView() {
@@ -197,20 +284,18 @@ class InputFieldFragment : Fragment() {
         } else 1.0f
 
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-            val videoFile = parentFolder.findFile(fileName)
-            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
-                videoView.visibility = View.VISIBLE
-                playVideoFile(videoFile.uri, volume)
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            if (parentFolder != null) {
+                val videoFile = parentFolder.findFile(fileName)
+                if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                    videoView.visibility = View.VISIBLE
+                    videoView.setVideoURI(videoFile.uri)
+                    videoView.setOnPreparedListener { mp ->
+                        mp.start()
+                        mp.setVolume(volume, volume)
+                    }
+                }
             }
-        }
-    }
-
-    private fun playVideoFile(videoUri: Uri, volume: Float) {
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-            mp.setVolume(volume, volume)
         }
     }
 
@@ -221,8 +306,7 @@ class InputFieldFragment : Fragment() {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -279,6 +363,10 @@ class InputFieldFragment : Fragment() {
         } else {
             text to false
         }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     companion object {
