@@ -31,6 +31,11 @@ TIMER_SOUND;sound9.wav
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
+TRANSITIONS;off
+SCALE[RANDOMIZED];Randomized scale test;This scale<code.html><movie.mp4>has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
+
+
+
 TRANSITIONS;slide
 INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
 INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ

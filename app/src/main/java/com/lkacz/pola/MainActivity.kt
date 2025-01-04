@@ -1,4 +1,3 @@
-// Filename: MainActivity.kt
 package com.lkacz.pola
 
 import android.app.NotificationChannel
@@ -9,6 +8,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
 import android.transition.Slide
+import android.transition.TransitionSet
+import android.transition.Visibility
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -67,24 +68,44 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
     fun loadNextFragment() {
         val newFragment = fragmentLoader.loadNextFragment()
-        val mode = TransitionManager.getTransitionMode(this)
+        var mode = TransitionManager.getTransitionMode(this)
         val currentFragment = supportFragmentManager.findFragmentById(fragmentContainerId)
+
+        newFragment.apply {
+            allowEnterTransitionOverlap = true
+            allowReturnTransitionOverlap = true
+        }
 
         when (mode) {
             "off" -> {
                 // No transition animations.
             }
             "slide" -> {
-                val slideIn = Slide(Gravity.END).apply { duration = 350 }
-                val slideOut = Slide(Gravity.START).apply { duration = 350 }
-                newFragment.enterTransition = slideIn
-                currentFragment?.exitTransition = slideOut
+                // Slide out to the left, slide in from the right.
+                // Here we properly use int constants for mode (Visibility.MODE_OUT / MODE_IN).
+                val slideOut = Slide().apply {
+                    slideEdge = Gravity.LEFT
+                    duration = 350
+                    mode = Visibility.MODE_OUT.toString()
+                }
+                val slideIn = Slide().apply {
+                    slideEdge = Gravity.RIGHT
+                    duration = 350
+                    mode = Visibility.MODE_IN.toString()
+                }
+                val transitionSet = TransitionSet().apply {
+                    addTransition(slideOut)
+                    addTransition(slideIn)
+                    ordering = TransitionSet.ORDERING_TOGETHER
+                }
+                currentFragment?.exitTransition = transitionSet
+                newFragment.enterTransition = transitionSet
             }
             "dissolve" -> {
-                val dissolveIn = Fade().apply { duration = 350 }
                 val dissolveOut = Fade().apply { duration = 350 }
-                newFragment.enterTransition = dissolveIn
+                val dissolveIn = Fade().apply { duration = 350 }
                 currentFragment?.exitTransition = dissolveOut
+                newFragment.enterTransition = dissolveIn
             }
             "fade" -> {
                 val fadeOut = Fade().apply { duration = 350 }
@@ -92,36 +113,57 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     duration = 350
                     startDelay = 350
                 }
-                newFragment.enterTransition = fadeIn
                 currentFragment?.exitTransition = fadeOut
+                newFragment.enterTransition = fadeIn
             }
         }
 
-        supportFragmentManager.commit {
+        supportFragmentManager.beginTransaction().apply {
+            setReorderingAllowed(true)
             replace(fragmentContainerId, newFragment)
+            commit()
         }
     }
 
     fun loadFragmentByLabel(label: String) {
         val newFragment = fragmentLoader.jumpToLabelAndLoad(label)
-        val mode = TransitionManager.getTransitionMode(this)
+        var mode = TransitionManager.getTransitionMode(this)
         val currentFragment = supportFragmentManager.findFragmentById(fragmentContainerId)
+
+        newFragment.apply {
+            allowEnterTransitionOverlap = true
+            allowReturnTransitionOverlap = true
+        }
 
         when (mode) {
             "off" -> {
                 // No transition animations.
             }
             "slide" -> {
-                val slideIn = Slide(Gravity.END).apply { duration = 350 }
-                val slideOut = Slide(Gravity.START).apply { duration = 350 }
-                newFragment.enterTransition = slideIn
-                currentFragment?.exitTransition = slideOut
+                // Slide out to the left, slide in from the right.
+                val slideOut = Slide().apply {
+                    slideEdge = Gravity.LEFT
+                    duration = 350
+                    mode = Visibility.MODE_OUT.toString()
+                }
+                val slideIn = Slide().apply {
+                    slideEdge = Gravity.RIGHT
+                    duration = 350
+                    mode = Visibility.MODE_IN.toString()
+                }
+                val transitionSet = TransitionSet().apply {
+                    addTransition(slideOut)
+                    addTransition(slideIn)
+                    ordering = TransitionSet.ORDERING_TOGETHER
+                }
+                currentFragment?.exitTransition = transitionSet
+                newFragment.enterTransition = transitionSet
             }
             "dissolve" -> {
-                val dissolveIn = Fade().apply { duration = 350 }
                 val dissolveOut = Fade().apply { duration = 350 }
-                newFragment.enterTransition = dissolveIn
+                val dissolveIn = Fade().apply { duration = 350 }
                 currentFragment?.exitTransition = dissolveOut
+                newFragment.enterTransition = dissolveIn
             }
             "fade" -> {
                 val fadeOut = Fade().apply { duration = 350 }
@@ -129,13 +171,15 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                     duration = 350
                     startDelay = 350
                 }
-                newFragment.enterTransition = fadeIn
                 currentFragment?.exitTransition = fadeOut
+                newFragment.enterTransition = fadeIn
             }
         }
 
-        supportFragmentManager.commit {
+        supportFragmentManager.beginTransaction().apply {
+            setReorderingAllowed(true)
             replace(fragmentContainerId, newFragment)
+            commit()
         }
     }
 
