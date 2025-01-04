@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
@@ -35,7 +36,8 @@ class CustomHtmlFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
+        // Already using FrameLayout as root
         val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -86,7 +88,7 @@ class CustomHtmlFragment : Fragment() {
         if (tapEnabled) {
             continueButton.visibility = View.INVISIBLE
             frameLayout.setOnTouchListener { _, event ->
-                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
                         continueButton.visibility = View.VISIBLE
@@ -174,6 +176,7 @@ class CustomHtmlFragment : Fragment() {
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+
         val (hGravity, vGravity) = when (horiz) {
             "LEFT" -> Gravity.START to when (vert) {
                 "TOP" -> Gravity.TOP
@@ -189,6 +192,12 @@ class CustomHtmlFragment : Fragment() {
             }
         }
         lp.gravity = hGravity or vGravity
+
+        // If you want the uniform 32dp margin, mimic InstructionFragment approach:
+        val density = resources.displayMetrics.density
+        val marginPx = (32 * density + 0.5f).toInt()
+        lp.setMargins(marginPx, marginPx, marginPx, marginPx)
+
         button.layoutParams = lp
     }
 

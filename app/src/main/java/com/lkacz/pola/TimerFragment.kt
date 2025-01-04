@@ -2,6 +2,7 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.graphics.Typeface
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -59,9 +60,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val rootLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16))
+        // Root container as FrameLayout
+        val rootFrame = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -69,10 +69,30 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             keepScreenOn = true
         }
 
+        // Scrollable content layout
+        val scrollView = ScrollView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            isFillViewport = true
+        }
+        val contentLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        scrollView.addView(contentLayout)
+        rootFrame.addView(scrollView)
+
+        // Header
         headerTextView = TextView(requireContext()).apply {
             text = "Default Header"
             textSize = 20f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTypeface(typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -80,8 +100,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(headerTextView)
+        contentLayout.addView(headerTextView)
 
+        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -91,8 +112,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(webView)
+        contentLayout.addView(webView)
 
+        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -103,8 +125,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(bodyTextView)
+        contentLayout.addView(bodyTextView)
 
+        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -114,8 +137,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(32)
             }
         }
-        rootLayout.addView(videoView)
+        contentLayout.addView(videoView)
 
+        // Timer text
         timerTextView = TextView(requireContext()).apply {
             text = "Time remaining: XX seconds"
             textSize = 18f
@@ -125,23 +149,23 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 bottomMargin = dpToPx(16)
-                gravity = Gravity.CENTER_HORIZONTAL
             }
         }
-        rootLayout.addView(timerTextView)
+        contentLayout.addView(timerTextView)
 
+        // Next button pinned in the FrameLayout
         nextButton = Button(requireContext()).apply {
             text = "Next"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.END
-            }
         }
-        rootLayout.addView(nextButton)
+        val buttonParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.END
+        )
+        nextButton.layoutParams = buttonParams
+        rootFrame.addView(nextButton)
 
-        return rootLayout
+        return rootFrame
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -165,16 +189,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
+        // Header
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
+        // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
+        // Timer styling
         val timerSize = FontSizeManager.getTimerSize(requireContext())
         val timerColor = ColorManager.getTimerTextColor(requireContext())
         timerTextView.textSize = timerSize
@@ -182,6 +209,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyTimerAlignment(timerTextView)
         applyTimerTextPadding(timerTextView)
 
+        // Next button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -205,6 +233,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
 
+        // Timer logic
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -359,11 +388,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         textView.setPadding(hPx, vPx, hPx, vPx)
     }
 
+    /**
+     * Use FrameLayout.LayoutParams for horizontal & vertical alignment.
+     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
-        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+
+        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+
         val hGravity = when (horiz) {
             "LEFT" -> Gravity.START
             "CENTER" -> Gravity.CENTER_HORIZONTAL
@@ -374,6 +408,12 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             else -> Gravity.BOTTOM
         }
         lp.gravity = hGravity or vGravity
+
+        // 32dp margin
+        val density = resources.displayMetrics.density
+        val marginPx = (32 * density + 0.5f).toInt()
+        lp.setMargins(marginPx, marginPx, marginPx, marginPx)
+
         button.layoutParams = lp
     }
 

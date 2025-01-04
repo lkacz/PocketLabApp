@@ -2,6 +2,7 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.graphics.Typeface
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -27,7 +28,7 @@ class InputFieldFragment : Fragment() {
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private lateinit var scrollView: ScrollView
-    private lateinit var mainLayout: LinearLayout
+    private lateinit var mainContent: LinearLayout
     private lateinit var headingTextView: TextView
     private lateinit var webView: WebView
     private lateinit var bodyTextView: TextView
@@ -55,29 +56,40 @@ class InputFieldFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        scrollView = ScrollView(requireContext()).apply {
+    ): View? {
+        // Root as FrameLayout
+        val rootFrame = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+        }
+
+        // Scrollable area for main content
+        scrollView = ScrollView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
             isFillViewport = true
         }
-
-        mainLayout = LinearLayout(requireContext()).apply {
+        mainContent = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+            val dp16 = dpToPx(16)
+            setPadding(dp16, dp16, dp16, dp16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
-        scrollView.addView(mainLayout)
+        scrollView.addView(mainContent)
+        rootFrame.addView(scrollView)
 
+        // Heading
         headingTextView = TextView(requireContext()).apply {
             text = "Default Heading"
             textSize = 20f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTypeface(typeface, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -85,8 +97,9 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainLayout.addView(headingTextView)
+        mainContent.addView(headingTextView)
 
+        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -96,8 +109,9 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainLayout.addView(webView)
+        mainContent.addView(webView)
 
+        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -108,8 +122,9 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainLayout.addView(bodyTextView)
+        mainContent.addView(bodyTextView)
 
+        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -119,8 +134,9 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(32)
             }
         }
-        mainLayout.addView(videoView)
+        mainContent.addView(videoView)
 
+        // Container layout for EditTexts
         containerLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -130,21 +146,22 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainLayout.addView(containerLayout)
+        mainContent.addView(containerLayout)
 
+        // Continue button pinned in FrameLayout
         continueButton = Button(requireContext()).apply {
             text = "Continue"
             textSize = 16f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.END
-            }
         }
-        mainLayout.addView(continueButton)
+        val buttonParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.END
+        )
+        continueButton.layoutParams = buttonParams
+        rootFrame.addView(continueButton)
 
-        return scrollView
+        return rootFrame
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -154,6 +171,7 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -162,6 +180,7 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
+        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -170,6 +189,7 @@ class InputFieldFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
+        // Fields
         val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
         actualFields.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
@@ -190,6 +210,7 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
+        // Continue button text
         val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
         tapEnabled = isTap
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
@@ -202,6 +223,7 @@ class InputFieldFragment : Fragment() {
         applyContinueAlignment(continueButton)
         applyContinueButtonPadding(continueButton)
 
+        // Tap to show button logic
         if (tapEnabled) {
             continueButton.visibility = View.INVISIBLE
             view.setOnTouchListener { _, event ->
@@ -218,6 +240,7 @@ class InputFieldFragment : Fragment() {
             }
         }
 
+        // Continue button action
         continueButton.setOnClickListener {
             fieldValues.forEach { (hint, value) ->
                 val isNumeric = value.toDoubleOrNull() != null
@@ -327,11 +350,15 @@ class InputFieldFragment : Fragment() {
         }
     }
 
+    /**
+     * FrameLayout.LayoutParams-based alignment.
+     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
-        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+
         val hGravity = when (horiz) {
             "LEFT" -> Gravity.START
             "CENTER" -> Gravity.CENTER_HORIZONTAL
@@ -342,6 +369,12 @@ class InputFieldFragment : Fragment() {
             else -> Gravity.BOTTOM
         }
         lp.gravity = hGravity or vGravity
+
+        // 32dp margin
+        val density = resources.displayMetrics.density
+        val marginPx = (32 * density + 0.5f).toInt()
+        lp.setMargins(marginPx, marginPx, marginPx, marginPx)
+
         button.layoutParams = lp
     }
 
