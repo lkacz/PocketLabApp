@@ -128,7 +128,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(16)
                 gravity = Gravity.CENTER_HORIZONTAL
             }
-            // Center text within the TextView itself
             gravity = Gravity.CENTER
         }
         rootLayout.addView(timerTextView)
@@ -178,6 +177,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
+        // Timer text customizations
+        val timerSize = FontSizeManager.getTimerSize(requireContext())
+        val timerColor = ColorManager.getTimerTextColor(requireContext())
+        timerTextView.textSize = timerSize
+        timerTextView.setTextColor(timerColor)
+        applyTimerAlignment(timerTextView)
+
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -185,25 +191,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // Define what a "click" should do (performClick will end up here):
-        view.setOnClickListener {
-            if (tapEnabled) {
-                tapCount++
-                if (tapCount >= tapThreshold) {
-                    nextButton.visibility = View.VISIBLE
-                    tapCount = 0
-                }
-            }
-        }
-
-        // Attach a touch listener that calls performClick() on ACTION_DOWN
+        // [TAP] handling for next button
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
             view.setOnTouchListener { v, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
-                    // Call performClick to handle accessibility
-                    v.performClick()
-                    // We return true to indicate we've consumed the event
+                    tapCount++
+                    if (tapCount >= tapThreshold) {
+                        nextButton.visibility = View.VISIBLE
+                        tapCount = 0
+                    }
                     true
                 } else {
                     false
@@ -211,6 +208,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
 
+        // Start the timer
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -218,7 +216,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 val secondsLeft = (millisUntilFinished % 60000) / 1000
                 timerTextView.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
             }
-
             override fun onFinish() {
                 timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
@@ -233,9 +230,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
         }
     }
-
-    // Optionally override performClick on the fragment’s root view if you want custom logic
-    // associated specifically with performClick. Usually, setting an OnClickListener is enough.
 
     override fun onTouchThresholdReached() {
         timer?.cancel()
@@ -342,6 +336,15 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
     }
 
+    private fun applyTimerAlignment(textView: TextView) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+        when (prefs.getString("TIMER_ALIGNMENT", "CENTER")?.uppercase()) {
+            "LEFT" -> textView.gravity = Gravity.START
+            "RIGHT" -> textView.gravity = Gravity.END
+            else -> textView.gravity = Gravity.CENTER
+        }
+    }
+
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         when (prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()) {
@@ -349,6 +352,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             "RIGHT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.END
             else -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.CENTER_HORIZONTAL
         }
+        button.layoutParams = button.layoutParams
     }
 
     private fun applyContinueButtonPadding(button: Button) {

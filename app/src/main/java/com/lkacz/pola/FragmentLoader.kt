@@ -111,6 +111,25 @@ class FragmentLoader(
                     continue
                 }
 
+                // Handle the timer-related new commands
+                "TIMER_SIZE" -> {
+                    val sizeValue = parts.getOrNull(1)?.toFloatOrNull() ?: 18f
+                    FontSizeManager.setTimerSize(getContext(), sizeValue)
+                    continue
+                }
+                "TIMER_COLOR" -> {
+                    val colorStr = parts.getOrNull(1)?.trim().orEmpty()
+                    val colorInt = safeParseColor(colorStr)
+                    ColorManager.setTimerTextColor(getContext(), colorInt)
+                    continue
+                }
+                "TIMER_ALIGNMENT" -> {
+                    val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
+                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                        .edit().putString("TIMER_ALIGNMENT", alignValue).apply()
+                    continue
+                }
+
                 "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
@@ -118,15 +137,8 @@ class FragmentLoader(
                             "HEADER_SIZE" -> FontSizeManager.setHeaderSize(getContext(), sizeValue)
                             "BODY_SIZE" -> FontSizeManager.setBodySize(getContext(), sizeValue)
                             "ITEM_SIZE" -> FontSizeManager.setItemSize(getContext(), sizeValue)
-                            "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(
-                                getContext(),
-                                sizeValue
-                            )
-
-                            "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(
-                                getContext(),
-                                sizeValue
-                            )
+                            "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(getContext(), sizeValue)
+                            "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(getContext(), sizeValue)
                         }
                     }
                     continue
@@ -239,7 +251,6 @@ class FragmentLoader(
         val heading = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val buttonName = parts.getOrNull(3)
-
         val fields = parts.drop(4)
 
         return InputFieldFragment.newInstance(

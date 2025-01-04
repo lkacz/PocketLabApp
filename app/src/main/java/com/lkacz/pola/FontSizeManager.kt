@@ -1,3 +1,4 @@
+// Filename: FontSizeManager.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -12,12 +13,14 @@ object FontSizeManager {
     private const val ITEM_SIZE_KEY = "itemSize"
     private const val RESPONSE_SIZE_KEY = "responseSize"
     private const val CONTINUE_SIZE_KEY = "continueSize"
+    private const val TIMER_SIZE_KEY = "timerSize"
 
     private const val DEFAULT_HEADER_SIZE = 60f
     private const val DEFAULT_BODY_SIZE = 24f
     private const val DEFAULT_ITEM_SIZE = 50f
     private const val DEFAULT_RESPONSE_SIZE = 8f
     private const val DEFAULT_CONTINUE_SIZE = 18f
+    private const val DEFAULT_TIMER_SIZE = 18f
 
     fun getHeaderSize(context: Context): Float {
         return getSharedPrefs(context).getFloat(HEADER_SIZE_KEY, DEFAULT_HEADER_SIZE)
@@ -57,6 +60,14 @@ object FontSizeManager {
 
     fun setContinueSize(context: Context, newSize: Float) {
         getSharedPrefs(context).edit().putFloat(CONTINUE_SIZE_KEY, newSize).apply()
+    }
+
+    fun getTimerSize(context: Context): Float {
+        return getSharedPrefs(context).getFloat(TIMER_SIZE_KEY, DEFAULT_TIMER_SIZE)
+    }
+
+    fun setTimerSize(context: Context, newSize: Float) {
+        getSharedPrefs(context).edit().putFloat(TIMER_SIZE_KEY, newSize).apply()
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {

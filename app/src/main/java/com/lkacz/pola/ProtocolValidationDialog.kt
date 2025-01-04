@@ -56,6 +56,9 @@ class ProtocolValidationDialog : DialogFragment() {
         "STUDY_ID",
         "TIMER",
         "TIMER_SOUND",
+        "TIMER_SIZE",
+        "TIMER_COLOR",
+        "TIMER_ALIGNMENT",
         "TRANSITIONS"
     )
 
@@ -213,7 +216,6 @@ class ProtocolValidationDialog : DialogFragment() {
                         revalidateAndRefreshUI()
                     }
                 }
-
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -670,7 +672,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
-            "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE" -> {
+            // Added TIMER_SIZE to the existing size checks
+            "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> {
                 val (err, warn) = sizeValidation(commandRaw, parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
@@ -705,9 +708,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
+            // Added TIMER_COLOR to existing color checks
             "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
             "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
-            "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR" -> {
+            "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "$commandRaw missing color value")
                 } else {
@@ -718,7 +722,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
-            "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT" -> {
+            // Added TIMER_ALIGNMENT to existing alignment checks
+            "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage =
                         appendError(errorMessage, "$commandRaw missing alignment value")

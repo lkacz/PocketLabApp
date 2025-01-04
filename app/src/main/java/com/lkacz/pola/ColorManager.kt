@@ -18,6 +18,7 @@ object ColorManager {
     private const val SCREEN_BACKGROUND_COLOR_KEY = "screenBackgroundColor"
     private const val CONTINUE_TEXT_COLOR_KEY = "continueTextColor"
     private const val CONTINUE_BACKGROUND_COLOR_KEY = "continueBackgroundColor"
+    private const val TIMER_TEXT_COLOR_KEY = "timerTextColor"
 
     private const val DEFAULT_HEADER_TEXT_COLOR = Color.BLACK
     private const val DEFAULT_BODY_TEXT_COLOR = Color.DKGRAY
@@ -28,6 +29,7 @@ object ColorManager {
     private const val DEFAULT_SCREEN_BACKGROUND_COLOR = Color.WHITE
     private const val DEFAULT_CONTINUE_TEXT_COLOR = Color.WHITE
     private const val DEFAULT_CONTINUE_BACKGROUND_COLOR = Color.DKGRAY
+    private const val DEFAULT_TIMER_TEXT_COLOR = Color.BLACK
 
     fun getHeaderTextColor(context: Context): Int {
         return getSharedPrefs(context).getInt(HEADER_TEXT_COLOR_KEY, DEFAULT_HEADER_TEXT_COLOR)
@@ -99,6 +101,17 @@ object ColorManager {
 
     fun setContinueBackgroundColor(context: Context, color: Int) {
         getSharedPrefs(context).edit().putInt(CONTINUE_BACKGROUND_COLOR_KEY, color).apply()
+    }
+
+    /**
+     * Timer text color
+     */
+    fun getTimerTextColor(context: Context): Int {
+        return getSharedPrefs(context).getInt(TIMER_TEXT_COLOR_KEY, DEFAULT_TIMER_TEXT_COLOR)
+    }
+
+    fun setTimerTextColor(context: Context, color: Int) {
+        getSharedPrefs(context).edit().putInt(TIMER_TEXT_COLOR_KEY, color).apply()
     }
 
     private fun getSharedPrefs(context: Context): SharedPreferences {
