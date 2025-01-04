@@ -141,12 +141,16 @@ class InputFieldFragment : Fragment() {
         mainLayout.addView(containerLayout)
 
         // 6) Continue Button
+        // Changed to WRAP_CONTENT for width/height and default gravity=END
         continueButton = Button(requireContext()).apply {
             text = "Continue"
+            textSize = 16f
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+            ).apply {
+                gravity = Gravity.END
+            }
         }
         mainLayout.addView(continueButton)
 
@@ -201,7 +205,7 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Continue button
+        // Continue button text, alignment, padding, etc.
         val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
         tapEnabled = isTap
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
