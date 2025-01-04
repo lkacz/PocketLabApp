@@ -19,7 +19,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var previewPaddingButtonContainer: LinearLayout
     private lateinit var previewPaddingButton1: Button
     private lateinit var previewPaddingButton2: Button
-
     private lateinit var previewContainerTop: LinearLayout
     private lateinit var previewContainerScaleAndResponse: LinearLayout
 
@@ -45,6 +44,17 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var sliderContinuePaddingV: SeekBar
     private lateinit var tvContinuePaddingVValue: TextView
 
+    // Newly added for Timer:
+    private lateinit var previewTimerTextView: TextView
+    private lateinit var sliderTimer: SeekBar
+    private lateinit var tvTimerSizeValue: TextView
+    private lateinit var timerColorPicker: View
+    private lateinit var spinnerTimerAlignment: Spinner
+    private lateinit var sliderTimerPaddingH: SeekBar
+    private lateinit var tvTimerPaddingHValue: TextView
+    private lateinit var sliderTimerPaddingV: SeekBar
+    private lateinit var tvTimerPaddingVValue: TextView
+
     private lateinit var headerColorPicker: View
     private lateinit var bodyColorPicker: View
     private lateinit var continueTextColorPicker: View
@@ -60,12 +70,17 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var spinnerHeaderAlignment: Spinner
     private lateinit var spinnerBodyAlignment: Spinner
 
+    // Existing text sizes
     private var headerTextSize = 24f
     private var bodyTextSize = 16f
     private var continueTextSize = 18f
     private var itemTextSize = 16f
     private var responseTextSize = 16f
 
+    // Newly added timer size
+    private var timerTextSize = 18f
+
+    // Existing color variables
     private var headerTextColor = Color.BLACK
     private var bodyTextColor = Color.DKGRAY
     private var continueTextColor = Color.WHITE
@@ -77,9 +92,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private var screenBgColor = Color.WHITE
     private var currentTransitionMode = "off"
 
+    // Newly added timer text color
+    private var timerTextColorVar = Color.BLACK
+
     private var currentContinueAlignment = "CENTER"
     private var currentHeaderAlignment = "CENTER"
     private var currentBodyAlignment = "CENTER"
+    private var currentTimerAlignment = "CENTER"
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = Dialog(requireContext())
@@ -166,6 +185,23 @@ class AppearanceCustomizationDialog : DialogFragment() {
             layoutParams = continueBtnLp
         }
         previewContainerTop.addView(previewContinueButton)
+
+        // Now add a sample timer preview
+        val timerLayoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            topMargin = dpToPx(8)
+            bottomMargin = dpToPx(8)
+        }
+        previewTimerTextView = TextView(requireContext()).apply {
+            text = "00:01"
+            textSize = 18f
+            gravity = Gravity.CENTER
+            setPadding(0, dpToPx(0), 0, dpToPx(0))
+            layoutParams = timerLayoutParams
+        }
+        previewContainerTop.addView(previewTimerTextView)
 
         val headerRow = newRowLayout()
         mainLinearLayout.addView(headerRow)
@@ -338,13 +374,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
         mainLinearLayout.addView(headerAlignRow)
-
         val headerAlignLabel = TextView(requireContext()).apply {
             text = "Header Alignment:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
         headerAlignRow.addView(headerAlignLabel)
-
         spinnerHeaderAlignment = Spinner(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -360,13 +394,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
         mainLinearLayout.addView(bodyAlignRow)
-
         val bodyAlignLabel = TextView(requireContext()).apply {
             text = "Body Alignment:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
         bodyAlignRow.addView(bodyAlignLabel)
-
         spinnerBodyAlignment = Spinner(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -382,13 +414,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
         }
         mainLinearLayout.addView(continueAlignRow)
-
         val continueAlignLabel = TextView(requireContext()).apply {
             text = "Continue Alignment:"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
         continueAlignRow.addView(continueAlignLabel)
-
         spinnerContinueAlignment = Spinner(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -533,7 +563,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
             }
         }
         responseRow.addView(buttonTextColorPicker)
-
         buttonBackgroundColorPicker = View(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
                 leftMargin = dpToPx(8)
@@ -634,6 +663,127 @@ class AppearanceCustomizationDialog : DialogFragment() {
             ).apply { topMargin = dpToPx(8) }
         })
 
+        // Timer customizations row
+        val timerRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(timerRow)
+        val timerLabel = TextView(requireContext()).apply {
+            text = "Timer Text:"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        timerRow.addView(timerLabel)
+        sliderTimer = SeekBar(requireContext()).apply {
+            max = 100
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply { leftMargin = dpToPx(4) }
+        }
+        timerRow.addView(sliderTimer)
+        tvTimerSizeValue = TextView(requireContext()).apply {
+            text = "18"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { leftMargin = dpToPx(4) }
+        }
+        timerRow.addView(tvTimerSizeValue)
+        timerColorPicker = View(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dpToPx(36), dpToPx(36)
+            ).apply { leftMargin = dpToPx(8) }
+        }
+        timerRow.addView(timerColorPicker)
+
+        // Timer padding horizontal
+        val timerPaddingHRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(timerPaddingHRow)
+        val timerPaddingHLabel = TextView(requireContext()).apply {
+            text = "Timer Padding (L/R):"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        timerPaddingHRow.addView(timerPaddingHLabel)
+        sliderTimerPaddingH = SeekBar(requireContext()).apply {
+            max = 100
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(4)
+            }
+        }
+        timerPaddingHRow.addView(sliderTimerPaddingH)
+        tvTimerPaddingHValue = TextView(requireContext()).apply {
+            text = "0"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { leftMargin = dpToPx(4) }
+        }
+        timerPaddingHRow.addView(tvTimerPaddingHValue)
+
+        // Timer padding vertical
+        val timerPaddingVRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(timerPaddingVRow)
+        val timerPaddingVLabel = TextView(requireContext()).apply {
+            text = "Timer Padding (T/B):"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        timerPaddingVRow.addView(timerPaddingVLabel)
+        sliderTimerPaddingV = SeekBar(requireContext()).apply {
+            max = 100
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(4)
+            }
+        }
+        timerPaddingVRow.addView(sliderTimerPaddingV)
+        tvTimerPaddingVValue = TextView(requireContext()).apply {
+            text = "0"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { leftMargin = dpToPx(4) }
+        }
+        timerPaddingVRow.addView(tvTimerPaddingVValue)
+
+        // Timer alignment
+        val timerAlignRow = newRowLayout().apply {
+            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+        }
+        mainLinearLayout.addView(timerAlignRow)
+        val timerAlignLabel = TextView(requireContext()).apply {
+            text = "Timer Alignment:"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        }
+        timerAlignRow.addView(timerAlignLabel)
+        spinnerTimerAlignment = Spinner(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                leftMargin = dpToPx(16)
+            }
+        }
+        timerAlignRow.addView(spinnerTimerAlignment)
+
+        mainLinearLayout.addView(View(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
+            ).apply { topMargin = dpToPx(8) }
+        })
+
         val bgRow = newRowLayout().apply {
             (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(4)
         }
@@ -726,17 +876,20 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         (view as ScrollView).setBackgroundColor(screenBgColor)
 
+        // Initialize slider progress
         sliderHeader.progress = headerTextSize.toInt().coerceIn(8, 100)
         sliderBody.progress = bodyTextSize.toInt().coerceIn(8, 100)
         sliderContinue.progress = continueTextSize.toInt().coerceIn(8, 100)
         sliderItem.progress = itemTextSize.toInt().coerceIn(8, 100)
         sliderResponse.progress = responseTextSize.toInt().coerceIn(8, 100)
+        sliderTimer.progress = timerTextSize.toInt().coerceIn(8, 100)
 
         tvHeaderSizeValue.text = sliderHeader.progress.toString()
         tvBodySizeValue.text = sliderBody.progress.toString()
         tvContinueSizeValue.text = sliderContinue.progress.toString()
         tvItemSizeValue.text = sliderItem.progress.toString()
         tvResponseSizeValue.text = sliderResponse.progress.toString()
+        tvTimerSizeValue.text = sliderTimer.progress.toString()
 
         previewHeaderTextView.textSize = sliderHeader.progress.toFloat()
         previewBodyTextView.textSize = sliderBody.progress.toFloat()
@@ -744,6 +897,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewItemTextView.textSize = sliderItem.progress.toFloat()
         previewPaddingButton1.textSize = sliderResponse.progress.toFloat()
         previewPaddingButton2.textSize = sliderResponse.progress.toFloat()
+        previewTimerTextView.textSize = sliderTimer.progress.toFloat()
 
         previewHeaderTextView.setTextColor(headerTextColor)
         previewBodyTextView.setTextColor(bodyTextColor)
@@ -754,6 +908,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton1.setBackgroundColor(buttonBackgroundColorVar)
         previewPaddingButton2.setTextColor(responseTextColor)
         previewPaddingButton2.setBackgroundColor(buttonBackgroundColorVar)
+        previewTimerTextView.setTextColor(timerTextColorVar)
 
         applyColorPickerBoxColor(headerColorPicker, headerTextColor)
         applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
@@ -764,6 +919,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColorVar)
         applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
         applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+        applyColorPickerBoxColor(timerColorPicker, timerTextColorVar)
 
         sliderResponseSpacing.max = 100
         val savedSpacing = SpacingManager.getResponseSpacing(requireContext()).toInt().coerceIn(0, 100)
@@ -793,6 +949,19 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvContinuePaddingVValue.text = savedContinueV.toString()
         applyContinueButtonPadding()
 
+        // Timer padding
+        sliderTimerPaddingH.max = 100
+        val savedTimerH = SpacingManager.getTimerPaddingHorizontal(requireContext()).toInt().coerceIn(0, 100)
+        sliderTimerPaddingH.progress = savedTimerH
+        tvTimerPaddingHValue.text = savedTimerH.toString()
+
+        sliderTimerPaddingV.max = 100
+        val savedTimerV = SpacingManager.getTimerPaddingVertical(requireContext()).toInt().coerceIn(0, 100)
+        sliderTimerPaddingV.progress = savedTimerV
+        tvTimerPaddingVValue.text = savedTimerV.toString()
+        applyTimerTextPadding()
+
+        // Listeners
         sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
             headerTextSize = size.toFloat()
@@ -824,6 +993,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
             previewPaddingButton2.textSize = size.toFloat()
             tvResponseSizeValue.text = size.toString()
         })
+        sliderTimer.setOnSeekBarChangeListener(simpleSeekBarListener {
+            val size = it.coerceIn(8, 100)
+            timerTextSize = size.toFloat()
+            previewTimerTextView.textSize = size.toFloat()
+            tvTimerSizeValue.text = size.toString()
+        })
 
         sliderResponseSpacing.setOnSeekBarChangeListener(simpleSeekBarListener {
             val spaceDp = it.coerceIn(0, 100)
@@ -845,6 +1020,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         sliderContinuePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
             tvContinuePaddingVValue.text = it.toString()
             applyContinueButtonPadding()
+        })
+        sliderTimerPaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
+            tvTimerPaddingHValue.text = it.toString()
+            applyTimerTextPadding()
+        })
+        sliderTimerPaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
+            tvTimerPaddingVValue.text = it.toString()
+            applyTimerTextPadding()
         })
 
         val transitionOptions = listOf("No transition", "Slide to left")
@@ -921,9 +1104,29 @@ class AppearanceCustomizationDialog : DialogFragment() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
+        spinnerTimerAlignment.adapter = alignAdapter
+        val savedTimerAlign = prefs.getString("TIMER_ALIGNMENT", "CENTER") ?: "CENTER"
+        currentTimerAlignment = savedTimerAlign.uppercase()
+        spinnerTimerAlignment.setSelection(
+            when (currentTimerAlignment) {
+                "LEFT" -> 0
+                "RIGHT" -> 2
+                else -> 1
+            },
+            false
+        )
+        spinnerTimerAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                currentTimerAlignment = alignmentOptions[position].uppercase()
+                applyTimerAlignmentToPreview()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
         applyHeaderAlignmentToPreview()
         applyBodyAlignmentToPreview()
         applyContinueAlignmentToPreview()
+        applyTimerAlignmentToPreview()
     }
 
     private fun newRowLayout(): LinearLayout {
@@ -979,6 +1182,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
+    private fun applyTimerTextPadding() {
+        val scale = resources.displayMetrics.density
+        val horizontalPx = (sliderTimerPaddingH.progress * scale + 0.5f).toInt()
+        val verticalPx = (sliderTimerPaddingV.progress * scale + 0.5f).toInt()
+        previewTimerTextView.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
+    }
+
     private fun applyColorPickerBoxColor(picker: View, color: Int) {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
         if (drawable is GradientDrawable) {
@@ -1027,6 +1237,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
                         screenBgColor = chosenColor
                         (view as? ScrollView)?.setBackgroundColor(chosenColor)
                     }
+                    timerColorPicker -> {
+                        timerTextColorVar = chosenColor
+                        previewTimerTextView.setTextColor(chosenColor)
+                    }
                 }
                 applyColorPickerBoxColor(picker, chosenColor)
             }
@@ -1039,6 +1253,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultContinueSize = 18f
         val defaultItemSize = 16f
         val defaultResponseSize = 16f
+        val defaultTimerSize = 18f
 
         val defaultHeaderColor = Color.parseColor("#37474F")
         val defaultBodyColor = Color.parseColor("#616161")
@@ -1049,12 +1264,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultScreenBgColor = Color.parseColor("#F5F5F5")
         val defaultButtonTextColor = Color.WHITE
         val defaultButtonBgColor = Color.parseColor("#008577")
+        val defaultTimerColor = Color.BLACK
 
         headerTextSize = defaultHeaderSize
         bodyTextSize = defaultBodySize
         continueTextSize = defaultContinueSize
         itemTextSize = defaultItemSize
         responseTextSize = defaultResponseSize
+        timerTextSize = defaultTimerSize
 
         headerTextColor = defaultHeaderColor
         bodyTextColor = defaultBodyColor
@@ -1065,21 +1282,25 @@ class AppearanceCustomizationDialog : DialogFragment() {
         buttonTextColorVar = defaultButtonTextColor
         buttonBackgroundColorVar = defaultButtonBgColor
         screenBgColor = defaultScreenBgColor
+        timerTextColorVar = defaultTimerColor
         currentContinueAlignment = "CENTER"
         currentHeaderAlignment = "CENTER"
         currentBodyAlignment = "CENTER"
+        currentTimerAlignment = "CENTER"
 
         sliderHeader.progress = headerTextSize.toInt()
         sliderBody.progress = bodyTextSize.toInt()
         sliderContinue.progress = continueTextSize.toInt()
         sliderItem.progress = itemTextSize.toInt()
         sliderResponse.progress = responseTextSize.toInt()
+        sliderTimer.progress = timerTextSize.toInt()
 
         tvHeaderSizeValue.text = sliderHeader.progress.toString()
         tvBodySizeValue.text = sliderBody.progress.toString()
         tvContinueSizeValue.text = sliderContinue.progress.toString()
         tvItemSizeValue.text = sliderItem.progress.toString()
         tvResponseSizeValue.text = sliderResponse.progress.toString()
+        tvTimerSizeValue.text = sliderTimer.progress.toString()
 
         previewHeaderTextView.textSize = headerTextSize
         previewBodyTextView.textSize = bodyTextSize
@@ -1087,6 +1308,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewItemTextView.textSize = itemTextSize
         previewPaddingButton1.textSize = responseTextSize
         previewPaddingButton2.textSize = responseTextSize
+        previewTimerTextView.textSize = timerTextSize
 
         applyColorPickerBoxColor(headerColorPicker, headerTextColor)
         applyColorPickerBoxColor(bodyColorPicker, bodyTextColor)
@@ -1097,6 +1319,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         applyColorPickerBoxColor(buttonTextColorPicker, buttonTextColorVar)
         applyColorPickerBoxColor(buttonBackgroundColorPicker, buttonBackgroundColorVar)
         applyColorPickerBoxColor(screenBackgroundColorPicker, screenBgColor)
+        applyColorPickerBoxColor(timerColorPicker, timerTextColorVar)
 
         previewHeaderTextView.setTextColor(headerTextColor)
         previewBodyTextView.setTextColor(bodyTextColor)
@@ -1107,6 +1330,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewPaddingButton1.setBackgroundColor(buttonBackgroundColorVar)
         previewPaddingButton2.setTextColor(responseTextColor)
         previewPaddingButton2.setBackgroundColor(buttonBackgroundColorVar)
+        previewTimerTextView.setTextColor(timerTextColorVar)
 
         (view as? ScrollView)?.setBackgroundColor(screenBgColor)
 
@@ -1126,13 +1350,21 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvContinuePaddingVValue.text = "0"
         applyContinueButtonPadding()
 
+        sliderTimerPaddingH.progress = 0
+        tvTimerPaddingHValue.text = "0"
+        sliderTimerPaddingV.progress = 0
+        tvTimerPaddingVValue.text = "0"
+        applyTimerTextPadding()
+
         spinnerContinueAlignment.setSelection(1, false)
         spinnerHeaderAlignment.setSelection(1, false)
         spinnerBodyAlignment.setSelection(1, false)
+        spinnerTimerAlignment.setSelection(1, false)
 
         applyHeaderAlignmentToPreview()
         applyBodyAlignmentToPreview()
         applyContinueAlignmentToPreview()
+        applyTimerAlignmentToPreview()
     }
 
     private fun saveCurrentSelections() {
@@ -1145,12 +1377,14 @@ class AppearanceCustomizationDialog : DialogFragment() {
         ColorManager.setContinueTextColor(requireContext(), continueTextColor)
         ColorManager.setContinueBackgroundColor(requireContext(), continueBackgroundColor)
         ColorManager.setScreenBackgroundColor(requireContext(), screenBgColor)
+        ColorManager.setTimerTextColor(requireContext(), timerTextColorVar)
 
         FontSizeManager.setHeaderSize(requireContext(), headerTextSize)
         FontSizeManager.setBodySize(requireContext(), bodyTextSize)
         FontSizeManager.setItemSize(requireContext(), itemTextSize)
         FontSizeManager.setResponseSize(requireContext(), responseTextSize)
         FontSizeManager.setContinueSize(requireContext(), continueTextSize)
+        FontSizeManager.setTimerSize(requireContext(), timerTextSize)
 
         SpacingManager.setResponseSpacing(requireContext(), sliderResponseSpacing.progress.toFloat())
 
@@ -1159,6 +1393,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
         SpacingManager.setResponseButtonPaddingVertical(requireContext(), sliderResponsePaddingV.progress.toFloat())
         SpacingManager.setContinueButtonPaddingHorizontal(requireContext(), sliderContinuePaddingH.progress.toFloat())
         SpacingManager.setContinueButtonPaddingVertical(requireContext(), sliderContinuePaddingV.progress.toFloat())
+        SpacingManager.setTimerPaddingHorizontal(requireContext(), sliderTimerPaddingH.progress.toFloat())
+        SpacingManager.setTimerPaddingVertical(requireContext(), sliderTimerPaddingV.progress.toFloat())
 
         TransitionManager.setTransitionMode(requireContext(), if (currentTransitionMode == "off") "off" else "slide")
 
@@ -1166,6 +1402,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
         prefs.edit().putString("HEADER_ALIGNMENT", currentHeaderAlignment).apply()
         prefs.edit().putString("BODY_ALIGNMENT", currentBodyAlignment).apply()
+        prefs.edit().putString("TIMER_ALIGNMENT", currentTimerAlignment).apply()
     }
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
@@ -1203,6 +1440,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewContinueButton.layoutParams = lp
     }
 
+    private fun applyTimerAlignmentToPreview() {
+        val lp = previewTimerTextView.layoutParams as? LinearLayout.LayoutParams ?: return
+        lp.gravity = when (currentTimerAlignment) {
+            "LEFT" -> Gravity.START
+            "RIGHT" -> Gravity.END
+            else -> Gravity.CENTER_HORIZONTAL
+        }
+        previewTimerTextView.layoutParams = lp
+    }
+
     /**
      * Loads persisted values from the various managers to ensure changes
      * are reflected each time the dialog is opened.
@@ -1213,6 +1460,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         continueTextSize = FontSizeManager.getContinueSize(requireContext())
         itemTextSize = FontSizeManager.getItemSize(requireContext())
         responseTextSize = FontSizeManager.getResponseSize(requireContext())
+        timerTextSize = FontSizeManager.getTimerSize(requireContext())
 
         headerTextColor = ColorManager.getHeaderTextColor(requireContext())
         bodyTextColor = ColorManager.getBodyTextColor(requireContext())
@@ -1223,6 +1471,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         buttonTextColorVar = ColorManager.getButtonTextColor(requireContext())
         buttonBackgroundColorVar = ColorManager.getButtonBackgroundColor(requireContext())
         screenBgColor = ColorManager.getScreenBackgroundColor(requireContext())
+        timerTextColorVar = ColorManager.getTimerTextColor(requireContext())
 
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         val savedTransitions = prefs.getString("TRANSITION_MODE", "off") ?: "off"
@@ -1231,5 +1480,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         currentContinueAlignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
         currentHeaderAlignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
         currentBodyAlignment = prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
+        currentTimerAlignment = prefs.getString("TIMER_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
     }
 }

@@ -121,6 +121,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         timerTextView = TextView(requireContext()).apply {
             text = "Time remaining: XX seconds"
             textSize = 18f
+            gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -128,7 +129,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 bottomMargin = dpToPx(16)
                 gravity = Gravity.CENTER_HORIZONTAL
             }
-            gravity = Gravity.CENTER
         }
         rootLayout.addView(timerTextView)
 
@@ -167,11 +167,13 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
+        // Apply header text customizations
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
+        // Apply body text customizations
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
@@ -183,7 +185,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         timerTextView.textSize = timerSize
         timerTextView.setTextColor(timerColor)
         applyTimerAlignment(timerTextView)
+        applyTimerTextPadding(timerTextView)
 
+        // Next button customizations
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -194,7 +198,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         // [TAP] handling for next button
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { v, event ->
+            view.setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
@@ -208,7 +212,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
 
-        // Start the timer
+        // Start the countdown timer
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -241,6 +245,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onTouchThresholdReached() {
+        // Called when user taps multiple times within threshold
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         timerTextView.text = "Continue."
@@ -352,6 +357,15 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
         }
+    }
+
+    private fun applyTimerTextPadding(textView: TextView) {
+        val density = resources.displayMetrics.density
+        val horizontalPadding = SpacingManager.getTimerPaddingHorizontal(requireContext())
+        val verticalPadding = SpacingManager.getTimerPaddingVertical(requireContext())
+        val hPx = (horizontalPadding * density + 0.5f).toInt()
+        val vPx = (verticalPadding * density + 0.5f).toInt()
+        textView.setPadding(hPx, vPx, hPx, vPx)
     }
 
     private fun applyContinueAlignment(button: Button) {
