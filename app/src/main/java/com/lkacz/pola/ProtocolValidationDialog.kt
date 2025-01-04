@@ -672,7 +672,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     errorMessage = appendError(errorMessage, it)
                 }
             }
-            // Added TIMER_SIZE to the existing size checks
             "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> {
                 val (err, warn) = sizeValidation(commandRaw, parts)
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
@@ -708,7 +707,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (err.isNotEmpty()) errorMessage = appendError(errorMessage, err)
                 if (warn.isNotEmpty()) warningMessage = appendWarning(warningMessage, warn)
             }
-            // Added TIMER_COLOR to existing color checks
             "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
             "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
             "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> {
@@ -722,7 +720,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
             }
-            // Added TIMER_ALIGNMENT to existing alignment checks
             "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage =
@@ -763,11 +760,11 @@ class ProtocolValidationDialog : DialogFragment() {
                 val mode = parts.getOrNull(1)?.lowercase()?.trim()
                 if (mode.isNullOrEmpty()) {
                     errorMessage =
-                        appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide)")
-                } else if (mode != "off" && mode != "slide") {
+                        appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide or dissolve)")
+                } else if (mode != "off" && mode != "slide" && mode != "dissolve") {
                     errorMessage = appendError(
                         errorMessage,
-                        "TRANSITIONS mode must be either 'off' or 'slide'"
+                        "TRANSITIONS mode must be either 'off', 'slide', or 'dissolve'"
                     )
                 }
             }

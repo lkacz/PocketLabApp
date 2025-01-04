@@ -19,23 +19,17 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private lateinit var logger: Logger
     private lateinit var protocolManager: ProtocolManager
 
-    // An ID we can use to refer to our FrameLayout container in transactions if needed.
     private val fragmentContainerId = ViewGroup.generateViewId()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep the screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        // Hide the action bar
         supportActionBar?.hide()
 
-        // Reset and initialize logger
         Logger.resetInstance()
         logger = Logger.getInstance(this)
 
-        // Programmatically create a container for fragments
         val fragmentContainer = FrameLayout(this).apply {
             id = fragmentContainerId
             layoutParams = FrameLayout.LayoutParams(
@@ -43,11 +37,8 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
-
-        // Set this container as our main content view
         setContentView(fragmentContainer)
 
-        // If first launch, load the StartFragment
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(fragmentContainerId, StartFragment())
@@ -55,8 +46,6 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         }
 
         createNotificationChannel()
-
-        // Start the foreground service
         val serviceIntent = Intent(this, MyForegroundService::class.java)
         startForegroundService(serviceIntent)
     }
@@ -85,6 +74,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 R.anim.slide_in_left,
                 R.anim.slide_out_right
             )
+        } else if (mode == "dissolve") {
+            transaction.setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out,
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
+            )
         }
         transaction.replace(fragmentContainerId, fragment).commit()
     }
@@ -99,6 +95,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 R.anim.slide_out_left,
                 R.anim.slide_in_left,
                 R.anim.slide_out_right
+            )
+        } else if (mode == "dissolve") {
+            transaction.setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out,
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
             )
         }
         transaction.replace(fragmentContainerId, fragment).commit()

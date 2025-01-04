@@ -876,7 +876,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         (view as ScrollView).setBackgroundColor(screenBgColor)
 
-        // Initialize slider progress
         sliderHeader.progress = headerTextSize.toInt().coerceIn(8, 100)
         sliderBody.progress = bodyTextSize.toInt().coerceIn(8, 100)
         sliderContinue.progress = continueTextSize.toInt().coerceIn(8, 100)
@@ -961,7 +960,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvTimerPaddingVValue.text = savedTimerV.toString()
         applyTimerTextPadding()
 
-        // Listeners
         sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
             val size = it.coerceIn(8, 100)
             headerTextSize = size.toFloat()
@@ -1030,14 +1028,28 @@ class AppearanceCustomizationDialog : DialogFragment() {
             applyTimerTextPadding()
         })
 
-        val transitionOptions = listOf("No transition", "Slide to left")
+        val transitionOptions = listOf("No transition", "Slide to left", "Dissolve")
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, transitionOptions)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerTransitions.adapter = adapter
-        spinnerTransitions.setSelection(if (currentTransitionMode == "off") 0 else 1, false)
+
+        spinnerTransitions.setSelection(
+            when (currentTransitionMode) {
+                "off" -> 0
+                "slide" -> 1
+                "dissolve" -> 2
+                else -> 0
+            },
+            false
+        )
         spinnerTransitions.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
-                currentTransitionMode = if (position == 0) "off" else "slide"
+                currentTransitionMode = when (position) {
+                    0 -> "off"
+                    1 -> "slide"
+                    2 -> "dissolve"
+                    else -> "off"
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
@@ -1396,7 +1408,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         SpacingManager.setTimerPaddingHorizontal(requireContext(), sliderTimerPaddingH.progress.toFloat())
         SpacingManager.setTimerPaddingVertical(requireContext(), sliderTimerPaddingV.progress.toFloat())
 
-        TransitionManager.setTransitionMode(requireContext(), if (currentTransitionMode == "off") "off" else "slide")
+        TransitionManager.setTransitionMode(requireContext(), currentTransitionMode)
 
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
@@ -1450,10 +1462,6 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewTimerTextView.layoutParams = lp
     }
 
-    /**
-     * Loads persisted values from the various managers to ensure changes
-     * are reflected each time the dialog is opened.
-     */
     private fun loadPersistedValues() {
         headerTextSize = FontSizeManager.getHeaderSize(requireContext())
         bodyTextSize = FontSizeManager.getBodySize(requireContext())
@@ -1475,7 +1483,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
         val savedTransitions = prefs.getString("TRANSITION_MODE", "off") ?: "off"
-        currentTransitionMode = if (savedTransitions.equals("off", ignoreCase = true)) "off" else "slide"
+        currentTransitionMode = when (savedTransitions.lowercase()) {
+            "off" -> "off"
+            "dissolve" -> "dissolve"
+            else -> "slide"
+        }
 
         currentContinueAlignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
         currentHeaderAlignment = prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"
