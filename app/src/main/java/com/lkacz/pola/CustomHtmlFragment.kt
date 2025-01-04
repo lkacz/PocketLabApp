@@ -21,7 +21,6 @@ class CustomHtmlFragment : Fragment() {
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    // [TAP] logic
     private var tapEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
@@ -53,7 +52,6 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        // Check for [TAP]
         val (cleanText, isTap) = parseTapAttribute(continueButtonText.orEmpty())
         tapEnabled = isTap
 
@@ -70,7 +68,6 @@ class CustomHtmlFragment : Fragment() {
             val cvPx = (cv * density + 0.5f).toInt()
             setPadding(chPx, cvPx, chPx, cvPx)
 
-            // Initially place in bottom-end
             val marginPx = (16 * density + 0.5f).toInt()
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -86,7 +83,6 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(continueButton)
 
-        // Hide the button if [TAP] is present
         if (tapEnabled) {
             continueButton.visibility = View.INVISIBLE
             frameLayout.setOnTouchListener { _, event ->
@@ -103,7 +99,6 @@ class CustomHtmlFragment : Fragment() {
             }
         }
 
-        // Apply alignment preference
         applyContinueAlignment(continueButton)
 
         return frameLayout
@@ -176,16 +171,25 @@ class CustomHtmlFragment : Fragment() {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
-        val layoutParams = button.layoutParams
-        if (layoutParams is FrameLayout.LayoutParams) {
-            layoutParams.gravity = when (alignment) {
-                "LEFT" -> Gravity.BOTTOM or Gravity.START
-                "RIGHT" -> Gravity.BOTTOM or Gravity.END
-                else -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
+        val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
+        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+        val (hGravity, vGravity) = when (horiz) {
+            "LEFT" -> Gravity.START to when (vert) {
+                "TOP" -> Gravity.TOP
+                else -> Gravity.BOTTOM
             }
-            button.layoutParams = layoutParams
+            "CENTER" -> Gravity.CENTER_HORIZONTAL to when (vert) {
+                "TOP" -> Gravity.TOP
+                else -> Gravity.BOTTOM
+            }
+            else -> Gravity.END to when (vert) {
+                "TOP" -> Gravity.TOP
+                else -> Gravity.BOTTOM
+            }
         }
+        lp.gravity = hGravity or vGravity
+        button.layoutParams = lp
     }
 
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {

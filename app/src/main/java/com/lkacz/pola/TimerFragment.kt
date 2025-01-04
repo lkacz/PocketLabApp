@@ -27,7 +27,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    // Views created programmatically
     private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
     private lateinit var bodyTextView: TextView
@@ -35,7 +34,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
 
-    // [TAP] logic
     private var tapEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
@@ -167,19 +165,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Apply header text customizations
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Apply body text customizations
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Timer text customizations
         val timerSize = FontSizeManager.getTimerSize(requireContext())
         val timerColor = ColorManager.getTimerTextColor(requireContext())
         timerTextView.textSize = timerSize
@@ -187,7 +182,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyTimerAlignment(timerTextView)
         applyTimerTextPadding(timerTextView)
 
-        // Next button customizations
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -195,7 +189,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // [TAP] handling for next button
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
             view.setOnTouchListener { _, event ->
@@ -212,7 +205,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
 
-        // Start the countdown timer
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
@@ -245,7 +237,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     override fun onTouchThresholdReached() {
-        // Called when user taps multiple times within threshold
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         timerTextView.text = "Continue."
@@ -370,12 +361,20 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        when (prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()) {
-            "LEFT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.START
-            "RIGHT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.END
-            else -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.CENTER_HORIZONTAL
+        val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
+        val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
+        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+        val hGravity = when (horiz) {
+            "LEFT" -> Gravity.START
+            "CENTER" -> Gravity.CENTER_HORIZONTAL
+            else -> Gravity.END
         }
-        button.layoutParams = button.layoutParams
+        val vGravity = when (vert) {
+            "TOP" -> Gravity.TOP
+            else -> Gravity.BOTTOM
+        }
+        lp.gravity = hGravity or vGravity
+        button.layoutParams = lp
     }
 
     private fun applyContinueButtonPadding(button: Button) {

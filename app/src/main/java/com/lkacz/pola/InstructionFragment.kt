@@ -48,15 +48,34 @@ class InstructionFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val rootLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+        // Root container: FrameLayout to allow absolute positioning (top/bottom).
+        val rootFrame = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
 
+        // Scrollable main content (header, body, possibly webView, video, etc.)
+        val scrollView = ScrollView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            isFillViewport = true
+        }
+        val contentLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        scrollView.addView(contentLayout)
+        rootFrame.addView(scrollView)
+
+        // Header
         headerTextView = TextView(requireContext()).apply {
             text = "Default Header"
             textSize = 20f
@@ -68,8 +87,9 @@ class InstructionFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(headerTextView)
+        contentLayout.addView(headerTextView)
 
+        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -79,8 +99,9 @@ class InstructionFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(webView)
+        contentLayout.addView(webView)
 
+        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -91,8 +112,9 @@ class InstructionFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        rootLayout.addView(bodyTextView)
+        contentLayout.addView(bodyTextView)
 
+        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -102,20 +124,23 @@ class InstructionFragment : Fragment() {
                 bottomMargin = dpToPx(32)
             }
         }
-        rootLayout.addView(videoView)
+        contentLayout.addView(videoView)
 
+        // “Continue” button (placed directly in the FrameLayout).
         nextButton = Button(requireContext()).apply {
             text = "Next"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.END
-            }
+            // Size and style set later.
         }
-        rootLayout.addView(nextButton)
+        // Start with some default positioning that we’ll override later.
+        val buttonParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.END
+        )
+        nextButton.layoutParams = buttonParams
+        rootFrame.addView(nextButton)
 
-        return rootLayout
+        return rootFrame
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -125,6 +150,7 @@ class InstructionFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
+        // Parse and handle any embedded media in the text
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
@@ -139,6 +165,7 @@ class InstructionFragment : Fragment() {
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
+        // Apply text to UI
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
@@ -149,6 +176,7 @@ class InstructionFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
+        // Next Button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -156,6 +184,7 @@ class InstructionFragment : Fragment() {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
+        // Tap to show button logic
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
             view.setOnTouchListener { _, event ->
@@ -172,6 +201,7 @@ class InstructionFragment : Fragment() {
             }
         }
 
+        // Button action: load next fragment
         nextButton.setOnClickListener {
             (activity as MainActivity).loadNextFragment()
         }
@@ -188,6 +218,8 @@ class InstructionFragment : Fragment() {
             webView.destroy()
         }
     }
+
+    // --- Utility methods ---
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
@@ -270,20 +302,27 @@ class InstructionFragment : Fragment() {
         }
     }
 
+    /**
+     * Overhauled alignment to rely on FrameLayout.LayoutParams for both horizontal & vertical.
+     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
-        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+
+        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+
         val hGravity = when (horiz) {
             "LEFT" -> Gravity.START
             "CENTER" -> Gravity.CENTER_HORIZONTAL
             else -> Gravity.END
         }
+
         val vGravity = when (vert) {
             "TOP" -> Gravity.TOP
             else -> Gravity.BOTTOM
         }
+
         lp.gravity = hGravity or vGravity
         button.layoutParams = lp
     }

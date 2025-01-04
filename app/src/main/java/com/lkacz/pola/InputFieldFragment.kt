@@ -35,7 +35,6 @@ class InputFieldFragment : Fragment() {
     private lateinit var containerLayout: LinearLayout
     private lateinit var continueButton: Button
 
-    // [TAP] logic
     private var tapEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
@@ -57,7 +56,6 @@ class InputFieldFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Root container: a ScrollView to allow vertical scrolling
         scrollView = ScrollView(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -66,7 +64,6 @@ class InputFieldFragment : Fragment() {
             isFillViewport = true
         }
 
-        // Main vertical LinearLayout
         mainLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
@@ -77,7 +74,6 @@ class InputFieldFragment : Fragment() {
         }
         scrollView.addView(mainLayout)
 
-        // 1) Heading
         headingTextView = TextView(requireContext()).apply {
             text = "Default Heading"
             textSize = 20f
@@ -91,7 +87,6 @@ class InputFieldFragment : Fragment() {
         }
         mainLayout.addView(headingTextView)
 
-        // 2) WebView (hidden by default)
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -103,7 +98,6 @@ class InputFieldFragment : Fragment() {
         }
         mainLayout.addView(webView)
 
-        // 3) Body text
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -116,7 +110,6 @@ class InputFieldFragment : Fragment() {
         }
         mainLayout.addView(bodyTextView)
 
-        // 4) VideoView (hidden by default)
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -128,7 +121,6 @@ class InputFieldFragment : Fragment() {
         }
         mainLayout.addView(videoView)
 
-        // 5) Container for input fields
         containerLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -140,8 +132,6 @@ class InputFieldFragment : Fragment() {
         }
         mainLayout.addView(containerLayout)
 
-        // 6) Continue Button
-        // Changed to WRAP_CONTENT for width/height and default gravity=END
         continueButton = Button(requireContext()).apply {
             text = "Continue"
             textSize = 16f
@@ -164,7 +154,6 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -173,7 +162,6 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -182,10 +170,7 @@ class InputFieldFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Shuffle fields if isRandom
         val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
-
-        // Create EditTexts
         actualFields.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
@@ -205,7 +190,6 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Continue button text, alignment, padding, etc.
         val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
         tapEnabled = isTap
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
@@ -215,14 +199,8 @@ class InputFieldFragment : Fragment() {
         continueButton.textSize = FontSizeManager.getContinueSize(requireContext())
         continueButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         continueButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
-
-        val density = resources.displayMetrics.density
-        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
-        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
-        val chPx = (ch * density + 0.5f).toInt()
-        val cvPx = (cv * density + 0.5f).toInt()
-        continueButton.setPadding(chPx, cvPx, chPx, cvPx)
         applyContinueAlignment(continueButton)
+        applyContinueButtonPadding(continueButton)
 
         if (tapEnabled) {
             continueButton.visibility = View.INVISIBLE
@@ -241,7 +219,6 @@ class InputFieldFragment : Fragment() {
         }
 
         continueButton.setOnClickListener {
-            // Log all fields
             fieldValues.forEach { (hint, value) ->
                 val isNumeric = value.toDoubleOrNull() != null
                 logger.logInputFieldFragment(
@@ -352,11 +329,29 @@ class InputFieldFragment : Fragment() {
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        when (prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()) {
-            "LEFT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.START
-            "RIGHT" -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.END
-            else -> (button.layoutParams as? LinearLayout.LayoutParams)?.gravity = Gravity.CENTER_HORIZONTAL
+        val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
+        val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
+        val lp = button.layoutParams as? LinearLayout.LayoutParams ?: return
+        val hGravity = when (horiz) {
+            "LEFT" -> Gravity.START
+            "CENTER" -> Gravity.CENTER_HORIZONTAL
+            else -> Gravity.END
         }
+        val vGravity = when (vert) {
+            "TOP" -> Gravity.TOP
+            else -> Gravity.BOTTOM
+        }
+        lp.gravity = hGravity or vGravity
+        button.layoutParams = lp
+    }
+
+    private fun applyContinueButtonPadding(button: Button) {
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        button.setPadding(chPx, cvPx, chPx, cvPx)
     }
 
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {

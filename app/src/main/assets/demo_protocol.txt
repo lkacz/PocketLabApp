@@ -31,11 +31,17 @@ TIMER_SOUND;sound9.wav
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
+CONTINUE_ALIGNMENT;LEFT;BOTTOM
+
+HEADER_SIZE;32
+BODY_SIZE;32
+
+
+INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality
+
 
 TRANSITIONS;off
-INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
-TRANSITIONS;slide
-INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
+INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
 TRANSITIONS;fade
 INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
 TRANSITIONS;dissolve
@@ -56,7 +62,6 @@ TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ;5
 
 
 
-INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality
 
 INPUTFIELD[RANDOMIZED];Randomized inputfield testing;<fupa.mp3>Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;Participant ID;Interests;City of Origin;Nationality
 
