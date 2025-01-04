@@ -1,20 +1,15 @@
+// Filename: ScaleFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.VideoView
+import android.widget.*
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
@@ -35,8 +30,15 @@ class ScaleFragment : Fragment() {
     private val selectedResponse = MutableLiveData<String>()
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
-    private lateinit var videoView: VideoView
+
+    // UI elements created programmatically
+    private lateinit var rootLayout: LinearLayout
+    private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
+    private lateinit var bodyTextView: TextView
+    private lateinit var videoView: VideoView
+    private lateinit var itemTextView: TextView
+    private lateinit var buttonContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,20 +67,99 @@ class ScaleFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_scale, container, false)
+    ): View {
+        // Root layout
+        rootLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
 
-        val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        webView = view.findViewById(R.id.htmlSnippetWebView)
-        webView.visibility = View.GONE
-        val bodyTextView: TextView = view.findViewById(R.id.introductionTextView)
-        videoView = view.findViewById(R.id.videoView2)
-        videoView.visibility = View.GONE
-        val itemTextView: TextView = view.findViewById(R.id.itemTextView)
-        val buttonContainer: LinearLayout = view.findViewById(R.id.buttonContainer)
+        // Header TextView
+        headerTextView = TextView(requireContext()).apply {
+            text = "Default Header"
+            textSize = 20f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(headerTextView)
 
+        // WebView
+        webView = WebView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(webView)
+
+        // Body TextView
+        bodyTextView = TextView(requireContext()).apply {
+            text = "Default Body"
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(bodyTextView)
+
+        // VideoView
+        videoView = VideoView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(32)
+            }
+        }
+        rootLayout.addView(videoView)
+
+        // Item TextView (centered)
+        itemTextView = TextView(requireContext()).apply {
+            text = "Default Item"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            textSize = 16f
+            gravity = Gravity.CENTER  // Ensures the item text is always centered
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(itemTextView)
+
+        // Button container for responses
+        buttonContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        rootLayout.addView(buttonContainer)
+
+        return rootLayout
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         setupWebView()
-
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
         // Header
@@ -106,6 +187,7 @@ class ScaleFragment : Fragment() {
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
+        // Note: gravity was set to CENTER in onCreateView to ensure centered text.
 
         // Build responses as buttons
         val density = resources.displayMetrics.density
@@ -158,8 +240,6 @@ class ScaleFragment : Fragment() {
             }
             buttonContainer.addView(button)
         }
-
-        return view
     }
 
     override fun onDestroyView() {
@@ -189,9 +269,6 @@ class ScaleFragment : Fragment() {
         )
     }
 
-    /**
-     * Checks for .mp4 placeholders. If the file is found, sets the video to visible and plays it.
-     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
@@ -199,8 +276,7 @@ class ScaleFragment : Fragment() {
         val segments = group.split(",")
         val fileName = segments[0].trim()
         val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+            segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
         } else 1.0f
 
         if (resourcesFolderUri != null) {
@@ -208,16 +284,12 @@ class ScaleFragment : Fragment() {
             val videoFile = parentFolder.findFile(fileName)
             if (videoFile != null && videoFile.exists() && videoFile.isFile) {
                 videoView.visibility = View.VISIBLE
-                playVideoFile(videoFile.uri, volume)
+                videoView.setVideoURI(videoFile.uri)
+                videoView.setOnPreparedListener { mp ->
+                    mp.start()
+                    mp.setVolume(volume, volume)
+                }
             }
-        }
-    }
-
-    private fun playVideoFile(videoUri: Uri, volume: Float) {
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-            mp.setVolume(volume, volume)
         }
     }
 
@@ -263,6 +335,10 @@ class ScaleFragment : Fragment() {
             "RIGHT" -> textView.gravity = Gravity.END
             else -> textView.gravity = Gravity.CENTER
         }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     companion object {
