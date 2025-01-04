@@ -1,11 +1,12 @@
+// Filename: EndFragment.kt
 package com.lkacz.pola
 
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.LinearLayout
+import android.widget.TextView
 
 class EndFragment : BaseTouchAwareFragment(5000, 20) {
 
@@ -15,9 +16,28 @@ class EndFragment : BaseTouchAwareFragment(5000, 20) {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         logger = Logger.getInstance(requireContext())
-        return inflater.inflate(R.layout.fragment_end, container, false)
+
+        // Create a simple layout in code:
+        val rootLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            gravity = Gravity.CENTER
+        }
+
+        val endMessageTextView = TextView(requireContext()).apply {
+            text = "Completed"
+            textSize = 24f
+            gravity = Gravity.CENTER
+        }
+        rootLayout.addView(endMessageTextView)
+
+        return rootLayout
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -31,5 +51,9 @@ class EndFragment : BaseTouchAwareFragment(5000, 20) {
      */
     override fun onTouchThresholdReached() {
         activity?.finish()
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 }
