@@ -1,3 +1,4 @@
+// Filename: InstructionFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -8,10 +9,7 @@ import android.view.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.VideoView
+import android.widget.*
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
@@ -22,14 +20,15 @@ class InstructionFragment : Fragment() {
     private var nextButtonText: String? = null
 
     private lateinit var logger: Logger
-    private lateinit var videoView: VideoView
+
+    private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
+    private lateinit var bodyTextView: TextView
+    private lateinit var videoView: VideoView
+    private lateinit var nextButton: Button
+
     private val mediaPlayers = mutableListOf<MediaPlayer>()
-
-    // Tracks whether the [TAP] attribute is used in nextButtonText
     private var tapEnabled = false
-
-    // For counting taps if [TAP] is present
     private var tapCount = 0
     private val tapThreshold = 3
 
@@ -48,27 +47,84 @@ class InstructionFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_instruction, container, false)
+    ): View {
+        val rootLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        headerTextView = TextView(requireContext()).apply {
+            text = "Default Header"
+            textSize = 20f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(headerTextView)
+
+        webView = WebView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(webView)
+
+        bodyTextView = TextView(requireContext()).apply {
+            text = "Default Body"
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(bodyTextView)
+
+        videoView = VideoView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(32)
+            }
+        }
+        rootLayout.addView(videoView)
+
+        nextButton = Button(requireContext()).apply {
+            text = "Next"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.END
+            }
+        }
+        rootLayout.addView(nextButton)
+
+        return rootLayout
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
-
-        val headerTextView = view.findViewById<TextView>(R.id.headerTextView)
-        webView = view.findViewById(R.id.htmlSnippetWebView)
-        webView.visibility = View.GONE
-        val bodyTextView = view.findViewById<TextView>(R.id.bodyTextView)
-        videoView = view.findViewById(R.id.videoView2)
-        videoView.visibility = View.GONE
-        val nextButton = view.findViewById<Button>(R.id.nextButton)
-
         setupWebView()
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Clean/parse input
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
@@ -79,7 +135,6 @@ class InstructionFragment : Fragment() {
         tapEnabled = isTap
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
-        // Handle .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
@@ -99,27 +154,18 @@ class InstructionFragment : Fragment() {
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
 
-        val density = resources.displayMetrics.density
-        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
-        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
-        val chPx = (ch * density + 0.5f).toInt()
-        val cvPx = (cv * density + 0.5f).toInt()
-        nextButton.setPadding(chPx, cvPx, chPx, cvPx)
+        applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // If [TAP] is in the continue text, hide the button until threshold reached
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
-            // Listen for touches in the root view
             view.setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
                         nextButton.visibility = View.VISIBLE
-                        // Reset so repeated 3-taps won't hide it again
                         tapCount = 0
                     }
-                    // Eat the event
                     true
                 } else {
                     false
@@ -136,10 +182,12 @@ class InstructionFragment : Fragment() {
         super.onDestroyView()
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
-        if (videoView.isPlaying) {
+        if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
-        webView.destroy()
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
     }
 
     private fun setupWebView() {
@@ -172,16 +220,12 @@ class InstructionFragment : Fragment() {
             val videoFile = parentFolder.findFile(fileName)
             if (videoFile != null && videoFile.exists() && videoFile.isFile) {
                 videoView.visibility = View.VISIBLE
-                playVideoFile(videoFile.uri, volume)
+                videoView.setVideoURI(videoFile.uri)
+                videoView.setOnPreparedListener { mp ->
+                    mp.start()
+                    mp.setVolume(volume, volume)
+                }
             }
-        }
-    }
-
-    private fun playVideoFile(videoUri: Uri, volume: Float) {
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-            mp.setVolume(volume, volume)
         }
     }
 
@@ -227,10 +271,6 @@ class InstructionFragment : Fragment() {
         }
     }
 
-    /**
-     * Updated to cast to the correct LayoutParams type.
-     * If the parent is a LinearLayout, you can safely cast to LinearLayout.LayoutParams and set gravity.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
@@ -245,9 +285,15 @@ class InstructionFragment : Fragment() {
         }
     }
 
-    /**
-     * Checks if the text ends with [TAP]. If it does, returns the text minus [TAP] and sets a flag.
-     */
+    private fun applyContinueButtonPadding(button: Button) {
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        button.setPadding(chPx, cvPx, chPx, cvPx)
+    }
+
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
@@ -256,6 +302,10 @@ class InstructionFragment : Fragment() {
         } else {
             text to false
         }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     companion object {
