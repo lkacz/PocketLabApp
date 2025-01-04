@@ -324,6 +324,11 @@ class InstructionFragment : Fragment() {
         }
 
         lp.gravity = hGravity or vGravity
+
+        val density = resources.displayMetrics.density
+        val paddingPx = (32* density + 0.5f).toInt()
+        lp.setMargins(paddingPx, paddingPx, paddingPx, paddingPx)
+
         button.layoutParams = lp
     }
 
