@@ -1,5 +1,4 @@
 // protocol.txt manual
-
 // Participant ID Entry
 
 //HEADER_SIZE;40
@@ -19,7 +18,6 @@ TIMER_SOUND;sound9.wav
 // ITEM_SIZE;20
 // RESPONSE_SIZE;24
 
-
 // CONTINUE_TEXT_COLOR;#ff0000
 // CONTINUE_BACKGROUND_COLOR;#00ff00
 // CONTINUE_ALIGNMENT;LEFT
@@ -30,12 +28,14 @@ TIMER_SOUND;sound9.wav
 // SCREEN_BACKGROUND_COLOR;#F5F5F5
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
-
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
-
-TRANSITIONS;fade
+TRANSITIONS;slide
+INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
+INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
+INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
+INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
 
 TIMER_SIZE;20
 TIMER_COLOR;cyan

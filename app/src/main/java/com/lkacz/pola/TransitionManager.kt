@@ -14,6 +14,7 @@ object TransitionManager {
     }
 
     fun getTransitionMode(context: Context): String {
+        // Recognized: off, slide, dissolve, fade
         return getPrefs(context).getString(KEY_TRANSITION_MODE, "slide").orEmpty()
     }
 

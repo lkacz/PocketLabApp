@@ -1,5 +1,4 @@
 // Filename: MainActivity.kt
-
 package com.lkacz.pola
 
 import android.app.NotificationChannel
@@ -9,9 +8,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
+import android.transition.Slide
+import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 
@@ -32,11 +32,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         Logger.resetInstance()
         logger = Logger.getInstance(this)
 
-        val fragmentContainer = FrameLayout(this).apply {
+        val fragmentContainer = androidx.fragment.app.FragmentContainerView(this).apply {
             id = fragmentContainerId
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
         setContentView(fragmentContainer)
@@ -72,12 +72,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
         when (mode) {
             "off" -> {
-                // No transition animations
+                // No transition animations.
             }
             "slide" -> {
-                // Slide logic remains as is or can be handled via fragment animations
-                // Example: setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_left)
-                // or any existing logic you already have for sliding transitions
+                val slideIn = Slide(Gravity.END).apply { duration = 350 }
+                val slideOut = Slide(Gravity.START).apply { duration = 350 }
+                newFragment.enterTransition = slideIn
+                currentFragment?.exitTransition = slideOut
             }
             "dissolve" -> {
                 val dissolveIn = Fade().apply { duration = 350 }
@@ -86,9 +87,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 currentFragment?.exitTransition = dissolveOut
             }
             "fade" -> {
-                // Old fragment fully fades out first, then the new fragment fades in
                 val fadeOut = Fade().apply { duration = 350 }
-                val fadeIn = Fade().apply { duration = 350; startDelay = 350 }
+                val fadeIn = Fade().apply {
+                    duration = 350
+                    startDelay = 350
+                }
                 newFragment.enterTransition = fadeIn
                 currentFragment?.exitTransition = fadeOut
             }
@@ -106,10 +109,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
         when (mode) {
             "off" -> {
-                // No transition animations
+                // No transition animations.
             }
             "slide" -> {
-                // Slide logic remains as is or can be handled via fragment animations
+                val slideIn = Slide(Gravity.END).apply { duration = 350 }
+                val slideOut = Slide(Gravity.START).apply { duration = 350 }
+                newFragment.enterTransition = slideIn
+                currentFragment?.exitTransition = slideOut
             }
             "dissolve" -> {
                 val dissolveIn = Fade().apply { duration = 350 }
@@ -119,7 +125,10 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             }
             "fade" -> {
                 val fadeOut = Fade().apply { duration = 350 }
-                val fadeIn = Fade().apply { duration = 350; startDelay = 350 }
+                val fadeIn = Fade().apply {
+                    duration = 350
+                    startDelay = 350
+                }
                 newFragment.enterTransition = fadeIn
                 currentFragment?.exitTransition = fadeOut
             }
