@@ -31,6 +31,12 @@ TIMER_SOUND;sound9.wav
 // CONTINUE_BUTTON_ALIGNMENT;LEFT
 
 
+// Timer for 30 Minutes Solo Walk
+// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
+
+TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ;5
+
+
 CUSTOM_HTML;custom.html;CONTINUE
 INSTRUCTION;;<wiki.html>;CONTINUE[TAP]
 

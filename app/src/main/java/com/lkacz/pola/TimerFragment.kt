@@ -6,17 +6,12 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.VideoView
+import android.widget.*
+import androidx.core.view.setPadding
 import androidx.documentfile.provider.DocumentFile
 
 class TimerFragment : BaseTouchAwareFragment(5000, 20) {
@@ -31,8 +26,14 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private var timer: CountDownTimer? = null
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
-    private lateinit var videoView: VideoView
+
+    // Views created programmatically
+    private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
+    private lateinit var bodyTextView: TextView
+    private lateinit var videoView: VideoView
+    private lateinit var timerTextView: TextView
+    private lateinit var nextButton: Button
 
     // [TAP] logic
     private var tapEnabled = false
@@ -59,28 +60,100 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_timer, container, false)
+    ): View {
+        val rootLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(16))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            keepScreenOn = true
+        }
+
+        headerTextView = TextView(requireContext()).apply {
+            text = "Default Header"
+            textSize = 20f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(headerTextView)
+
+        webView = WebView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(webView)
+
+        bodyTextView = TextView(requireContext()).apply {
+            text = "Default Body"
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+            }
+        }
+        rootLayout.addView(bodyTextView)
+
+        videoView = VideoView(requireContext()).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(32)
+            }
+        }
+        rootLayout.addView(videoView)
+
+        timerTextView = TextView(requireContext()).apply {
+            text = "Time remaining: XX seconds"
+            textSize = 18f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dpToPx(16)
+                gravity = Gravity.CENTER_HORIZONTAL
+            }
+            // Center text within the TextView itself
+            gravity = Gravity.CENTER
+        }
+        rootLayout.addView(timerTextView)
+
+        nextButton = Button(requireContext()).apply {
+            text = "Next"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.END
+            }
+        }
+        rootLayout.addView(nextButton)
+
+        return rootLayout
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
-
-        val headerTextView: TextView = view.findViewById(R.id.headerTextView)
-        webView = view.findViewById(R.id.htmlSnippetWebView)
-        webView.visibility = View.GONE
-        val bodyTextView: TextView = view.findViewById(R.id.bodyTextView)
-        videoView = view.findViewById(R.id.videoView2)
-        videoView.visibility = View.GONE
-        val nextButton: Button = view.findViewById(R.id.nextButton)
-        val timerTextView: TextView = view.findViewById(R.id.timerTextView)
-
         setupWebView()
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Parse for [TAP]
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
@@ -91,7 +164,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         tapEnabled = isTap
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
-        // .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
@@ -110,25 +182,28 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
-
-        val density = resources.displayMetrics.density
-        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
-        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
-        val chPx = (ch * density + 0.5f).toInt()
-        val cvPx = (cv * density + 0.5f).toInt()
-        nextButton.setPadding(chPx, cvPx, chPx, cvPx)
+        applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // If [TAP] is present, hide until threshold
+        // Define what a "click" should do (performClick will end up here):
+        view.setOnClickListener {
+            if (tapEnabled) {
+                tapCount++
+                if (tapCount >= tapThreshold) {
+                    nextButton.visibility = View.VISIBLE
+                    tapCount = 0
+                }
+            }
+        }
+
+        // Attach a touch listener that calls performClick() on ACTION_DOWN
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { _, event ->
-                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
-                    tapCount++
-                    if (tapCount >= tapThreshold) {
-                        nextButton.visibility = View.VISIBLE
-                        tapCount = 0
-                    }
+            view.setOnTouchListener { v, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    // Call performClick to handle accessibility
+                    v.performClick()
+                    // We return true to indicate we've consumed the event
                     true
                 } else {
                     false
@@ -136,16 +211,12 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
         }
 
-        // Timer text
-        timerTextView.textSize = FontSizeManager.getBodySize(requireContext())
-        timerTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
-
         val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
         timer = object : CountDownTimer(totalTimeMillis, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val minutesLeft = millisUntilFinished / 60000
                 val secondsLeft = (millisUntilFinished % 60000) / 1000
-                timerTextView.text = String.format("Time left: %02d:%02d", minutesLeft, secondsLeft)
+                timerTextView.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
             }
 
             override fun onFinish() {
@@ -163,13 +234,14 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
     }
 
+    // Optionally override performClick on the fragment’s root view if you want custom logic
+    // associated specifically with performClick. Usually, setting an OnClickListener is enough.
+
     override fun onTouchThresholdReached() {
-        // If the user forcibly ends the timer by quick taps (from BaseTouchAwareFragment),
-        // we also show the button and start alarm
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
-        view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
-        view?.findViewById<Button>(R.id.nextButton)?.visibility = View.VISIBLE
+        timerTextView.text = "Continue."
+        nextButton.visibility = View.VISIBLE
         alarmHelper.startAlarm()
     }
 
@@ -220,16 +292,12 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             val videoFile = parentFolder.findFile(fileName)
             if (videoFile != null && videoFile.exists() && videoFile.isFile) {
                 videoView.visibility = View.VISIBLE
-                playVideoFile(videoFile.uri, volume)
+                videoView.setVideoURI(videoFile.uri)
+                videoView.setOnPreparedListener { mp ->
+                    mp.start()
+                    mp.setVolume(volume, volume)
+                }
             }
-        }
-    }
-
-    private fun playVideoFile(videoUri: Uri, volume: Float) {
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mp ->
-            mp.start()
-            mp.setVolume(volume, volume)
         }
     }
 
@@ -283,6 +351,15 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
     }
 
+    private fun applyContinueButtonPadding(button: Button) {
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        button.setPadding(chPx, cvPx, chPx, cvPx)
+    }
+
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
@@ -291,6 +368,10 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         } else {
             text to false
         }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     companion object {
