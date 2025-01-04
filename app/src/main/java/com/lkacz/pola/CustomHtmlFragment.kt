@@ -3,6 +3,7 @@ package com.lkacz.pola
 
 import android.content.Context
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -21,8 +22,9 @@ class CustomHtmlFragment : Fragment() {
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    // [TAP] logic
+    // For [TAP] and [HOLD]
     private var tapEnabled = false
+    private var holdEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
 
@@ -53,12 +55,15 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        // Check for [TAP]
+        val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
+
         val (cleanText, isTap) = parseTapAttribute(continueButtonText.orEmpty())
         tapEnabled = isTap
+        val (finalButtonText, isHold) = parseHoldAttribute(cleanText)
+        holdEnabled = isHold
 
-        val continueButton = Button(requireContext()).apply {
-            text = cleanText.ifBlank { "Continue" }
+        val button = Button(requireContext()).apply {
+            text = finalButtonText.ifBlank { "Continue" }
             textSize = FontSizeManager.getContinueSize(requireContext())
             setTextColor(ColorManager.getContinueTextColor(requireContext()))
             setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
@@ -70,7 +75,6 @@ class CustomHtmlFragment : Fragment() {
             val cvPx = (cv * density + 0.5f).toInt()
             setPadding(chPx, cvPx, chPx, cvPx)
 
-            // Initially place in bottom-end
             val marginPx = (16 * density + 0.5f).toInt()
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -79,21 +83,17 @@ class CustomHtmlFragment : Fragment() {
             ).apply {
                 setMargins(marginPx, marginPx, marginPx, marginPx)
             }
-
-            setOnClickListener {
-                (activity as? MainActivity)?.loadNextFragment()
-            }
         }
-        frameLayout.addView(continueButton)
 
-        // Hide the button if [TAP] is present
+        applyContinueAlignment(button)
+
         if (tapEnabled) {
-            continueButton.visibility = View.INVISIBLE
+            button.visibility = View.INVISIBLE
             frameLayout.setOnTouchListener { _, event ->
                 if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
-                        continueButton.visibility = View.VISIBLE
+                        button.visibility = View.VISIBLE
                         tapCount = 0
                     }
                     true
@@ -103,8 +103,16 @@ class CustomHtmlFragment : Fragment() {
             }
         }
 
-        // Apply alignment preference
-        applyContinueAlignment(continueButton)
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(button) {
+                (activity as? MainActivity)?.loadNextFragment()
+            }
+        } else {
+            button.setOnClickListener {
+                (activity as? MainActivity)?.loadNextFragment()
+            }
+        }
+        frameLayout.addView(button)
 
         return frameLayout
     }
@@ -134,22 +142,14 @@ class CustomHtmlFragment : Fragment() {
     private fun loadCustomHtml() {
         val resourcesUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
         if (resourcesUri == null || fileName.isNullOrBlank()) {
-            webView.loadData(
-                "<html><body><h2>File not found or invalid name.</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
+            webView.loadData("<html><body><h2>File not found or invalid name.</h2></body></html>", "text/html", "UTF-8")
             return
         }
 
         val folder = DocumentFile.fromTreeUri(requireContext(), resourcesUri) ?: return
         val htmlFile = folder.findFile(fileName!!)
         if (htmlFile == null || !htmlFile.exists() || !htmlFile.isFile) {
-            webView.loadData(
-                "<html><body><h2>HTML file not found in resources folder.</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
+            webView.loadData("<html><body><h2>HTML file not found in resources folder.</h2></body></html>", "text/html", "UTF-8")
             return
         }
 
@@ -157,39 +157,37 @@ class CustomHtmlFragment : Fragment() {
             requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
                 val htmlContent = inputStream.bufferedReader().readText()
                 webView.visibility = View.VISIBLE
-                webView.loadDataWithBaseURL(
-                    null,
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
+                webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
             }
         } catch (e: Exception) {
-            webView.loadData(
-                "<html><body><h2>Error loading file: ${e.message}</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
+            webView.loadData("<html><body><h2>Error loading file: ${e.message}</h2></body></html>", "text/html", "UTF-8")
         }
     }
 
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
-        val layoutParams = button.layoutParams
-        if (layoutParams is FrameLayout.LayoutParams) {
-            layoutParams.gravity = when (alignment) {
-                "LEFT" -> Gravity.BOTTOM or Gravity.START
-                "RIGHT" -> Gravity.BOTTOM or Gravity.END
-                else -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            }
-            button.layoutParams = layoutParams
+        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+        lp.gravity = when (alignment) {
+            "LEFT" -> Gravity.BOTTOM or Gravity.START
+            "RIGHT" -> Gravity.BOTTOM or Gravity.END
+            else -> Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         }
+        button.layoutParams = lp
     }
 
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
             newText to true

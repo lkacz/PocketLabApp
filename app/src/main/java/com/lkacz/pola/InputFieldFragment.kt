@@ -29,8 +29,9 @@ class InputFieldFragment : Fragment() {
     private lateinit var videoView: VideoView
     private lateinit var webView: WebView
 
-    // [TAP] logic
+    // [TAP] and [HOLD] logic
     private var tapEnabled = false
+    private var holdEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
 
@@ -88,7 +89,6 @@ class InputFieldFragment : Fragment() {
         // Shuffle fields if isRandom
         val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
 
-        // Create EditTexts
         for (fieldHint in actualFields) {
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
             val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
@@ -110,12 +110,16 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Continue button
-        val (cleanButtonText, isTap) = parseTapAttribute(
+        // Continue button text check for [TAP] and [HOLD]
+        val (btnWithoutTap, isTap) = parseTapAttribute(
             parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri)
         )
         tapEnabled = isTap
-        val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
+
+        val (finalButtonText, isHold) = parseHoldAttribute(btnWithoutTap)
+        holdEnabled = isHold
+
+        val refinedButtonText = checkAndLoadHtml(finalButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
 
         continueButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButtonText)
@@ -147,22 +151,31 @@ class InputFieldFragment : Fragment() {
             }
         }
 
-        continueButton.setOnClickListener {
-            // Log all fields
-            fieldValues.forEach { (hint, value) ->
-                val isNumeric = value.toDoubleOrNull() != null
-                logger.logInputFieldFragment(
-                    heading.orEmpty(),
-                    body.orEmpty(),
-                    hint,
-                    value,
-                    isNumeric
-                )
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(continueButton) {
+                logAndProceed()
             }
-            (activity as MainActivity).loadNextFragment()
+        } else {
+            continueButton.setOnClickListener {
+                logAndProceed()
+            }
         }
 
         return view
+    }
+
+    private fun logAndProceed() {
+        fieldValues.forEach { (hint, value) ->
+            val isNumeric = value.toDoubleOrNull() != null
+            logger.logInputFieldFragment(
+                heading.orEmpty(),
+                body.orEmpty(),
+                hint,
+                value,
+                isNumeric
+            )
+        }
+        (activity as MainActivity).loadNextFragment()
     }
 
     override fun onDestroyView() {
@@ -275,6 +288,16 @@ class InputFieldFragment : Fragment() {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = regex.replace(text, "").trim()
             newText to true
         } else {
             text to false

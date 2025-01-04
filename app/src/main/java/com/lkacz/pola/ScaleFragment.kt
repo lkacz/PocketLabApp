@@ -1,3 +1,4 @@
+// Filename: ScaleFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -24,11 +25,6 @@ class ScaleFragment : Fragment() {
     private var header: String? = null
     private var body: String? = null
     private var item: String? = null
-
-    /**
-     * Holds either simple responses (normal scale) or branching ones.
-     * Each entry is a Pair(displayText, branchLabel?), where branchLabel is null if not branching.
-     */
     private var responses: List<Pair<String, String?>> = emptyList()
 
     private lateinit var logger: Logger
@@ -81,7 +77,6 @@ class ScaleFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -90,7 +85,6 @@ class ScaleFragment : Fragment() {
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -99,7 +93,6 @@ class ScaleFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Item
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
         checkAndPlayMp4(item.orEmpty(), resourcesFolderUri)
@@ -107,7 +100,6 @@ class ScaleFragment : Fragment() {
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
 
-        // Build responses as buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -119,8 +111,8 @@ class ScaleFragment : Fragment() {
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
 
         responses.forEachIndexed { index, (displayText, label) ->
-            val buttonText = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
-            val refinedButton = checkAndLoadHtml(buttonText, resourcesFolderUri)
+            val parsedText = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
+            val refinedButton = checkAndLoadHtml(parsedText, resourcesFolderUri)
             checkAndPlayMp4(displayText, resourcesFolderUri)
 
             val button = Button(context).apply {
@@ -189,9 +181,6 @@ class ScaleFragment : Fragment() {
         )
     }
 
-    /**
-     * Checks for .mp4 placeholders. If the file is found, sets the video to visible and plays it.
-     */
     private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return

@@ -1,3 +1,4 @@
+// Filename: InstructionFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -26,8 +27,9 @@ class InstructionFragment : Fragment() {
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    // Tracks whether the [TAP] attribute is used in nextButtonText
+    // Tracks whether the [TAP] or [HOLD] attribute is used
     private var tapEnabled = false
+    private var holdEnabled = false
 
     // For counting taps if [TAP] is present
     private var tapCount = 0
@@ -73,11 +75,16 @@ class InstructionFragment : Fragment() {
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val (cleanNextText, isTap) = parseTapAttribute(
+        val (btnWithoutTap, isTap) = parseTapAttribute(
             parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         )
         tapEnabled = isTap
-        val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
+
+        // Check for [HOLD]
+        val (finalButtonText, isHold) = parseHoldAttribute(btnWithoutTap)
+        holdEnabled = isHold
+
+        val refinedNextText = checkAndLoadHtml(finalButtonText, resourcesFolderUri)
 
         // Handle .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -107,19 +114,16 @@ class InstructionFragment : Fragment() {
         nextButton.setPadding(chPx, cvPx, chPx, cvPx)
         applyContinueAlignment(nextButton)
 
-        // If [TAP] is in the continue text, hide the button until threshold reached
+        // If [TAP] is in the text, hide button until threshold reached
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
-            // Listen for touches in the root view
             view.setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
                         nextButton.visibility = View.VISIBLE
-                        // Reset so repeated 3-taps won't hide it again
                         tapCount = 0
                     }
-                    // Eat the event
                     true
                 } else {
                     false
@@ -127,8 +131,15 @@ class InstructionFragment : Fragment() {
             }
         }
 
-        nextButton.setOnClickListener {
-            (activity as MainActivity).loadNextFragment()
+        // If [HOLD], set up hold logic; else normal immediate click
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(nextButton) {
+                (activity as MainActivity).loadNextFragment()
+            }
+        } else {
+            nextButton.setOnClickListener {
+                (activity as MainActivity).loadNextFragment()
+            }
         }
     }
 
@@ -227,10 +238,6 @@ class InstructionFragment : Fragment() {
         }
     }
 
-    /**
-     * Updated to cast to the correct LayoutParams type.
-     * If the parent is a LinearLayout, you can safely cast to LinearLayout.LayoutParams and set gravity.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val alignment = prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase()
@@ -245,13 +252,22 @@ class InstructionFragment : Fragment() {
         }
     }
 
-    /**
-     * Checks if the text ends with [TAP]. If it does, returns the text minus [TAP] and sets a flag.
-     */
+    // Already existing [TAP] logic
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
+    // New parser for [HOLD]
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = regex.replace(text, "").trim()
             newText to true
         } else {
             text to false

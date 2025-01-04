@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
@@ -38,6 +39,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private var tapEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
+
+    // [HOLD] logic
+    private var holdEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,16 +84,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Parse for [TAP]
+        // Parse for [TAP], then check for [HOLD]
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val (cleanNextText, isTap) = parseTapAttribute(
+        val (btnNoTap, isTap) = parseTapAttribute(
             parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         )
         tapEnabled = isTap
-        val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
+        val (finalNextText, isHold) = parseHoldAttribute(btnNoTap)
+        holdEnabled = isHold
+
+        val refinedNextText = checkAndLoadHtml(finalNextText, resourcesFolderUri)
 
         // .mp4 placeholders
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -119,11 +126,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         nextButton.setPadding(chPx, cvPx, chPx, cvPx)
         applyContinueAlignment(nextButton)
 
-        // If [TAP] is present, hide until threshold
+        // [TAP] hides the button until threshold
         if (tapEnabled) {
             nextButton.visibility = View.INVISIBLE
             view.setOnTouchListener { _, event ->
-                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
                         nextButton.visibility = View.VISIBLE
@@ -133,6 +140,17 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 } else {
                     false
                 }
+            }
+        }
+
+        // If [HOLD], set up the 1s hold press; otherwise immediate click
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(nextButton) {
+                stopAlarmAndProceed()
+            }
+        } else {
+            nextButton.setOnClickListener {
+                stopAlarmAndProceed()
             }
         }
 
@@ -155,17 +173,18 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                 logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
             }
         }.start()
+    }
 
-        nextButton.setOnClickListener {
-            alarmHelper.stopAlarm()
-            (activity as MainActivity).loadNextFragment()
-            logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
-        }
+    /**
+     * Called if the user clicks or holds to continue. Stop alarm, go to next.
+     */
+    private fun stopAlarmAndProceed() {
+        alarmHelper.stopAlarm()
+        (activity as MainActivity).loadNextFragment()
+        logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
     }
 
     override fun onTouchThresholdReached() {
-        // If the user forcibly ends the timer by quick taps (from BaseTouchAwareFragment),
-        // we also show the button and start alarm
         timer?.cancel()
         logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
         view?.findViewById<TextView>(R.id.timerTextView)?.text = "Continue."
@@ -285,6 +304,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
+    /**
+     * Detects [HOLD] in the text, removing it and returning (cleanText, isHold).
+     */
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
             newText to true
