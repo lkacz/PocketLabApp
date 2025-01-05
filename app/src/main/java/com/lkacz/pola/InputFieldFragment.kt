@@ -36,9 +36,7 @@ class InputFieldFragment : Fragment() {
     private lateinit var containerLayout: LinearLayout
     private lateinit var continueButton: Button
 
-    private var tapEnabled = false
-    private var tapCount = 0
-    private val tapThreshold = 3
+    private var holdEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +55,6 @@ class InputFieldFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Root as FrameLayout
         val rootFrame = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -65,7 +62,6 @@ class InputFieldFragment : Fragment() {
             )
         }
 
-        // Scrollable area for main content
         scrollView = ScrollView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -85,7 +81,6 @@ class InputFieldFragment : Fragment() {
         scrollView.addView(mainContent)
         rootFrame.addView(scrollView)
 
-        // Heading
         headingTextView = TextView(requireContext()).apply {
             text = "Default Heading"
             textSize = 20f
@@ -99,7 +94,6 @@ class InputFieldFragment : Fragment() {
         }
         mainContent.addView(headingTextView)
 
-        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -111,7 +105,6 @@ class InputFieldFragment : Fragment() {
         }
         mainContent.addView(webView)
 
-        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -124,7 +117,6 @@ class InputFieldFragment : Fragment() {
         }
         mainContent.addView(bodyTextView)
 
-        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -136,7 +128,6 @@ class InputFieldFragment : Fragment() {
         }
         mainContent.addView(videoView)
 
-        // Container layout for EditTexts
         containerLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -148,7 +139,6 @@ class InputFieldFragment : Fragment() {
         }
         mainContent.addView(containerLayout)
 
-        // Continue button pinned in FrameLayout
         continueButton = Button(requireContext()).apply {
             text = "Continue"
             textSize = 16f
@@ -171,7 +161,6 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Heading
         val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
         val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
         checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
@@ -180,7 +169,6 @@ class InputFieldFragment : Fragment() {
         headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headingTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -189,7 +177,6 @@ class InputFieldFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Fields
         val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
         actualFields.forEach { fieldHint ->
             val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
@@ -210,9 +197,9 @@ class InputFieldFragment : Fragment() {
             containerLayout.addView(editText)
         }
 
-        // Continue button text
-        val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
-        tapEnabled = isTap
+        val (cleanButtonText, isHold) =
+            parseHoldAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
+        holdEnabled = isHold
         val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
         checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
 
@@ -223,36 +210,14 @@ class InputFieldFragment : Fragment() {
         applyContinueAlignment(continueButton)
         applyContinueButtonPadding(continueButton)
 
-        // Tap to show button logic
-        if (tapEnabled) {
-            continueButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    tapCount++
-                    if (tapCount >= tapThreshold) {
-                        continueButton.visibility = View.VISIBLE
-                        tapCount = 0
-                    }
-                    true
-                } else {
-                    false
-                }
+        if (holdEnabled) {
+            setupHoldToContinue(continueButton) {
+                handleContinue()
             }
-        }
-
-        // Continue button action
-        continueButton.setOnClickListener {
-            fieldValues.forEach { (hint, value) ->
-                val isNumeric = value.toDoubleOrNull() != null
-                logger.logInputFieldFragment(
-                    heading.orEmpty(),
-                    body.orEmpty(),
-                    hint,
-                    value,
-                    isNumeric
-                )
+        } else {
+            continueButton.setOnClickListener {
+                handleContinue()
             }
-            (activity as MainActivity).loadNextFragment()
         }
     }
 
@@ -266,6 +231,20 @@ class InputFieldFragment : Fragment() {
         if (this::webView.isInitialized) {
             webView.destroy()
         }
+    }
+
+    private fun handleContinue() {
+        fieldValues.forEach { (hint, value) ->
+            val isNumeric = value.toDoubleOrNull() != null
+            logger.logInputFieldFragment(
+                heading.orEmpty(),
+                body.orEmpty(),
+                hint,
+                value,
+                isNumeric
+            )
+        }
+        (activity as MainActivity).loadNextFragment()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
@@ -350,9 +329,6 @@ class InputFieldFragment : Fragment() {
         }
     }
 
-    /**
-     * FrameLayout.LayoutParams-based alignment.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
@@ -370,11 +346,9 @@ class InputFieldFragment : Fragment() {
         }
         lp.gravity = hGravity or vGravity
 
-        // 32dp margin
         val density = resources.displayMetrics.density
         val marginPx = (32 * density + 0.5f).toInt()
         lp.setMargins(marginPx, marginPx, marginPx, marginPx)
-
         button.layoutParams = lp
     }
 
@@ -387,13 +361,33 @@ class InputFieldFragment : Fragment() {
         button.setPadding(chPx, cvPx, chPx, cvPx)
     }
 
-    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
-        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
             newText to true
         } else {
             text to false
+        }
+    }
+
+    private fun setupHoldToContinue(button: Button, onHoldComplete: () -> Unit) {
+        button.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    button.postDelayed({
+                        if (button.isPressed) {
+                            onHoldComplete()
+                        }
+                    }, 1000)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    button.removeCallbacks(null)
+                    false
+                }
+                else -> false
+            }
         }
     }
 

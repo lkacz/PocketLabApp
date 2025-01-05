@@ -28,9 +28,7 @@ class InstructionFragment : Fragment() {
     private lateinit var nextButton: Button
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
-    private var tapEnabled = false
-    private var tapCount = 0
-    private val tapThreshold = 3
+    private var holdEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,15 +46,15 @@ class InstructionFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Root container: FrameLayout to allow absolute positioning (top/bottom).
         val rootFrame = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            isClickable = true
+            isFocusable = true
         }
 
-        // Scrollable main content (header, body, possibly webView, video, etc.)
         val scrollView = ScrollView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -75,7 +73,6 @@ class InstructionFragment : Fragment() {
         scrollView.addView(contentLayout)
         rootFrame.addView(scrollView)
 
-        // Header
         headerTextView = TextView(requireContext()).apply {
             text = "Default Header"
             textSize = 20f
@@ -89,7 +86,6 @@ class InstructionFragment : Fragment() {
         }
         contentLayout.addView(headerTextView)
 
-        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -101,7 +97,6 @@ class InstructionFragment : Fragment() {
         }
         contentLayout.addView(webView)
 
-        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -114,7 +109,6 @@ class InstructionFragment : Fragment() {
         }
         contentLayout.addView(bodyTextView)
 
-        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -126,12 +120,9 @@ class InstructionFragment : Fragment() {
         }
         contentLayout.addView(videoView)
 
-        // “Continue” button (placed directly in the FrameLayout).
         nextButton = Button(requireContext()).apply {
             text = "Next"
-            // Size and style set later.
         }
-        // Start with some default positioning that we’ll override later.
         val buttonParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -150,22 +141,21 @@ class InstructionFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Parse and handle any embedded media in the text
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val (cleanNextText, isTap) = parseTapAttribute(
+
+        val (cleanNextText, isHold) = parseHoldAttribute(
             parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
         )
-        tapEnabled = isTap
+        holdEnabled = isHold
         val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
 
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Apply text to UI
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
@@ -176,7 +166,6 @@ class InstructionFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Next Button
         nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
@@ -184,26 +173,14 @@ class InstructionFragment : Fragment() {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // Tap to show button logic
-        if (tapEnabled) {
-            nextButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    tapCount++
-                    if (tapCount >= tapThreshold) {
-                        nextButton.visibility = View.VISIBLE
-                        tapCount = 0
-                    }
-                    true
-                } else {
-                    false
-                }
+        if (holdEnabled) {
+            setupHoldToContinue(nextButton) {
+                (activity as MainActivity).loadNextFragment()
             }
-        }
-
-        // Button action: load next fragment
-        nextButton.setOnClickListener {
-            (activity as MainActivity).loadNextFragment()
+        } else {
+            nextButton.setOnClickListener {
+                (activity as MainActivity).loadNextFragment()
+            }
         }
     }
 
@@ -218,8 +195,6 @@ class InstructionFragment : Fragment() {
             webView.destroy()
         }
     }
-
-    // --- Utility methods ---
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
@@ -284,6 +259,38 @@ class InstructionFragment : Fragment() {
         return text.replace(matchedFull, "")
     }
 
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
+    private fun setupHoldToContinue(button: Button, onHoldComplete: () -> Unit) {
+        var holdRunnable: Runnable? = null
+        button.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    holdRunnable = Runnable {
+                        if (button.isPressed) {
+                            onHoldComplete()
+                        }
+                    }
+                    button.postDelayed(holdRunnable, 1000)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    holdRunnable?.let { button.removeCallbacks(it) }
+                    false
+                }
+                else -> false
+            }
+        }
+    }
+
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
@@ -302,14 +309,10 @@ class InstructionFragment : Fragment() {
         }
     }
 
-    /**
-     * Overhauled alignment to rely on FrameLayout.LayoutParams for both horizontal & vertical.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
-
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
 
         val hGravity = when (horiz) {
@@ -317,18 +320,15 @@ class InstructionFragment : Fragment() {
             "CENTER" -> Gravity.CENTER_HORIZONTAL
             else -> Gravity.END
         }
-
         val vGravity = when (vert) {
             "TOP" -> Gravity.TOP
             else -> Gravity.BOTTOM
         }
-
         lp.gravity = hGravity or vGravity
 
         val density = resources.displayMetrics.density
-        val paddingPx = (32* density + 0.5f).toInt()
-        lp.setMargins(paddingPx, paddingPx, paddingPx, paddingPx)
-
+        val marginPx = (32 * density + 0.5f).toInt()
+        lp.setMargins(marginPx, marginPx, marginPx, marginPx)
         button.layoutParams = lp
     }
 
@@ -339,16 +339,6 @@ class InstructionFragment : Fragment() {
         val chPx = (ch * density + 0.5f).toInt()
         val cvPx = (cv * density + 0.5f).toInt()
         button.setPadding(chPx, cvPx, chPx, cvPx)
-    }
-
-    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
-        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
-        return if (regex.containsMatchIn(text)) {
-            val newText = text.replace(regex, "").trim()
-            newText to true
-        } else {
-            text to false
-        }
     }
 
     private fun dpToPx(dp: Int): Int {

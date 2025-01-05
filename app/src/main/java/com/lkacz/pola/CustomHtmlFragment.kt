@@ -22,9 +22,7 @@ class CustomHtmlFragment : Fragment() {
     private lateinit var webView: WebView
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    private var tapEnabled = false
-    private var tapCount = 0
-    private val tapThreshold = 3
+    private var holdEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +35,6 @@ class CustomHtmlFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Already using FrameLayout as root
         val frameLayout = FrameLayout(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -54,8 +51,8 @@ class CustomHtmlFragment : Fragment() {
         }
         frameLayout.addView(webView)
 
-        val (cleanText, isTap) = parseTapAttribute(continueButtonText.orEmpty())
-        tapEnabled = isTap
+        val (cleanText, isHold) = parseHoldAttribute(continueButtonText.orEmpty())
+        holdEnabled = isHold
 
         val continueButton = Button(requireContext()).apply {
             text = cleanText.ifBlank { "Continue" }
@@ -78,26 +75,16 @@ class CustomHtmlFragment : Fragment() {
             ).apply {
                 setMargins(marginPx, marginPx, marginPx, marginPx)
             }
-
-            setOnClickListener {
-                (activity as? MainActivity)?.loadNextFragment()
-            }
         }
         frameLayout.addView(continueButton)
 
-        if (tapEnabled) {
-            continueButton.visibility = View.INVISIBLE
-            frameLayout.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    tapCount++
-                    if (tapCount >= tapThreshold) {
-                        continueButton.visibility = View.VISIBLE
-                        tapCount = 0
-                    }
-                    true
-                } else {
-                    false
-                }
+        if (holdEnabled) {
+            setupHoldToContinue(continueButton) {
+                (activity as? MainActivity)?.loadNextFragment()
+            }
+        } else {
+            continueButton.setOnClickListener {
+                (activity as? MainActivity)?.loadNextFragment()
             }
         }
 
@@ -193,7 +180,6 @@ class CustomHtmlFragment : Fragment() {
         }
         lp.gravity = hGravity or vGravity
 
-        // If you want the uniform 32dp margin, mimic InstructionFragment approach:
         val density = resources.displayMetrics.density
         val marginPx = (32 * density + 0.5f).toInt()
         lp.setMargins(marginPx, marginPx, marginPx, marginPx)
@@ -201,13 +187,33 @@ class CustomHtmlFragment : Fragment() {
         button.layoutParams = lp
     }
 
-    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
-        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
             val newText = text.replace(regex, "").trim()
             newText to true
         } else {
             text to false
+        }
+    }
+
+    private fun setupHoldToContinue(button: Button, onHoldComplete: () -> Unit) {
+        button.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    button.postDelayed({
+                        if (button.isPressed) {
+                            onHoldComplete()
+                        }
+                    }, 1000)
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    button.removeCallbacks(null)
+                    false
+                }
+                else -> false
+            }
         }
     }
 

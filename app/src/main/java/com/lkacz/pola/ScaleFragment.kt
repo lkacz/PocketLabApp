@@ -19,19 +19,12 @@ class ScaleFragment : Fragment() {
     private var header: String? = null
     private var body: String? = null
     private var item: String? = null
-
-    /**
-     * Holds either simple responses (normal scale) or branching ones.
-     * Each entry is a Pair(displayText, branchLabel?), where branchLabel is null if not branching.
-     */
     private var responses: List<Pair<String, String?>> = emptyList()
 
     private lateinit var logger: Logger
     private val selectedResponse = MutableLiveData<String>()
-
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
-    // UI elements created programmatically
     private lateinit var rootLayout: LinearLayout
     private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
@@ -39,6 +32,8 @@ class ScaleFragment : Fragment() {
     private lateinit var videoView: VideoView
     private lateinit var itemTextView: TextView
     private lateinit var buttonContainer: LinearLayout
+
+    private var holdEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +63,6 @@ class ScaleFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Root layout
         rootLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
@@ -78,7 +72,6 @@ class ScaleFragment : Fragment() {
             )
         }
 
-        // Header TextView
         headerTextView = TextView(requireContext()).apply {
             text = "Default Header"
             textSize = 20f
@@ -92,7 +85,6 @@ class ScaleFragment : Fragment() {
         }
         rootLayout.addView(headerTextView)
 
-        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -104,7 +96,6 @@ class ScaleFragment : Fragment() {
         }
         rootLayout.addView(webView)
 
-        // Body TextView
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -117,7 +108,6 @@ class ScaleFragment : Fragment() {
         }
         rootLayout.addView(bodyTextView)
 
-        // VideoView
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -129,12 +119,11 @@ class ScaleFragment : Fragment() {
         }
         rootLayout.addView(videoView)
 
-        // Item TextView (centered)
         itemTextView = TextView(requireContext()).apply {
             text = "Default Item"
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             textSize = 16f
-            gravity = Gravity.CENTER  // Ensures the item text is always centered
+            gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -144,7 +133,6 @@ class ScaleFragment : Fragment() {
         }
         rootLayout.addView(itemTextView)
 
-        // Button container for responses
         buttonContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -162,7 +150,6 @@ class ScaleFragment : Fragment() {
         setupWebView()
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Header
         val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
@@ -171,7 +158,6 @@ class ScaleFragment : Fragment() {
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
@@ -180,16 +166,13 @@ class ScaleFragment : Fragment() {
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Item
         val cleanItem = parseAndPlayAudioIfAny(item.orEmpty(), resourcesFolderUri)
         val refinedItem = checkAndLoadHtml(cleanItem, resourcesFolderUri)
         checkAndPlayMp4(item.orEmpty(), resourcesFolderUri)
         itemTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedItem)
         itemTextView.textSize = FontSizeManager.getItemSize(requireContext())
         itemTextView.setTextColor(ColorManager.getItemTextColor(requireContext()))
-        // Note: gravity was set to CENTER in onCreateView to ensure centered text.
 
-        // Build responses as buttons
         val density = resources.displayMetrics.density
         val marginDp = SpacingManager.getResponseButtonMargin(requireContext())
         val marginPx = (marginDp * density + 0.5f).toInt()
@@ -199,6 +182,10 @@ class ScaleFragment : Fragment() {
         val paddingVpx = (paddingVdp * density + 0.5f).toInt()
         val extraSpacingDp = SpacingManager.getResponseSpacing(requireContext())
         val extraSpacingPx = (extraSpacingDp * density + 0.5f).toInt()
+
+        // If [HOLD] appears in item text or body text for some reason, we don't do a separate hold here.
+        // Scale buttons remain immediate click. If you need hold for scale, adapt similarly below.
+        // But here, we demonstrate removing old [TAP] logic and not using [HOLD] for scale responses.
 
         responses.forEachIndexed { index, (displayText, label) ->
             val buttonText = parseAndPlayAudioIfAny(displayText, resourcesFolderUri)
