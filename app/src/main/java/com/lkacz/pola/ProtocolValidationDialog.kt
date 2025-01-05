@@ -3,10 +3,13 @@ package com.lkacz.pola
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Intent
+import android.database.Cursor
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.text.*
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
@@ -94,6 +97,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private var coloringEnabled = true
     private var semicolonsAsBreaks = false
 
+    private lateinit var btnLoad: Button
     private lateinit var btnSave: Button
     private lateinit var btnSaveAs: Button
 
@@ -107,7 +111,10 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                     }
                     val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
-                    prefs.edit().putString("PROTOCOL_URI", uri.toString()).apply()
+                    prefs.edit()
+                        .putString("PROTOCOL_URI", uri.toString())
+                        .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
+                        .apply()
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
                     Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
@@ -120,6 +127,28 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             } else {
                 Toast.makeText(requireContext(), "Save As was cancelled.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val openDocumentLauncher: ActivityResultLauncher<Array<String>> =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                try {
+                    requireContext().contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: SecurityException) {
+                }
+                val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+                prefs.edit()
+                    .putString("PROTOCOL_URI", uri.toString())
+                    .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
+                    .apply()
+                revalidateAndRefreshUI()
+                Toast.makeText(requireContext(), "Protocol loaded.", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "Loading was cancelled.", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -151,7 +180,7 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Button row at the top: SAVE | SAVE AS (aligned left), CLOSE (aligned right)
+        // Button row at the top: LOAD | SAVE | SAVE AS (aligned left), CLOSE (aligned right)
         val topButtonRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -174,6 +203,13 @@ class ProtocolValidationDialog : DialogFragment() {
             gravity = Gravity.END
         }
 
+        btnLoad = Button(requireContext()).apply {
+            text = "LOAD"
+            setOnClickListener {
+                openDocumentLauncher.launch(arrayOf("text/plain", "text/*"))
+            }
+        }
+
         btnSave = Button(requireContext()).apply {
             text = "SAVE"
             isEnabled = false
@@ -190,6 +226,7 @@ class ProtocolValidationDialog : DialogFragment() {
             setOnClickListener { dismiss() }
         }
 
+        leftButtonsLayout.addView(btnLoad)
         leftButtonsLayout.addView(btnSave)
         leftButtonsLayout.addView(btnSaveAs)
         rightButtonsLayout.addView(btnClose)
@@ -219,8 +256,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val searchButton = Button(requireContext()).apply {
             text = "Search"
             setOnClickListener {
-                searchQuery =
-                    searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
                 revalidateAndRefreshUI()
             }
         }
@@ -328,7 +364,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val fileContent = getProtocolContent()
-
             val lines = fileContent.split("\n")
             allLines = mergeLongFormatCommands(lines).toMutableList()
 
@@ -378,12 +413,9 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-
-        // Remove any previously added final view (scrollable content) so it can be refreshed
         while (containerLayout.childCount > 4) {
             containerLayout.removeViewAt(4)
         }
-
         containerLayout.addView(buildCompletedView())
     }
 
@@ -1122,7 +1154,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val spannable = SpannableString(combinedText)
-
         if (errorMessage.isNotEmpty()) {
             val errorLength = errorMessage.length
             spannable.setSpan(
@@ -1132,7 +1163,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
-
         if (warningMessage.isNotEmpty()) {
             val startIndex = errorMessage.length + if (errorMessage.isNotEmpty()) 1 else 0
             val endIndex = startIndex + warningMessage.length
@@ -1266,5 +1296,16 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         flushBufferIfNeeded()
         return mergedLines
+    }
+
+    private fun getFileName(uri: Uri): String? {
+        var name: String? = null
+        val cursor: Cursor? = requireContext().contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                name = it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            }
+        }
+        return name
     }
 }
