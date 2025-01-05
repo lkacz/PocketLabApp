@@ -245,7 +245,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val cbColoring = CheckBox(requireContext()).apply {
-            text = "Highlight Recognized Commands"
+            text = "Highlight Commands"
             isChecked = coloringEnabled
             setOnCheckedChangeListener { _, isChecked ->
                 coloringEnabled = isChecked
@@ -254,7 +254,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val cbSemicolonsBreak = CheckBox(requireContext()).apply {
-            text = "Display Commands in Segments"
+            text = "Split Commands"
             isChecked = semicolonsAsBreaks
             setOnCheckedChangeListener { _, isChecked ->
                 semicolonsAsBreaks = isChecked
@@ -463,7 +463,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (coloringEnabled) highlightLine(trimmedLine, semicolonsAsBreaks)
                 else {
                     if (semicolonsAsBreaks) {
-                        SpannableString(trimmedLine.replace(";", "\n"))
+                        SpannableString(trimmedLine.replace(";", ";\n"))
                     } else {
                         SpannableString(trimmedLine)
                     }
@@ -1029,6 +1029,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
             if (index < tokens.size - 1) {
                 if (treatSemicolonsAsLineBreaks) {
+                    // Keep the semicolon, then line-break
+                    spannableBuilder.append(";")
                     spannableBuilder.append("\n")
                 } else {
                     spannableBuilder.append(";")
