@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.*
 import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.widget.*
@@ -416,9 +417,9 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)
-            headerRow.addView(createHeaderCell("Line"))
-            headerRow.addView(createHeaderCell("Command"))
-            headerRow.addView(createHeaderCell("Error(s)"))
+            headerRow.addView(createHeaderCell("Line", Gravity.END))
+            headerRow.addView(createHeaderCell("Command", Gravity.START))
+            headerRow.addView(createHeaderCell("Error(s)", Gravity.START))
             addView(headerRow)
         }
     }
@@ -459,7 +460,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
 
-            val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
+            val combinedIssuesSpannable = colorizeIssues(errorMessage, warningMessage)
 
             val row = TableRow(context).apply {
                 val backgroundColor = if ((originalLineNumber % 2) == 0) {
@@ -541,12 +542,12 @@ class ProtocolValidationDialog : DialogFragment() {
             .show()
     }
 
-    private fun createHeaderCell(headerText: String): TextView {
+    private fun createHeaderCell(headerText: String, gravity: Int): TextView {
         return TextView(requireContext()).apply {
             text = headerText
             textSize = 16f
             setTypeface(null, Typeface.BOLD)
-            gravity = Gravity.CENTER
+            this.gravity = gravity
             setPadding(24, 16, 24, 16)
             layoutParams = TableRow.LayoutParams(
                 TableRow.LayoutParams.WRAP_CONTENT,
@@ -639,6 +640,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
         if (!commandRecognized) {
             errorMessage = appendError(errorMessage, "Unrecognized command")
+            // If unrecognized, skip adding further errors/warnings
+            return Pair(errorMessage, warningMessage)
         } else {
             val result = handleKnownCommandValidations(
                 commandRaw,
@@ -703,7 +706,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (parts.size > 1 && parts[1].isNotBlank()) {
                     val fileRef = parts[1].trim()
                     if (resourcesFolderUri != null) {
-                        val found = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                        val found =
+                            ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                         if (!found) {
                             errorMessage = appendError(
                                 errorMessage,
@@ -744,8 +748,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (parts.size < 4) {
                     errorMessage = appendError(
                         errorMessage,
-                        "$commandRaw must have at least 4 segments: " +
-                                "e.g. INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE_TEXT"
+                        "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE_TEXT"
                     )
                 }
             }
@@ -807,7 +810,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 val mode = parts.getOrNull(1)?.lowercase()?.trim()
                 if (mode.isNullOrEmpty()) {
                     errorMessage =
-                        appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide or dissolve)")
+                        appendError(
+                            errorMessage,
+                            "TRANSITIONS missing mode (e.g. off or slide or dissolve)"
+                        )
                 } else if (mode !in listOf("off", "slide", "dissolve", "fade", "slideleft")) {
                     errorMessage = appendError(
                         errorMessage,
@@ -974,14 +980,12 @@ class ProtocolValidationDialog : DialogFragment() {
             spannableBuilder.append(token)
             val end = spannableBuilder.length
 
-            // Determine command color logic
             val commandUpper = tokens.firstOrNull()?.uppercase().orEmpty()
             val colorSpan = BackgroundColorSpan(
                 chooseTokenBackgroundColor(commandUpper, index, tokens.size)
             )
             spannableBuilder.setSpan(colorSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-            // Bold the first token (the command)
             if (index == 0) {
                 spannableBuilder.setSpan(
                     StyleSpan(Typeface.BOLD),
@@ -995,10 +999,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (treatSemicolonsAsLineBreaks) {
                     spannableBuilder.append("\n")
                 } else {
-                    // Optional: if you want a visible semicolon, you can append it.
-                    // Or leave as is if you prefer not to display them.
-                    // spannableBuilder.append(";")
-                    spannableBuilder.append(" ")
+                    // Show the semicolon only, no added space
+                    spannableBuilder.append(";")
                 }
             }
         }
@@ -1065,13 +1067,36 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    private fun combineIssues(errorMessage: String, warningMessage: String): SpannableString {
+    private fun colorizeIssues(errorMessage: String, warningMessage: String): SpannableString {
         val combinedText = buildString {
             if (errorMessage.isNotEmpty()) append(errorMessage)
             if (errorMessage.isNotEmpty() && warningMessage.isNotEmpty()) append("\n")
             if (warningMessage.isNotEmpty()) append(warningMessage)
         }
-        return SpannableString(combinedText)
+
+        val spannable = SpannableString(combinedText)
+
+        if (errorMessage.isNotEmpty()) {
+            val errorLength = errorMessage.length
+            spannable.setSpan(
+                ForegroundColorSpan(Color.RED),
+                0,
+                errorLength,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        if (warningMessage.isNotEmpty()) {
+            val startIndex = errorMessage.length + if (errorMessage.isNotEmpty()) 1 else 0
+            val endIndex = startIndex + warningMessage.length
+            spannable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#FFA500")),
+                startIndex,
+                endIndex,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        return spannable
     }
 
     private fun isValidColor(colorStr: String): Boolean {
@@ -1132,7 +1157,8 @@ class ProtocolValidationDialog : DialogFragment() {
             revalidateAndRefreshUI()
             Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 }

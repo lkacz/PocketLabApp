@@ -40,12 +40,28 @@ CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 
 
 
-INPUTFIELD;Inputfield testing;Let's test;[Participant ID;Interests;City of Origin];CONTINUE[HOLD]
+INPUTFIELD;
+    Inputfield testing;
+    Let's test;
+    [Participant ID;Interests;City of Origin];
+    CONTINUE[HOLD]
+
+
+
 INPUTFIELD;Inputfield testing;Let's test;Participant ID;CONTINUE[HOLD]
 INPUTFIELD;Inputfield testing;Let's test;[Participant ID];CONTINUE[HOLD]
 
 
-TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ
+TIMER;
+Walking;
+Coś tam coś tam;
+5;
+IDZIEMY DALEJ
+
+
+
+
+
 TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ[HOLD]
 
 
