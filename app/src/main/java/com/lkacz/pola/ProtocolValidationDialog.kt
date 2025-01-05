@@ -89,10 +89,6 @@ class ProtocolValidationDialog : DialogFragment() {
     private var filterOption: FilterOption = FilterOption.HIDE_COMMENTS
 
     private var hasUnsavedChanges = false
-        set(value) {
-            field = value
-            btnSave.isEnabled = value
-        }
 
     private var coloringEnabled = true
     private var semicolonsAsBreaks = true
@@ -207,9 +203,9 @@ class ProtocolValidationDialog : DialogFragment() {
             setOnClickListener { confirmLoadProtocol() }
         }
 
+        // Keep this button always enabled to ensure we can see the "No Changes Detected" dialog
         btnSave = Button(requireContext()).apply {
             text = "SAVE"
-            isEnabled = false
             setOnClickListener { confirmSaveDialog() }
         }
 
@@ -434,6 +430,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun confirmSaveDialog() {
+        // If there are no unsaved changes, ask whether the user still wants to save.
         if (!hasUnsavedChanges) {
             AlertDialog.Builder(requireContext())
                 .setTitle("No Changes Detected")
