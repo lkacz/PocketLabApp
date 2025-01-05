@@ -12,32 +12,29 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.*
-import androidx.core.view.setPadding
 import androidx.documentfile.provider.DocumentFile
+import androidx.fragment.app.Fragment
 
-class TimerFragment : BaseTouchAwareFragment(5000, 20) {
+class TimerFragment : Fragment() {
 
     private var header: String? = null
     private var body: String? = null
     private var nextButtonText: String? = null
-    private var timeInSeconds: Int? = null
+    private var timeSeconds: Int = 0
 
-    private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
-    private var timer: CountDownTimer? = null
-
-    private val mediaPlayers = mutableListOf<MediaPlayer>()
 
     private lateinit var headerTextView: TextView
-    private lateinit var webView: WebView
     private lateinit var bodyTextView: TextView
     private lateinit var videoView: VideoView
-    private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
+    private lateinit var timerTextView: TextView
+    private lateinit var webView: WebView
 
-    private var tapEnabled = false
-    private var tapCount = 0
-    private val tapThreshold = 3
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
+    private var holdEnabled = false
+
+    private var countDownTimer: CountDownTimer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,14 +42,10 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             header = it.getString("HEADER")
             body = it.getString("BODY")
             nextButtonText = it.getString("NEXT_BUTTON_TEXT")
-            timeInSeconds = it.getInt("TIME_IN_SECONDS")
+            timeSeconds = it.getInt("TIME_SECONDS", 0)
         }
-        if (timeInSeconds == null || timeInSeconds!! < 0) {
-            timeInSeconds = 0
-        }
-        alarmHelper = AlarmHelper(requireContext())
         logger = Logger.getInstance(requireContext())
-        logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeInSeconds ?: 0)
+        logger.logTimerFragment(header ?: "Default Header", body ?: "Default Body", timeSeconds, nextButtonText)
     }
 
     override fun onCreateView(
@@ -60,112 +53,19 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Root container as FrameLayout
-        val rootFrame = FrameLayout(requireContext()).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            keepScreenOn = true
-        }
+        val rootView = inflater.inflate(R.layout.fragment_timer, container, false)
 
-        // Scrollable content layout
-        val scrollView = ScrollView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            isFillViewport = true
-        }
-        val contentLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        scrollView.addView(contentLayout)
-        rootFrame.addView(scrollView)
+        headerTextView = rootView.findViewById(R.id.headerTextView)
+        webView = rootView.findViewById(R.id.htmlSnippetWebView)
+        bodyTextView = rootView.findViewById(R.id.bodyTextView)
+        videoView = rootView.findViewById(R.id.videoView2)
+        timerTextView = rootView.findViewById(R.id.timerTextView)
+        nextButton = rootView.findViewById(R.id.nextButton)
 
-        // Header
-        headerTextView = TextView(requireContext()).apply {
-            text = "Default Header"
-            textSize = 20f
-            setTypeface(typeface, Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
-            }
-        }
-        contentLayout.addView(headerTextView)
+        // Button should remain hidden until time is up
+        nextButton.visibility = View.INVISIBLE
 
-        // WebView
-        webView = WebView(requireContext()).apply {
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
-            }
-        }
-        contentLayout.addView(webView)
-
-        // Body
-        bodyTextView = TextView(requireContext()).apply {
-            text = "Default Body"
-            textSize = 16f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
-            }
-        }
-        contentLayout.addView(bodyTextView)
-
-        // Video
-        videoView = VideoView(requireContext()).apply {
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(32)
-            }
-        }
-        contentLayout.addView(videoView)
-
-        // Timer text
-        timerTextView = TextView(requireContext()).apply {
-            text = "Time remaining: XX seconds"
-            textSize = 18f
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
-            }
-        }
-        contentLayout.addView(timerTextView)
-
-        // Next button pinned in the FrameLayout
-        nextButton = Button(requireContext()).apply {
-            text = "Next"
-        }
-        val buttonParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM or Gravity.END
-        )
-        nextButton.layoutParams = buttonParams
-        rootFrame.addView(nextButton)
-
-        return rootFrame
+        return rootView
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -179,121 +79,107 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
-        val (cleanNextText, isTap) = parseTapAttribute(
-            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
-        )
-        tapEnabled = isTap
-        val refinedNextText = checkAndLoadHtml(cleanNextText, resourcesFolderUri)
+        val cleanNext = parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        val refinedNext = checkAndLoadHtml(cleanNext, resourcesFolderUri)
 
         checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
 
-        // Header
         headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
         headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
         headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
         applyHeaderAlignment(headerTextView)
 
-        // Body
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Timer styling
-        val timerSize = FontSizeManager.getTimerSize(requireContext())
-        val timerColor = ColorManager.getTimerTextColor(requireContext())
-        timerTextView.textSize = timerSize
-        timerTextView.setTextColor(timerColor)
+        timerTextView.textSize = FontSizeManager.getTimerSize(requireContext())
+        timerTextView.setTextColor(ColorManager.getTimerTextColor(requireContext()))
         applyTimerAlignment(timerTextView)
-        applyTimerTextPadding(timerTextView)
 
-        // Next button
-        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
+        // Parse [HOLD] from nextButtonText
+        val (buttonTextNoHold, isHold) = parseHoldAttribute(refinedNext)
+        holdEnabled = isHold
+
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, buttonTextNoHold)
         nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
         nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
         nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        if (tapEnabled) {
-            nextButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    tapCount++
-                    if (tapCount >= tapThreshold) {
-                        nextButton.visibility = View.VISIBLE
-                        tapCount = 0
-                    }
-                    true
-                } else {
-                    false
-                }
-            }
-        }
+        // Once timer finishes, the button is shown. If [HOLD], we set up hold logic, otherwise direct click.
+        startCountdown(timeSeconds)
 
-        // Timer logic
-        val totalTimeMillis = (timeInSeconds ?: 0) * 1000L
-        timer = object : CountDownTimer(totalTimeMillis, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                val remainingSeconds = millisUntilFinished / 1000
-                if (remainingSeconds >= 3600) {
-                    val hoursLeft = remainingSeconds / 3600
-                    val minutesLeft = (remainingSeconds % 3600) / 60
-                    val secondsLeft = remainingSeconds % 60
-                    timerTextView.text = String.format("%02d:%02d:%02d", hoursLeft, minutesLeft, secondsLeft)
-                } else {
-                    val minutesLeft = remainingSeconds / 60
-                    val secondsLeft = remainingSeconds % 60
-                    timerTextView.text = String.format("%02d:%02d", minutesLeft, secondsLeft)
-                }
-            }
-
-            override fun onFinish() {
-                timerTextView.text = "Continue."
-                nextButton.visibility = View.VISIBLE
-                alarmHelper.startAlarm()
-                logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
-            }
-        }.start()
-
-        nextButton.setOnClickListener {
-            alarmHelper.stopAlarm()
-            (activity as MainActivity).loadNextFragment()
-            logger.logTimerFragment(header ?: "Default Header", "Next Button Clicked", 0)
-        }
-    }
-
-    override fun onTouchThresholdReached() {
-        timer?.cancel()
-        logger.logTimerFragment(header ?: "Default Header", "Timer forcibly ended by user", timeInSeconds ?: 0)
-        timerTextView.text = "Continue."
-        nextButton.visibility = View.VISIBLE
-        alarmHelper.startAlarm()
+        // We do not handle [TAP] in TimerFragment.
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        timer?.cancel()
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
+        countDownTimer?.cancel()
+
         if (this::videoView.isInitialized && videoView.isPlaying) {
             videoView.stopPlayback()
         }
-        webView.destroy()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        alarmHelper.release()
-        logger.logTimerFragment(header ?: "Default Header", "Destroyed", timeInSeconds ?: 0)
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
     }
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
         webView.webChromeClient = WebChromeClient()
+    }
+
+    private fun startCountdown(seconds: Int) {
+        if (seconds <= 0) {
+            // If invalid or zero, instantly show button
+            enableButtonPostTimer()
+            return
+        }
+
+        countDownTimer = object : CountDownTimer(seconds * 1000L, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val secLeft = millisUntilFinished / 1000
+                timerTextView.text = "Time remaining: $secLeft seconds"
+            }
+
+            override fun onFinish() {
+                timerTextView.text = "Time remaining: 0 seconds"
+                enableButtonPostTimer()
+            }
+        }.start()
+    }
+
+    private fun enableButtonPostTimer() {
+        // Make the button visible now that the timer is over
+        nextButton.visibility = View.VISIBLE
+
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(nextButton) {
+                (activity as MainActivity).loadNextFragment()
+            }
+        } else {
+            nextButton.setOnClickListener {
+                (activity as MainActivity).loadNextFragment()
+            }
+        }
+    }
+
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
     }
 
     private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
@@ -336,7 +222,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -345,8 +232,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                     webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
             }
         }
         return text.replace(matchedFull, "")
@@ -379,24 +265,18 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
     }
 
-    private fun applyTimerTextPadding(textView: TextView) {
-        val density = resources.displayMetrics.density
-        val horizontalPadding = SpacingManager.getTimerPaddingHorizontal(requireContext())
-        val verticalPadding = SpacingManager.getTimerPaddingVertical(requireContext())
-        val hPx = (horizontalPadding * density + 0.5f).toInt()
-        val vPx = (verticalPadding * density + 0.5f).toInt()
-        textView.setPadding(hPx, vPx, hPx, vPx)
-    }
-
-    /**
-     * Use FrameLayout.LayoutParams for horizontal & vertical alignment.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
-
-        val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
+        val lp = button.layoutParams as? FrameLayout.LayoutParams
+            ?: (button.layoutParams as? LinearLayout.LayoutParams)?.let {
+                // If it's a linear layout, convert it to a FrameLayout
+                val newParams = FrameLayout.LayoutParams(it.width, it.height)
+                button.layoutParams = newParams
+                newParams
+            }
+            ?: return
 
         val hGravity = when (horiz) {
             "LEFT" -> Gravity.START
@@ -409,11 +289,9 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         }
         lp.gravity = hGravity or vGravity
 
-        // 32dp margin
         val density = resources.displayMetrics.density
         val marginPx = (32 * density + 0.5f).toInt()
         lp.setMargins(marginPx, marginPx, marginPx, marginPx)
-
         button.layoutParams = lp
     }
 
@@ -426,34 +304,16 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         button.setPadding(chPx, cvPx, chPx, cvPx)
     }
 
-    private fun parseTapAttribute(text: String): Pair<String, Boolean> {
-        val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
-        return if (regex.containsMatchIn(text)) {
-            val newText = text.replace(regex, "").trim()
-            newText to true
-        } else {
-            text to false
-        }
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density + 0.5f).toInt()
-    }
-
     companion object {
         @JvmStatic
-        fun newInstance(
-            header: String?,
-            body: String?,
-            nextButtonText: String?,
-            timeInSeconds: Int?
-        ) = TimerFragment().apply {
-            arguments = Bundle().apply {
-                putString("HEADER", header)
-                putString("BODY", body)
-                putString("NEXT_BUTTON_TEXT", nextButtonText)
-                putInt("TIME_IN_SECONDS", timeInSeconds ?: 0)
+        fun newInstance(header: String?, body: String?, nextButtonText: String?, timeSeconds: Int) =
+            TimerFragment().apply {
+                arguments = Bundle().apply {
+                    putString("HEADER", header)
+                    putString("BODY", body)
+                    putString("NEXT_BUTTON_TEXT", nextButtonText)
+                    putInt("TIME_SECONDS", timeSeconds)
+                }
             }
-        }
     }
 }

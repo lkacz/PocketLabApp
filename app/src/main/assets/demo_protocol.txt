@@ -32,7 +32,6 @@ TIMER_SOUND;sound9.wav
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
 
-
 CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 
 INPUTFIELD;Inputfield testing;Let's test<dupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE[HOLD];Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality
