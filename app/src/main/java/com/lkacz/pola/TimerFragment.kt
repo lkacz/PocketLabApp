@@ -19,8 +19,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private var header: String? = null
     private var body: String? = null
-    private var nextButtonText: String? = null
     private var timeInSeconds: Int? = null
+    private var nextButtonText: String? = null
 
     private lateinit var alarmHelper: AlarmHelper
     private lateinit var logger: Logger
@@ -41,8 +41,8 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         arguments?.let {
             header = it.getString("HEADER")
             body = it.getString("BODY")
-            nextButtonText = it.getString("NEXT_BUTTON_TEXT")
             timeInSeconds = it.getInt("TIME_IN_SECONDS")
+            nextButtonText = it.getString("NEXT_BUTTON_TEXT")
         }
         if (timeInSeconds == null || timeInSeconds!! < 0) {
             timeInSeconds = 0
@@ -202,7 +202,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        // Hide the button initially if there's an active timer.
         if (timeInSeconds ?: 0 > 0) {
             nextButton.visibility = View.INVISIBLE
         }
@@ -234,7 +233,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         if (timeInSeconds ?: 0 > 0) {
             timer?.start()
         } else {
-            // If timeInSeconds == 0, show button immediately, no countdown.
             nextButton.visibility = View.VISIBLE
         }
 
@@ -424,18 +422,21 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     companion object {
+        /**
+         * Revised order: header, body, timeInSeconds, nextButtonText
+         */
         @JvmStatic
         fun newInstance(
             header: String?,
             body: String?,
-            nextButtonText: String?,
-            timeInSeconds: Int?
+            timeInSeconds: Int?,
+            nextButtonText: String?
         ) = TimerFragment().apply {
             arguments = Bundle().apply {
                 putString("HEADER", header)
                 putString("BODY", body)
-                putString("NEXT_BUTTON_TEXT", nextButtonText)
                 putInt("TIME_IN_SECONDS", timeInSeconds ?: 0)
+                putString("NEXT_BUTTON_TEXT", nextButtonText)
             }
         }
     }

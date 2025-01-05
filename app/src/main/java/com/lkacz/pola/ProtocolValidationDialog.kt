@@ -216,6 +216,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         revalidateAndRefreshUI()
                     }
                 }
+
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -864,15 +865,20 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun timerValidation(parts: List<String>): Pair<String, String> {
         var err = ""
         var warn = ""
-        if (parts.size < 2) {
-            err = "TIMER missing numeric value or parameters"
-        } else {
-            val timeVal = parts.last().trim().toIntOrNull()
-            if (timeVal == null || timeVal < 0) {
-                err = "TIMER must have a non-negative integer"
-            } else if (timeVal > 3600) {
-                warn = "TIMER = $timeVal (over 3600s, is that intentional?)"
-            }
+        /*
+         * New desired order: TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
+         * Must have exactly 5 segments: index=0->TIMER,1->header,2->body,3->time,4->continue
+         */
+        if (parts.size != 5) {
+            err = "TIMER must have exactly 4 semicolons (5 segments): TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT"
+            return err to warn
+        }
+
+        val timeVal = parts[3].trim().toIntOrNull()
+        if (timeVal == null || timeVal < 0) {
+            err = appendError(err, "TIMER must have a non-negative integer in the 4th segment")
+        } else if (timeVal > 3600) {
+            warn = appendWarning(warn, "TIMER = $timeVal (over 3600s, is that intentional?)")
         }
         return err to warn
     }

@@ -93,14 +93,11 @@ class FragmentLoader(
                     val arg1 = parts.getOrNull(1)?.uppercase()
                     val arg2 = parts.getOrNull(2)?.uppercase()
 
-                    // Defaults
                     var horizontal = "RIGHT"
                     var vertical = "BOTTOM"
-
                     val possibleHoriz = setOf("LEFT", "CENTER", "RIGHT")
                     val possibleVert = setOf("TOP", "BOTTOM")
 
-                    // First argument
                     if (!arg1.isNullOrEmpty()) {
                         if (arg1 in possibleHoriz) {
                             horizontal = arg1
@@ -108,7 +105,6 @@ class FragmentLoader(
                             vertical = arg1
                         }
                     }
-                    // Second argument
                     if (!arg2.isNullOrEmpty()) {
                         if (arg2 in possibleHoriz) {
                             horizontal = arg2
@@ -242,11 +238,15 @@ class FragmentLoader(
     }
 
     private fun createTimerFragment(parts: List<String>): Fragment {
+        /*
+         * New parameter order:
+         * TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
+         */
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
-        val buttonText = parts.getOrNull(3)
-        val timeSeconds = parts.getOrNull(4)?.toIntOrNull() ?: 0
-        return TimerFragment.newInstance(header, body, buttonText, timeSeconds)
+        val timeSeconds = parts.getOrNull(3)?.toIntOrNull() ?: 0
+        val buttonText = parts.getOrNull(4)
+        return TimerFragment.newInstance(header, body, timeSeconds, buttonText)
     }
 
     private fun createInputFieldFragment(parts: List<String>, isRandom: Boolean): Fragment {
