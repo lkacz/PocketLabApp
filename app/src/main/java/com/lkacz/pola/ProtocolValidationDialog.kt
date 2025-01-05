@@ -180,7 +180,6 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
-        // Button row at the top: LOAD | SAVE | SAVE AS (aligned left), CLOSE (aligned right)
         val topButtonRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -205,15 +204,13 @@ class ProtocolValidationDialog : DialogFragment() {
 
         btnLoad = Button(requireContext()).apply {
             text = "LOAD"
-            setOnClickListener {
-                openDocumentLauncher.launch(arrayOf("text/plain", "text/*"))
-            }
+            setOnClickListener { confirmLoadProtocol() }
         }
 
         btnSave = Button(requireContext()).apply {
             text = "SAVE"
             isEnabled = false
-            setOnClickListener { saveProtocol() }
+            setOnClickListener { confirmSaveDialog() }
         }
 
         btnSaveAs = Button(requireContext()).apply {
@@ -223,7 +220,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val btnClose = Button(requireContext()).apply {
             text = "CLOSE"
-            setOnClickListener { dismiss() }
+            setOnClickListener { confirmCloseDialog() }
         }
 
         leftButtonsLayout.addView(btnLoad)
@@ -234,7 +231,6 @@ class ProtocolValidationDialog : DialogFragment() {
         topButtonRow.addView(rightButtonsLayout)
         rootLayout.addView(topButtonRow)
 
-        // Search controls
         val searchContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -275,7 +271,6 @@ class ProtocolValidationDialog : DialogFragment() {
         searchContainer.addView(clearButton)
         rootLayout.addView(searchContainer)
 
-        // Filtering controls
         val filterContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 16)
@@ -307,7 +302,6 @@ class ProtocolValidationDialog : DialogFragment() {
                         revalidateAndRefreshUI()
                     }
                 }
-
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
             layoutParams = LinearLayout.LayoutParams(
@@ -319,7 +313,6 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
-        // Toggling highlight and semicolon splitting
         val togglesContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 16)
@@ -356,9 +349,7 @@ class ProtocolValidationDialog : DialogFragment() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-            }
+            ).apply { gravity = Gravity.CENTER_HORIZONTAL }
         }
         rootLayout.addView(progressBar)
 
@@ -391,6 +382,96 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         return rootLayout
+    }
+
+    private fun confirmLoadProtocol() {
+        if (!hasUnsavedChanges) {
+            openDocumentLauncher.launch(arrayOf("text/plain", "text/*"))
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Unsaved Changes")
+            .setMessage("You have unsaved changes. Would you like to save before loading another protocol?")
+            .setPositiveButton("Yes") { _, _ ->
+                saveProtocol {
+                    Toast.makeText(requireContext(), "Saved current protocol.", Toast.LENGTH_SHORT).show()
+                    openDocumentLauncher.launch(arrayOf("text/plain", "text/*"))
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                Toast.makeText(requireContext(), "Discarding unsaved changes.", Toast.LENGTH_SHORT).show()
+                hasUnsavedChanges = false
+                openDocumentLauncher.launch(arrayOf("text/plain", "text/*"))
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmCloseDialog() {
+        if (!hasUnsavedChanges) {
+            dismiss()
+            Toast.makeText(requireContext(), "Dialog closed.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Unsaved Changes")
+            .setMessage("You have unsaved changes. Would you like to save before closing?")
+            .setPositiveButton("Yes") { _, _ ->
+                saveProtocol {
+                    Toast.makeText(requireContext(), "Saved current protocol.", Toast.LENGTH_SHORT).show()
+                    dismiss()
+                    Toast.makeText(requireContext(), "Dialog closed.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                Toast.makeText(requireContext(), "Discarding unsaved changes.", Toast.LENGTH_SHORT).show()
+                hasUnsavedChanges = false
+                dismiss()
+                Toast.makeText(requireContext(), "Dialog closed.", Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
+    }
+
+    private fun confirmSaveDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirm Save")
+            .setMessage("Are you sure you want to save?")
+            .setPositiveButton("Yes") { _, _ ->
+                saveProtocol {
+                    Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                Toast.makeText(requireContext(), "Save cancelled.", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    private fun saveProtocol(onSuccess: (() -> Unit)? = null) {
+        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+        val customUriString = prefs.getString("PROTOCOL_URI", null)
+        if (customUriString.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val uri = Uri.parse(customUriString)
+        try {
+            requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                FileOutputStream(pfd.fileDescriptor).use { fos ->
+                    fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
+                }
+            }
+            hasUnsavedChanges = false
+            revalidateAndRefreshUI()
+            onSuccess?.invoke()
+        } catch (e: Exception) {
+            Toast.makeText(
+                requireContext(),
+                "Error saving file: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun revalidateAndRefreshUI() {
@@ -1214,32 +1295,6 @@ class ProtocolValidationDialog : DialogFragment() {
         HIDE_COMMENTS("Hide comments"),
         ERRORS_WARNINGS_ONLY("Errors & Warnings"),
         ERRORS_ONLY("Only Errors")
-    }
-
-    private fun saveProtocol() {
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
-        val customUriString = prefs.getString("PROTOCOL_URI", null)
-        if (customUriString.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val uri = Uri.parse(customUriString)
-        try {
-            requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                FileOutputStream(pfd.fileDescriptor).use { fos ->
-                    fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
-                }
-            }
-            hasUnsavedChanges = false
-            revalidateAndRefreshUI()
-            Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Error saving file: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
     }
 
     private fun mergeLongFormatCommands(lines: List<String>): List<String> {
