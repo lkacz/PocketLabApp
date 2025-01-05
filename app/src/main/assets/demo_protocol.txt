@@ -33,6 +33,11 @@ TIMER_SOUND;sound9.wav
 
 CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 
+
+TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ;5
+TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ[HOLD];5
+
+
 CUSTOM_HTML;pola_snake.html
 CUSTOM_HTML;pola_snake.html;CONT[HOLD]
 
