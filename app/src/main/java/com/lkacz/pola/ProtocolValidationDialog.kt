@@ -231,6 +231,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
+
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
@@ -281,6 +282,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 dismiss()
             }
         }
+
         btnSave = Button(requireContext()).apply {
             text = "SAVE"
             isEnabled = false
@@ -288,12 +290,14 @@ class ProtocolValidationDialog : DialogFragment() {
                 saveProtocol()
             }
         }
+
         btnSaveAs = Button(requireContext()).apply {
             text = "SAVE AS"
             setOnClickListener {
                 createDocumentLauncher.launch("protocol_modified.txt")
             }
         }
+
         buttonRow.addView(btnOk)
         buttonRow.addView(btnSave)
         buttonRow.addView(btnSaveAs)
@@ -308,6 +312,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 gravity = Gravity.CENTER_HORIZONTAL
             }
         }
+
         rootLayout.addView(progressBar)
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
@@ -413,7 +418,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
+            // Let columns be stretchable
             isStretchAllColumns = false
+            setColumnStretchable(1, true)
+            setColumnStretchable(2, true)
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)
@@ -432,6 +440,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
             isStretchAllColumns = false
+            setColumnStretchable(1, true)
+            setColumnStretchable(2, true)
             setPadding(8, 8, 8, 8)
         }
 
@@ -472,13 +482,19 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 8, 16, 8)
             }
 
+            // Line number cell
             row.addView(createLineNumberCell(originalLineNumber))
-            val commandCell = createBodyCell(lineContent, 1.0f)
+
+            // Command column
+            val commandCell = createBodyCell(lineContent, 2.0f)
             commandCell.setOnClickListener {
                 showEditLineDialog(originalLineNumber - 1)
             }
             row.addView(commandCell)
+
+            // Error(s) column
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
+
             tableLayout.addView(row)
         }
 
@@ -582,11 +598,10 @@ class ProtocolValidationDialog : DialogFragment() {
             gravity = Gravity.START
             setPadding(24, 8, 24, 8)
             layoutParams = TableRow.LayoutParams(
-                TableRow.LayoutParams.WRAP_CONTENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-            ).apply {
-                this.weight = weight
-            }
+                /* width = */ 0,
+                /* height = */ TableRow.LayoutParams.WRAP_CONTENT,
+                /* weight = */ weight
+            )
         }
     }
 
@@ -640,7 +655,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
         if (!commandRecognized) {
             errorMessage = appendError(errorMessage, "Unrecognized command")
-            // If unrecognized, skip adding further errors/warnings
             return Pair(errorMessage, warningMessage)
         } else {
             val result = handleKnownCommandValidations(
@@ -814,7 +828,7 @@ class ProtocolValidationDialog : DialogFragment() {
                             errorMessage,
                             "TRANSITIONS missing mode (e.g. off or slide or dissolve)"
                         )
-                } else if (mode !in listOf("off", "slide", "dissolve", "fade", "slideleft")) {
+                } else if (mode !in listOf("off", "slide", "slideleft", "dissolve", "fade")) {
                     errorMessage = appendError(
                         errorMessage,
                         "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', 'dissolve', or 'fade'"
@@ -999,7 +1013,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (treatSemicolonsAsLineBreaks) {
                     spannableBuilder.append("\n")
                 } else {
-                    // Show the semicolon only, no added space
                     spannableBuilder.append(";")
                 }
             }
@@ -1157,8 +1170,11 @@ class ProtocolValidationDialog : DialogFragment() {
             revalidateAndRefreshUI()
             Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(
+                requireContext(),
+                "Error saving file: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
