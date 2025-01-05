@@ -90,6 +90,9 @@ class ProtocolValidationDialog : DialogFragment() {
             btnSave.isEnabled = value
         }
 
+    private var coloringEnabled = true
+    private var semicolonsAsBreaks = false
+
     private lateinit var btnSave: Button
     private lateinit var btnSaveAs: Button
 
@@ -108,7 +111,11 @@ class ProtocolValidationDialog : DialogFragment() {
                     revalidateAndRefreshUI()
                     Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error saving file: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error saving file: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } else {
                 Toast.makeText(requireContext(), "Save As was cancelled.", Toast.LENGTH_SHORT).show()
@@ -226,6 +233,37 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
+        val togglesContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 0, 16, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val cbColoring = CheckBox(requireContext()).apply {
+            text = "Coloring"
+            isChecked = coloringEnabled
+            setOnCheckedChangeListener { _, isChecked ->
+                coloringEnabled = isChecked
+                revalidateAndRefreshUI()
+            }
+        }
+
+        val cbSemicolonsBreak = CheckBox(requireContext()).apply {
+            text = "Semicolons as breaks"
+            isChecked = semicolonsAsBreaks
+            setOnCheckedChangeListener { _, isChecked ->
+                semicolonsAsBreaks = isChecked
+                revalidateAndRefreshUI()
+            }
+        }
+
+        togglesContainer.addView(cbColoring)
+        togglesContainer.addView(cbSemicolonsBreak)
+        rootLayout.addView(togglesContainer)
+
         val buttonRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 0)
@@ -321,8 +359,8 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
-        while (containerLayout.childCount > 3) {
-            containerLayout.removeViewAt(3)
+        while (containerLayout.childCount > 4) {
+            containerLayout.removeViewAt(4)
         }
         containerLayout.addView(buildCompletedView())
     }
@@ -410,7 +448,17 @@ class ProtocolValidationDialog : DialogFragment() {
             val trimmedLine = rawLine.trim()
             val (errorMessage, warningMessage) =
                 validateLine(originalLineNumber, trimmedLine, labelOccurrences)
-            val highlightedLine = highlightLine(trimmedLine)
+
+            val lineContent =
+                if (coloringEnabled) highlightLine(trimmedLine, semicolonsAsBreaks)
+                else {
+                    if (semicolonsAsBreaks) {
+                        SpannableString(trimmedLine.replace(";", "\n"))
+                    } else {
+                        SpannableString(trimmedLine)
+                    }
+                }
+
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
             val row = TableRow(context).apply {
@@ -424,7 +472,7 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
             row.addView(createLineNumberCell(originalLineNumber))
-            val commandCell = createBodyCell(highlightedLine, 1.0f)
+            val commandCell = createBodyCell(lineContent, 1.0f)
             commandCell.setOnClickListener {
                 showEditLineDialog(originalLineNumber - 1)
             }
@@ -541,9 +589,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    /**
-     * Validate a line’s correctness, returning an errorMessage and warningMessage.
-     */
     private fun validateLine(
         lineNumber: Int,
         line: String,
@@ -763,10 +808,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (mode.isNullOrEmpty()) {
                     errorMessage =
                         appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide or dissolve)")
-                } else if (mode !in listOf("off", "slide", "dissolve", "fade")) {
+                } else if (mode !in listOf("off", "slide", "dissolve", "fade", "slideleft")) {
                     errorMessage = appendError(
                         errorMessage,
-                        "TRANSITIONS mode must be either 'off', 'slide', 'dissolve', or 'fade'"
+                        "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', 'dissolve', or 'fade'"
                     )
                 }
             }
@@ -866,10 +911,6 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun timerValidation(parts: List<String>): Pair<String, String> {
         var err = ""
         var warn = ""
-        /*
-         * TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
-         * must have exactly 5 segments
-         */
         if (parts.size != 5) {
             err = "TIMER must have exactly 4 semicolons (5 segments): TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT"
             return err to warn
@@ -916,130 +957,107 @@ class ProtocolValidationDialog : DialogFragment() {
         return results
     }
 
-    /**
-     * Main line-highlighter that sets background colors per token (command, header, body, etc.).
-     */
-    private fun highlightLine(line: String): SpannableString {
-        val spannable = SpannableString(line)
+    private fun highlightLine(
+        line: String,
+        treatSemicolonsAsLineBreaks: Boolean
+    ): SpannableStringBuilder {
+        val tokens = line.split(";")
+        val spannableBuilder = SpannableStringBuilder()
 
-        // Quick skip if it's a comment line.
-        if (line.startsWith("//")) {
-            return spannable
+        if (line.startsWith("//") || line.isBlank()) {
+            spannableBuilder.append(line)
+            return spannableBuilder
         }
 
-        // Identify tokens
-        val parts = line.split(";")
-        if (parts.isEmpty()) return spannable
+        for ((index, token) in tokens.withIndex()) {
+            val start = spannableBuilder.length
+            spannableBuilder.append(token)
+            val end = spannableBuilder.length
 
-        // We'll highlight each token in place by tracking substring positions
-        // as we progress through the line. Remember to account for the delimiter.
-        var cursor = 0
+            // Determine command color logic
+            val commandUpper = tokens.firstOrNull()?.uppercase().orEmpty()
+            val colorSpan = BackgroundColorSpan(
+                chooseTokenBackgroundColor(commandUpper, index, tokens.size)
+            )
+            spannableBuilder.setSpan(colorSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        // The recognized command is the first token
-        val commandPart = parts[0]
-        val commandUpper = commandPart.uppercase()
-
-        // Colors we’ll use:
-        val BG_COMMAND = "#CCFFCC"   // Light green
-        val BG_HEADER = "#ADD8E6"    // Light blue
-        val BG_BODY = "#FFFFE0"      // Light yellow
-        val BG_RESPONSES = "#40E0D0" // Teal
-        val BG_CONTINUE = "#80FF80"  // Lime-green
-
-        for ((index, token) in parts.withIndex()) {
-            val startPos = line.indexOf(token, cursor)
-            if (startPos == -1) break
-            val endPos = startPos + token.length
-
-            // Decide which background color to use for this token index
-            val bgSpan = BackgroundColorSpan(chooseTokenBackgroundColor(
-                commandUpper, index, parts.size,
-                BG_COMMAND, BG_HEADER, BG_BODY, BG_RESPONSES, BG_CONTINUE
-            ))
-
-            spannable.setSpan(bgSpan, startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            // Also apply bold to the command token only (optional):
+            // Bold the first token (the command)
             if (index == 0) {
-                spannable.setSpan(StyleSpan(Typeface.BOLD), startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                spannableBuilder.setSpan(
+                    StyleSpan(Typeface.BOLD),
+                    start,
+                    end,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
             }
 
-            // Move cursor forward beyond this token + semicolon
-            cursor = endPos + 1
+            if (index < tokens.size - 1) {
+                if (treatSemicolonsAsLineBreaks) {
+                    spannableBuilder.append("\n")
+                } else {
+                    // Optional: if you want a visible semicolon, you can append it.
+                    // Or leave as is if you prefer not to display them.
+                    // spannableBuilder.append(";")
+                    spannableBuilder.append(" ")
+                }
+            }
         }
-
-        return spannable
+        return spannableBuilder
     }
 
-    /**
-     * Chooses the background color for each token index, depending on command type.
-     */
     private fun chooseTokenBackgroundColor(
         commandUpper: String,
         tokenIndex: Int,
-        totalTokens: Int,
-        cmdColor: String,
-        hdrColor: String,
-        bodyColor: String,
-        respColor: String,
-        contColor: String
+        totalTokens: Int
     ): Int {
-        // If it's the 0th token => command
-        if (tokenIndex == 0) {
-            return Color.parseColor(cmdColor)
-        }
+        val BG_COMMAND = "#CCFFCC"
+        val BG_HEADER = "#ADD8E6"
+        val BG_BODY = "#FFFFE0"
+        val BG_RESPONSES = "#40E0D0"
+        val BG_CONTINUE = "#80FF80"
 
-        // For commands that always follow the pattern: command;HEADER;BODY;...;CONTINUE
-        // We'll identify the typical positions for header, body, responses, or continue text.
+        if (tokenIndex == 0) {
+            return Color.parseColor(BG_COMMAND)
+        }
 
         return when (commandUpper) {
             "INSTRUCTION" -> {
-                // INSTRUCTION;HEADER;BODY;CONTINUE
-                // index=1 => header, index=2 => body, index=3 => continue
                 when (tokenIndex) {
-                    1 -> Color.parseColor(hdrColor)
-                    2 -> Color.parseColor(bodyColor)
-                    3 -> Color.parseColor(contColor)
+                    1 -> Color.parseColor(BG_HEADER)
+                    2 -> Color.parseColor(BG_BODY)
+                    3 -> Color.parseColor(BG_CONTINUE)
                     else -> Color.TRANSPARENT
                 }
             }
             "TIMER" -> {
-                // TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE
                 when (tokenIndex) {
-                    1 -> Color.parseColor(hdrColor)
-                    2 -> Color.parseColor(bodyColor)
-                    3 -> Color.parseColor(respColor) // time is "response-like" numeric
-                    4 -> Color.parseColor(contColor)
+                    1 -> Color.parseColor(BG_HEADER)
+                    2 -> Color.parseColor(BG_BODY)
+                    3 -> Color.parseColor(BG_RESPONSES)
+                    4 -> Color.parseColor(BG_CONTINUE)
                     else -> Color.TRANSPARENT
                 }
             }
             "SCALE", "SCALE[RANDOMIZED]" -> {
-                // SCALE;HEADER;BODY;ITEM;Response1;Response2;...
-                // index=1 => header, index=2 => body, index=3 => item, index>=4 => responses
                 when {
-                    tokenIndex == 1 -> Color.parseColor(hdrColor)
-                    tokenIndex == 2 -> Color.parseColor(bodyColor)
-                    tokenIndex == 3 -> Color.parseColor(respColor) // item, treat as "response"?
-                    tokenIndex >= 4 -> Color.parseColor(respColor) // actual responses
+                    tokenIndex == 1 -> Color.parseColor(BG_HEADER)
+                    tokenIndex == 2 -> Color.parseColor(BG_BODY)
+                    tokenIndex >= 3 -> Color.parseColor(BG_RESPONSES)
                     else -> Color.TRANSPARENT
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                // INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE (or no brackets)
-                // The last token is always the continue text. The rest (between index=3 and last-1) are fields => response color.
                 when {
-                    tokenIndex == 1 -> Color.parseColor(hdrColor)
-                    tokenIndex == 2 -> Color.parseColor(bodyColor)
-                    tokenIndex == totalTokens - 1 -> Color.parseColor(contColor)
-                    tokenIndex >= 3 -> Color.parseColor(respColor)
+                    tokenIndex == 1 -> Color.parseColor(BG_HEADER)
+                    tokenIndex == 2 -> Color.parseColor(BG_BODY)
+                    tokenIndex == totalTokens - 1 -> Color.parseColor(BG_CONTINUE)
+                    tokenIndex >= 3 -> Color.parseColor(BG_RESPONSES)
                     else -> Color.TRANSPARENT
                 }
             }
             else -> {
-                // Generic fallback for other commands:
-                // e.g., BODY_SIZE;14 => tokenIndex=1 => "14" => treat as response or param
                 if (tokenIndex == 1) {
-                    // Possibly a param => highlight as "response"
-                    Color.parseColor(respColor)
+                    Color.parseColor(BG_RESPONSES)
                 } else {
                     Color.TRANSPARENT
                 }
@@ -1048,8 +1066,6 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun combineIssues(errorMessage: String, warningMessage: String): SpannableString {
-        // We will keep the red text for errors and orange for warnings as is, if needed,
-        // but do so carefully since we are not altering text color in normal highlighting.
         val combinedText = buildString {
             if (errorMessage.isNotEmpty()) append(errorMessage)
             if (errorMessage.isNotEmpty() && warningMessage.isNotEmpty()) append("\n")

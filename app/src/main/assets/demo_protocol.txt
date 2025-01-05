@@ -31,11 +31,15 @@ TIMER_SOUND;sound9.wav
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
+
+
+
 CUSTOM_HTML;pola_snake.html
 
 CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 
-INPUTFIELD;Inputfield testing;Let's test;Participant ID;Interests;City of Origin;CONTINUE[HOLD]
+
+
 INPUTFIELD;Inputfield testing;Let's test;[Participant ID;Interests;City of Origin];CONTINUE[HOLD]
 INPUTFIELD;Inputfield testing;Let's test;Participant ID;CONTINUE[HOLD]
 INPUTFIELD;Inputfield testing;Let's test;[Participant ID];CONTINUE[HOLD]
