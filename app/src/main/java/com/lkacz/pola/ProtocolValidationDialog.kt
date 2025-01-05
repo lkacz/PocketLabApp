@@ -444,12 +444,8 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(8, 8, 8, 8)
         }
 
-        val linesWithIndices = allLines.mapIndexed { index, line ->
-            (index + 1) to line
-        }
-
+        val linesWithIndices = allLines.mapIndexed { index, line -> (index + 1) to line }
         val labelOccurrences = findLabelOccurrences(allLines)
-
         val filteredLines = linesWithIndices.filter { (originalIndex, rawLine) ->
             lineMatchesCurrentFilter(originalIndex - 1, rawLine, labelOccurrences)
         }
@@ -481,19 +477,14 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 8, 16, 8)
             }
 
-            // Line number cell
             row.addView(createLineNumberCell(originalLineNumber))
 
-            // Command column
             val commandCell = createBodyCell(lineContent, 2.0f)
             commandCell.setOnClickListener {
                 showEditLineDialog(originalLineNumber - 1)
             }
             row.addView(commandCell)
-
-            // Error(s) column
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
-
             tableLayout.addView(row)
         }
 
@@ -597,9 +588,9 @@ class ProtocolValidationDialog : DialogFragment() {
             gravity = Gravity.START
             setPadding(24, 8, 24, 8)
             layoutParams = TableRow.LayoutParams(
-                /* width = */ 0,
-                /* height = */ TableRow.LayoutParams.WRAP_CONTENT,
-                /* weight = */ weight
+                0,
+                TableRow.LayoutParams.WRAP_CONTENT,
+                weight
             )
         }
     }
@@ -980,9 +971,21 @@ class ProtocolValidationDialog : DialogFragment() {
         line: String,
         treatSemicolonsAsLineBreaks: Boolean
     ): SpannableStringBuilder {
+        if (line.startsWith("//")) {
+            val greyComment = SpannableString(line)
+            greyComment.setSpan(
+                ForegroundColorSpan(Color.GRAY),
+                0,
+                line.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            return SpannableStringBuilder(greyComment)
+        }
+
         val tokens = if (
             line.uppercase().startsWith("SCALE") &&
-            (line.uppercase().startsWith("SCALE[RANDOMIZED]") || line.uppercase() == "SCALE" ||
+            (line.uppercase().startsWith("SCALE[RANDOMIZED]") ||
+                    line.uppercase() == "SCALE" ||
                     line.uppercase().startsWith("SCALE;"))
         ) {
             ParsingUtils.customSplitSemicolons(line)
@@ -991,25 +994,27 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val spannableBuilder = SpannableStringBuilder()
-
-        if (line.startsWith("//") || line.isBlank()) {
-            spannableBuilder.append(line)
-            return spannableBuilder
-        }
+        val commandUpper = tokens.firstOrNull()?.uppercase().orEmpty()
+        val isRecognized = recognizedCommands.contains(commandUpper)
 
         for ((index, token) in tokens.withIndex()) {
             val start = spannableBuilder.length
             spannableBuilder.append(token)
             val end = spannableBuilder.length
 
-            val commandUpper = tokens.firstOrNull()?.uppercase().orEmpty()
-            val colorSpan = BackgroundColorSpan(
-                chooseTokenBackgroundColor(commandUpper, index, tokens.size)
+            val colorForToken = when {
+                !isRecognized && index == 0 -> Color.parseColor("#ffaaaa")
+                !isRecognized -> Color.TRANSPARENT
+                else -> chooseTokenBackgroundColor(commandUpper, index, tokens.size)
+            }
+            spannableBuilder.setSpan(
+                BackgroundColorSpan(colorForToken),
+                start,
+                end,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )
-            spannableBuilder.setSpan(colorSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
             if (index == 0) {
-                // Command token in bold
                 spannableBuilder.setSpan(
                     StyleSpan(Typeface.BOLD),
                     start,
@@ -1041,7 +1046,6 @@ class ProtocolValidationDialog : DialogFragment() {
         val BG_GREEN_FOR_RESPONSES = "#DAF7A6"
 
         if (tokenIndex == 0) {
-            // Command
             return Color.parseColor(BG_COMMAND)
         }
 
