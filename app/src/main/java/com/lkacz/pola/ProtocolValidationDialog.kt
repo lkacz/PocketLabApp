@@ -95,7 +95,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
     private var coloringEnabled = true
-    private var semicolonsAsBreaks = false
+    private var semicolonsAsBreaks = true
 
     private lateinit var btnLoad: Button
     private lateinit var btnSave: Button
@@ -434,6 +434,21 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun confirmSaveDialog() {
+        if (!hasUnsavedChanges) {
+            AlertDialog.Builder(requireContext())
+                .setTitle("No Changes Detected")
+                .setMessage("No changes have been made. Do you still want to save the file?")
+                .setPositiveButton("Yes") { _, _ ->
+                    saveProtocol {
+                        Toast.makeText(requireContext(), "Protocol saved.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("No") { _, _ ->
+                    Toast.makeText(requireContext(), "Save cancelled.", Toast.LENGTH_SHORT).show()
+                }
+                .show()
+            return
+        }
         AlertDialog.Builder(requireContext())
             .setTitle("Confirm Save")
             .setMessage("Are you sure you want to save?")
