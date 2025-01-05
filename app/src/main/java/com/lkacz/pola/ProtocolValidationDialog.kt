@@ -980,7 +980,6 @@ class ProtocolValidationDialog : DialogFragment() {
         line: String,
         treatSemicolonsAsLineBreaks: Boolean
     ): SpannableStringBuilder {
-        // For lines starting with SCALE or SCALE[RANDOMIZED], parse with customSplitSemicolons:
         val tokens = if (
             line.uppercase().startsWith("SCALE") &&
             (line.uppercase().startsWith("SCALE[RANDOMIZED]") || line.uppercase() == "SCALE" ||
@@ -988,7 +987,6 @@ class ProtocolValidationDialog : DialogFragment() {
         ) {
             ParsingUtils.customSplitSemicolons(line)
         } else {
-            // Fallback to normal splitting
             line.split(";")
         }
 
@@ -1036,14 +1034,11 @@ class ProtocolValidationDialog : DialogFragment() {
         tokenIndex: Int,
         totalTokens: Int
     ): Int {
-        // We interpret BG_RESPONSES as the teal color for items
-        // and BG_CONTINUE as the color for all responses after items.
-        // Adjusting as requested:
-        val BG_COMMAND = "#CCFFCC"
-        val BG_HEADER = "#ADD8E6"
+        val BG_COMMAND = "#AABBCC"
+        val BG_HEADER = "#CDEEFF"
         val BG_BODY = "#FFFFE0"
-        val BG_TEAL_FOR_ITEMS = "#40E0D0"   // teal
-        val BG_GREEN_FOR_RESPONSES = "#80FF80"
+        val BG_TEAL_FOR_ITEMS = "#D1FCE3"
+        val BG_GREEN_FOR_RESPONSES = "#DAF7A6"
 
         if (tokenIndex == 0) {
             // Command
@@ -1069,8 +1064,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             "SCALE", "SCALE[RANDOMIZED]" -> {
-                // tokenIndex=1 => header, 2 => body, 3 => item(s),
-                // everything after => responses
                 when {
                     tokenIndex == 1 -> Color.parseColor(BG_HEADER)
                     tokenIndex == 2 -> Color.parseColor(BG_BODY)
@@ -1080,7 +1073,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                // tokenIndex=1 => header, 2 => body, 3..(last-1) => fields, last => continue
                 if (tokenIndex == 1) {
                     return Color.parseColor(BG_HEADER)
                 } else if (tokenIndex == 2) {
@@ -1093,7 +1085,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 return Color.TRANSPARENT
             }
             else -> {
-                // For any other command: first param after command => treat it like "response"
                 if (tokenIndex == 1) {
                     return Color.parseColor(BG_TEAL_FOR_ITEMS)
                 }
