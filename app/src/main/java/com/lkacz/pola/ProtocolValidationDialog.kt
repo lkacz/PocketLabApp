@@ -245,7 +245,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val cbColoring = CheckBox(requireContext()).apply {
-            text = "Coloring"
+            text = "Highlight Recognized Commands"
             isChecked = coloringEnabled
             setOnCheckedChangeListener { _, isChecked ->
                 coloringEnabled = isChecked
@@ -254,7 +254,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val cbSemicolonsBreak = CheckBox(requireContext()).apply {
-            text = "Semicolons as breaks"
+            text = "Display Commands in Segments"
             isChecked = semicolonsAsBreaks
             setOnCheckedChangeListener { _, isChecked ->
                 semicolonsAsBreaks = isChecked
@@ -317,7 +317,11 @@ class ProtocolValidationDialog : DialogFragment() {
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val fileContent = getProtocolContent()
-            allLines = fileContent.split("\n").toMutableList()
+
+            // 1) Split into lines
+            val lines = fileContent.split("\n")
+            // 2) Merge any multi-line (long format) commands
+            allLines = mergeLongFormatCommands(lines).toMutableList()
 
             val bracketedReferences = mutableSetOf<String>()
             for (line in allLines) {
@@ -1193,5 +1197,75 @@ class ProtocolValidationDialog : DialogFragment() {
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    /**
+     * Merges any lines that represent a recognized command in a "long format"
+     * into a single line. A recognized command line is considered "long format" if:
+     *   1) It starts with a recognized command + semicolon, with nothing else on that same line, OR
+     *   2) The command has a trailing semicolon and the next line also ends with semicolon, continuing
+     *      until a line does not end with a semicolon.
+     */
+    private fun mergeLongFormatCommands(lines: List<String>): List<String> {
+        val mergedLines = mutableListOf<String>()
+        var buffer = StringBuilder()
+        var isLongFormat = false
+
+        fun flushBufferIfNeeded() {
+            if (buffer.isNotEmpty()) {
+                mergedLines.add(buffer.toString())
+                buffer = StringBuilder()
+                isLongFormat = false
+            }
+        }
+
+        for (lineRaw in lines) {
+            val line = lineRaw.trim()
+            if (line.isEmpty()) {
+                if (!isLongFormat) {
+                    mergedLines.add(lineRaw)
+                } else {
+                    buffer.append(" ")
+                }
+                continue
+            }
+
+            val tokens = line.split(";").map { it.trim() }
+            val firstToken = tokens.firstOrNull()?.uppercase().orEmpty()
+
+            if (!isLongFormat) {
+                // Check if line might start a multi-line command
+                if (recognizedCommands.contains(firstToken)) {
+                    // If the entire line is just: COMMAND; or if it ends with ";" and
+                    // has no additional segments of real content, treat as multi-line start.
+                    val hasTrailingSemicolon = line.endsWith(";")
+                    val contentAfterCommand = tokens.drop(1).joinToString("").isBlank()
+
+                    if (hasTrailingSemicolon && contentAfterCommand) {
+                        // Start building
+                        buffer.append(line.removeSuffix(";"))
+                        isLongFormat = true
+                        continue
+                    } else {
+                        mergedLines.add(lineRaw)
+                    }
+                } else {
+                    mergedLines.add(lineRaw)
+                }
+            } else {
+                // We are currently in multi-line mode
+                val endsWithSemicolon = line.endsWith(";")
+                val content = if (endsWithSemicolon) line.removeSuffix(";") else line
+                buffer.append(";").append(content)
+
+                if (!endsWithSemicolon) {
+                    // End the multi-line merging
+                    flushBufferIfNeeded()
+                }
+            }
+        }
+        // If still in multi-line mode at end of file, flush the buffer
+        flushBufferIfNeeded()
+        return mergedLines
     }
 }
