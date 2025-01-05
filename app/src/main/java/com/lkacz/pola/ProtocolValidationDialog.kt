@@ -696,10 +696,19 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                /*
+                 * Now requires at least 4 segments:
+                 *   index=0 -> command
+                 *   index=1 -> HEADER_TEXT
+                 *   index=2 -> BODY_TEXT
+                 *   index=N-1 -> CONTINUE_TEXT
+                 *   index=3..(N-2) -> zero or more input fields (possibly bracketed)
+                 */
                 if (parts.size < 4) {
                     errorMessage = appendError(
                         errorMessage,
-                        "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;heading;body;button;field1..."
+                        "$commandRaw must have at least 4 segments: " +
+                                "e.g. INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE_TEXT"
                     )
                 }
             }
@@ -866,7 +875,7 @@ class ProtocolValidationDialog : DialogFragment() {
         var err = ""
         var warn = ""
         /*
-         * New desired order: TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
+         * Desired order: TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
          * Must have exactly 5 segments: index=0->TIMER,1->header,2->body,3->time,4->continue
          */
         if (parts.size != 5) {

@@ -31,19 +31,27 @@ TIMER_SOUND;sound9.wav
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
-CONTINUE_ALIGNMENT;RIGHT;TOP
+CUSTOM_HTML;pola_snake.html
+
+CONTINUE_ALIGNMENT;RIGHT;BOTTOM
+
+INPUTFIELD;Inputfield testing;Let's test;Participant ID;Interests;City of Origin;CONTINUE[HOLD]
+INPUTFIELD;Inputfield testing;Let's test;[Participant ID;Interests;City of Origin];CONTINUE[HOLD]
+INPUTFIELD;Inputfield testing;Let's test;Participant ID;CONTINUE[HOLD]
+INPUTFIELD;Inputfield testing;Let's test;[Participant ID];CONTINUE[HOLD]
+
 
 TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ
 TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ[HOLD]
 
-CUSTOM_HTML;pola_snake.html
+
 CUSTOM_HTML;pola_snake.html;CONT[HOLD]
 
 CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 INSTRUCTION;nothing;Tere fere.;DALEJ
 INSTRUCTION;hold;Tere fere.;DALEJ[HOLD]
 
-INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE[HOLD];Participant ID;Interests;City of Origin;
+
 
 
 TRANSITIONS;fade

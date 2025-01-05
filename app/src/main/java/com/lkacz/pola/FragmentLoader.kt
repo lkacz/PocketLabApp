@@ -238,10 +238,7 @@ class FragmentLoader(
     }
 
     private fun createTimerFragment(parts: List<String>): Fragment {
-        /*
-         * New parameter order:
-         * TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
-         */
+        // TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
         val header = parts.getOrNull(1)
         val body = parts.getOrNull(2)
         val timeSeconds = parts.getOrNull(3)?.toIntOrNull() ?: 0
@@ -250,11 +247,30 @@ class FragmentLoader(
     }
 
     private fun createInputFieldFragment(parts: List<String>, isRandom: Boolean): Fragment {
-        val heading = parts.getOrNull(1)
-        val body = parts.getOrNull(2)
-        val buttonName = parts.getOrNull(3)
-        val fields = parts.drop(4)
-        return InputFieldFragment.newInstance(heading, body, buttonName, fields, isRandom)
+
+        if (parts.size < 4) {
+            return EndFragment()
+        }
+        val heading = parts[1]
+        val body = parts[2]
+        val continueText = parts[parts.size - 1]
+        val rawFieldsRange = parts.subList(3, parts.size - 1)
+        val combined = rawFieldsRange.joinToString(";").trim()
+
+        // If user enclosed the input fields in brackets, remove them and split
+        val fields: List<String> = if (
+            combined.startsWith("[") && combined.endsWith("]") && combined.length > 2
+        ) {
+            combined
+                .substring(1, combined.length - 1)
+                .split(";")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+        } else {
+            rawFieldsRange.map { it.trim() }.filter { it.isNotEmpty() }
+        }
+
+        return InputFieldFragment.newInstance(heading, body, continueText, fields, isRandom)
     }
 
     private fun createCustomHtmlFragment(parts: List<String>): Fragment {

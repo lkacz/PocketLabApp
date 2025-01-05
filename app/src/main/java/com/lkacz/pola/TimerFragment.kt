@@ -131,7 +131,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         contentLayout.addView(videoView)
 
         timerTextView = TextView(requireContext()).apply {
-            text = "Time remaining: XX seconds"
+            text = ""
             textSize = 18f
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
@@ -202,7 +202,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         applyContinueButtonPadding(nextButton)
         applyContinueAlignment(nextButton)
 
-        if (timeInSeconds ?: 0 > 0) {
+        if ((timeInSeconds ?: 0) > 0) {
             nextButton.visibility = View.INVISIBLE
         }
 
@@ -223,7 +223,6 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
             }
 
             override fun onFinish() {
-                timerTextView.text = "Continue."
                 nextButton.visibility = View.VISIBLE
                 alarmHelper.startAlarm()
                 logger.logTimerFragment(header ?: "Default Header", "Timer Finished", timeInSeconds ?: 0)
