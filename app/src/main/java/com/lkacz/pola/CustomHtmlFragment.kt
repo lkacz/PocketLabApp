@@ -3,33 +3,41 @@ package com.lkacz.pola
 
 import android.content.Context
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
-import android.webkit.*
-import android.widget.Button
-import android.widget.FrameLayout
+import android.view.*
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.widget.*
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 class CustomHtmlFragment : Fragment() {
 
     private var fileName: String? = null
-    private var continueButtonText: String? = null
+    private var nextButtonText: String? = null
+
+    private lateinit var logger: Logger
     private lateinit var webView: WebView
+    private lateinit var nextButton: Button
+    private lateinit var containerLayout: FrameLayout
+
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
     private var tapEnabled = false
+    private var holdEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        fileName = arguments?.getString(ARG_HTML_FILE)
-        continueButtonText = arguments?.getString(ARG_BUTTON_TEXT, "Continue")
+        arguments?.let {
+            fileName = it.getString("HTML_FILE")
+            nextButtonText = it.getString("NEXT_BUTTON_TEXT")
+        }
+        logger = Logger.getInstance(requireContext())
+        logger.logOther("Entered CustomHtmlFragment: $fileName")
     }
 
     override fun onCreateView(
@@ -37,8 +45,7 @@ class CustomHtmlFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Already using FrameLayout as root
-        val frameLayout = FrameLayout(requireContext()).apply {
+        containerLayout = FrameLayout(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
@@ -46,54 +53,61 @@ class CustomHtmlFragment : Fragment() {
         }
 
         webView = WebView(requireContext()).apply {
-            visibility = View.GONE
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
-        frameLayout.addView(webView)
+        containerLayout.addView(webView)
 
-        val (cleanText, isTap) = parseTapAttribute(continueButtonText.orEmpty())
+        nextButton = Button(requireContext()).apply {
+            text = "Continue"
+        }
+        val buttonParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM or Gravity.END
+        )
+        nextButton.layoutParams = buttonParams
+        containerLayout.addView(nextButton)
+
+        return containerLayout
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
+        setupWebView()
+
+        val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
+        val (buttonTextNoTap, isTap) = parseTapAttribute(
+            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        )
         tapEnabled = isTap
 
-        val continueButton = Button(requireContext()).apply {
-            text = cleanText.ifBlank { "Continue" }
-            textSize = FontSizeManager.getContinueSize(requireContext())
-            setTextColor(ColorManager.getContinueTextColor(requireContext()))
-            setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+        val (buttonTextNoHold, isHold) = parseHoldAttribute(buttonTextNoTap)
+        holdEnabled = isHold
 
-            val density = resources.displayMetrics.density
-            val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
-            val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
-            val chPx = (ch * density + 0.5f).toInt()
-            val cvPx = (cv * density + 0.5f).toInt()
-            setPadding(chPx, cvPx, chPx, cvPx)
+        loadHtmlContentIfAvailable(fileName.orEmpty(), resourcesFolderUri)
 
-            val marginPx = (16 * density + 0.5f).toInt()
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM or Gravity.END
-            ).apply {
-                setMargins(marginPx, marginPx, marginPx, marginPx)
-            }
+        nextButton.text = buttonTextNoHold
+        nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
+        nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
+        nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+        applyContinueButtonPadding(nextButton)
+        applyContinueAlignment(nextButton)
 
-            setOnClickListener {
-                (activity as? MainActivity)?.loadNextFragment()
-            }
-        }
-        frameLayout.addView(continueButton)
-
+        // [TAP] logic
         if (tapEnabled) {
-            continueButton.visibility = View.INVISIBLE
-            frameLayout.setOnTouchListener { _, event ->
+            nextButton.visibility = View.INVISIBLE
+            view.setOnTouchListener { v, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
-                        continueButton.visibility = View.VISIBLE
+                        nextButton.visibility = View.VISIBLE
                         tapCount = 0
                     }
+                    v.performClick()
                     true
                 } else {
                     false
@@ -101,74 +115,54 @@ class CustomHtmlFragment : Fragment() {
             }
         }
 
-        applyContinueAlignment(continueButton)
-
-        return frameLayout
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        setupWebView()
-        loadCustomHtml()
+        // [HOLD] logic
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(nextButton) {
+                (activity as? MainActivity)?.loadNextFragment()
+            }
+        } else {
+            nextButton.setOnClickListener {
+                (activity as? MainActivity)?.loadNextFragment()
+            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayers.forEach { it.release() }
         mediaPlayers.clear()
+        if (this::webView.isInitialized) {
+            webView.destroy()
+        }
+    }
+
+    private fun loadHtmlContentIfAvailable(htmlFileName: String, resourcesFolderUri: Uri?) {
+        if (htmlFileName.isBlank() || resourcesFolderUri == null) return
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+        val htmlFile = parentFolder.findFile(htmlFileName) ?: return
+        if (!htmlFile.exists() || !htmlFile.isFile) return
+        try {
+            requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                val htmlContent = inputStream.bufferedReader().readText()
+                webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
+        return AudioPlaybackHelper.parseAndPlayAudio(
+            context = requireContext(),
+            rawText = text,
+            mediaFolderUri = resourcesFolderUri,
+            mediaPlayers = mediaPlayers
+        )
     }
 
     private fun setupWebView() {
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-
-        webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
-    }
-
-    private fun loadCustomHtml() {
-        val resourcesUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
-        if (resourcesUri == null || fileName.isNullOrBlank()) {
-            webView.loadData(
-                "<html><body><h2>File not found or invalid name.</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
-            return
-        }
-
-        val folder = DocumentFile.fromTreeUri(requireContext(), resourcesUri) ?: return
-        val htmlFile = folder.findFile(fileName!!)
-        if (htmlFile == null || !htmlFile.exists() || !htmlFile.isFile) {
-            webView.loadData(
-                "<html><body><h2>HTML file not found in resources folder.</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
-            return
-        }
-
-        try {
-            requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
-                val htmlContent = inputStream.bufferedReader().readText()
-                webView.visibility = View.VISIBLE
-                webView.loadDataWithBaseURL(
-                    null,
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            }
-        } catch (e: Exception) {
-            webView.loadData(
-                "<html><body><h2>Error loading file: ${e.message}</h2></body></html>",
-                "text/html",
-                "UTF-8"
-            )
-        }
     }
 
     private fun applyContinueAlignment(button: Button) {
@@ -177,28 +171,30 @@ class CustomHtmlFragment : Fragment() {
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
 
-        val (hGravity, vGravity) = when (horiz) {
-            "LEFT" -> Gravity.START to when (vert) {
-                "TOP" -> Gravity.TOP
-                else -> Gravity.BOTTOM
-            }
-            "CENTER" -> Gravity.CENTER_HORIZONTAL to when (vert) {
-                "TOP" -> Gravity.TOP
-                else -> Gravity.BOTTOM
-            }
-            else -> Gravity.END to when (vert) {
-                "TOP" -> Gravity.TOP
-                else -> Gravity.BOTTOM
-            }
+        val hGravity = when (horiz) {
+            "LEFT" -> Gravity.START
+            "CENTER" -> Gravity.CENTER_HORIZONTAL
+            else -> Gravity.END
+        }
+        val vGravity = when (vert) {
+            "TOP" -> Gravity.TOP
+            else -> Gravity.BOTTOM
         }
         lp.gravity = hGravity or vGravity
 
-        // If you want the uniform 32dp margin, mimic InstructionFragment approach:
         val density = resources.displayMetrics.density
         val marginPx = (32 * density + 0.5f).toInt()
         lp.setMargins(marginPx, marginPx, marginPx, marginPx)
-
         button.layoutParams = lp
+    }
+
+    private fun applyContinueButtonPadding(button: Button) {
+        val density = resources.displayMetrics.density
+        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val chPx = (ch * density + 0.5f).toInt()
+        val cvPx = (cv * density + 0.5f).toInt()
+        button.setPadding(chPx, cvPx, chPx, cvPx)
     }
 
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
@@ -211,17 +207,24 @@ class CustomHtmlFragment : Fragment() {
         }
     }
 
-    companion object {
-        private const val ARG_HTML_FILE = "ARG_HTML_FILE"
-        private const val ARG_BUTTON_TEXT = "ARG_BUTTON_TEXT"
-
-        fun newInstance(fileName: String, buttonText: String): CustomHtmlFragment {
-            val fragment = CustomHtmlFragment()
-            fragment.arguments = Bundle().apply {
-                putString(ARG_HTML_FILE, fileName)
-                putString(ARG_BUTTON_TEXT, buttonText)
-            }
-            return fragment
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
         }
+    }
+
+    companion object {
+        @JvmStatic
+        fun newInstance(fileName: String, nextButtonText: String) =
+            CustomHtmlFragment().apply {
+                arguments = Bundle().apply {
+                    putString("HTML_FILE", fileName)
+                    putString("NEXT_BUTTON_TEXT", nextButtonText)
+                }
+            }
     }
 }

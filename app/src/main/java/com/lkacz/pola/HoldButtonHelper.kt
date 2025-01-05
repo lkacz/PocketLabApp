@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.widget.Button
 import kotlin.math.min
 
@@ -33,9 +34,10 @@ object HoldButtonHelper {
                 accumulatedTime += updateInterval
                 val fraction = min(accumulatedTime.toFloat() / holdDurationMs.toFloat(), 1f)
                 val level = (fraction * maxLevel).toInt()
-                progressDrawable.setLevel(level)
+                progressDrawable.level = level
 
                 if (fraction >= 1f) {
+                    // Fire the hold-complete callback
                     onHoldComplete()
                 } else {
                     holdHandler.postDelayed(this, updateInterval)
@@ -43,23 +45,30 @@ object HoldButtonHelper {
             }
         }
 
-        button.setOnTouchListener { _, event ->
+        button.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     button.background = progressDrawable
                     accumulatedTime = 0L
-                    progressDrawable.setLevel(0)
+                    progressDrawable.level = 0
                     holdHandler.postDelayed(holdRunnable, updateInterval)
                     true
                 }
+
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL,
                 MotionEvent.ACTION_OUTSIDE -> {
+                    // Stop counting the hold time
                     holdHandler.removeCallbacks(holdRunnable)
-                    progressDrawable.setLevel(0)
+                    progressDrawable.level = 0
                     button.background = originalBg
+
+                    // IMPORTANT: Call performClick() to signal a click action for accessibility
+                    v.performClick()
+
                     true
                 }
+
                 else -> false
             }
         }
@@ -75,11 +84,11 @@ object HoldButtonHelper {
             level = 0
         }
 
-        // If originalBg is null, use an empty ColorDrawable as the bottom layer.
+        // If originalBg is null, use a ColorDrawable as the bottom layer.
         val bottomDrawable = originalBg ?: ColorDrawable(Color.TRANSPARENT)
         val layers = arrayOf(bottomDrawable, clipDrawable)
         return LayerDrawable(layers).apply {
-            // Ensure the clip layer is above the original background
+            // Ensure the clip layer is layered above the original background
             setId(0, 0)
             setId(1, 1)
         }

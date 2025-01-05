@@ -2,7 +2,6 @@
 package com.lkacz.pola
 
 import android.content.Context
-import android.graphics.Typeface
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
@@ -11,42 +10,39 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.*
-import androidx.core.widget.addTextChangedListener
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 class InputFieldFragment : Fragment() {
 
-    private var heading: String? = null
+    private var header: String? = null
     private var body: String? = null
-    private var buttonName: String? = null
-    private var inputFields: List<String>? = null
+    private var nextButtonText: String? = null
+    private var fields: List<String> = emptyList()
     private var isRandom: Boolean = false
 
     private lateinit var logger: Logger
-    private val fieldValues = mutableMapOf<String, String>()
-
-    private val mediaPlayers = mutableListOf<MediaPlayer>()
-    private lateinit var scrollView: ScrollView
-    private lateinit var mainContent: LinearLayout
-    private lateinit var headingTextView: TextView
+    private lateinit var headerTextView: TextView
     private lateinit var webView: WebView
     private lateinit var bodyTextView: TextView
     private lateinit var videoView: VideoView
-    private lateinit var containerLayout: LinearLayout
-    private lateinit var continueButton: Button
+    private lateinit var nextButton: Button
+
+    private val mediaPlayers = mutableListOf<MediaPlayer>()
+    private val editTexts = mutableListOf<EditText>()
 
     private var tapEnabled = false
+    private var holdEnabled = false
     private var tapCount = 0
     private val tapThreshold = 3
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            heading = it.getString("HEADING")
-            body = it.getString("TEXT")
-            buttonName = it.getString("BUTTON")
-            inputFields = it.getStringArrayList("INPUTFIELDS")
+            header = it.getString("HEADER")
+            body = it.getString("BODY")
+            nextButtonText = it.getString("NEXT_BUTTON_TEXT")
+            fields = it.getStringArrayList("FIELDS")?.toList() ?: emptyList()
             isRandom = it.getBoolean("IS_RANDOM", false)
         }
         logger = Logger.getInstance(requireContext())
@@ -56,40 +52,37 @@ class InputFieldFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Root as FrameLayout
-        val rootFrame = FrameLayout(requireContext()).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+    ): View {
+        val frameLayout = FrameLayout(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
 
-        // Scrollable area for main content
-        scrollView = ScrollView(requireContext()).apply {
+        val scrollView = ScrollView(requireContext()).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             isFillViewport = true
         }
-        mainContent = LinearLayout(requireContext()).apply {
+
+        val contentLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            val dp16 = dpToPx(16)
-            setPadding(dp16, dp16, dp16, dp16)
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
-        scrollView.addView(mainContent)
-        rootFrame.addView(scrollView)
+        scrollView.addView(contentLayout)
+        frameLayout.addView(scrollView)
 
-        // Heading
-        headingTextView = TextView(requireContext()).apply {
-            text = "Default Heading"
+        headerTextView = TextView(requireContext()).apply {
+            text = "Default Header"
             textSize = 20f
-            setTypeface(typeface, Typeface.BOLD)
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -97,9 +90,8 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainContent.addView(headingTextView)
+        contentLayout.addView(headerTextView)
 
-        // WebView
         webView = WebView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -109,9 +101,8 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainContent.addView(webView)
+        contentLayout.addView(webView)
 
-        // Body
         bodyTextView = TextView(requireContext()).apply {
             text = "Default Body"
             textSize = 16f
@@ -122,9 +113,8 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(16)
             }
         }
-        mainContent.addView(bodyTextView)
+        contentLayout.addView(bodyTextView)
 
-        // Video
         videoView = VideoView(requireContext()).apply {
             visibility = View.GONE
             layoutParams = LinearLayout.LayoutParams(
@@ -134,34 +124,31 @@ class InputFieldFragment : Fragment() {
                 bottomMargin = dpToPx(32)
             }
         }
-        mainContent.addView(videoView)
+        contentLayout.addView(videoView)
 
-        // Container layout for EditTexts
-        containerLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
+        // Dynamically create EditTexts based on 'fields'
+        for (field in fields) {
+            val editText = EditText(requireContext()).apply {
+                hint = field
+                textSize = FontSizeManager.getBodySize(requireContext())
+                setTextColor(ColorManager.getBodyTextColor(requireContext()))
             }
+            contentLayout.addView(editText)
+            editTexts.add(editText)
         }
-        mainContent.addView(containerLayout)
 
-        // Continue button pinned in FrameLayout
-        continueButton = Button(requireContext()).apply {
+        nextButton = Button(requireContext()).apply {
             text = "Continue"
-            textSize = 16f
         }
         val buttonParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.END
         )
-        continueButton.layoutParams = buttonParams
-        rootFrame.addView(continueButton)
+        nextButton.layoutParams = buttonParams
+        frameLayout.addView(nextButton)
 
-        return rootFrame
+        return frameLayout
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -171,68 +158,55 @@ class InputFieldFragment : Fragment() {
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        // Heading
-        val cleanHeading = parseAndPlayAudioIfAny(heading.orEmpty(), resourcesFolderUri)
-        val refinedHeading = checkAndLoadHtml(cleanHeading, resourcesFolderUri)
-        checkAndPlayMp4(heading.orEmpty(), resourcesFolderUri)
-        headingTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeading)
-        headingTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
-        headingTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
-        applyHeaderAlignment(headingTextView)
-
-        // Body
+        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
+        val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)
+
+        // Parse [TAP] first
+        val (buttonTextNoTap, isTap) = parseTapAttribute(
+            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
+        )
+        tapEnabled = isTap
+
+        // Then parse [HOLD]
+        val (buttonTextNoHold, isHold) = parseHoldAttribute(buttonTextNoTap)
+        holdEnabled = isHold
+
+        val refinedNextText = checkAndLoadHtml(buttonTextNoHold, resourcesFolderUri)
+
+        checkAndPlayMp4(header.orEmpty(), resourcesFolderUri)
         checkAndPlayMp4(body.orEmpty(), resourcesFolderUri)
+        checkAndPlayMp4(nextButtonText.orEmpty(), resourcesFolderUri)
+
+        headerTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHeader)
+        headerTextView.textSize = FontSizeManager.getHeaderSize(requireContext())
+        headerTextView.setTextColor(ColorManager.getHeaderTextColor(requireContext()))
+        applyHeaderAlignment(headerTextView)
+
         bodyTextView.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedBody)
         bodyTextView.textSize = FontSizeManager.getBodySize(requireContext())
         bodyTextView.setTextColor(ColorManager.getBodyTextColor(requireContext()))
         applyBodyAlignment(bodyTextView)
 
-        // Fields
-        val actualFields = if (isRandom) inputFields?.shuffled() ?: emptyList() else inputFields ?: emptyList()
-        actualFields.forEach { fieldHint ->
-            val cleanHint = parseAndPlayAudioIfAny(fieldHint, resourcesFolderUri)
-            val refinedHint = checkAndLoadHtml(cleanHint, resourcesFolderUri)
-            checkAndPlayMp4(fieldHint, resourcesFolderUri)
+        nextButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedNextText)
+        nextButton.textSize = FontSizeManager.getContinueSize(requireContext())
+        nextButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
+        nextButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
+        applyContinueButtonPadding(nextButton)
+        applyContinueAlignment(nextButton)
 
-            val editText = EditText(requireContext()).apply {
-                hint = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedHint)
-                textSize = FontSizeManager.getBodySize(requireContext())
-                setTextColor(ColorManager.getBodyTextColor(requireContext()))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-            editText.addTextChangedListener { fieldValues[fieldHint] = it.toString() }
-            fieldValues[fieldHint] = ""
-            containerLayout.addView(editText)
-        }
-
-        // Continue button text
-        val (cleanButtonText, isTap) = parseTapAttribute(parseAndPlayAudioIfAny(buttonName.orEmpty(), resourcesFolderUri))
-        tapEnabled = isTap
-        val refinedButtonText = checkAndLoadHtml(cleanButtonText, resourcesFolderUri)
-        checkAndPlayMp4(buttonName.orEmpty(), resourcesFolderUri)
-
-        continueButton.text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButtonText)
-        continueButton.textSize = FontSizeManager.getContinueSize(requireContext())
-        continueButton.setTextColor(ColorManager.getContinueTextColor(requireContext()))
-        continueButton.setBackgroundColor(ColorManager.getContinueBackgroundColor(requireContext()))
-        applyContinueAlignment(continueButton)
-        applyContinueButtonPadding(continueButton)
-
-        // Tap to show button logic
+        // [TAP] logic
         if (tapEnabled) {
-            continueButton.visibility = View.INVISIBLE
-            view.setOnTouchListener { _, event ->
+            nextButton.visibility = View.INVISIBLE
+            view.setOnTouchListener { v, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     tapCount++
                     if (tapCount >= tapThreshold) {
-                        continueButton.visibility = View.VISIBLE
+                        nextButton.visibility = View.VISIBLE
                         tapCount = 0
                     }
+                    v.performClick()
                     true
                 } else {
                     false
@@ -240,19 +214,15 @@ class InputFieldFragment : Fragment() {
             }
         }
 
-        // Continue button action
-        continueButton.setOnClickListener {
-            fieldValues.forEach { (hint, value) ->
-                val isNumeric = value.toDoubleOrNull() != null
-                logger.logInputFieldFragment(
-                    heading.orEmpty(),
-                    body.orEmpty(),
-                    hint,
-                    value,
-                    isNumeric
-                )
+        // [HOLD] logic
+        if (holdEnabled) {
+            HoldButtonHelper.setupHoldToConfirm(nextButton) {
+                logResponsesAndContinue()
             }
-            (activity as MainActivity).loadNextFragment()
+        } else {
+            nextButton.setOnClickListener {
+                logResponsesAndContinue()
+            }
         }
     }
 
@@ -266,6 +236,28 @@ class InputFieldFragment : Fragment() {
         if (this::webView.isInitialized) {
             webView.destroy()
         }
+    }
+
+    private fun logResponsesAndContinue() {
+        // Log each input field; detect numeric or text
+        for (editText in editTexts) {
+            val response = editText.text.toString().trim()
+            val numeric = response.toFloatOrNull() != null
+            logger.logInputFieldFragment(
+                header = header.orEmpty(),
+                body = body.orEmpty(),
+                item = editText.hint?.toString().orEmpty(),
+                response = response,
+                isNumeric = numeric
+            )
+        }
+        (activity as? MainActivity)?.loadNextFragment()
+    }
+
+    private fun setupWebView() {
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        webView.webChromeClient = WebChromeClient()
     }
 
     private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
@@ -288,16 +280,14 @@ class InputFieldFragment : Fragment() {
         } else 1.0f
 
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            if (parentFolder != null) {
-                val videoFile = parentFolder.findFile(fileName)
-                if (videoFile != null && videoFile.exists() && videoFile.isFile) {
-                    videoView.visibility = View.VISIBLE
-                    videoView.setVideoURI(videoFile.uri)
-                    videoView.setOnPreparedListener { mp ->
-                        mp.start()
-                        mp.setVolume(volume, volume)
-                    }
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
+            val videoFile = parentFolder.findFile(fileName)
+            if (videoFile != null && videoFile.exists() && videoFile.isFile) {
+                videoView.visibility = View.VISIBLE
+                videoView.setVideoURI(videoFile.uri)
+                videoView.setOnPreparedListener { mp ->
+                    mp.start()
+                    mp.setVolume(volume, volume)
                 }
             }
         }
@@ -310,7 +300,8 @@ class InputFieldFragment : Fragment() {
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return text
+        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -319,17 +310,10 @@ class InputFieldFragment : Fragment() {
                     webView.visibility = View.VISIBLE
                     webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
             }
         }
         return text.replace(matchedFull, "")
-    }
-
-    private fun setupWebView() {
-        val settings: WebSettings = webView.settings
-        settings.javaScriptEnabled = true
-        webView.webChromeClient = WebChromeClient()
     }
 
     private fun applyHeaderAlignment(textView: TextView) {
@@ -350,9 +334,6 @@ class InputFieldFragment : Fragment() {
         }
     }
 
-    /**
-     * FrameLayout.LayoutParams-based alignment.
-     */
     private fun applyContinueAlignment(button: Button) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
@@ -370,11 +351,9 @@ class InputFieldFragment : Fragment() {
         }
         lp.gravity = hGravity or vGravity
 
-        // 32dp margin
         val density = resources.displayMetrics.density
         val marginPx = (32 * density + 0.5f).toInt()
         lp.setMargins(marginPx, marginPx, marginPx, marginPx)
-
         button.layoutParams = lp
     }
 
@@ -397,6 +376,16 @@ class InputFieldFragment : Fragment() {
         }
     }
 
+    private fun parseHoldAttribute(text: String): Pair<String, Boolean> {
+        val regex = Regex("\\[HOLD\\]", RegexOption.IGNORE_CASE)
+        return if (regex.containsMatchIn(text)) {
+            val newText = text.replace(regex, "").trim()
+            newText to true
+        } else {
+            text to false
+        }
+    }
+
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density + 0.5f).toInt()
     }
@@ -405,16 +394,16 @@ class InputFieldFragment : Fragment() {
         @JvmStatic
         fun newInstance(
             heading: String?,
-            text: String?,
+            body: String?,
             buttonName: String?,
-            inputFields: List<String>?,
+            inputFields: List<String>,
             isRandom: Boolean
         ) = InputFieldFragment().apply {
             arguments = Bundle().apply {
-                putString("HEADING", heading)
-                putString("TEXT", text)
-                putString("BUTTON", buttonName)
-                putStringArrayList("INPUTFIELDS", ArrayList(inputFields ?: emptyList()))
+                putString("HEADER", heading)
+                putString("BODY", body)
+                putString("NEXT_BUTTON_TEXT", buttonName)
+                putStringArrayList("FIELDS", ArrayList(inputFields))
                 putBoolean("IS_RANDOM", isRandom)
             }
         }
