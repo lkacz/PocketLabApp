@@ -151,6 +151,53 @@ class ProtocolValidationDialog : DialogFragment() {
             )
         }
 
+        // Button row at the top: SAVE | SAVE AS (aligned left), CLOSE (aligned right)
+        val topButtonRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 16, 16, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val leftButtonsLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val rightButtonsLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            gravity = Gravity.END
+        }
+
+        btnSave = Button(requireContext()).apply {
+            text = "SAVE"
+            isEnabled = false
+            setOnClickListener { saveProtocol() }
+        }
+
+        btnSaveAs = Button(requireContext()).apply {
+            text = "SAVE AS"
+            setOnClickListener { createDocumentLauncher.launch("protocol_modified.txt") }
+        }
+
+        val btnClose = Button(requireContext()).apply {
+            text = "CLOSE"
+            setOnClickListener { dismiss() }
+        }
+
+        leftButtonsLayout.addView(btnSave)
+        leftButtonsLayout.addView(btnSaveAs)
+        rightButtonsLayout.addView(btnClose)
+        topButtonRow.addView(leftButtonsLayout)
+        topButtonRow.addView(rightButtonsLayout)
+        rootLayout.addView(topButtonRow)
+
+        // Search controls
         val searchContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 16, 16, 16)
@@ -192,6 +239,7 @@ class ProtocolValidationDialog : DialogFragment() {
         searchContainer.addView(clearButton)
         rootLayout.addView(searchContainer)
 
+        // Filtering controls
         val filterContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 16)
@@ -235,6 +283,7 @@ class ProtocolValidationDialog : DialogFragment() {
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
+        // Toggling highlight and semicolon splitting
         val togglesContainer = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 0, 16, 16)
@@ -266,43 +315,6 @@ class ProtocolValidationDialog : DialogFragment() {
         togglesContainer.addView(cbSemicolonsBreak)
         rootLayout.addView(togglesContainer)
 
-        val buttonRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 0, 16, 0)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            gravity = Gravity.END
-        }
-
-        val btnOk = Button(requireContext()).apply {
-            text = "OK"
-            setOnClickListener {
-                dismiss()
-            }
-        }
-
-        btnSave = Button(requireContext()).apply {
-            text = "SAVE"
-            isEnabled = false
-            setOnClickListener {
-                saveProtocol()
-            }
-        }
-
-        btnSaveAs = Button(requireContext()).apply {
-            text = "SAVE AS"
-            setOnClickListener {
-                createDocumentLauncher.launch("protocol_modified.txt")
-            }
-        }
-
-        buttonRow.addView(btnOk)
-        buttonRow.addView(btnSave)
-        buttonRow.addView(btnSaveAs)
-        rootLayout.addView(buttonRow)
-
         val progressBar = ProgressBar(requireContext()).apply {
             isIndeterminate = true
             layoutParams = LinearLayout.LayoutParams(
@@ -312,15 +324,12 @@ class ProtocolValidationDialog : DialogFragment() {
                 gravity = Gravity.CENTER_HORIZONTAL
             }
         }
-
         rootLayout.addView(progressBar)
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             val fileContent = getProtocolContent()
 
-            // 1) Split into lines
             val lines = fileContent.split("\n")
-            // 2) Merge any multi-line (long format) commands
             allLines = mergeLongFormatCommands(lines).toMutableList()
 
             val bracketedReferences = mutableSetOf<String>()
@@ -369,9 +378,12 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val containerLayout = view as? LinearLayout ?: return
+
+        // Remove any previously added final view (scrollable content) so it can be refreshed
         while (containerLayout.childCount > 4) {
             containerLayout.removeViewAt(4)
         }
+
         containerLayout.addView(buildCompletedView())
     }
 
@@ -1029,7 +1041,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
             if (index < tokens.size - 1) {
                 if (treatSemicolonsAsLineBreaks) {
-                    // Keep the semicolon, then line-break
                     spannableBuilder.append(";")
                     spannableBuilder.append("\n")
                 } else {
@@ -1201,13 +1212,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    /**
-     * Merges any lines that represent a recognized command in a "long format"
-     * into a single line. A recognized command line is considered "long format" if:
-     *   1) It starts with a recognized command + semicolon, with nothing else on that same line, OR
-     *   2) The command has a trailing semicolon and the next line also ends with semicolon, continuing
-     *      until a line does not end with a semicolon.
-     */
     private fun mergeLongFormatCommands(lines: List<String>): List<String> {
         val mergedLines = mutableListOf<String>()
         var buffer = StringBuilder()
@@ -1236,15 +1240,11 @@ class ProtocolValidationDialog : DialogFragment() {
             val firstToken = tokens.firstOrNull()?.uppercase().orEmpty()
 
             if (!isLongFormat) {
-                // Check if line might start a multi-line command
                 if (recognizedCommands.contains(firstToken)) {
-                    // If the entire line is just: COMMAND; or if it ends with ";" and
-                    // has no additional segments of real content, treat as multi-line start.
                     val hasTrailingSemicolon = line.endsWith(";")
                     val contentAfterCommand = tokens.drop(1).joinToString("").isBlank()
 
                     if (hasTrailingSemicolon && contentAfterCommand) {
-                        // Start building
                         buffer.append(line.removeSuffix(";"))
                         isLongFormat = true
                         continue
@@ -1255,18 +1255,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     mergedLines.add(lineRaw)
                 }
             } else {
-                // We are currently in multi-line mode
                 val endsWithSemicolon = line.endsWith(";")
                 val content = if (endsWithSemicolon) line.removeSuffix(";") else line
                 buffer.append(";").append(content)
 
                 if (!endsWithSemicolon) {
-                    // End the multi-line merging
                     flushBufferIfNeeded()
                 }
             }
         }
-        // If still in multi-line mode at end of file, flush the buffer
         flushBufferIfNeeded()
         return mergedLines
     }
