@@ -7,9 +7,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
+import android.text.*
+import android.text.style.BackgroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.widget.*
@@ -401,17 +400,17 @@ class ProtocolValidationDialog : DialogFragment() {
             (index + 1) to line
         }
 
-        val filteredLines = linesWithIndices.filter { (originalIndex, rawLine) ->
-            lineMatchesCurrentFilter(originalIndex - 1, rawLine, findLabelOccurrences(allLines))
-        }
-
         val labelOccurrences = findLabelOccurrences(allLines)
+
+        val filteredLines = linesWithIndices.filter { (originalIndex, rawLine) ->
+            lineMatchesCurrentFilter(originalIndex - 1, rawLine, labelOccurrences)
+        }
 
         filteredLines.forEach { (originalLineNumber, rawLine) ->
             val trimmedLine = rawLine.trim()
             val (errorMessage, warningMessage) =
                 validateLine(originalLineNumber, trimmedLine, labelOccurrences)
-            val highlightedLine = highlightLine(trimmedLine, errorMessage)
+            val highlightedLine = highlightLine(trimmedLine)
             val combinedIssuesSpannable = combineIssues(errorMessage, warningMessage)
 
             val row = TableRow(context).apply {
@@ -459,9 +458,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (trimmedLine.isBlank() || trimmedLine.startsWith("//")) {
                     false
                 } else {
-                    val parts = trimmedLine.split(";")
-                    val cmd = parts.firstOrNull()?.uppercase() ?: ""
-                    recognizedCommands.contains(cmd) || true
+                    true
                 }
             }
             FilterOption.ERRORS_WARNINGS_ONLY -> (hasErrors || hasWarnings)
@@ -544,6 +541,9 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
+    /**
+     * Validate a line’s correctness, returning an errorMessage and warningMessage.
+     */
     private fun validateLine(
         lineNumber: Int,
         line: String,
@@ -696,14 +696,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                /*
-                 * Now requires at least 4 segments:
-                 *   index=0 -> command
-                 *   index=1 -> HEADER_TEXT
-                 *   index=2 -> BODY_TEXT
-                 *   index=N-1 -> CONTINUE_TEXT
-                 *   index=3..(N-2) -> zero or more input fields (possibly bracketed)
-                 */
                 if (parts.size < 4) {
                     errorMessage = appendError(
                         errorMessage,
@@ -771,10 +763,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (mode.isNullOrEmpty()) {
                     errorMessage =
                         appendError(errorMessage, "TRANSITIONS missing mode (e.g. off or slide or dissolve)")
-                } else if (mode != "off" && mode != "slide" && mode != "dissolve") {
+                } else if (mode !in listOf("off", "slide", "dissolve", "fade")) {
                     errorMessage = appendError(
                         errorMessage,
-                        "TRANSITIONS mode must be either 'off', 'slide', or 'dissolve'"
+                        "TRANSITIONS mode must be either 'off', 'slide', 'dissolve', or 'fade'"
                     )
                 }
             }
@@ -875,8 +867,8 @@ class ProtocolValidationDialog : DialogFragment() {
         var err = ""
         var warn = ""
         /*
-         * Desired order: TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
-         * Must have exactly 5 segments: index=0->TIMER,1->header,2->body,3->time,4->continue
+         * TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT
+         * must have exactly 5 segments
          */
         if (parts.size != 5) {
             err = "TIMER must have exactly 4 semicolons (5 segments): TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE_TEXT"
@@ -924,86 +916,155 @@ class ProtocolValidationDialog : DialogFragment() {
         return results
     }
 
-    private fun highlightLine(line: String, errorMessage: String): SpannableString {
-        val combined = SpannableString(line)
+    /**
+     * Main line-highlighter that sets background colors per token (command, header, body, etc.).
+     */
+    private fun highlightLine(line: String): SpannableString {
+        val spannable = SpannableString(line)
+
+        // Quick skip if it's a comment line.
         if (line.startsWith("//")) {
-            return combined
+            return spannable
         }
+
+        // Identify tokens
         val parts = line.split(";")
+        if (parts.isEmpty()) return spannable
+
+        // We'll highlight each token in place by tracking substring positions
+        // as we progress through the line. Remember to account for the delimiter.
+        var cursor = 0
+
+        // The recognized command is the first token
         val commandPart = parts[0]
-        val cmdIsRecognized = recognizedCommands.contains(commandPart.uppercase())
+        val commandUpper = commandPart.uppercase()
 
-        val startCmd = 0
-        val endCmd = commandPart.length
+        // Colors we’ll use:
+        val BG_COMMAND = "#CCFFCC"   // Light green
+        val BG_HEADER = "#ADD8E6"    // Light blue
+        val BG_BODY = "#FFFFE0"      // Light yellow
+        val BG_RESPONSES = "#40E0D0" // Teal
+        val BG_CONTINUE = "#80FF80"  // Lime-green
 
-        if (cmdIsRecognized) {
-            setSpanColor(combined, startCmd, endCmd, Color.parseColor("#006400"))
-            setSpanBold(combined, startCmd, endCmd)
-        } else {
-            setSpanColor(combined, startCmd, endCmd, Color.RED)
+        for ((index, token) in parts.withIndex()) {
+            val startPos = line.indexOf(token, cursor)
+            if (startPos == -1) break
+            val endPos = startPos + token.length
+
+            // Decide which background color to use for this token index
+            val bgSpan = BackgroundColorSpan(chooseTokenBackgroundColor(
+                commandUpper, index, parts.size,
+                BG_COMMAND, BG_HEADER, BG_BODY, BG_RESPONSES, BG_CONTINUE
+            ))
+
+            spannable.setSpan(bgSpan, startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            // Also apply bold to the command token only (optional):
+            if (index == 0) {
+                spannable.setSpan(StyleSpan(Typeface.BOLD), startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+
+            // Move cursor forward beyond this token + semicolon
+            cursor = endPos + 1
         }
 
-        if (commandPart.uppercase() == "LABEL") {
-            if (errorMessage.contains("duplicated") || errorMessage.contains("Label is not a single word")) {
-                val offset = commandPart.length
-                if (offset < line.length) {
-                    setSpanColor(combined, offset, line.length, Color.RED)
+        return spannable
+    }
+
+    /**
+     * Chooses the background color for each token index, depending on command type.
+     */
+    private fun chooseTokenBackgroundColor(
+        commandUpper: String,
+        tokenIndex: Int,
+        totalTokens: Int,
+        cmdColor: String,
+        hdrColor: String,
+        bodyColor: String,
+        respColor: String,
+        contColor: String
+    ): Int {
+        // If it's the 0th token => command
+        if (tokenIndex == 0) {
+            return Color.parseColor(cmdColor)
+        }
+
+        // For commands that always follow the pattern: command;HEADER;BODY;...;CONTINUE
+        // We'll identify the typical positions for header, body, responses, or continue text.
+
+        return when (commandUpper) {
+            "INSTRUCTION" -> {
+                // INSTRUCTION;HEADER;BODY;CONTINUE
+                // index=1 => header, index=2 => body, index=3 => continue
+                when (tokenIndex) {
+                    1 -> Color.parseColor(hdrColor)
+                    2 -> Color.parseColor(bodyColor)
+                    3 -> Color.parseColor(contColor)
+                    else -> Color.TRANSPARENT
+                }
+            }
+            "TIMER" -> {
+                // TIMER;HEADER;BODY;TIME_IN_SECONDS;CONTINUE
+                when (tokenIndex) {
+                    1 -> Color.parseColor(hdrColor)
+                    2 -> Color.parseColor(bodyColor)
+                    3 -> Color.parseColor(respColor) // time is "response-like" numeric
+                    4 -> Color.parseColor(contColor)
+                    else -> Color.TRANSPARENT
+                }
+            }
+            "SCALE", "SCALE[RANDOMIZED]" -> {
+                // SCALE;HEADER;BODY;ITEM;Response1;Response2;...
+                // index=1 => header, index=2 => body, index=3 => item, index>=4 => responses
+                when {
+                    tokenIndex == 1 -> Color.parseColor(hdrColor)
+                    tokenIndex == 2 -> Color.parseColor(bodyColor)
+                    tokenIndex == 3 -> Color.parseColor(respColor) // item, treat as "response"?
+                    tokenIndex >= 4 -> Color.parseColor(respColor) // actual responses
+                    else -> Color.TRANSPARENT
+                }
+            }
+            "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                // INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE (or no brackets)
+                // The last token is always the continue text. The rest (between index=3 and last-1) are fields => response color.
+                when {
+                    tokenIndex == 1 -> Color.parseColor(hdrColor)
+                    tokenIndex == 2 -> Color.parseColor(bodyColor)
+                    tokenIndex == totalTokens - 1 -> Color.parseColor(contColor)
+                    tokenIndex >= 3 -> Color.parseColor(respColor)
+                    else -> Color.TRANSPARENT
+                }
+            }
+            else -> {
+                // Generic fallback for other commands:
+                // e.g., BODY_SIZE;14 => tokenIndex=1 => "14" => treat as response or param
+                if (tokenIndex == 1) {
+                    // Possibly a param => highlight as "response"
+                    Color.parseColor(respColor)
+                } else {
+                    Color.TRANSPARENT
                 }
             }
         }
-
-        val emptyTags = findEmptyHtmlTags(line)
-        for (tag in emptyTags) {
-            val startIndex = line.indexOf(tag)
-            if (startIndex != -1) {
-                val endIndex = startIndex + tag.length
-                setSpanColor(combined, startIndex, endIndex, Color.rgb(255, 165, 0))
-            }
-        }
-        return combined
     }
 
     private fun combineIssues(errorMessage: String, warningMessage: String): SpannableString {
+        // We will keep the red text for errors and orange for warnings as is, if needed,
+        // but do so carefully since we are not altering text color in normal highlighting.
         val combinedText = buildString {
             if (errorMessage.isNotEmpty()) append(errorMessage)
             if (errorMessage.isNotEmpty() && warningMessage.isNotEmpty()) append("\n")
             if (warningMessage.isNotEmpty()) append(warningMessage)
         }
-
-        val spannable = SpannableString(combinedText)
-        if (errorMessage.isNotEmpty()) {
-            val errorStart = 0
-            val errorEnd = errorStart + errorMessage.length
-            setSpanColor(spannable, errorStart, errorEnd, Color.RED)
-            setSpanBold(spannable, errorStart, errorEnd)
-        }
-        if (warningMessage.isNotEmpty()) {
-            val warnStart = combinedText.indexOf(warningMessage)
-            val warnEnd = warnStart + warningMessage.length
-            setSpanColor(spannable, warnStart, warnEnd, Color.rgb(255, 165, 0))
-            setSpanBold(spannable, warnStart, warnEnd)
-        }
-        return spannable
+        return SpannableString(combinedText)
     }
 
-    private fun setSpanColor(spannable: SpannableString, start: Int, end: Int, color: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            ForegroundColorSpan(color),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
-    }
-
-    private fun setSpanBold(spannable: SpannableString, start: Int, end: Int) {
-        if (start < 0 || end <= start || end > spannable.length) return
-        spannable.setSpan(
-            StyleSpan(Typeface.BOLD),
-            start,
-            end,
-            Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+    private fun isValidColor(colorStr: String): Boolean {
+        return try {
+            Color.parseColor(colorStr)
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun appendError(current: String, newError: String): String {
@@ -1027,15 +1088,6 @@ class ProtocolValidationDialog : DialogFragment() {
             ProtocolReader().readFromAssets(requireContext(), "tutorial_protocol.txt")
         } else {
             ProtocolReader().readFromAssets(requireContext(), "demo_protocol.txt")
-        }
-    }
-
-    private fun isValidColor(colorStr: String): Boolean {
-        return try {
-            Color.parseColor(colorStr)
-            true
-        } catch (_: Exception) {
-            false
         }
     }
 
