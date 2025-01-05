@@ -418,7 +418,6 @@ class ProtocolValidationDialog : DialogFragment() {
                 TableLayout.LayoutParams.MATCH_PARENT,
                 TableLayout.LayoutParams.WRAP_CONTENT
             )
-            // Let columns be stretchable
             isStretchAllColumns = false
             setColumnStretchable(1, true)
             setColumnStretchable(2, true)
@@ -981,7 +980,18 @@ class ProtocolValidationDialog : DialogFragment() {
         line: String,
         treatSemicolonsAsLineBreaks: Boolean
     ): SpannableStringBuilder {
-        val tokens = line.split(";")
+        // For lines starting with SCALE or SCALE[RANDOMIZED], parse with customSplitSemicolons:
+        val tokens = if (
+            line.uppercase().startsWith("SCALE") &&
+            (line.uppercase().startsWith("SCALE[RANDOMIZED]") || line.uppercase() == "SCALE" ||
+                    line.uppercase().startsWith("SCALE;"))
+        ) {
+            ParsingUtils.customSplitSemicolons(line)
+        } else {
+            // Fallback to normal splitting
+            line.split(";")
+        }
+
         val spannableBuilder = SpannableStringBuilder()
 
         if (line.startsWith("//") || line.isBlank()) {
@@ -1001,6 +1011,7 @@ class ProtocolValidationDialog : DialogFragment() {
             spannableBuilder.setSpan(colorSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
             if (index == 0) {
+                // Command token in bold
                 spannableBuilder.setSpan(
                     StyleSpan(Typeface.BOLD),
                     start,
@@ -1025,13 +1036,17 @@ class ProtocolValidationDialog : DialogFragment() {
         tokenIndex: Int,
         totalTokens: Int
     ): Int {
+        // We interpret BG_RESPONSES as the teal color for items
+        // and BG_CONTINUE as the color for all responses after items.
+        // Adjusting as requested:
         val BG_COMMAND = "#CCFFCC"
         val BG_HEADER = "#ADD8E6"
         val BG_BODY = "#FFFFE0"
-        val BG_RESPONSES = "#40E0D0"
-        val BG_CONTINUE = "#80FF80"
+        val BG_TEAL_FOR_ITEMS = "#40E0D0"   // teal
+        val BG_GREEN_FOR_RESPONSES = "#80FF80"
 
         if (tokenIndex == 0) {
+            // Command
             return Color.parseColor(BG_COMMAND)
         }
 
@@ -1040,7 +1055,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 when (tokenIndex) {
                     1 -> Color.parseColor(BG_HEADER)
                     2 -> Color.parseColor(BG_BODY)
-                    3 -> Color.parseColor(BG_CONTINUE)
+                    3 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
                     else -> Color.TRANSPARENT
                 }
             }
@@ -1048,34 +1063,41 @@ class ProtocolValidationDialog : DialogFragment() {
                 when (tokenIndex) {
                     1 -> Color.parseColor(BG_HEADER)
                     2 -> Color.parseColor(BG_BODY)
-                    3 -> Color.parseColor(BG_RESPONSES)
-                    4 -> Color.parseColor(BG_CONTINUE)
+                    3 -> Color.parseColor(BG_TEAL_FOR_ITEMS)
+                    4 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
                     else -> Color.TRANSPARENT
                 }
             }
             "SCALE", "SCALE[RANDOMIZED]" -> {
+                // tokenIndex=1 => header, 2 => body, 3 => item(s),
+                // everything after => responses
                 when {
                     tokenIndex == 1 -> Color.parseColor(BG_HEADER)
                     tokenIndex == 2 -> Color.parseColor(BG_BODY)
-                    tokenIndex >= 3 -> Color.parseColor(BG_RESPONSES)
+                    tokenIndex == 3 -> Color.parseColor(BG_TEAL_FOR_ITEMS)
+                    tokenIndex > 3 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
                     else -> Color.TRANSPARENT
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                when {
-                    tokenIndex == 1 -> Color.parseColor(BG_HEADER)
-                    tokenIndex == 2 -> Color.parseColor(BG_BODY)
-                    tokenIndex == totalTokens - 1 -> Color.parseColor(BG_CONTINUE)
-                    tokenIndex >= 3 -> Color.parseColor(BG_RESPONSES)
-                    else -> Color.TRANSPARENT
+                // tokenIndex=1 => header, 2 => body, 3..(last-1) => fields, last => continue
+                if (tokenIndex == 1) {
+                    return Color.parseColor(BG_HEADER)
+                } else if (tokenIndex == 2) {
+                    return Color.parseColor(BG_BODY)
+                } else if (tokenIndex == totalTokens - 1) {
+                    return Color.parseColor(BG_GREEN_FOR_RESPONSES)
+                } else if (tokenIndex >= 3) {
+                    return Color.parseColor(BG_TEAL_FOR_ITEMS)
                 }
+                return Color.TRANSPARENT
             }
             else -> {
+                // For any other command: first param after command => treat it like "response"
                 if (tokenIndex == 1) {
-                    Color.parseColor(BG_RESPONSES)
-                } else {
-                    Color.TRANSPARENT
+                    return Color.parseColor(BG_TEAL_FOR_ITEMS)
                 }
+                return Color.TRANSPARENT
             }
         }
     }

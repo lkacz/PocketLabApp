@@ -60,6 +60,10 @@ IDZIEMY DALEJ
 
 
 
+SCALE;Multiscale test;This scale has serveral items that will be presented in the same order as they are typed in. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
+
+
+
 
 
 TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ[HOLD]
