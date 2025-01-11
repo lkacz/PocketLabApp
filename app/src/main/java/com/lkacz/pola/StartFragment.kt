@@ -45,7 +45,6 @@ class StartFragment : Fragment() {
         super.onAttach(context)
         listener = context as OnProtocolSelectedListener
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        // Load last-used protocol (if any) from SharedPreferences:
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
         resourcesFolderManager = ResourcesFolderManager(context)
     }
@@ -73,7 +72,6 @@ class StartFragment : Fragment() {
         }
         scrollView.addView(rootLayout)
 
-        // Title section
         val titleSection = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -100,10 +98,8 @@ class StartFragment : Fragment() {
         }
         titleSection.addView(tvAppVersion)
 
-        // Divider
         rootLayout.addView(createDivider())
 
-        // Current Protocol display
         val currentProtocolLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
@@ -133,7 +129,6 @@ class StartFragment : Fragment() {
         updateProtocolNameDisplay(currentFileName)
         currentProtocolLayout.addView(tvSelectedProtocolName)
 
-        // "START" button
         val btnStart = createMenuButton("START") {
             showStartStudyConfirmation()
         }.apply {
@@ -143,7 +138,6 @@ class StartFragment : Fragment() {
         }
         rootLayout.addView(btnStart)
 
-        // ----- FILES -----
         val tvFilesHeading = TextView(requireContext()).apply {
             text = "FILES"
             textSize = 16f
@@ -177,7 +171,6 @@ class StartFragment : Fragment() {
 
         rootLayout.addView(
             createMenuButton("Use Tutorial Protocol") {
-                // Now we store an asset-based Uri instead of removing PROTOCOL_URI:
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/tutorial_protocol.txt"
                     sharedPref.edit()
@@ -190,7 +183,6 @@ class StartFragment : Fragment() {
             }
         )
 
-        // Optionally add a "Use Demo Protocol" button if desired, for completeness:
         rootLayout.addView(
             createMenuButton("Use Demo Protocol") {
                 showChangeProtocolConfirmation {
@@ -205,7 +197,6 @@ class StartFragment : Fragment() {
             }
         )
 
-        // ----- CUSTOMIZATION -----
         val tvCustomizationHeading = TextView(requireContext()).apply {
             text = "CUSTOMIZATION"
             textSize = 16f
@@ -235,9 +226,9 @@ class StartFragment : Fragment() {
         }
         rootLayout.addView(spacerView)
 
-        // About
         val btnAbout = createMenuButton("About") {
-            showAboutContentDialog()
+            val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
+            HtmlDialogHelper.showHtmlContent(requireContext(), "About", aboutHtmlContent)
         }
         rootLayout.addView(btnAbout)
 
@@ -307,11 +298,6 @@ class StartFragment : Fragment() {
 
     private fun updateProtocolNameDisplay(protocolName: String) {
         tvSelectedProtocolName.text = protocolName
-    }
-
-    private fun showAboutContentDialog() {
-        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
-        ProtocolContentDisplayer(requireContext()).showHtmlContent("About", aboutHtmlContent)
     }
 
     private fun showToast(message: String) {
