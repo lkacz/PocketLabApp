@@ -1,24 +1,22 @@
+// Filename: FileUriUtils.kt
 package com.lkacz.pola
 
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
-import android.provider.OpenableColumns
+import androidx.documentfile.provider.DocumentFile
 
 class FileUriUtils {
 
     fun handleFileUri(context: Context, uri: Uri, sharedPref: SharedPreferences) {
-        context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        context.contentResolver.takePersistableUriPermission(uri, takeFlags)
         sharedPref.edit().putString("PROTOCOL_URI", uri.toString()).apply()
     }
 
     fun getFileName(context: Context, uri: Uri): String {
-        val cursor = context.contentResolver.query(uri, null, null, null, null)
-        val nameIndex = cursor?.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
-        cursor?.moveToFirst()
-        val name = nameIndex?.let { cursor.getString(it) }
-        cursor?.close()
-        return name ?: "Unknown"
+        val docFile = DocumentFile.fromSingleUri(context, uri)
+        return docFile?.name ?: "Unknown"
     }
 }
