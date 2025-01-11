@@ -36,7 +36,7 @@ class ProtocolValidationDialog : DialogFragment() {
         "CONTINUE_ALIGNMENT",
         "CONTINUE_BACKGROUND_COLOR",
         "CONTINUE_SIZE",
-        "CUSTOM_HTML",
+        "HTML", // Replaced CUSTOM_HTML with HTML
         "END",
         "GOTO",
         "HEADER_ALIGNMENT",
@@ -203,7 +203,6 @@ class ProtocolValidationDialog : DialogFragment() {
             setOnClickListener { confirmLoadProtocol() }
         }
 
-        // Keep this button always enabled to ensure we can see the "No Changes Detected" dialog
         btnSave = Button(requireContext()).apply {
             text = "SAVE"
             setOnClickListener { confirmSaveDialog() }
@@ -430,7 +429,6 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun confirmSaveDialog() {
-        // If there are no unsaved changes, ask whether the user still wants to save.
         if (!hasUnsavedChanges) {
             AlertDialog.Builder(requireContext())
                 .setTitle("No Changes Detected")
@@ -839,6 +837,11 @@ class ProtocolValidationDialog : DialogFragment() {
         var warningMessage = existingWarning
 
         when (commandRaw) {
+            "HTML" -> {
+                htmlValidation(parts).forEach {
+                    errorMessage = appendError(errorMessage, it)
+                }
+            }
             "LABEL" -> {
                 labelValidation(lineNumber, line, labelOccurrences).forEach {
                     errorMessage = appendError(errorMessage, it)
@@ -860,11 +863,6 @@ class ProtocolValidationDialog : DialogFragment() {
                             )
                         }
                     }
-                }
-            }
-            "CUSTOM_HTML" -> {
-                customHtmlValidation(parts).forEach {
-                    errorMessage = appendError(errorMessage, it)
                 }
             }
             "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> {
@@ -962,7 +960,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 } else if (mode !in listOf("off", "slide", "slideleft", "dissolve", "fade")) {
                     errorMessage = appendError(
                         errorMessage,
-                        "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', 'dissolve', or 'fade'"
+                        "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', or 'fade' or 'dissolve'"
                     )
                 }
             }
@@ -976,14 +974,14 @@ class ProtocolValidationDialog : DialogFragment() {
         val matchedExt = knownExtensions.firstOrNull { lowerFile.endsWith(it) } ?: return ""
 
         val mainAllowed = allowedMediaCommands.contains(command)
-        val isCustomHtml = (command == "CUSTOM_HTML")
+        val isHtml = (command == "HTML")
         val isTimerSound = (command == "TIMER_SOUND")
 
-        if (!mainAllowed && !isCustomHtml && !isTimerSound) {
+        if (!mainAllowed && !isHtml && !isTimerSound) {
             return "Command '$command' cannot reference media or .html files, found <$fileRef>"
         }
-        if (isCustomHtml && matchedExt != ".html") {
-            return "CUSTOM_HTML only accepts .html files, found <$fileRef>"
+        if (isHtml && matchedExt != ".html") {
+            return "HTML only accepts .html files, found <$fileRef>"
         }
         if (isTimerSound && (matchedExt != ".mp3" && matchedExt != ".wav")) {
             return "TIMER_SOUND only accepts .mp3 or .wav files, found <$fileRef>"
@@ -1028,14 +1026,14 @@ class ProtocolValidationDialog : DialogFragment() {
         return errors
     }
 
-    private fun customHtmlValidation(parts: List<String>): List<String> {
+    private fun htmlValidation(parts: List<String>): List<String> {
         val errors = mutableListOf<String>()
         if (parts.size < 2 || parts[1].isBlank()) {
-            errors.add("CUSTOM_HTML missing filename")
+            errors.add("HTML missing filename")
         } else {
             val filename = parts[1].trim()
             if (!filename.endsWith(".html", ignoreCase = true)) {
-                errors.add("CUSTOM_HTML must be followed by *.html")
+                errors.add("HTML must be followed by *.html")
             }
         }
         return errors

@@ -8,6 +8,10 @@
 // ITEM_SIZE;30
 // RESPONSE_SIZE;24
 
+
+
+INPUTFIELD;About you no brackets;Plesae provide information about you;Favourite food;Interests;City of Origin;Complete[HOLD]
+
 TIMER_SOUND;sound9.wav
 
 // VERIFIED:
@@ -32,8 +36,18 @@ TIMER_SOUND;sound9.wav
 // Timer for 30 Minutes Solo Walk
 // Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
 
-CUSTOM_HTML;
-pola_snake.html
+TIMER;
+Walking;
+Coś tam coś tam<sound.mp3><video.mp4><custom.html>;
+5;
+Walk
+
+IDZIEMY DALEJ
+Instruction;Read this instruction;Listen to this sound, watch this movie, and click this html button<sound.mp3><video.mp4><custom.html>;Continue
+INPUTFIELD;Inputfield testing;Let's test<sound.mp3><video.mp4><custom.html>;Participant ID;CONTINUE[HOLD]
+
+CUSTOM_HTML;custom.html
+
 
 CONTINUE_ALIGNMENT;
 RIGHT;BOTTOM
@@ -45,7 +59,6 @@ INPUTFIELD;
     CONTINUE[HOLD]
 
 INPUTFIELD;Inputfield testing;Let's test;[Participant ID;Interests;City of Origin];CONTINUE[HOLD]
-
 INPUTFIELD;Inputfield testing;Let's test;Participant ID;CONTINUE[HOLD]
 INPUTFIELD;Inputfield testing;Let's test;[Participant ID];CONTINUE[HOLD]
 
@@ -63,11 +76,11 @@ SCALE;Multiscale test;This scale has serveral items that will be presented in th
 
 
 
+INPUTFIELD;About you;Plesae provide information about you;[Favourite food;Interests;City of Origin];Complete[HOLD]
+TIMER;Walking;Walk for a minute;60;Continue[HOLD]
+CUSTOM_HTML;pola_snake.html;Skip[HOLD]
+INSTRUCTION;Welcome;Plese hold the button to proceede.;Continue[HOLD]
 
-TIMER;Walking;Coś tam coś tam;5;IDZIEMY DALEJ[HOLD]
-
-
-CUSTOM_HTML;pola_snake.html;CONT[HOLD]
 
 CONTINUE_ALIGNMENT;RIGHT;BOTTOM
 INSTRUCTION;nothing;Tere fere.;DALEJ

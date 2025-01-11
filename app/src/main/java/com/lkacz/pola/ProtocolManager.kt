@@ -69,7 +69,7 @@ class ProtocolManager(private val context: Context) {
             "CONTINUE_ALIGNMENT",
             "CONTINUE_BACKGROUND_COLOR",
             "CONTINUE_SIZE",
-            "CUSTOM_HTML",
+            "HTML",  // Replaced CUSTOM_HTML with HTML
             "END",
             "GOTO",
             "HEADER_ALIGNMENT",

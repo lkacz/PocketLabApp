@@ -188,8 +188,8 @@ class FragmentLoader(
                 "INPUTFIELD[RANDOMIZED]" -> {
                     return createInputFieldFragment(parts, isRandom = true)
                 }
-                "CUSTOM_HTML" -> {
-                    return createCustomHtmlFragment(parts)
+                "HTML" -> {
+                    return createHtmlFragment(parts)
                 }
                 "END" -> {
                     return EndFragment()
@@ -247,7 +247,6 @@ class FragmentLoader(
     }
 
     private fun createInputFieldFragment(parts: List<String>, isRandom: Boolean): Fragment {
-
         if (parts.size < 4) {
             return EndFragment()
         }
@@ -257,7 +256,6 @@ class FragmentLoader(
         val rawFieldsRange = parts.subList(3, parts.size - 1)
         val combined = rawFieldsRange.joinToString(";").trim()
 
-        // If user enclosed the input fields in brackets, remove them and split
         val fields: List<String> = if (
             combined.startsWith("[") && combined.endsWith("]") && combined.length > 2
         ) {
@@ -273,10 +271,10 @@ class FragmentLoader(
         return InputFieldFragment.newInstance(heading, body, continueText, fields, isRandom)
     }
 
-    private fun createCustomHtmlFragment(parts: List<String>): Fragment {
+    private fun createHtmlFragment(parts: List<String>): Fragment {
         val fileName = parts.getOrNull(1).orEmpty()
         val buttonText = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Continue"
-        return CustomHtmlFragment.newInstance(fileName, buttonText)
+        return HtmlFragment.newInstance(fileName, buttonText)
     }
 
     private fun safeParseColor(colorStr: String): Int {

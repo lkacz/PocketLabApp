@@ -1,4 +1,4 @@
-// Filename: CustomHtmlFragment.kt
+// Filename: HtmlFragment.kt
 package com.lkacz.pola
 
 import android.content.Context
@@ -13,7 +13,7 @@ import android.widget.*
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
-class CustomHtmlFragment : Fragment() {
+class HtmlFragment : Fragment() {
 
     private var fileName: String? = null
     private var nextButtonText: String? = null
@@ -37,7 +37,7 @@ class CustomHtmlFragment : Fragment() {
             nextButtonText = it.getString("NEXT_BUTTON_TEXT")
         }
         logger = Logger.getInstance(requireContext())
-        logger.logOther("Entered CustomHtmlFragment: $fileName")
+        logger.logOther("Entered HtmlFragment: $fileName")
     }
 
     override fun onCreateView(
@@ -219,7 +219,7 @@ class CustomHtmlFragment : Fragment() {
     companion object {
         @JvmStatic
         fun newInstance(fileName: String, nextButtonText: String) =
-            CustomHtmlFragment().apply {
+            HtmlFragment().apply {
                 arguments = Bundle().apply {
                     putString("HTML_FILE", fileName)
                     putString("NEXT_BUTTON_TEXT", nextButtonText)
