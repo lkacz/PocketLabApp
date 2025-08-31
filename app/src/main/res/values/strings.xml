@@ -94,4 +94,8 @@
     <string name="action_move_down">Move Down</string>
     <string name="toast_command_moved">Command moved</string>
     <string name="toast_move_blocked">Cannot move further</string>
+    <string name="action_undo">Undo</string>
+    <string name="cd_undo">Undo last change</string>
+    <string name="toast_undo_none">Nothing to undo</string>
+    <string name="toast_undo_done">Reverted last change</string>
 </resources>

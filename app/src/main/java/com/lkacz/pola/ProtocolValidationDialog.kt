@@ -126,6 +126,24 @@ class ProtocolValidationDialog : DialogFragment() {
     private var coloringEnabled = true
     private var semicolonsAsBreaks = true
 
+    // Simple undo stack of previous protocol line states
+    private val undoStack: ArrayDeque<List<String>> = ArrayDeque()
+    private fun pushUndoState() {
+        // Limit stack size to avoid memory bloat
+        if (undoStack.size > 50) undoStack.removeFirst()
+        undoStack.addLast(allLines.toList())
+    }
+    private fun performUndo() {
+        if (undoStack.isEmpty()) {
+            Toast.makeText(requireContext(), getString(R.string.toast_undo_none), Toast.LENGTH_SHORT).show()
+            return
+        }
+        allLines = undoStack.removeLast().toMutableList()
+        hasUnsavedChanges = true
+        revalidateAndRefreshUI()
+        Toast.makeText(requireContext(), getString(R.string.toast_undo_done), Toast.LENGTH_SHORT).show()
+    }
+
     private lateinit var btnLoad: View
     private lateinit var btnSave: View
     private lateinit var btnAdd: View
@@ -284,12 +302,14 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
     btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
+    val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
     actionBar.addView(btnLoad)
     actionBar.addView(btnSave)
     actionBar.addView(btnNew)
     actionBar.addView(btnAdd)
+    actionBar.addView(btnUndo)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
 
@@ -587,6 +607,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun confirmNewProtocol() {
         fun createNew() {
+            pushUndoState()
             allLines.clear()
             allLines.add("INSTRUCTION;Header;Body;Continue")
             hasUnsavedChanges = true
@@ -919,12 +940,13 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 16, 16, 16)
             }
 
-        AlertDialog.Builder(context)
+    AlertDialog.Builder(context)
             .setTitle("Edit Line #${lineIndex + 1}")
             .setView(editText)
             .setPositiveButton("Save") { _, _ ->
                 val newLine = editText.text.toString()
                 if (newLine != originalLine) {
+            pushUndoState()
                     allLines[lineIndex] = newLine
                     hasUnsavedChanges = true
                 }
@@ -1781,10 +1803,12 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 // proceed add or update
                     if (isEdit) {
+                        pushUndoState()
                         allLines[editLineIndex!!] = newLine
                         Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
                     } else {
                         val idx = insertAfterLine?.plus(1) ?: allLines.size
+                        pushUndoState()
                         allLines.add(idx, newLine)
                         Toast.makeText(ctx, getString(R.string.toast_command_inserted), Toast.LENGTH_SHORT).show()
                     }
@@ -1796,6 +1820,7 @@ class ProtocolValidationDialog : DialogFragment() {
         if (isEdit) {
             builder.setNeutralButton(R.string.action_delete_command) { _, _ ->
                 if (editLineIndex != null && editLineIndex in allLines.indices) {
+                    pushUndoState()
                     allLines.removeAt(editLineIndex)
                     hasUnsavedChanges = true
                     revalidateAndRefreshUI()
@@ -1816,6 +1841,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 inner.addView(moveRow)
                 btnUp.setOnClickListener {
                     if (editLineIndex != null && editLineIndex > 0) {
+                        pushUndoState()
                         java.util.Collections.swap(allLines, editLineIndex, editLineIndex - 1)
                         hasUnsavedChanges = true
                         revalidateAndRefreshUI()
@@ -1827,6 +1853,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 btnDown.setOnClickListener {
                     if (editLineIndex != null && editLineIndex < allLines.lastIndex) {
+                        pushUndoState()
                         java.util.Collections.swap(allLines, editLineIndex, editLineIndex + 1)
                         hasUnsavedChanges = true
                         revalidateAndRefreshUI()
