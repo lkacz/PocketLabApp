@@ -31,17 +31,27 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Root = Resolve-Path (Join-Path $ScriptDir '..')
 Set-Location $Root
 
-# 2. Infer SDK path from local.properties if present
-$localProps = Join-Path $Root 'local.properties'
-if(Test-Path $localProps){
-  $sdkLine = (Get-Content $localProps | Where-Object { $_ -match '^sdk.dir=' })
-  if($sdkLine){ $env:ANDROID_SDK_ROOT = ($sdkLine -replace '^sdk.dir=','') -replace '\\\\','\\' }
+# 2. Infer SDK path from local.properties if present (only if not already valid)
+if(-not ($env:ANDROID_SDK_ROOT -and (Test-Path $env:ANDROID_SDK_ROOT))){
+  $localProps = Join-Path $Root 'local.properties'
+  if(Test-Path $localProps){
+    $sdkLine = (Get-Content $localProps | Where-Object { $_ -match '^sdk.dir=' })
+    if($sdkLine){
+      $raw = ($sdkLine -replace '^sdk.dir=','').Trim()
+      # Collapse doubled backslashes from properties escaping
+      while($raw -match '\\\\'){ $raw = $raw -replace '\\\\','\\' }
+      $env:ANDROID_SDK_ROOT = $raw
+    }
+  }
 }
 if(-not $env:ANDROID_SDK_ROOT){
   $defaultSdk = "$env:USERPROFILE\AppData\Local\Android\Sdk"
   if(Test-Path $defaultSdk){ $env:ANDROID_SDK_ROOT = $defaultSdk }
 }
-if(-not (Test-Path $env:ANDROID_SDK_ROOT)){ throw "ANDROID_SDK_ROOT not found. Set it manually or install the SDK." }
+if(-not (Test-Path $env:ANDROID_SDK_ROOT)){
+  Write-Host "DEBUG ANDROID_SDK_ROOT value='$env:ANDROID_SDK_ROOT'" -ForegroundColor Yellow
+  throw "ANDROID_SDK_ROOT not found. Set it manually or install the SDK."
+}
 
 # 3. Update PATH (idempotent for session)
 $pathsToAdd = @("$env:ANDROID_SDK_ROOT\platform-tools","$env:ANDROID_SDK_ROOT\emulator")
@@ -70,9 +80,9 @@ function Wait-ForDevice{
 $devices = (& adb devices) -join "\n"
 if($devices -notmatch 'emulator-'){ if(-not $JustInstall){
     Write-Section "Starting emulator $AvdName"
-    $args = @('-avd', $AvdName)
-    if(-not $NoWipe){ $args += '-no-snapshot-load' }
-    Start-Process -FilePath 'emulator' -ArgumentList $args | Out-Null
+  $emuArgs = @('-avd', $AvdName)
+  if(-not $NoWipe){ $emuArgs += '-no-snapshot-load' }
+  Start-Process -FilePath 'emulator' -ArgumentList $emuArgs | Out-Null
     Wait-ForDevice
   } else { throw 'No emulator/device connected and JustInstall specified.' }
 } else {

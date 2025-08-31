@@ -10,9 +10,8 @@ import androidx.documentfile.provider.DocumentFile
 
 class HtmlImageLoader private constructor(
     private val context: Context,
-    private val parentFolderUri: Uri?
+    private val parentFolderUri: Uri?,
 ) : Html.ImageGetter {
-
     override fun getDrawable(source: String?): Drawable? {
         if (source.isNullOrBlank()) return null
 
@@ -56,7 +55,7 @@ class HtmlImageLoader private constructor(
         fun getSpannedFromHtml(
             context: Context,
             parentFolderUri: Uri?,
-            htmlText: String?
+            htmlText: String?,
         ): Spanned {
             if (htmlText.isNullOrEmpty()) {
                 return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY)
@@ -67,7 +66,7 @@ class HtmlImageLoader private constructor(
                 htmlText,
                 HtmlCompat.FROM_HTML_MODE_LEGACY,
                 HtmlImageLoader(context, parentFolderUri),
-                MediaTagHandler()
+                MediaTagHandler(),
             )
         }
     }

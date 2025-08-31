@@ -10,7 +10,6 @@ import androidx.core.content.getSystemService
 import androidx.documentfile.provider.DocumentFile
 
 class AlarmHelper(private val context: Context) {
-
     private val vibrator: Vibrator? = context.getSystemService()
     private var mediaPlayer: MediaPlayer? = null
 
@@ -20,40 +19,44 @@ class AlarmHelper(private val context: Context) {
      * Vibration also starts, repeating until [stopAlarm] is called.
      */
     fun startAlarm() {
-        stopAlarm()  // Ensure no old playback continues
+        stopAlarm() // Ensure no old playback continues
 
         // Attempt to retrieve custom timer sound from SharedPreferences
-        val prefs = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+    val prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val soundFileName = prefs.getString("CUSTOM_TIMER_SOUND", null)
 
         // If we have a custom sound name, try to locate and play it
-        val customSoundUri = if (!soundFileName.isNullOrBlank()) {
-            findSoundUri(soundFileName)
-        } else null
+        val customSoundUri =
+            if (!soundFileName.isNullOrBlank()) {
+                findSoundUri(soundFileName)
+            } else {
+                null
+            }
 
         // Create a MediaPlayer for either custom sound or the default alarm sound
-        mediaPlayer = if (customSoundUri != null) {
-            try {
-                MediaPlayer().apply {
-                    setDataSource(context, customSoundUri)
-                    isLooping = true
-                    prepare()
-                    start()
+        mediaPlayer =
+            if (customSoundUri != null) {
+                try {
+                    MediaPlayer().apply {
+                        setDataSource(context, customSoundUri)
+                        isLooping = true
+                        prepare()
+                        start()
+                    }
+                } catch (e: Exception) {
+                    // Fallback to default if any error occurs
+                    MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
+                        isLooping = true
+                        start()
+                    }
                 }
-            } catch (e: Exception) {
-                // Fallback to default if any error occurs
+            } else {
+                // Default resource
                 MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
                     isLooping = true
                     start()
                 }
             }
-        } else {
-            // Default resource
-            MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
-                isLooping = true
-                start()
-            }
-        }
 
         // Vibration pattern (waveform) repeated indefinitely
         val pattern = longArrayOf(0, 1000, 1000)

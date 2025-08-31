@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 
 class AppearanceCustomizationDialog : DialogFragment() {
-
     private lateinit var previewHeaderTextView: TextView
     private lateinit var previewBodyTextView: TextView
     private lateinit var previewContinueButton: Button
@@ -106,748 +105,910 @@ class AppearanceCustomizationDialog : DialogFragment() {
         super.onResume()
         dialog?.window?.setLayout(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
+            WindowManager.LayoutParams.WRAP_CONTENT,
         )
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        val rootScrollView = ScrollView(requireContext()).apply {
-            isFillViewport = true
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
+        val rootScrollView =
+            ScrollView(requireContext()).apply {
+                isFillViewport = true
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
+            }
 
-        val mainLinearLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
+        val mainLinearLayout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         rootScrollView.addView(mainLinearLayout)
 
-        previewContainerTop = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        previewContainerTop =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         mainLinearLayout.addView(previewContainerTop)
 
-        val headerLayoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dpToPx(8) }
-        previewHeaderTextView = TextView(requireContext()).apply {
-            text = "Header"
-            textSize = 24f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            gravity = Gravity.CENTER
-            layoutParams = headerLayoutParams
-        }
+        val headerLayoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dpToPx(8) }
+        previewHeaderTextView =
+            TextView(requireContext()).apply {
+                text = "Header"
+                textSize = 24f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                gravity = Gravity.CENTER
+                layoutParams = headerLayoutParams
+            }
         previewContainerTop.addView(previewHeaderTextView)
 
-        val bodyLayoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dpToPx(8) }
-        previewBodyTextView = TextView(requireContext()).apply {
-            text = "Body text, e.g. Lorem ipsum..."
-            textSize = 16f
-            gravity = Gravity.CENTER
-            layoutParams = bodyLayoutParams
-        }
+        val bodyLayoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dpToPx(8) }
+        previewBodyTextView =
+            TextView(requireContext()).apply {
+                text = "Body text, e.g. Lorem ipsum..."
+                textSize = 16f
+                gravity = Gravity.CENTER
+                layoutParams = bodyLayoutParams
+            }
         previewContainerTop.addView(previewBodyTextView)
 
-        val continueBtnLp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            bottomMargin = dpToPx(8)
-            gravity = Gravity.END
-        }
-        previewContinueButton = Button(requireContext()).apply {
-            text = "Continue Button"
-            textSize = 16f
-            layoutParams = continueBtnLp
-        }
+        val continueBtnLp =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                bottomMargin = dpToPx(8)
+                gravity = Gravity.END
+            }
+        previewContinueButton =
+            Button(requireContext()).apply {
+                text = "Continue Button"
+                textSize = 16f
+                layoutParams = continueBtnLp
+            }
         previewContainerTop.addView(previewContinueButton)
 
-        val timerLayoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            topMargin = dpToPx(8)
-            bottomMargin = dpToPx(8)
-        }
-        previewTimerTextView = TextView(requireContext()).apply {
-            text = "00:01"
-            textSize = 18f
-            gravity = Gravity.CENTER
-            setPadding(0, dpToPx(0), 0, dpToPx(0))
-            layoutParams = timerLayoutParams
-        }
+        val timerLayoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dpToPx(8)
+                bottomMargin = dpToPx(8)
+            }
+        previewTimerTextView =
+            TextView(requireContext()).apply {
+                text = "00:01"
+                textSize = 18f
+                gravity = Gravity.CENTER
+                setPadding(0, dpToPx(0), 0, dpToPx(0))
+                layoutParams = timerLayoutParams
+            }
         previewContainerTop.addView(previewTimerTextView)
 
         val headerRow = newRowLayout()
         mainLinearLayout.addView(headerRow)
-        val headerLabel = TextView(requireContext()).apply {
-            text = "Header:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val headerLabel =
+            TextView(requireContext()).apply {
+                text = "Header:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         headerRow.addView(headerLabel)
-        sliderHeader = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        sliderHeader =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
             }
-        }
         headerRow.addView(sliderHeader)
-        tvHeaderSizeValue = TextView(requireContext()).apply {
-            text = "24"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
-        headerRow.addView(tvHeaderSizeValue)
-        headerColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        tvHeaderSizeValue =
+            TextView(requireContext()).apply {
+                text = "24"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
             }
-        }
+        headerRow.addView(tvHeaderSizeValue)
+        headerColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
+            }
         headerRow.addView(headerColorPicker)
 
-        val bodyRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
+        val bodyRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
         mainLinearLayout.addView(bodyRow)
-        val bodyLabel = TextView(requireContext()).apply {
-            text = "Body:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val bodyLabel =
+            TextView(requireContext()).apply {
+                text = "Body:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         bodyRow.addView(bodyLabel)
-        sliderBody = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        sliderBody =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
             }
-        }
         bodyRow.addView(sliderBody)
-        tvBodySizeValue = TextView(requireContext()).apply {
-            text = "16"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
-        bodyRow.addView(tvBodySizeValue)
-        bodyColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        tvBodySizeValue =
+            TextView(requireContext()).apply {
+                text = "16"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
             }
-        }
+        bodyRow.addView(tvBodySizeValue)
+        bodyColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
+            }
         bodyRow.addView(bodyColorPicker)
 
-        val continueRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
+        val continueRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
         mainLinearLayout.addView(continueRow)
-        val continueLabel = TextView(requireContext()).apply {
-            text = "Continue BTN:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val continueLabel =
+            TextView(requireContext()).apply {
+                text = "Continue BTN:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         continueRow.addView(continueLabel)
-        sliderContinue = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        sliderContinue =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
             }
-        }
         continueRow.addView(sliderContinue)
-        tvContinueSizeValue = TextView(requireContext()).apply {
-            text = "18"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvContinueSizeValue =
+            TextView(requireContext()).apply {
+                text = "18"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         continueRow.addView(tvContinueSizeValue)
-        continueTextColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        continueTextColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
             }
-        }
         continueRow.addView(continueTextColorPicker)
-        continueBackgroundColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        continueBackgroundColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
             }
-        }
         continueRow.addView(continueBackgroundColorPicker)
 
-        val continuePaddingHRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(continuePaddingHRow)
-        val paddingHLabel = TextView(requireContext()).apply {
-            text = "Continue Padding (L/R):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        continuePaddingHRow.addView(paddingHLabel)
-        sliderContinuePaddingH = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val continuePaddingHRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(continuePaddingHRow)
+        val paddingHLabel =
+            TextView(requireContext()).apply {
+                text = "Continue Padding (L/R):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        continuePaddingHRow.addView(paddingHLabel)
+        sliderContinuePaddingH =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         continuePaddingHRow.addView(sliderContinuePaddingH)
-        tvContinuePaddingHValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvContinuePaddingHValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         continuePaddingHRow.addView(tvContinuePaddingHValue)
 
-        val continuePaddingVRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(continuePaddingVRow)
-        val paddingVLabel = TextView(requireContext()).apply {
-            text = "Continue Padding (T/B):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        continuePaddingVRow.addView(paddingVLabel)
-        sliderContinuePaddingV = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val continuePaddingVRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(continuePaddingVRow)
+        val paddingVLabel =
+            TextView(requireContext()).apply {
+                text = "Continue Padding (T/B):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        continuePaddingVRow.addView(paddingVLabel)
+        sliderContinuePaddingV =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         continuePaddingVRow.addView(sliderContinuePaddingV)
-        tvContinuePaddingVValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvContinuePaddingVValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         continuePaddingVRow.addView(tvContinuePaddingVValue)
 
-        val headerAlignRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(headerAlignRow)
-        val headerAlignLabel = TextView(requireContext()).apply {
-            text = "Header Alignment:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        headerAlignRow.addView(headerAlignLabel)
-        spinnerHeaderAlignment = Spinner(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(16)
+        val headerAlignRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(headerAlignRow)
+        val headerAlignLabel =
+            TextView(requireContext()).apply {
+                text = "Header Alignment:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        headerAlignRow.addView(headerAlignLabel)
+        spinnerHeaderAlignment =
+            Spinner(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                    }
+            }
         headerAlignRow.addView(spinnerHeaderAlignment)
 
-        val bodyAlignRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(bodyAlignRow)
-        val bodyAlignLabel = TextView(requireContext()).apply {
-            text = "Body Alignment:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        bodyAlignRow.addView(bodyAlignLabel)
-        spinnerBodyAlignment = Spinner(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(16)
+        val bodyAlignRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(bodyAlignRow)
+        val bodyAlignLabel =
+            TextView(requireContext()).apply {
+                text = "Body Alignment:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        bodyAlignRow.addView(bodyAlignLabel)
+        spinnerBodyAlignment =
+            Spinner(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                    }
+            }
         bodyAlignRow.addView(spinnerBodyAlignment)
 
-        val continueAlignRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(continueAlignRow)
-        val continueAlignLabel = TextView(requireContext()).apply {
-            text = "Continue Alignment:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        continueAlignRow.addView(continueAlignLabel)
-        spinnerContinueAlignment = Spinner(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(16)
+        val continueAlignRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(continueAlignRow)
+        val continueAlignLabel =
+            TextView(requireContext()).apply {
+                text = "Continue Alignment:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        continueAlignRow.addView(continueAlignLabel)
+        spinnerContinueAlignment =
+            Spinner(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                    }
+            }
         continueAlignRow.addView(spinnerContinueAlignment)
 
-        mainLinearLayout.addView(View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
-            ).apply { topMargin = dpToPx(8) }
-        })
+        mainLinearLayout.addView(
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16),
+                    ).apply { topMargin = dpToPx(8) }
+            },
+        )
 
-        previewContainerScaleAndResponse = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), 0, dpToPx(16), 0)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        previewContainerScaleAndResponse =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dpToPx(16), 0, dpToPx(16), 0)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         mainLinearLayout.addView(previewContainerScaleAndResponse)
 
-        val itemTvLp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dpToPx(8) }
-        previewItemTextView = TextView(requireContext()).apply {
-            text = "SCALE ITEM"
-            gravity = Gravity.CENTER
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            layoutParams = itemTvLp
-        }
+        val itemTvLp =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dpToPx(8) }
+        previewItemTextView =
+            TextView(requireContext()).apply {
+                text = "SCALE ITEM"
+                gravity = Gravity.CENTER
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                layoutParams = itemTvLp
+            }
         previewContainerScaleAndResponse.addView(previewItemTextView)
 
-        previewPaddingButtonContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        previewPaddingButtonContainer =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         previewContainerScaleAndResponse.addView(previewPaddingButtonContainer)
 
-        val paddingBtn1Lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { bottomMargin = dpToPx(4) }
-        previewPaddingButton1 = Button(requireContext()).apply {
-            text = "Response 1"
-            layoutParams = paddingBtn1Lp
-        }
+        val paddingBtn1Lp =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dpToPx(4) }
+        previewPaddingButton1 =
+            Button(requireContext()).apply {
+                text = "Response 1"
+                layoutParams = paddingBtn1Lp
+            }
         previewPaddingButtonContainer.addView(previewPaddingButton1)
 
-        previewPaddingButton2 = Button(requireContext()).apply {
-            text = "Response 2"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        previewPaddingButton2 =
+            Button(requireContext()).apply {
+                text = "Response 2"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         previewPaddingButtonContainer.addView(previewPaddingButton2)
 
-        val itemRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
+        val itemRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
         mainLinearLayout.addView(itemRow)
-        val itemLabel = TextView(requireContext()).apply {
-            text = "Item:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val itemLabel =
+            TextView(requireContext()).apply {
+                text = "Item:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         itemRow.addView(itemLabel)
-        sliderItem = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        sliderItem =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
             }
-        }
         itemRow.addView(sliderItem)
-        tvItemSizeValue = TextView(requireContext()).apply {
-            text = "16"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
-        itemRow.addView(tvItemSizeValue)
-        itemColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        tvItemSizeValue =
+            TextView(requireContext()).apply {
+                text = "16"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
             }
-        }
+        itemRow.addView(tvItemSizeValue)
+        itemColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
+            }
         itemRow.addView(itemColorPicker)
 
-        val responseRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
+        val responseRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
         mainLinearLayout.addView(responseRow)
-        val responseLabel = TextView(requireContext()).apply {
-            text = "Response:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val responseLabel =
+            TextView(requireContext()).apply {
+                text = "Response:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         responseRow.addView(responseLabel)
-        sliderResponse = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        sliderResponse =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
             }
-        }
         responseRow.addView(sliderResponse)
-        tvResponseSizeValue = TextView(requireContext()).apply {
-            text = "16"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
-        responseRow.addView(tvResponseSizeValue)
-        responseColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        tvResponseSizeValue =
+            TextView(requireContext()).apply {
+                text = "16"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
             }
-        }
+        responseRow.addView(tvResponseSizeValue)
+        responseColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
+            }
         responseRow.addView(responseColorPicker)
 
-        buttonTextColorPicker = View(requireContext()).apply {
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        buttonTextColorPicker =
+            View(requireContext()).apply {
+                visibility = View.GONE
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
             }
-        }
         responseRow.addView(buttonTextColorPicker)
-        buttonBackgroundColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        buttonBackgroundColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
             }
-        }
         responseRow.addView(buttonBackgroundColorPicker)
 
-        val responseSpacingRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(responseSpacingRow)
-        val responseSpacingLabel = TextView(requireContext()).apply {
-            text = "Response Spacing:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        responseSpacingRow.addView(responseSpacingLabel)
-        sliderResponseSpacing = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val responseSpacingRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(responseSpacingRow)
+        val responseSpacingLabel =
+            TextView(requireContext()).apply {
+                text = "Response Spacing:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        responseSpacingRow.addView(responseSpacingLabel)
+        sliderResponseSpacing =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         responseSpacingRow.addView(sliderResponseSpacing)
-        tvResponseSpacingValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvResponseSpacingValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         responseSpacingRow.addView(tvResponseSpacingValue)
 
-        val responsePaddingHRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(responsePaddingHRow)
-        val responsePaddingHLabel = TextView(requireContext()).apply {
-            text = "Padding (Left/Right):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        responsePaddingHRow.addView(responsePaddingHLabel)
-        sliderResponsePaddingH = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val responsePaddingHRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(responsePaddingHRow)
+        val responsePaddingHLabel =
+            TextView(requireContext()).apply {
+                text = "Padding (Left/Right):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        responsePaddingHRow.addView(responsePaddingHLabel)
+        sliderResponsePaddingH =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         responsePaddingHRow.addView(sliderResponsePaddingH)
-        tvResponsePaddingHValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvResponsePaddingHValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         responsePaddingHRow.addView(tvResponsePaddingHValue)
 
-        val responsePaddingVRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(responsePaddingVRow)
-        val responsePaddingVLabel = TextView(requireContext()).apply {
-            text = "Padding (Top/Bottom):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        responsePaddingVRow.addView(responsePaddingVLabel)
-        sliderResponsePaddingV = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val responsePaddingVRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(responsePaddingVRow)
+        val responsePaddingVLabel =
+            TextView(requireContext()).apply {
+                text = "Padding (Top/Bottom):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        responsePaddingVRow.addView(responsePaddingVLabel)
+        sliderResponsePaddingV =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         responsePaddingVRow.addView(sliderResponsePaddingV)
-        tvResponsePaddingVValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvResponsePaddingVValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         responsePaddingVRow.addView(tvResponsePaddingVValue)
 
-        mainLinearLayout.addView(View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
-            ).apply { topMargin = dpToPx(8) }
-        })
+        mainLinearLayout.addView(
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16),
+                    ).apply { topMargin = dpToPx(8) }
+            },
+        )
 
-        val timerRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
+        val timerRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
         mainLinearLayout.addView(timerRow)
-        val timerLabel = TextView(requireContext()).apply {
-            text = "Timer Text:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
+        val timerLabel =
+            TextView(requireContext()).apply {
+                text = "Timer Text:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
         timerRow.addView(timerLabel)
-        sliderTimer = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        sliderTimer =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         timerRow.addView(sliderTimer)
-        tvTimerSizeValue = TextView(requireContext()).apply {
-            text = "18"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvTimerSizeValue =
+            TextView(requireContext()).apply {
+                text = "18"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         timerRow.addView(tvTimerSizeValue)
-        timerColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                dpToPx(36), dpToPx(36)
-            ).apply { leftMargin = dpToPx(8) }
-        }
+        timerColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        dpToPx(36), dpToPx(36),
+                    ).apply { leftMargin = dpToPx(8) }
+            }
         timerRow.addView(timerColorPicker)
 
-        val timerPaddingHRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(timerPaddingHRow)
-        val timerPaddingHLabel = TextView(requireContext()).apply {
-            text = "Timer Padding (L/R):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        timerPaddingHRow.addView(timerPaddingHLabel)
-        sliderTimerPaddingH = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val timerPaddingHRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(timerPaddingHRow)
+        val timerPaddingHLabel =
+            TextView(requireContext()).apply {
+                text = "Timer Padding (L/R):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        timerPaddingHRow.addView(timerPaddingHLabel)
+        sliderTimerPaddingH =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         timerPaddingHRow.addView(sliderTimerPaddingH)
-        tvTimerPaddingHValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvTimerPaddingHValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         timerPaddingHRow.addView(tvTimerPaddingHValue)
 
-        val timerPaddingVRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(timerPaddingVRow)
-        val timerPaddingVLabel = TextView(requireContext()).apply {
-            text = "Timer Padding (T/B):"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        timerPaddingVRow.addView(timerPaddingVLabel)
-        sliderTimerPaddingV = SeekBar(requireContext()).apply {
-            max = 100
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(4)
+        val timerPaddingVRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(timerPaddingVRow)
+        val timerPaddingVLabel =
+            TextView(requireContext()).apply {
+                text = "Timer Padding (T/B):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        timerPaddingVRow.addView(timerPaddingVLabel)
+        sliderTimerPaddingV =
+            SeekBar(requireContext()).apply {
+                max = 100
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
         timerPaddingVRow.addView(sliderTimerPaddingV)
-        tvTimerPaddingVValue = TextView(requireContext()).apply {
-            text = "0"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(4) }
-        }
+        tvTimerPaddingVValue =
+            TextView(requireContext()).apply {
+                text = "0"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
         timerPaddingVRow.addView(tvTimerPaddingVValue)
 
-        val timerAlignRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
-        }
-        mainLinearLayout.addView(timerAlignRow)
-        val timerAlignLabel = TextView(requireContext()).apply {
-            text = "Timer Alignment:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        timerAlignRow.addView(timerAlignLabel)
-        spinnerTimerAlignment = Spinner(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            ).apply {
-                leftMargin = dpToPx(16)
+        val timerAlignRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
             }
-        }
+        mainLinearLayout.addView(timerAlignRow)
+        val timerAlignLabel =
+            TextView(requireContext()).apply {
+                text = "Timer Alignment:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        timerAlignRow.addView(timerAlignLabel)
+        spinnerTimerAlignment =
+            Spinner(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                    }
+            }
         timerAlignRow.addView(spinnerTimerAlignment)
 
-        mainLinearLayout.addView(View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
-            ).apply { topMargin = dpToPx(8) }
-        })
+        mainLinearLayout.addView(
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16),
+                    ).apply { topMargin = dpToPx(8) }
+            },
+        )
 
-        val bgRow = newRowLayout().apply {
-            (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(4)
-        }
-        mainLinearLayout.addView(bgRow)
-        val bgLabel = TextView(requireContext()).apply {
-            text = "Background:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-        }
-        bgRow.addView(bgLabel)
-        screenBackgroundColorPicker = View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
-                leftMargin = dpToPx(8)
+        val bgRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(4)
             }
-        }
+        mainLinearLayout.addView(bgRow)
+        val bgLabel =
+            TextView(requireContext()).apply {
+                text = "Background:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        bgRow.addView(bgLabel)
+        screenBackgroundColorPicker =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(dpToPx(36), dpToPx(36)).apply {
+                        leftMargin = dpToPx(8)
+                    }
+            }
         bgRow.addView(screenBackgroundColorPicker)
 
-        mainLinearLayout.addView(View(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16)
-            ).apply { topMargin = dpToPx(8) }
-        })
+        mainLinearLayout.addView(
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dpToPx(16),
+                    ).apply { topMargin = dpToPx(8) }
+            },
+        )
 
-        val transitionsLabel = TextView(requireContext()).apply {
-            text = "Slides transition style:"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                leftMargin = dpToPx(16)
-                topMargin = dpToPx(16)
+        val transitionsLabel =
+            TextView(requireContext()).apply {
+                text = "Slides transition style:"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                        topMargin = dpToPx(16)
+                    }
             }
-        }
         mainLinearLayout.addView(transitionsLabel)
-        spinnerTransitions = Spinner(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                leftMargin = dpToPx(16)
-                bottomMargin = dpToPx(16)
+        spinnerTransitions =
+            Spinner(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        leftMargin = dpToPx(16)
+                        bottomMargin = dpToPx(16)
+                    }
             }
-        }
         mainLinearLayout.addView(spinnerTransitions)
 
-        val bottomButtonRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dpToPx(16) }
-        }
+        val bottomButtonRow =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { bottomMargin = dpToPx(16) }
+            }
         mainLinearLayout.addView(bottomButtonRow)
-        val btnOk = Button(requireContext()).apply {
-            text = "OK"
-        }
+        val btnOk =
+            Button(requireContext()).apply {
+                text = "OK"
+            }
         bottomButtonRow.addView(btnOk)
-        val btnDefaults = Button(requireContext()).apply {
-            text = "Defaults"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(16) }
-        }
+        val btnDefaults =
+            Button(requireContext()).apply {
+                text = "Defaults"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(16) }
+            }
         bottomButtonRow.addView(btnDefaults)
-        val btnCancel = Button(requireContext()).apply {
-            text = "Cancel"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { leftMargin = dpToPx(16) }
-        }
+        val btnCancel =
+            Button(requireContext()).apply {
+                text = "Cancel"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(16) }
+            }
         bottomButtonRow.addView(btnCancel)
 
         btnOk.setOnClickListener {
@@ -860,7 +1021,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         return rootScrollView
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         loadPersistedValues()
 
@@ -960,73 +1124,99 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvTimerPaddingVValue.text = savedTimerV.toString()
         applyTimerTextPadding()
 
-        sliderHeader.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            headerTextSize = size.toFloat()
-            previewHeaderTextView.textSize = size.toFloat()
-            tvHeaderSizeValue.text = size.toString()
-        })
-        sliderBody.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            bodyTextSize = size.toFloat()
-            previewBodyTextView.textSize = size.toFloat()
-            tvBodySizeValue.text = size.toString()
-        })
-        sliderContinue.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            continueTextSize = size.toFloat()
-            previewContinueButton.textSize = size.toFloat()
-            tvContinueSizeValue.text = size.toString()
-        })
-        sliderItem.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            itemTextSize = size.toFloat()
-            previewItemTextView.textSize = size.toFloat()
-            tvItemSizeValue.text = size.toString()
-        })
-        sliderResponse.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            responseTextSize = size.toFloat()
-            previewPaddingButton1.textSize = size.toFloat()
-            previewPaddingButton2.textSize = size.toFloat()
-            tvResponseSizeValue.text = size.toString()
-        })
-        sliderTimer.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val size = it.coerceIn(8, 100)
-            timerTextSize = size.toFloat()
-            previewTimerTextView.textSize = size.toFloat()
-            tvTimerSizeValue.text = size.toString()
-        })
+        sliderHeader.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                headerTextSize = size.toFloat()
+                previewHeaderTextView.textSize = size.toFloat()
+                tvHeaderSizeValue.text = size.toString()
+            },
+        )
+        sliderBody.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                bodyTextSize = size.toFloat()
+                previewBodyTextView.textSize = size.toFloat()
+                tvBodySizeValue.text = size.toString()
+            },
+        )
+        sliderContinue.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                continueTextSize = size.toFloat()
+                previewContinueButton.textSize = size.toFloat()
+                tvContinueSizeValue.text = size.toString()
+            },
+        )
+        sliderItem.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                itemTextSize = size.toFloat()
+                previewItemTextView.textSize = size.toFloat()
+                tvItemSizeValue.text = size.toString()
+            },
+        )
+        sliderResponse.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                responseTextSize = size.toFloat()
+                previewPaddingButton1.textSize = size.toFloat()
+                previewPaddingButton2.textSize = size.toFloat()
+                tvResponseSizeValue.text = size.toString()
+            },
+        )
+        sliderTimer.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val size = it.coerceIn(8, 100)
+                timerTextSize = size.toFloat()
+                previewTimerTextView.textSize = size.toFloat()
+                tvTimerSizeValue.text = size.toString()
+            },
+        )
 
-        sliderResponseSpacing.setOnSeekBarChangeListener(simpleSeekBarListener {
-            val spaceDp = it.coerceIn(0, 100)
-            tvResponseSpacingValue.text = spaceDp.toString()
-            applyResponseSpacing(spaceDp)
-        })
-        sliderResponsePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvResponsePaddingHValue.text = it.toString()
-            applyResponseButtonPadding()
-        })
-        sliderResponsePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvResponsePaddingVValue.text = it.toString()
-            applyResponseButtonPadding()
-        })
-        sliderContinuePaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvContinuePaddingHValue.text = it.toString()
-            applyContinueButtonPadding()
-        })
-        sliderContinuePaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvContinuePaddingVValue.text = it.toString()
-            applyContinueButtonPadding()
-        })
-        sliderTimerPaddingH.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvTimerPaddingHValue.text = it.toString()
-            applyTimerTextPadding()
-        })
-        sliderTimerPaddingV.setOnSeekBarChangeListener(simpleSeekBarListener {
-            tvTimerPaddingVValue.text = it.toString()
-            applyTimerTextPadding()
-        })
+        sliderResponseSpacing.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val spaceDp = it.coerceIn(0, 100)
+                tvResponseSpacingValue.text = spaceDp.toString()
+                applyResponseSpacing(spaceDp)
+            },
+        )
+        sliderResponsePaddingH.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvResponsePaddingHValue.text = it.toString()
+                applyResponseButtonPadding()
+            },
+        )
+        sliderResponsePaddingV.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvResponsePaddingVValue.text = it.toString()
+                applyResponseButtonPadding()
+            },
+        )
+        sliderContinuePaddingH.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvContinuePaddingHValue.text = it.toString()
+                applyContinueButtonPadding()
+            },
+        )
+        sliderContinuePaddingV.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvContinuePaddingVValue.text = it.toString()
+                applyContinueButtonPadding()
+            },
+        )
+        sliderTimerPaddingH.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvTimerPaddingHValue.text = it.toString()
+                applyTimerTextPadding()
+            },
+        )
+        sliderTimerPaddingV.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                tvTimerPaddingVValue.text = it.toString()
+                applyTimerTextPadding()
+            },
+        )
 
         // Added "Fade" to transition options
         val transitionOptions = listOf("No transition", "Slide to left", "Dissolve", "Fade")
@@ -1043,26 +1233,28 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 "fade" -> 3
                 else -> 0
             },
-            false
+            false,
         )
-        spinnerTransitions.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                v: View?,
-                position: Int,
-                id: Long
-            ) {
-                currentTransitionMode = when (position) {
-                    0 -> "off"
-                    1 -> "slide"
-                    2 -> "dissolve"
-                    3 -> "fade"
-                    else -> "off"
+        spinnerTransitions.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    v: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    currentTransitionMode =
+                        when (position) {
+                            0 -> "off"
+                            1 -> "slide"
+                            2 -> "dissolve"
+                            3 -> "fade"
+                            else -> "off"
+                        }
                 }
-            }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
 
         val alignmentOptions = listOf("Left", "Center", "Right")
         val alignAdapter =
@@ -1070,7 +1262,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         alignAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
         spinnerContinueAlignment.adapter = alignAdapter
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val savedAlign = prefs.getString("CONTINUE_ALIGNMENT", "CENTER") ?: "CENTER"
         currentContinueAlignment = savedAlign.uppercase()
         spinnerContinueAlignment.setSelection(
@@ -1079,7 +1271,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 "RIGHT" -> 2
                 else -> 1
             },
-            false
+            false,
         )
         spinnerContinueAlignment.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
@@ -1087,7 +1279,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                     parent: AdapterView<*>?,
                     v: View?,
                     position: Int,
-                    id: Long
+                    id: Long,
                 ) {
                     currentContinueAlignment = alignmentOptions[position].uppercase()
                     applyContinueAlignmentToPreview()
@@ -1105,7 +1297,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 "RIGHT" -> 2
                 else -> 1
             },
-            false
+            false,
         )
         spinnerHeaderAlignment.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
@@ -1113,7 +1305,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
                     parent: AdapterView<*>?,
                     v: View?,
                     position: Int,
-                    id: Long
+                    id: Long,
                 ) {
                     currentHeaderAlignment = alignmentOptions[position].uppercase()
                     applyHeaderAlignmentToPreview()
@@ -1131,21 +1323,22 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 "RIGHT" -> 2
                 else -> 1
             },
-            false
+            false,
         )
-        spinnerBodyAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                v: View?,
-                position: Int,
-                id: Long
-            ) {
-                currentBodyAlignment = alignmentOptions[position].uppercase()
-                applyBodyAlignmentToPreview()
-            }
+        spinnerBodyAlignment.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    v: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    currentBodyAlignment = alignmentOptions[position].uppercase()
+                    applyBodyAlignmentToPreview()
+                }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
 
         spinnerTimerAlignment.adapter = alignAdapter
         val savedTimerAlign = prefs.getString("TIMER_ALIGNMENT", "CENTER") ?: "CENTER"
@@ -1156,21 +1349,22 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 "RIGHT" -> 2
                 else -> 1
             },
-            false
+            false,
         )
-        spinnerTimerAlignment.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                v: View?,
-                position: Int,
-                id: Long
-            ) {
-                currentTimerAlignment = alignmentOptions[position].uppercase()
-                applyTimerAlignmentToPreview()
-            }
+        spinnerTimerAlignment.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    v: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    currentTimerAlignment = alignmentOptions[position].uppercase()
+                    applyTimerAlignmentToPreview()
+                }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
 
         applyHeaderAlignmentToPreview()
         applyBodyAlignmentToPreview()
@@ -1183,10 +1377,11 @@ class AppearanceCustomizationDialog : DialogFragment() {
             orientation = LinearLayout.HORIZONTAL
             setPadding(dpToPx(16), 0, dpToPx(16), 0)
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
         }
     }
 
@@ -1217,6 +1412,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val scale = resources.displayMetrics.density
         val horizontalPx = (sliderResponsePaddingH.progress * scale + 0.5f).toInt()
         val verticalPx = (sliderResponsePaddingV.progress * scale + 0.5f).toInt()
+
         fun updateButtonPadding(button: Button) {
             button.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
         }
@@ -1238,7 +1434,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewTimerTextView.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
-    private fun applyColorPickerBoxColor(picker: View, color: Int) {
+    private fun applyColorPickerBoxColor(
+        picker: View,
+        color: Int,
+    ) {
         val drawable = ContextCompat.getDrawable(requireContext(), R.drawable.black_outline)
         if (drawable is GradientDrawable) {
             drawable.setColor(color)
@@ -1446,38 +1645,38 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         SpacingManager.setResponseSpacing(
             requireContext(),
-            sliderResponseSpacing.progress.toFloat()
+            sliderResponseSpacing.progress.toFloat(),
         )
 
         SpacingManager.setResponseButtonMargin(requireContext(), 0f)
         SpacingManager.setResponseButtonPaddingHorizontal(
             requireContext(),
-            sliderResponsePaddingH.progress.toFloat()
+            sliderResponsePaddingH.progress.toFloat(),
         )
         SpacingManager.setResponseButtonPaddingVertical(
             requireContext(),
-            sliderResponsePaddingV.progress.toFloat()
+            sliderResponsePaddingV.progress.toFloat(),
         )
         SpacingManager.setContinueButtonPaddingHorizontal(
             requireContext(),
-            sliderContinuePaddingH.progress.toFloat()
+            sliderContinuePaddingH.progress.toFloat(),
         )
         SpacingManager.setContinueButtonPaddingVertical(
             requireContext(),
-            sliderContinuePaddingV.progress.toFloat()
+            sliderContinuePaddingV.progress.toFloat(),
         )
         SpacingManager.setTimerPaddingHorizontal(
             requireContext(),
-            sliderTimerPaddingH.progress.toFloat()
+            sliderTimerPaddingH.progress.toFloat(),
         )
         SpacingManager.setTimerPaddingVertical(
             requireContext(),
-            sliderTimerPaddingV.progress.toFloat()
+            sliderTimerPaddingV.progress.toFloat(),
         )
 
         TransitionManager.setTransitionMode(requireContext(), currentTransitionMode)
 
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
         prefs.edit().putString("HEADER_ALIGNMENT", currentHeaderAlignment).apply()
         prefs.edit().putString("BODY_ALIGNMENT", currentBodyAlignment).apply()
@@ -1486,11 +1685,16 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
     private fun simpleSeekBarListener(onValueChanged: (Int) -> Unit) =
         object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+            override fun onProgressChanged(
+                seekBar: SeekBar?,
+                progress: Int,
+                fromUser: Boolean,
+            ) {
                 onValueChanged(progress)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         }
 
@@ -1512,21 +1716,23 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
     private fun applyContinueAlignmentToPreview() {
         val lp = previewContinueButton.layoutParams as? LinearLayout.LayoutParams ?: return
-        lp.gravity = when (currentContinueAlignment) {
-            "LEFT" -> Gravity.START
-            "RIGHT" -> Gravity.END
-            else -> Gravity.CENTER_HORIZONTAL
-        }
+        lp.gravity =
+            when (currentContinueAlignment) {
+                "LEFT" -> Gravity.START
+                "RIGHT" -> Gravity.END
+                else -> Gravity.CENTER_HORIZONTAL
+            }
         previewContinueButton.layoutParams = lp
     }
 
     private fun applyTimerAlignmentToPreview() {
         val lp = previewTimerTextView.layoutParams as? LinearLayout.LayoutParams ?: return
-        lp.gravity = when (currentTimerAlignment) {
-            "LEFT" -> Gravity.START
-            "RIGHT" -> Gravity.END
-            else -> Gravity.CENTER_HORIZONTAL
-        }
+        lp.gravity =
+            when (currentTimerAlignment) {
+                "LEFT" -> Gravity.START
+                "RIGHT" -> Gravity.END
+                else -> Gravity.CENTER_HORIZONTAL
+            }
         previewTimerTextView.layoutParams = lp
     }
 
@@ -1549,14 +1755,15 @@ class AppearanceCustomizationDialog : DialogFragment() {
         screenBgColor = ColorManager.getScreenBackgroundColor(requireContext())
         timerTextColorVar = ColorManager.getTimerTextColor(requireContext())
 
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val savedTransitions = prefs.getString("TRANSITION_MODE", "off") ?: "off"
-        currentTransitionMode = when (savedTransitions.lowercase()) {
-            "off" -> "off"
-            "dissolve" -> "dissolve"
-            "fade" -> "fade"
-            else -> "slide"
-        }
+        currentTransitionMode =
+            when (savedTransitions.lowercase()) {
+                "off" -> "off"
+                "dissolve" -> "dissolve"
+                "fade" -> "fade"
+                else -> "slide"
+            }
 
         currentContinueAlignment =
             prefs.getString("CONTINUE_ALIGNMENT", "CENTER")?.uppercase() ?: "CENTER"

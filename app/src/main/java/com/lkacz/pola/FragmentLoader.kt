@@ -6,7 +6,7 @@ import androidx.fragment.app.Fragment
 
 class FragmentLoader(
     bufferedReader: java.io.BufferedReader,
-    private val logger: Logger
+    private val logger: Logger,
 ) {
     private val lines = mutableListOf<String>()
     private val labelMap = mutableMapOf<String, Int>()
@@ -43,19 +43,19 @@ class FragmentLoader(
                 }
                 "TRANSITIONS" -> {
                     val mode = parts.getOrNull(1)?.lowercase() ?: "off"
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("TRANSITION_MODE", mode).apply()
                     continue
                 }
                 "TIMER_SOUND" -> {
                     val filename = parts.getOrNull(1)?.trim().orEmpty()
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("CUSTOM_TIMER_SOUND", filename).apply()
                     continue
                 }
                 "HEADER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("HEADER_ALIGNMENT", alignValue).apply()
                     continue
                 }
@@ -73,7 +73,7 @@ class FragmentLoader(
                 }
                 "BODY_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("BODY_ALIGNMENT", alignValue).apply()
                     continue
                 }
@@ -113,7 +113,7 @@ class FragmentLoader(
                         }
                     }
 
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit()
                         .putString("CONTINUE_ALIGNMENT_HORIZONTAL", horizontal)
                         .putString("CONTINUE_ALIGNMENT_VERTICAL", vertical)
@@ -138,7 +138,7 @@ class FragmentLoader(
                 }
                 "TIMER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("TIMER_ALIGNMENT", alignValue).apply()
                     continue
                 }
@@ -246,7 +246,10 @@ class FragmentLoader(
         return TimerFragment.newInstance(header, body, timeSeconds, buttonText)
     }
 
-    private fun createInputFieldFragment(parts: List<String>, isRandom: Boolean): Fragment {
+    private fun createInputFieldFragment(
+        parts: List<String>,
+        isRandom: Boolean,
+    ): Fragment {
         if (parts.size < 4) {
             return EndFragment()
         }
@@ -256,17 +259,18 @@ class FragmentLoader(
         val rawFieldsRange = parts.subList(3, parts.size - 1)
         val combined = rawFieldsRange.joinToString(";").trim()
 
-        val fields: List<String> = if (
-            combined.startsWith("[") && combined.endsWith("]") && combined.length > 2
-        ) {
-            combined
-                .substring(1, combined.length - 1)
-                .split(";")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-        } else {
-            rawFieldsRange.map { it.trim() }.filter { it.isNotEmpty() }
-        }
+        val fields: List<String> =
+            if (
+                combined.startsWith("[") && combined.endsWith("]") && combined.length > 2
+            ) {
+                combined
+                    .substring(1, combined.length - 1)
+                    .split(";")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+            } else {
+                rawFieldsRange.map { it.trim() }.filter { it.isNotEmpty() }
+            }
 
         return InputFieldFragment.newInstance(heading, body, continueText, fields, isRandom)
     }
@@ -301,8 +305,9 @@ class FragmentLoader(
         return branchResponses
     }
 
-    private fun getContext() = logger.javaClass
-        .getDeclaredField("context")
-        .apply { isAccessible = true }
-        .get(logger) as Context
+    private fun getContext() =
+        logger.javaClass
+            .getDeclaredField("context")
+            .apply { isAccessible = true }
+            .get(logger) as Context
 }

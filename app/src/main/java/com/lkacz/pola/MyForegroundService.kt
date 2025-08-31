@@ -13,12 +13,17 @@ class MyForegroundService : Service() {
         return null
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("PoLA Foreground Service")
-            .setContentText("PoLA service is running...")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .build()
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
+        val notification =
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("PoLA Foreground Service")
+                .setContentText("PoLA service is running...")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .build()
 
         startForeground(NOTIFICATION_ID, notification)
 

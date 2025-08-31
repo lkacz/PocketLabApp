@@ -1,8 +1,8 @@
 package com.lkacz.pola
 
-import android.os.Environment
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Environment
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -11,7 +11,7 @@ class Logger private constructor(private val context: Context) {
     private val fileOperations: FileOperations
     private var isBackupCreated = false
     private val excelOperations = ExcelOperations()
-    private val sharedPref: SharedPreferences = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+    private val sharedPref: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     private val studyId: String? = sharedPref.getString("STUDY_ID", null)
     private val fileName: String
@@ -20,11 +20,12 @@ class Logger private constructor(private val context: Context) {
 
     init {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-        fileName = if (studyId.isNullOrEmpty()) {
-            "output_$timeStamp.csv"
-        } else {
-            "${studyId}_output_$timeStamp.csv"
-        }
+        fileName =
+            if (studyId.isNullOrEmpty()) {
+                "output_$timeStamp.csv"
+            } else {
+                "${studyId}_output_$timeStamp.csv"
+            }
 
         val publicStorage = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         mainFolder = File(publicStorage, "PoLA_Data")
@@ -47,26 +48,46 @@ class Logger private constructor(private val context: Context) {
         fileOperations.writeToCSV(logMessage)
     }
 
-    fun logInstructionFragment(header: String, body: String) {
+    fun logInstructionFragment(
+        header: String,
+        body: String,
+    ) {
         // Column layout changed from INTRODUCTION to BODY
         logToCSV(arrayOf(header, body, null, null, null, null, null, null))
     }
 
-    fun logTimerFragment(header: String, body: String, timeInSeconds: Int, other: String? = null) {
+    fun logTimerFragment(
+        header: String,
+        body: String,
+        timeInSeconds: Int,
+        other: String? = null,
+    ) {
         logToCSV(arrayOf(header, body, null, null, null, timeInSeconds.toString(), null, other))
     }
 
     /**
      * Renamed "intro" to "body" in the signature and CSV structure
      */
-    fun logScaleFragment(header: String, body: String, item: String, responseNumber: Int, responseText: String) {
+    fun logScaleFragment(
+        header: String,
+        body: String,
+        item: String,
+        responseNumber: Int,
+        responseText: String,
+    ) {
         logToCSV(arrayOf(header, body, item, responseNumber.toString(), responseText, null, null, null))
     }
 
     /**
      * "intro" param changed to "body" in CSV columns
      */
-    fun logInputFieldFragment(header: String, body: String, item: String, response: String, isNumeric: Boolean) {
+    fun logInputFieldFragment(
+        header: String,
+        body: String,
+        item: String,
+        response: String,
+        isNumeric: Boolean,
+    ) {
         val responseNumber = if (isNumeric) response else null
         val responseText = if (!isNumeric) response else null
         logToCSV(arrayOf(header, body, item, responseNumber, responseText, null, null, null))
@@ -87,7 +108,7 @@ class Logger private constructor(private val context: Context) {
                 mainFolderXlsxFile,
                 file,
                 BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
+                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
             )
 
             if (isBackupCreated) return
@@ -107,7 +128,7 @@ class Logger private constructor(private val context: Context) {
                 backupFileXlsx,
                 file,
                 BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: ""))
+                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
             )
 
             isBackupCreated = true

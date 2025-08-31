@@ -139,7 +139,7 @@ class ProtocolValidationDialog : DialogFragment() {
                             fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
                         }
                     }
-                    val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+                    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
                     prefs.edit()
                         .putString("PROTOCOL_URI", uri.toString())
                         .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
@@ -169,7 +169,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
                 } catch (_: SecurityException) {
                 }
-                val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+                val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
                 prefs.edit()
                     .putString("PROTOCOL_URI", uri.toString())
                     .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
@@ -531,7 +531,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun saveProtocol(onSuccess: (() -> Unit)? = null) {
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val customUriString = prefs.getString("PROTOCOL_URI", null)
         if (customUriString.isNullOrEmpty()) {
             Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
@@ -1474,7 +1474,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun getProtocolContent(): String {
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", 0)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val mode = prefs.getString("CURRENT_MODE", null)
         val customUriString = prefs.getString("PROTOCOL_URI", null)
 

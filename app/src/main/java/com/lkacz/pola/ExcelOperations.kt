@@ -1,15 +1,19 @@
 package com.lkacz.pola
 
+import android.os.Build
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import android.os.Build
 
 class ExcelOperations {
-
-    fun createXlsxBackup(backupFileXlsx: File, logFile: File, originalProtocol: BufferedReader, finalProtocol: BufferedReader) {
+    fun createXlsxBackup(
+        backupFileXlsx: File,
+        logFile: File,
+        originalProtocol: BufferedReader,
+        finalProtocol: BufferedReader,
+    ) {
         try {
             XSSFWorkbook().use { workbook ->
                 addSheetFromLogFile(workbook, "Log", logFile)
@@ -26,7 +30,11 @@ class ExcelOperations {
         }
     }
 
-    private fun addSheetFromLogFile(workbook: XSSFWorkbook, sheetName: String, logFile: File) {
+    private fun addSheetFromLogFile(
+        workbook: XSSFWorkbook,
+        sheetName: String,
+        logFile: File,
+    ) {
         val sheet = workbook.createSheet(sheetName)
         logFile.inputStream().bufferedReader().use { reader ->
             var rowIndex = 0
@@ -40,7 +48,11 @@ class ExcelOperations {
         }
     }
 
-    private fun addSheetFromBufferedReader(workbook: XSSFWorkbook, sheetName: String, bufferedReader: BufferedReader) {
+    private fun addSheetFromBufferedReader(
+        workbook: XSSFWorkbook,
+        sheetName: String,
+        bufferedReader: BufferedReader,
+    ) {
         val sheet = workbook.createSheet(sheetName)
         var rowIndex = 0
         bufferedReader.useLines { lines ->

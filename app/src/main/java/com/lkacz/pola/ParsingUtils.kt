@@ -7,7 +7,6 @@ package com.lkacz.pola
  * like [Item1;Item2;Item3] remains intact as a single part.
  */
 object ParsingUtils {
-
     /**
      * Splits [line] by semicolons that are NOT inside square brackets.
      * For example, the line:

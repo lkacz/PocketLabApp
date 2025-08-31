@@ -14,7 +14,6 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 
 class HtmlFragment : Fragment() {
-
     private var fileName: String? = null
     private var nextButtonText: String? = null
 
@@ -43,47 +42,57 @@ class HtmlFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        containerLayout = FrameLayout(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        }
+        containerLayout =
+            FrameLayout(requireContext()).apply {
+                layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    )
+            }
 
-        webView = WebView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-        }
+        webView =
+            WebView(requireContext()).apply {
+                layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                    )
+            }
         containerLayout.addView(webView)
 
-        nextButton = Button(requireContext()).apply {
-            text = "Continue"
-        }
-        val buttonParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM or Gravity.END
-        )
+        nextButton =
+            Button(requireContext()).apply {
+                text = "Continue"
+            }
+        val buttonParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.END,
+            )
         nextButton.layoutParams = buttonParams
         containerLayout.addView(nextButton)
 
         return containerLayout
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         setupWebView()
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-        val (buttonTextNoTap, isTap) = parseTapAttribute(
-            parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri)
-        )
+        val (buttonTextNoTap, isTap) =
+            parseTapAttribute(
+                parseAndPlayAudioIfAny(nextButtonText.orEmpty(), resourcesFolderUri),
+            )
         tapEnabled = isTap
 
         val (buttonTextNoHold, isHold) = parseHoldAttribute(buttonTextNoTap)
@@ -135,7 +144,10 @@ class HtmlFragment : Fragment() {
         }
     }
 
-    private fun loadHtmlContentIfAvailable(htmlFileName: String, resourcesFolderUri: Uri?) {
+    private fun loadHtmlContentIfAvailable(
+        htmlFileName: String,
+        resourcesFolderUri: Uri?,
+    ) {
         if (htmlFileName.isBlank() || resourcesFolderUri == null) return
         val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
         val htmlFile = parentFolder.findFile(htmlFileName) ?: return
@@ -149,12 +161,15 @@ class HtmlFragment : Fragment() {
         }
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
+    private fun parseAndPlayAudioIfAny(
+        text: String,
+        resourcesFolderUri: Uri?,
+    ): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
             mediaFolderUri = resourcesFolderUri,
-            mediaPlayers = mediaPlayers
+            mediaPlayers = mediaPlayers,
         )
     }
 
@@ -165,20 +180,22 @@ class HtmlFragment : Fragment() {
     }
 
     private fun applyContinueAlignment(button: Button) {
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return
 
-        val hGravity = when (horiz) {
-            "LEFT" -> Gravity.START
-            "CENTER" -> Gravity.CENTER_HORIZONTAL
-            else -> Gravity.END
-        }
-        val vGravity = when (vert) {
-            "TOP" -> Gravity.TOP
-            else -> Gravity.BOTTOM
-        }
+        val hGravity =
+            when (horiz) {
+                "LEFT" -> Gravity.START
+                "CENTER" -> Gravity.CENTER_HORIZONTAL
+                else -> Gravity.END
+            }
+        val vGravity =
+            when (vert) {
+                "TOP" -> Gravity.TOP
+                else -> Gravity.BOTTOM
+            }
         lp.gravity = hGravity or vGravity
 
         val density = resources.displayMetrics.density
@@ -218,12 +235,15 @@ class HtmlFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(fileName: String, nextButtonText: String) =
-            HtmlFragment().apply {
-                arguments = Bundle().apply {
+        fun newInstance(
+            fileName: String,
+            nextButtonText: String,
+        ) = HtmlFragment().apply {
+            arguments =
+                Bundle().apply {
                     putString("HTML_FILE", fileName)
                     putString("NEXT_BUTTON_TEXT", nextButtonText)
                 }
-            }
+        }
     }
 }

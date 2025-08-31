@@ -8,14 +8,20 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 
 class FileUriUtils {
-
-    fun handleFileUri(context: Context, uri: Uri, sharedPref: SharedPreferences) {
+    fun handleFileUri(
+        context: Context,
+        uri: Uri,
+        sharedPref: SharedPreferences,
+    ) {
         val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         context.contentResolver.takePersistableUriPermission(uri, takeFlags)
         sharedPref.edit().putString("PROTOCOL_URI", uri.toString()).apply()
     }
 
-    fun getFileName(context: Context, uri: Uri): String {
+    fun getFileName(
+        context: Context,
+        uri: Uri,
+    ): String {
         val docFile = DocumentFile.fromSingleUri(context, uri)
         return docFile?.name ?: "Unknown"
     }

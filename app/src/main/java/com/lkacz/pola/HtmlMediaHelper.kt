@@ -10,7 +10,6 @@ import androidx.core.text.HtmlCompat
  * by pre-processing HTML strings before passing them to [HtmlCompat.fromHtml].
  */
 object HtmlMediaHelper {
-
     /**
      * Pre-processes:
      *  - <img width="X" height="Y"> (centered, size stored in a map),
@@ -22,7 +21,7 @@ object HtmlMediaHelper {
     fun toSpannedHtml(
         context: Context,
         parentFolderUri: Uri?,
-        rawHtml: String?
+        rawHtml: String?,
     ): Spanned {
         if (rawHtml.isNullOrEmpty()) {
             return HtmlCompat.fromHtml("", HtmlCompat.FROM_HTML_MODE_LEGACY)

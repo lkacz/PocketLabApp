@@ -20,7 +20,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
-
     private val channelId = "ForegroundServiceChannel"
     private lateinit var fragmentLoader: FragmentLoader
     private lateinit var logger: Logger
@@ -33,20 +32,20 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         supportActionBar?.hide()
 
-    val isDebuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-    if (isDebuggable) {
+        val isDebuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (isDebuggable) {
             // StrictMode policies to surface accidental disk/network on main thread and leaks
             StrictMode.setThreadPolicy(
                 StrictMode.ThreadPolicy.Builder()
                     .detectAll()
                     .penaltyLog()
-                    .build()
+                    .build(),
             )
             StrictMode.setVmPolicy(
                 StrictMode.VmPolicy.Builder()
                     .detectAll()
                     .penaltyLog()
-                    .build()
+                    .build(),
             )
             if (Timber.forest().isEmpty()) {
                 Timber.plant(Timber.DebugTree())
@@ -57,13 +56,15 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         Logger.resetInstance()
         logger = Logger.getInstance(this)
 
-        val fragmentContainer = androidx.fragment.app.FragmentContainerView(this).apply {
-            id = fragmentContainerId
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
+        val fragmentContainer =
+            androidx.fragment.app.FragmentContainerView(this).apply {
+                id = fragmentContainerId
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+            }
         setContentView(fragmentContainer)
 
         if (savedInstanceState == null) {
@@ -149,13 +150,15 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             }
 
             "fade" -> {
-                val fadeOut = Fade().apply {
-                    duration = 350
-                }
-                val fadeIn = Fade().apply {
-                    duration = 350
-                    startDelay = 350
-                }
+                val fadeOut =
+                    Fade().apply {
+                        duration = 350
+                    }
+                val fadeIn =
+                    Fade().apply {
+                        duration = 350
+                        startDelay = 350
+                    }
                 currentFragment?.exitTransition = fadeOut
                 newFragment.enterTransition = fadeIn
 
@@ -235,13 +238,15 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             }
 
             "fade" -> {
-                val fadeOut = Fade().apply {
-                    duration = 350
-                }
-                val fadeIn = Fade().apply {
-                    duration = 350
-                    startDelay = 350
-                }
+                val fadeOut =
+                    Fade().apply {
+                        duration = 350
+                    }
+                val fadeIn =
+                    Fade().apply {
+                        duration = 350
+                        startDelay = 350
+                    }
                 currentFragment?.exitTransition = fadeOut
                 newFragment.enterTransition = fadeIn
 
@@ -263,11 +268,12 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            channelId,
-            "Foreground Service Channel",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+        val channel =
+            NotificationChannel(
+                channelId,
+                "Foreground Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
     }

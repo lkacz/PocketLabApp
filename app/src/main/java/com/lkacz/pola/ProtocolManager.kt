@@ -11,7 +11,7 @@ import kotlin.random.Random
 
 class ProtocolManager(private val context: Context) {
     private val sharedPref: SharedPreferences =
-        context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     fun readOriginalProtocol(uri: Uri? = null) {
         try {

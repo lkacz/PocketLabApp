@@ -15,7 +15,6 @@ import androidx.fragment.app.DialogFragment
  * Moved all timer sound logic out of AppearanceCustomizationDialog into here.
  */
 class AlarmCustomizationDialog : DialogFragment() {
-
     private lateinit var timerSoundEditText: EditText
     private var tempMediaPlayer: MediaPlayer? = null
 
@@ -30,27 +29,31 @@ class AlarmCustomizationDialog : DialogFragment() {
         super.onResume()
         dialog?.window?.setLayout(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
+            WindowManager.LayoutParams.WRAP_CONTENT,
         )
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         return inflater.inflate(R.layout.dialog_alarm_customization, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         timerSoundEditText = view.findViewById(R.id.alarmSoundEditText)
-        val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
+    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
         // Load current timer sound from shared prefs
-        val currentTimerSound = prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3")
-            ?: "mytimersound.mp3"
+        val currentTimerSound =
+            prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3")
+                ?: "mytimersound.mp3"
         timerSoundEditText.setText(currentTimerSound)
 
         view.findViewById<Button>(R.id.btnPreviewAlarmSound).setOnClickListener {
@@ -71,14 +74,15 @@ class AlarmCustomizationDialog : DialogFragment() {
             }
 
             try {
-                tempMediaPlayer = MediaPlayer().apply {
-                    val pfd = requireContext().contentResolver.openFileDescriptor(soundFile.uri, "r")
-                    pfd?.use {
-                        setDataSource(it.fileDescriptor)
-                        prepare()
-                        start()
+                tempMediaPlayer =
+                    MediaPlayer().apply {
+                        val pfd = requireContext().contentResolver.openFileDescriptor(soundFile.uri, "r")
+                        pfd?.use {
+                            setDataSource(it.fileDescriptor)
+                            prepare()
+                            start()
+                        }
                     }
-                }
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Error playing sound: ${e.message}", Toast.LENGTH_SHORT).show()
             }
@@ -103,7 +107,8 @@ class AlarmCustomizationDialog : DialogFragment() {
                 }
                 it.release()
             }
-        } catch (_: IllegalStateException) {}
+        } catch (_: IllegalStateException) {
+        }
         tempMediaPlayer = null
     }
 

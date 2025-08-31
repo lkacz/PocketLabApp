@@ -11,12 +11,14 @@ import androidx.fragment.app.Fragment
  */
 abstract class BaseTouchAwareFragment(
     private val resetTime: Long,
-    private val threshold: Int
+    private val threshold: Int,
 ) : Fragment() {
-
     private val touchCounter by lazy { TouchCounter(resetTime, threshold) }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         // Set up a universal touch listener that resets after [resetTime] ms

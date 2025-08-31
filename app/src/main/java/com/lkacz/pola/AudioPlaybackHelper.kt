@@ -12,17 +12,17 @@ import java.util.regex.Pattern
  * removing the placeholder text from the displayed text.
  */
 object AudioPlaybackHelper {
-
-    private val pattern = Pattern.compile(
-        "<([^>]+\\.(?:mp3|wav|jpg|png)(?:,[^>]+)?)>",
-        Pattern.CASE_INSENSITIVE
-    )
+    private val pattern =
+        Pattern.compile(
+            "<([^>]+\\.(?:mp3|wav|jpg|png)(?:,[^>]+)?)>",
+            Pattern.CASE_INSENSITIVE,
+        )
 
     fun parseAndPlayAudio(
         context: Context,
         rawText: String,
         mediaFolderUri: Uri?,
-        mediaPlayers: MutableList<MediaPlayer>
+        mediaPlayers: MutableList<MediaPlayer>,
     ): String {
         if (rawText.isBlank()) return rawText
 
@@ -66,10 +66,13 @@ object AudioPlaybackHelper {
     private fun parseAudioParams(fullMatch: String): Pair<String, Float> {
         val segments = fullMatch.split(",")
         val fileName = segments[0].trim()
-        val volume = if (segments.size > 1) {
-            val vol = segments[1].trim().toFloatOrNull()
-            if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
-        } else 1.0f
+        val volume =
+            if (segments.size > 1) {
+                val vol = segments[1].trim().toFloatOrNull()
+                if (vol != null && vol in 0f..100f) vol / 100f else 1.0f
+            } else {
+                1.0f
+            }
         return fileName to volume
     }
 
@@ -88,7 +91,11 @@ object AudioPlaybackHelper {
         return Triple(fileName, width, height)
     }
 
-    private fun buildImageTag(fileName: String, width: Int, height: Int): String {
+    private fun buildImageTag(
+        fileName: String,
+        width: Int,
+        height: Int,
+    ): String {
         val sb = StringBuilder("<img src=\"")
         sb.append(fileName).append("\"")
         if (width > 0) {
@@ -106,7 +113,7 @@ object AudioPlaybackHelper {
         fileName: String,
         volume: Float,
         mediaFolderUri: Uri?,
-        mediaPlayers: MutableList<MediaPlayer>
+        mediaPlayers: MutableList<MediaPlayer>,
     ) {
         if (mediaFolderUri == null) return
         val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri) ?: return
@@ -114,15 +121,16 @@ object AudioPlaybackHelper {
         if (!mediaFile.exists() || !mediaFile.isFile) return
 
         try {
-            val mediaPlayer = MediaPlayer().apply {
-                val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
-                pfd?.use {
-                    setDataSource(it.fileDescriptor)
-                    prepare()
-                    setVolume(volume, volume)
-                    start()
+            val mediaPlayer =
+                MediaPlayer().apply {
+                    val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
+                    pfd?.use {
+                        setDataSource(it.fileDescriptor)
+                        prepare()
+                        setVolume(volume, volume)
+                        start()
+                    }
                 }
-            }
             mediaPlayers.add(mediaPlayer)
         } catch (e: Exception) {
             e.printStackTrace()

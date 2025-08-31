@@ -9,38 +9,43 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 class EndFragment : BaseTouchAwareFragment(5000, 20) {
-
     private lateinit var logger: Logger
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         logger = Logger.getInstance(requireContext())
 
         // Create a simple layout in code:
-        val rootLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            gravity = Gravity.CENTER
-        }
+        val rootLayout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+                gravity = Gravity.CENTER
+            }
 
-        val endMessageTextView = TextView(requireContext()).apply {
-            text = "Completed"
-            textSize = 24f
-            gravity = Gravity.CENTER
-        }
+        val endMessageTextView =
+            TextView(requireContext()).apply {
+                text = "Completed"
+                textSize = 24f
+                gravity = Gravity.CENTER
+            }
         rootLayout.addView(endMessageTextView)
 
         return rootLayout
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         // Delay backup slightly after loading the view
         Handler(Looper.getMainLooper()).postDelayed({ logger.backupLogFile() }, 500)

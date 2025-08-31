@@ -4,7 +4,6 @@ import android.os.Handler
 import android.os.Looper
 
 class TouchCounter(private val resetTime: Long, private val threshold: Int) {
-
     private var touchCount = 0
     private val touchResetHandler = Handler(Looper.getMainLooper())
 
@@ -22,4 +21,3 @@ class TouchCounter(private val resetTime: Long, private val threshold: Int) {
         return false
     }
 }
-

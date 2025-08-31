@@ -15,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
 
 class ScaleFragment : Fragment() {
-
     private var header: String? = null
     private var body: String? = null
     private var item: String? = null
@@ -50,12 +49,13 @@ class ScaleFragment : Fragment() {
             val isBranch = it.getBoolean(ARG_IS_BRANCH, false)
             if (isBranch) {
                 val rawList = it.getStringArrayList(ARG_BRANCH_RESPONSES) ?: arrayListOf()
-                responses = rawList.map { raw ->
-                    val split = raw.split("||")
-                    val disp = split.getOrNull(0) ?: ""
-                    val lbl = split.getOrNull(1)?.ifEmpty { null }
-                    disp to lbl
-                }
+                responses =
+                    rawList.map { raw ->
+                        val split = raw.split("||")
+                        val disp = split.getOrNull(0) ?: ""
+                        val lbl = split.getOrNull(1)?.ifEmpty { null }
+                        disp to lbl
+                    }
             } else {
                 val normalList = it.getStringArrayList(ARG_NORMAL_RESPONSES) ?: arrayListOf()
                 responses = normalList.map { resp -> resp to null }
@@ -66,98 +66,115 @@ class ScaleFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         // Root layout
-        rootLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
+        rootLayout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+            }
 
         // Header TextView
-        headerTextView = TextView(requireContext()).apply {
-            text = "Default Header"
-            textSize = 20f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
+        headerTextView =
+            TextView(requireContext()).apply {
+                text = "Default Header"
+                textSize = 20f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
             }
-        }
         rootLayout.addView(headerTextView)
 
         // WebView
-        webView = WebView(requireContext()).apply {
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
+        webView =
+            WebView(requireContext()).apply {
+                visibility = View.GONE
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
             }
-        }
         rootLayout.addView(webView)
 
         // Body TextView
-        bodyTextView = TextView(requireContext()).apply {
-            text = "Default Body"
-            textSize = 16f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
+        bodyTextView =
+            TextView(requireContext()).apply {
+                text = "Default Body"
+                textSize = 16f
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
             }
-        }
         rootLayout.addView(bodyTextView)
 
         // VideoView
-        videoView = VideoView(requireContext()).apply {
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(32)
+        videoView =
+            VideoView(requireContext()).apply {
+                visibility = View.GONE
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(32)
+                    }
             }
-        }
         rootLayout.addView(videoView)
 
         // Item TextView (centered)
-        itemTextView = TextView(requireContext()).apply {
-            text = "Default Item"
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            textSize = 16f
-            gravity = Gravity.CENTER  // Ensures the item text is always centered
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dpToPx(16)
+        itemTextView =
+            TextView(requireContext()).apply {
+                text = "Default Item"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                textSize = 16f
+                gravity = Gravity.CENTER // Ensures the item text is always centered
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
             }
-        }
         rootLayout.addView(itemTextView)
 
         // Button container for responses
-        buttonContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        buttonContainer =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
         rootLayout.addView(buttonContainer)
 
         return rootLayout
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         setupWebView()
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -205,39 +222,41 @@ class ScaleFragment : Fragment() {
             val refinedButton = checkAndLoadHtml(buttonText, resourcesFolderUri)
             checkAndPlayMp4(displayText, resourcesFolderUri)
 
-            val button = Button(context).apply {
-                text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButton)
-                textSize = FontSizeManager.getResponseSize(requireContext())
-                setTextColor(ColorManager.getResponseTextColor(requireContext()))
-                setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
-                    bottomMargin = marginPx
-                    leftMargin = marginPx
-                    rightMargin = marginPx
-                }
-                setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
+            val button =
+                Button(context).apply {
+                    text = HtmlMediaHelper.toSpannedHtml(requireContext(), resourcesFolderUri, refinedButton)
+                    textSize = FontSizeManager.getResponseSize(requireContext())
+                    setTextColor(ColorManager.getResponseTextColor(requireContext()))
+                    setBackgroundColor(ColorManager.getButtonBackgroundColor(requireContext()))
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
+                            bottomMargin = marginPx
+                            leftMargin = marginPx
+                            rightMargin = marginPx
+                        }
+                    setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 
-                setOnClickListener {
-                    selectedResponse.value = displayText
-                    logger.logScaleFragment(
-                        header ?: "Default Header",
-                        body ?: "Default Body",
-                        item ?: "Default Item",
-                        index + 1,
-                        displayText
-                    )
-                    val mainActivity = activity as? MainActivity
-                    if (label.isNullOrEmpty()) {
-                        mainActivity?.loadNextFragment()
-                    } else {
-                        mainActivity?.loadFragmentByLabel(label)
+                    setOnClickListener {
+                        selectedResponse.value = displayText
+                        logger.logScaleFragment(
+                            header ?: "Default Header",
+                            body ?: "Default Body",
+                            item ?: "Default Item",
+                            index + 1,
+                            displayText,
+                        )
+                        val mainActivity = activity as? MainActivity
+                        if (label.isNullOrEmpty()) {
+                            mainActivity?.loadNextFragment()
+                        } else {
+                            mainActivity?.loadFragmentByLabel(label)
+                        }
                     }
                 }
-            }
             buttonContainer.addView(button)
         }
     }
@@ -260,24 +279,33 @@ class ScaleFragment : Fragment() {
         webView.webChromeClient = WebChromeClient()
     }
 
-    private fun parseAndPlayAudioIfAny(text: String, resourcesFolderUri: Uri?): String {
+    private fun parseAndPlayAudioIfAny(
+        text: String,
+        resourcesFolderUri: Uri?,
+    ): String {
         return AudioPlaybackHelper.parseAndPlayAudio(
             context = requireContext(),
             rawText = text,
             mediaFolderUri = resourcesFolderUri,
-            mediaPlayers = mediaPlayers
+            mediaPlayers = mediaPlayers,
         )
     }
 
-    private fun checkAndPlayMp4(text: String, resourcesFolderUri: Uri?) {
+    private fun checkAndPlayMp4(
+        text: String,
+        resourcesFolderUri: Uri?,
+    ) {
         val pattern = Regex("<([^>]+\\.mp4(?:,[^>]+)?)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return
         val group = match.groupValues[1]
         val segments = group.split(",")
         val fileName = segments[0].trim()
-        val volume = if (segments.size > 1) {
-            segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
-        } else 1.0f
+        val volume =
+            if (segments.size > 1) {
+                segments[1].trim().toFloatOrNull()?.coerceIn(0f, 100f)?.div(100f) ?: 1.0f
+            } else {
+                1.0f
+            }
 
         if (resourcesFolderUri != null) {
             val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
@@ -293,15 +321,19 @@ class ScaleFragment : Fragment() {
         }
     }
 
-    private fun checkAndLoadHtml(text: String, resourcesFolderUri: Uri?): String {
+    private fun checkAndLoadHtml(
+        text: String,
+        resourcesFolderUri: Uri?,
+    ): String {
         if (text.isBlank() || resourcesFolderUri == null) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            ?: return text
+        val parentFolder =
+            DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+                ?: return text
         val htmlFile = parentFolder.findFile(fileName)
         if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
             try {
@@ -354,15 +386,16 @@ class ScaleFragment : Fragment() {
             header: String?,
             body: String?,
             item: String?,
-            responses: List<String>
+            responses: List<String>,
         ) = ScaleFragment().apply {
-            arguments = Bundle().apply {
-                putString(ARG_HEADER, header)
-                putString(ARG_BODY, body)
-                putString(ARG_ITEM, item)
-                putBoolean(ARG_IS_BRANCH, false)
-                putStringArrayList(ARG_NORMAL_RESPONSES, ArrayList(responses))
-            }
+            arguments =
+                Bundle().apply {
+                    putString(ARG_HEADER, header)
+                    putString(ARG_BODY, body)
+                    putString(ARG_ITEM, item)
+                    putBoolean(ARG_IS_BRANCH, false)
+                    putStringArrayList(ARG_NORMAL_RESPONSES, ArrayList(responses))
+                }
         }
 
         @JvmStatic
@@ -370,16 +403,17 @@ class ScaleFragment : Fragment() {
             header: String?,
             body: String?,
             item: String?,
-            branchResponses: List<Pair<String, String?>>
+            branchResponses: List<Pair<String, String?>>,
         ) = ScaleFragment().apply {
-            arguments = Bundle().apply {
-                putString(ARG_HEADER, header)
-                putString(ARG_BODY, body)
-                putString(ARG_ITEM, item)
-                putBoolean(ARG_IS_BRANCH, true)
-                val rawList = branchResponses.map { "${it.first}||${it.second ?: ""}" }
-                putStringArrayList(ARG_BRANCH_RESPONSES, ArrayList(rawList))
-            }
+            arguments =
+                Bundle().apply {
+                    putString(ARG_HEADER, header)
+                    putString(ARG_BODY, body)
+                    putString(ARG_ITEM, item)
+                    putBoolean(ARG_IS_BRANCH, true)
+                    val rawList = branchResponses.map { "${it.first}||${it.second ?: ""}" }
+                    putStringArrayList(ARG_BRANCH_RESPONSES, ArrayList(rawList))
+                }
         }
     }
 }

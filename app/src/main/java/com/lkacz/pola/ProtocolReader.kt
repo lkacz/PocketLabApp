@@ -5,8 +5,10 @@ import android.content.Context
 import android.net.Uri
 
 class ProtocolReader {
-
-    fun readFromAssets(context: Context, fileName: String): String {
+    fun readFromAssets(
+        context: Context,
+        fileName: String,
+    ): String {
         return try {
             context.assets.open(fileName).bufferedReader().use { it.readText() }
         } catch (e: Exception) {
@@ -18,7 +20,10 @@ class ProtocolReader {
      * Attempts to read file content from a content URI. If the URI starts with
      * "file:///android_asset/", it reads from assets instead of regular storage.
      */
-    fun readFileContent(context: Context, uri: Uri): String {
+    fun readFileContent(
+        context: Context,
+        uri: Uri,
+    ): String {
         return try {
             val uriString = uri.toString()
             if (uriString.startsWith("file:///android_asset/")) {

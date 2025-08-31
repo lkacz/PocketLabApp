@@ -5,7 +5,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 class FileOperations(private val mainFolder: File, private val file: File) {
-
     fun createFileAndFolder() {
         try {
             if (!mainFolder.exists()) {

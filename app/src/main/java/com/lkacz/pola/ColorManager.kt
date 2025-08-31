@@ -6,7 +6,6 @@ import android.content.SharedPreferences
 import android.graphics.Color
 
 object ColorManager {
-
     private const val COLOR_PREFS = "ColorPrefs"
 
     private const val HEADER_TEXT_COLOR_KEY = "headerTextColor"
@@ -35,7 +34,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(HEADER_TEXT_COLOR_KEY, DEFAULT_HEADER_TEXT_COLOR)
     }
 
-    fun setHeaderTextColor(context: Context, color: Int) {
+    fun setHeaderTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(HEADER_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -43,7 +45,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(BODY_TEXT_COLOR_KEY, DEFAULT_BODY_TEXT_COLOR)
     }
 
-    fun setBodyTextColor(context: Context, color: Int) {
+    fun setBodyTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(BODY_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -51,7 +56,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(BUTTON_TEXT_COLOR_KEY, DEFAULT_BUTTON_TEXT_COLOR)
     }
 
-    fun setButtonTextColor(context: Context, color: Int) {
+    fun setButtonTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(BUTTON_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -59,7 +67,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(BUTTON_BACKGROUND_COLOR_KEY, DEFAULT_BUTTON_BACKGROUND_COLOR)
     }
 
-    fun setButtonBackgroundColor(context: Context, color: Int) {
+    fun setButtonBackgroundColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(BUTTON_BACKGROUND_COLOR_KEY, color).apply()
     }
 
@@ -67,7 +78,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(ITEM_TEXT_COLOR_KEY, DEFAULT_ITEM_TEXT_COLOR)
     }
 
-    fun setItemTextColor(context: Context, color: Int) {
+    fun setItemTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(ITEM_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -75,7 +89,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(RESPONSE_TEXT_COLOR_KEY, DEFAULT_RESPONSE_TEXT_COLOR)
     }
 
-    fun setResponseTextColor(context: Context, color: Int) {
+    fun setResponseTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(RESPONSE_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -83,7 +100,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(SCREEN_BACKGROUND_COLOR_KEY, DEFAULT_SCREEN_BACKGROUND_COLOR)
     }
 
-    fun setScreenBackgroundColor(context: Context, color: Int) {
+    fun setScreenBackgroundColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(SCREEN_BACKGROUND_COLOR_KEY, color).apply()
     }
 
@@ -91,7 +111,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(CONTINUE_TEXT_COLOR_KEY, DEFAULT_CONTINUE_TEXT_COLOR)
     }
 
-    fun setContinueTextColor(context: Context, color: Int) {
+    fun setContinueTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(CONTINUE_TEXT_COLOR_KEY, color).apply()
     }
 
@@ -99,7 +122,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(CONTINUE_BACKGROUND_COLOR_KEY, DEFAULT_CONTINUE_BACKGROUND_COLOR)
     }
 
-    fun setContinueBackgroundColor(context: Context, color: Int) {
+    fun setContinueBackgroundColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(CONTINUE_BACKGROUND_COLOR_KEY, color).apply()
     }
 
@@ -110,7 +136,10 @@ object ColorManager {
         return getSharedPrefs(context).getInt(TIMER_TEXT_COLOR_KEY, DEFAULT_TIMER_TEXT_COLOR)
     }
 
-    fun setTimerTextColor(context: Context, color: Int) {
+    fun setTimerTextColor(
+        context: Context,
+        color: Int,
+    ) {
         getSharedPrefs(context).edit().putInt(TIMER_TEXT_COLOR_KEY, color).apply()
     }
 

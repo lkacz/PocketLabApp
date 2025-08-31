@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 
 object FontSizeManager {
-
     private const val FONT_PREFS = "FontPrefs"
 
     private const val HEADER_SIZE_KEY = "headerSize"
@@ -26,7 +25,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(HEADER_SIZE_KEY, DEFAULT_HEADER_SIZE)
     }
 
-    fun setHeaderSize(context: Context, newSize: Float) {
+    fun setHeaderSize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(HEADER_SIZE_KEY, newSize).apply()
     }
 
@@ -34,7 +36,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(BODY_SIZE_KEY, DEFAULT_BODY_SIZE)
     }
 
-    fun setBodySize(context: Context, newSize: Float) {
+    fun setBodySize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(BODY_SIZE_KEY, newSize).apply()
     }
 
@@ -42,7 +47,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(ITEM_SIZE_KEY, DEFAULT_ITEM_SIZE)
     }
 
-    fun setItemSize(context: Context, newSize: Float) {
+    fun setItemSize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(ITEM_SIZE_KEY, newSize).apply()
     }
 
@@ -50,7 +58,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(RESPONSE_SIZE_KEY, DEFAULT_RESPONSE_SIZE)
     }
 
-    fun setResponseSize(context: Context, newSize: Float) {
+    fun setResponseSize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(RESPONSE_SIZE_KEY, newSize).apply()
     }
 
@@ -58,7 +69,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(CONTINUE_SIZE_KEY, DEFAULT_CONTINUE_SIZE)
     }
 
-    fun setContinueSize(context: Context, newSize: Float) {
+    fun setContinueSize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(CONTINUE_SIZE_KEY, newSize).apply()
     }
 
@@ -66,7 +80,10 @@ object FontSizeManager {
         return getSharedPrefs(context).getFloat(TIMER_SIZE_KEY, DEFAULT_TIMER_SIZE)
     }
 
-    fun setTimerSize(context: Context, newSize: Float) {
+    fun setTimerSize(
+        context: Context,
+        newSize: Float,
+    ) {
         getSharedPrefs(context).edit().putFloat(TIMER_SIZE_KEY, newSize).apply()
     }
 

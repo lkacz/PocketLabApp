@@ -12,13 +12,12 @@ import androidx.activity.result.ActivityResultLauncher
  * Formerly named MediaFolderManager.
  */
 class ResourcesFolderManager(private val context: Context) {
-
     private val sharedPref: SharedPreferences = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
 
     fun storeResourcesFolderUri(uri: Uri) {
         context.contentResolver.takePersistableUriPermission(
             uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
         )
         sharedPref.edit().putString(RESOURCES_FOLDER_URI_KEY, uri.toString()).apply()
     }

@@ -14,11 +14,10 @@ import android.widget.Button
 import kotlin.math.min
 
 object HoldButtonHelper {
-
     fun setupHoldToConfirm(
         button: Button,
         holdDurationMs: Long = 1000L,
-        onHoldComplete: () -> Unit
+        onHoldComplete: () -> Unit,
     ) {
         val originalBg = button.background
         val progressDrawable = createLayeredDrawable(originalBg)
@@ -28,20 +27,21 @@ object HoldButtonHelper {
         val updateInterval = 25L
         val maxLevel = 10000
 
-        val holdRunnable = object : Runnable {
-            override fun run() {
-                accumulatedTime += updateInterval
-                val fraction = min(accumulatedTime.toFloat() / holdDurationMs.toFloat(), 1f)
-                val level = (fraction * maxLevel).toInt()
-                progressDrawable.setLevel(level)
+        val holdRunnable =
+            object : Runnable {
+                override fun run() {
+                    accumulatedTime += updateInterval
+                    val fraction = min(accumulatedTime.toFloat() / holdDurationMs.toFloat(), 1f)
+                    val level = (fraction * maxLevel).toInt()
+                    progressDrawable.setLevel(level)
 
-                if (fraction >= 1f) {
-                    onHoldComplete()
-                } else {
-                    holdHandler.postDelayed(this, updateInterval)
+                    if (fraction >= 1f) {
+                        onHoldComplete()
+                    } else {
+                        holdHandler.postDelayed(this, updateInterval)
+                    }
                 }
             }
-        }
 
         button.setOnTouchListener { _, event ->
             when (event.action) {
@@ -54,7 +54,8 @@ object HoldButtonHelper {
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL,
-                MotionEvent.ACTION_OUTSIDE -> {
+                MotionEvent.ACTION_OUTSIDE,
+                -> {
                     holdHandler.removeCallbacks(holdRunnable)
                     progressDrawable.setLevel(0)
                     button.background = originalBg
@@ -67,13 +68,14 @@ object HoldButtonHelper {
 
     private fun createLayeredDrawable(originalBg: Drawable?): LayerDrawable {
         val transparentRect = ColorDrawable(Color.parseColor("#88FFFFFF"))
-        val clipDrawable = ClipDrawable(
-            transparentRect,
-            Gravity.LEFT,
-            ClipDrawable.HORIZONTAL
-        ).apply {
-            level = 0
-        }
+        val clipDrawable =
+            ClipDrawable(
+                transparentRect,
+                Gravity.LEFT,
+                ClipDrawable.HORIZONTAL,
+            ).apply {
+                level = 0
+            }
 
         // If originalBg is null, use an empty ColorDrawable as the bottom layer.
         val bottomDrawable = originalBg ?: ColorDrawable(Color.TRANSPARENT)
