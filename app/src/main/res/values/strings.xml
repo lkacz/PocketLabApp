@@ -88,4 +88,6 @@
     <string name="dialog_title_new_protocol">New Protocol</string>
     <string name="dialog_message_new_protocol_unsaved">You have unsaved changes. Do you want to save the current protocol before creating a new one?</string>
     <string name="toast_new_protocol_created">New protocol created</string>
+    <string name="action_delete_command">Delete</string>
+    <string name="toast_command_deleted">Command deleted</string>
 </resources>

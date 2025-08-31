@@ -1742,7 +1742,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val isEdit = editLineIndex != null
-        AlertDialog.Builder(ctx)
+        val builder = AlertDialog.Builder(ctx)
             .setTitle(getString(R.string.dialog_title_insert_command))
             .setView(container)
             .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
@@ -1792,7 +1792,18 @@ class ProtocolValidationDialog : DialogFragment() {
                     revalidateAndRefreshUI()
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
-            .show()
+
+        if (isEdit) {
+            builder.setNeutralButton(R.string.action_delete_command) { _, _ ->
+                if (editLineIndex != null && editLineIndex in allLines.indices) {
+                    allLines.removeAt(editLineIndex)
+                    hasUnsavedChanges = true
+                    revalidateAndRefreshUI()
+                    Toast.makeText(ctx, getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        builder.show()
     }
 
     private fun getSuggestedFileName(): String {
