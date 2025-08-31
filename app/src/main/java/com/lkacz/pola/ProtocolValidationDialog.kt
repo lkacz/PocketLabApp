@@ -580,8 +580,8 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun saveProtocol(onSuccess: (() -> Unit)? = null) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
-        val customUriString = prefs.getString("PROTOCOL_URI", null)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
         if (customUriString.isNullOrEmpty()) {
             Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
             return
