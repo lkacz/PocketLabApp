@@ -22,6 +22,11 @@ powershell -ExecutionPolicy Bypass -File scripts/run-app.ps1
 - `scripts/run-app.ps1` – build, (re)start emulator, install & launch.
 - `scripts/logcat.ps1` – filtered logcat (will create on first run if missing).
 
+## Debug Tooling
+- StrictMode enabled in debug to catch main-thread and VM violations.
+- Timber for structured logging.
+- LeakCanary (debug only) will show a notification if a leak is detected.
+
 ## VS Code Tasks
 Press `Ctrl+Shift+B` to see tasks once `.vscode/tasks.json` is present. Includes run-app, logcat, and deprecation check.
 

@@ -72,6 +72,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("com.jakewharton.timber:timber:5.0.1")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.13")
 
 }
 
