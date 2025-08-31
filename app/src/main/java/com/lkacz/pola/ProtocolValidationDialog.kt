@@ -27,52 +27,53 @@ import java.io.FileOutputStream
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
+    private val recognizedCommands =
+        setOf(
+            "BODY_ALIGNMENT",
+            "BODY_COLOR",
+            "BODY_SIZE",
+            "CONTINUE_TEXT_COLOR",
+            "CONTINUE_ALIGNMENT",
+            "CONTINUE_BACKGROUND_COLOR",
+            "CONTINUE_SIZE",
+            "HTML", // Replaced CUSTOM_HTML with HTML
+            "END",
+            "GOTO",
+            "HEADER_ALIGNMENT",
+            "HEADER_COLOR",
+            "HEADER_SIZE",
+            "INPUTFIELD",
+            "INPUTFIELD[RANDOMIZED]",
+            "INSTRUCTION",
+            "ITEM_SIZE",
+            "LABEL",
+            "LOG",
+            "RANDOMIZE_OFF",
+            "RANDOMIZE_ON",
+            "RESPONSE_BACKGROUND_COLOR",
+            "RESPONSE_SIZE",
+            "RESPONSE_TEXT_COLOR",
+            "SCALE",
+            "SCALE[RANDOMIZED]",
+            "SCREEN_BACKGROUND_COLOR",
+            "STUDY_ID",
+            "TIMER",
+            "TIMER_SOUND",
+            "TIMER_SIZE",
+            "TIMER_COLOR",
+            "TIMER_ALIGNMENT",
+            "TRANSITIONS",
+        )
 
-    private val recognizedCommands = setOf(
-        "BODY_ALIGNMENT",
-        "BODY_COLOR",
-        "BODY_SIZE",
-        "CONTINUE_TEXT_COLOR",
-        "CONTINUE_ALIGNMENT",
-        "CONTINUE_BACKGROUND_COLOR",
-        "CONTINUE_SIZE",
-        "HTML", // Replaced CUSTOM_HTML with HTML
-        "END",
-        "GOTO",
-        "HEADER_ALIGNMENT",
-        "HEADER_COLOR",
-        "HEADER_SIZE",
-        "INPUTFIELD",
-        "INPUTFIELD[RANDOMIZED]",
-        "INSTRUCTION",
-        "ITEM_SIZE",
-        "LABEL",
-        "LOG",
-        "RANDOMIZE_OFF",
-        "RANDOMIZE_ON",
-        "RESPONSE_BACKGROUND_COLOR",
-        "RESPONSE_SIZE",
-        "RESPONSE_TEXT_COLOR",
-        "SCALE",
-        "SCALE[RANDOMIZED]",
-        "SCREEN_BACKGROUND_COLOR",
-        "STUDY_ID",
-        "TIMER",
-        "TIMER_SOUND",
-        "TIMER_SIZE",
-        "TIMER_COLOR",
-        "TIMER_ALIGNMENT",
-        "TRANSITIONS"
-    )
-
-    private val allowedMediaCommands = setOf(
-        "INPUTFIELD",
-        "INPUTFIELD[RANDOMIZED]",
-        "INSTRUCTION",
-        "SCALE",
-        "SCALE[RANDOMIZED]",
-        "TIMER"
-    )
+    private val allowedMediaCommands =
+        setOf(
+            "INPUTFIELD",
+            "INPUTFIELD[RANDOMIZED]",
+            "INSTRUCTION",
+            "SCALE",
+            "SCALE[RANDOMIZED]",
+            "TIMER",
+        )
 
     private var randomizationLevel = 0
     private val globalErrors = mutableListOf<String>()
@@ -80,6 +81,38 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var allLines: MutableList<String> = mutableListOf()
     private val resourceExistenceMap = mutableMapOf<String, Boolean>()
+    private data class ValidationEntry(
+        val lineNumber: Int,
+        val rawLine: String,
+        val trimmedLine: String,
+        val error: String,
+        val warning: String,
+    )
+    private var validationCache: List<ValidationEntry> = emptyList()
+    private val pureValidator = ProtocolValidator()
+    private var issueLineNumbers: List<Int> = emptyList()
+    private var issueIndex: Int = -1
+    private val lineRowMap = mutableMapOf<Int, TableRow>()
+    private var scrollViewRef: ScrollView? = null
+
+    // Launcher for exporting validation report
+    private val exportReportLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+            if (uri != null) {
+                try {
+                    requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+                        FileOutputStream(pfd.fileDescriptor).use { fos ->
+                            fos.write(generateReportText().toByteArray(Charsets.UTF_8))
+                        }
+                    }
+                    Toast.makeText(requireContext(), "Report exported", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(requireContext(), "Export cancelled", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     private val resourcesFolderUri: Uri? by lazy {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -118,7 +151,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     Toast.makeText(
                         requireContext(),
                         "Error saving file: ${e.message}",
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_SHORT,
                     ).show()
                 }
             } else {
@@ -132,7 +165,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 try {
                     requireContext().contentResolver.takePersistableUriPermission(
                         uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     )
                 } catch (_: SecurityException) {
                 }
@@ -159,193 +192,221 @@ class ProtocolValidationDialog : DialogFragment() {
         super.onResume()
         dialog?.window?.setLayout(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT
+            WindowManager.LayoutParams.WRAP_CONTENT,
         )
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
-        val rootLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val topButtonRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 16, 16, 16)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val leftButtonsLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        val rightButtonsLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            gravity = Gravity.END
-        }
-
-        btnLoad = Button(requireContext()).apply {
-            text = "LOAD"
-            setOnClickListener { confirmLoadProtocol() }
-        }
-
-        btnSave = Button(requireContext()).apply {
-            text = "SAVE"
-            setOnClickListener { confirmSaveDialog() }
-        }
-
-        btnSaveAs = Button(requireContext()).apply {
-            text = "SAVE AS"
-            setOnClickListener { createDocumentLauncher.launch("protocol_modified.txt") }
-        }
-
-        val btnClose = Button(requireContext()).apply {
-            text = "CLOSE"
-            setOnClickListener { confirmCloseDialog() }
-        }
-
-        leftButtonsLayout.addView(btnLoad)
-        leftButtonsLayout.addView(btnSave)
-        leftButtonsLayout.addView(btnSaveAs)
-        rightButtonsLayout.addView(btnClose)
-        topButtonRow.addView(leftButtonsLayout)
-        topButtonRow.addView(rightButtonsLayout)
-        rootLayout.addView(topButtonRow)
-
-        val searchContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 16, 16, 16)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val searchEditText = EditText(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
-            hint = "Keyword"
-        }
-
-        val searchButton = Button(requireContext()).apply {
-            text = "Search"
-            setOnClickListener {
-                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
-                revalidateAndRefreshUI()
+        val rootLayout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
             }
-        }
 
-        val clearButton = Button(requireContext()).apply {
-            text = "Clear"
-            setOnClickListener {
-                searchQuery = null
-                searchEditText.setText("")
-                revalidateAndRefreshUI()
-            }
-        }
+    // (Removed old topButtonRow layout; replaced with card-based action layout)
 
-        searchContainer.addView(searchEditText)
-        searchContainer.addView(searchButton)
-        searchContainer.addView(clearButton)
-        rootLayout.addView(searchContainer)
-
-        val filterContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 0, 16, 16)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val spinnerFilter = Spinner(requireContext()).apply {
-            val adapter = ArrayAdapter(
-                requireContext(),
-                android.R.layout.simple_spinner_item,
-                FilterOption.values().map { it.displayName }
-            )
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            this.adapter = adapter
-            setSelection(FilterOption.HIDE_COMMENTS.ordinal, false)
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    val selected = FilterOption.values()[position]
-                    if (selected != filterOption) {
-                        filterOption = selected
-                        revalidateAndRefreshUI()
-                    }
+        // Helper to create a horizontal flow of buttons with spacing
+        fun materialButton(text: String, styleAttr: Int, onClick: () -> Unit): com.google.android.material.button.MaterialButton {
+            return com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
+                this.text = text
+                isAllCaps = false
+                setOnClickListener { onClick() }
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = 12
                 }
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
         }
+
+        val actionRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        btnLoad = materialButton("Load", com.google.android.material.R.attr.materialButtonOutlinedStyle) { confirmLoadProtocol() }
+        btnSave = materialButton("Save", com.google.android.material.R.attr.materialButtonStyle) { confirmSaveDialog() }
+        btnSaveAs = materialButton("Save As", com.google.android.material.R.attr.materialButtonOutlinedStyle) { createDocumentLauncher.launch("protocol_modified.txt") }
+        val btnClose = materialButton("Close", com.google.android.material.R.attr.materialButtonOutlinedStyle) { confirmCloseDialog() }
+
+        actionRow.addView(btnLoad)
+        actionRow.addView(btnSave)
+        actionRow.addView(btnSaveAs)
+        actionRow.addView(btnClose.apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
+
+        // Wrap in a MaterialCardView for consistency with Start screen sections
+        val actionsCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,16,16,8) }
+            radius = 12f
+            strokeWidth = 1
+            setContentPadding(24,24,24,16)
+            addView(actionRow)
+        }
+        rootLayout.addView(actionsCard)
+
+        val searchRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        val searchEditText =
+            EditText(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    )
+                hint = "Keyword"
+            }
+
+        val searchButton = materialButton("Search", com.google.android.material.R.attr.materialButtonStyle) {
+            searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+            revalidateAndRefreshUI()
+        }
+
+        val clearButton = materialButton("Clear", com.google.android.material.R.attr.materialButtonOutlinedStyle) {
+            searchQuery = null
+            searchEditText.setText("")
+            revalidateAndRefreshUI()
+        }
+        searchRow.addView(searchEditText)
+        searchRow.addView(searchButton)
+        searchRow.addView(clearButton)
+        val searchCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,8) }
+            radius = 12f
+            strokeWidth = 1
+            setContentPadding(24,24,24,16)
+            addView(searchRow)
+        }
+        rootLayout.addView(searchCard)
+
+        val filterContainer =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(16, 0, 16, 16)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
+
+        val spinnerFilter =
+            Spinner(requireContext()).apply {
+                val adapter =
+                    ArrayAdapter(
+                        requireContext(),
+                        android.R.layout.simple_spinner_item,
+                        FilterOption.values().map { it.displayName },
+                    )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                this.adapter = adapter
+                setSelection(FilterOption.HIDE_COMMENTS.ordinal, false)
+                onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(
+                            parent: AdapterView<*>?,
+                            view: View?,
+                            position: Int,
+                            id: Long,
+                        ) {
+                            val selected = FilterOption.values()[position]
+                            if (selected != filterOption) {
+                                filterOption = selected
+                                revalidateAndRefreshUI()
+                            }
+                        }
+
+                        override fun onNothingSelected(parent: AdapterView<*>?) {}
+                    }
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
 
         filterContainer.addView(spinnerFilter)
         rootLayout.addView(filterContainer)
 
-        val togglesContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 0, 16, 16)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val cbColoring = CheckBox(requireContext()).apply {
-            text = "Highlight Commands"
-            isChecked = coloringEnabled
-            setOnCheckedChangeListener { _, isChecked ->
-                coloringEnabled = isChecked
-                revalidateAndRefreshUI()
+        val togglesContainer =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(16, 0, 16, 16)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
             }
-        }
 
-        val cbSemicolonsBreak = CheckBox(requireContext()).apply {
-            text = "Split Commands"
-            isChecked = semicolonsAsBreaks
-            setOnCheckedChangeListener { _, isChecked ->
-                semicolonsAsBreaks = isChecked
-                revalidateAndRefreshUI()
+        val cbColoring =
+            CheckBox(requireContext()).apply {
+                text = "Highlight Commands"
+                isChecked = coloringEnabled
+                setOnCheckedChangeListener { _, isChecked ->
+                    coloringEnabled = isChecked
+                    revalidateAndRefreshUI()
+                }
             }
-        }
+
+        val cbSemicolonsBreak =
+            CheckBox(requireContext()).apply {
+                text = "Split Commands"
+                isChecked = semicolonsAsBreaks
+                setOnCheckedChangeListener { _, isChecked ->
+                    semicolonsAsBreaks = isChecked
+                    revalidateAndRefreshUI()
+                }
+            }
 
         togglesContainer.addView(cbColoring)
         togglesContainer.addView(cbSemicolonsBreak)
         rootLayout.addView(togglesContainer)
 
-        val progressBar = ProgressBar(requireContext()).apply {
-            isIndeterminate = true
+        // Navigation + Export row
+        val navContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 0, 16, 8)
             layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { gravity = Gravity.CENTER_HORIZONTAL }
+            )
         }
+        val btnPrev = Button(requireContext()).apply {
+            text = "Prev Err"
+            setOnClickListener { navigateIssue(-1) }
+        }
+        val btnNext = Button(requireContext()).apply {
+            text = "Next Err"
+            setOnClickListener { navigateIssue(1) }
+        }
+        val btnExport = Button(requireContext()).apply {
+            text = "Export Report"
+            setOnClickListener { exportReportLauncher.launch("protocol_validation_report.txt") }
+        }
+        navContainer.addView(btnPrev)
+        navContainer.addView(btnNext)
+        navContainer.addView(btnExport)
+        rootLayout.addView(navContainer)
+
+        val progressBar =
+            ProgressBar(requireContext()).apply {
+                isIndeterminate = true
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { gravity = Gravity.CENTER_HORIZONTAL }
+            }
         rootLayout.addView(progressBar)
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
@@ -361,13 +422,17 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             if (resourcesFolderUri != null) {
                 for (fileRef in bracketedReferences) {
-                    val doesExist = ResourceFileChecker.fileExistsInResources(
-                        requireContext(),
-                        fileRef
-                    )
+                    val doesExist =
+                        ResourceFileChecker.fileExistsInResources(
+                            requireContext(),
+                            fileRef,
+                        )
                     resourceExistenceMap[fileRef] = doesExist
                 }
             }
+
+            // Build validation cache (expensive part) once off main thread
+            PerfTimer.track("ProtocolDialog.initialValidate") { computeValidationCache() }
 
             withContext(Dispatchers.Main) {
                 rootLayout.removeView(progressBar)
@@ -479,7 +544,7 @@ class ProtocolValidationDialog : DialogFragment() {
             Toast.makeText(
                 requireContext(),
                 "Error saving file: ${e.message}",
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
     }
@@ -503,6 +568,8 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
+    PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
+
         val containerLayout = view as? LinearLayout ?: return
         while (containerLayout.childCount > 4) {
             containerLayout.removeViewAt(4)
@@ -511,52 +578,75 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun buildCompletedView(): View {
-        val containerLayout = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+        val containerLayout =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
 
         val headerTable = buildHeaderTable()
-        val scrollView = ScrollView(requireContext())
+    val scrollView = ScrollView(requireContext())
+    scrollViewRef = scrollView
         val contentTable = buildContentTable()
+
+        // Summary counts
+        val errorCount = validationCache.count { it.error.isNotEmpty() }
+        val warningCount = validationCache.count { it.warning.isNotEmpty() }
+        val total = validationCache.size
+        val summaryLabel = TextView(requireContext()).apply {
+            text = "Lines: $total  |  Errors: $errorCount  |  Warnings: $warningCount"
+            setPadding(24, 8, 24, 4)
+            textSize = 13f
+            setTypeface(null, Typeface.BOLD)
+        }
 
         if (randomizationLevel > 0) {
             globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
         }
 
         if (globalErrors.isNotEmpty()) {
-            val row = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFEEEE"))
-                setPadding(16, 8, 16, 8)
-            }
-            val cell = createBodyCell(
-                text = globalErrors.joinToString("\n"),
-                weight = 1.0f
-            ).apply {
-                setTextColor(Color.RED)
-                setTypeface(null, Typeface.BOLD)
-            }
+            val row =
+                TableRow(requireContext()).apply {
+                    setBackgroundColor(Color.parseColor("#FFEEEE"))
+                    setPadding(16, 8, 16, 8)
+                }
+            val cell =
+                createBodyCell(
+                    text = globalErrors.joinToString("\n"),
+                    weight = 1.0f,
+                ).apply {
+                    setTextColor(Color.RED)
+                    setTypeface(null, Typeface.BOLD)
+                }
             cell.layoutParams = TableRow.LayoutParams().apply { span = 3 }
             row.addView(cell)
             contentTable.addView(row)
         }
 
         scrollView.addView(contentTable)
-        containerLayout.addView(headerTable)
+    containerLayout.addView(headerTable)
+    containerLayout.addView(summaryLabel)
         containerLayout.addView(scrollView)
+
+        // Build issue list for navigation (errors or warnings present)
+        issueLineNumbers = validationCache.filter { it.error.isNotEmpty() || it.warning.isNotEmpty() }
+            .map { it.lineNumber }
+        issueIndex = if (issueLineNumbers.isNotEmpty()) -1 else -1
         return containerLayout
     }
 
     private fun buildHeaderTable(): TableLayout {
         val context = requireContext()
         return TableLayout(context).apply {
-            layoutParams = TableLayout.LayoutParams(
-                TableLayout.LayoutParams.MATCH_PARENT,
-                TableLayout.LayoutParams.WRAP_CONTENT
-            )
+            layoutParams =
+                TableLayout.LayoutParams(
+                    TableLayout.LayoutParams.MATCH_PARENT,
+                    TableLayout.LayoutParams.WRAP_CONTENT,
+                )
             isStretchAllColumns = false
             setColumnStretchable(1, true)
             setColumnStretchable(2, true)
@@ -572,31 +662,34 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun buildContentTable(): TableLayout {
         val context = requireContext()
-        val tableLayout = TableLayout(context).apply {
-            layoutParams = TableLayout.LayoutParams(
-                TableLayout.LayoutParams.MATCH_PARENT,
-                TableLayout.LayoutParams.WRAP_CONTENT
-            )
-            isStretchAllColumns = false
-            setColumnStretchable(1, true)
-            setColumnStretchable(2, true)
-            setPadding(8, 8, 8, 8)
+        val tableLayout =
+            TableLayout(context).apply {
+                layoutParams =
+                    TableLayout.LayoutParams(
+                        TableLayout.LayoutParams.MATCH_PARENT,
+                        TableLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                isStretchAllColumns = false
+                setColumnStretchable(1, true)
+                setColumnStretchable(2, true)
+                setPadding(8, 8, 8, 8)
+            }
+
+        val filteredEntries = validationCache.filter { entry ->
+            lineMatchesCurrentFilter(entry)
         }
 
-        val linesWithIndices = allLines.mapIndexed { index, line -> (index + 1) to line }
-        val labelOccurrences = findLabelOccurrences(allLines)
-        val filteredLines = linesWithIndices.filter { (originalIndex, rawLine) ->
-            lineMatchesCurrentFilter(originalIndex - 1, rawLine, labelOccurrences)
-        }
-
-        filteredLines.forEach { (originalLineNumber, rawLine) ->
-            val trimmedLine = rawLine.trim()
-            val (errorMessage, warningMessage) =
-                validateLine(originalLineNumber, trimmedLine, labelOccurrences)
+    lineRowMap.clear()
+    filteredEntries.forEach { entry ->
+            val originalLineNumber = entry.lineNumber
+            val trimmedLine = entry.trimmedLine
+            val errorMessage = entry.error
+            val warningMessage = entry.warning
 
             val lineContent =
-                if (coloringEnabled) highlightLine(trimmedLine, semicolonsAsBreaks)
-                else {
+                if (coloringEnabled) {
+                    highlightLine(trimmedLine, semicolonsAsBreaks)
+                } else {
                     if (semicolonsAsBreaks) {
                         SpannableString(trimmedLine.replace(";", ";\n"))
                     } else {
@@ -606,15 +699,17 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val combinedIssuesSpannable = colorizeIssues(errorMessage, warningMessage)
 
-            val row = TableRow(context).apply {
-                val backgroundColor = if ((originalLineNumber % 2) == 0) {
-                    Color.parseColor("#FFFFFF")
-                } else {
-                    Color.parseColor("#EEEEEE")
+            val row =
+                TableRow(context).apply {
+                    val backgroundColor =
+                        if ((originalLineNumber % 2) == 0) {
+                            Color.parseColor("#FFFFFF")
+                        } else {
+                            Color.parseColor("#EEEEEE")
+                        }
+                    setBackgroundColor(backgroundColor)
+                    setPadding(16, 8, 16, 8)
                 }
-                setBackgroundColor(backgroundColor)
-                setPadding(16, 8, 16, 8)
-            }
 
             row.addView(createLineNumberCell(originalLineNumber))
 
@@ -625,31 +720,23 @@ class ProtocolValidationDialog : DialogFragment() {
             row.addView(commandCell)
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
             tableLayout.addView(row)
+            lineRowMap[originalLineNumber] = row
         }
 
         return tableLayout
     }
 
-    private fun lineMatchesCurrentFilter(
-        zeroBasedIndex: Int,
-        rawLine: String,
-        labelOccurrences: Map<String, List<Int>>
-    ): Boolean {
+    private fun lineMatchesCurrentFilter(entry: ValidationEntry): Boolean {
         if (!searchQuery.isNullOrBlank()) {
-            if (!rawLine.contains(searchQuery!!, ignoreCase = true)) {
-                return false
-            }
+            if (!entry.rawLine.contains(searchQuery!!, ignoreCase = true)) return false
         }
-        val trimmedLine = rawLine.trim()
-        val lineNumber = zeroBasedIndex + 1
-        val (errMsg, warnMsg) = validateLine(lineNumber, trimmedLine, labelOccurrences)
-        val hasErrors = errMsg.isNotEmpty()
-        val hasWarnings = warnMsg.isNotEmpty()
+        val hasErrors = entry.error.isNotEmpty()
+        val hasWarnings = entry.warning.isNotEmpty()
 
         return when (filterOption) {
             FilterOption.EVERYTHING -> true
             FilterOption.HIDE_COMMENTS -> {
-                if (trimmedLine.isBlank() || trimmedLine.startsWith("//")) {
+                if (entry.trimmedLine.isBlank() || entry.trimmedLine.startsWith("//")) {
                     false
                 } else {
                     true
@@ -660,17 +747,75 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
+    private fun computeValidationCache() {
+        // Use pure validator for base validations then map into existing cache structure
+        val results = pureValidator.validate(allLines)
+        validationCache = results.map { ValidationEntry(it.lineNumber, it.raw, it.raw.trim(), it.error, it.warning) }
+        // Preserve randomizationLevel side-effect detection (EOF unmatched) using last synthetic entry if present
+        val eofEntry = results.lastOrNull()?.takeIf { it.raw == "<EOF>" && it.error.isNotEmpty() }
+        if (eofEntry != null) {
+            globalErrors.clear()
+            globalErrors.add(eofEntry.error)
+        }
+    }
+
+    private fun navigateIssue(direction: Int) {
+        if (issueLineNumbers.isEmpty()) {
+            Toast.makeText(requireContext(), "No issues", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Move index
+        issueIndex = when {
+            issueIndex == -1 && direction > 0 -> 0
+            issueIndex == -1 && direction < 0 -> issueLineNumbers.lastIndex
+            else -> (issueIndex + direction + issueLineNumbers.size) % issueLineNumbers.size
+        }
+        val lineNumber = issueLineNumbers[issueIndex]
+        highlightAndScrollTo(lineNumber)
+    }
+
+    private fun highlightAndScrollTo(lineNumber: Int) {
+        // Reset previous highlight
+        lineRowMap.forEach { (_, row) ->
+            val ln = (row.getChildAt(0) as? TextView)?.text?.toString()?.toIntOrNull()
+            if (ln != null) {
+                val baseColor = if ((ln % 2) == 0) Color.parseColor("#FFFFFF") else Color.parseColor("#EEEEEE")
+                row.setBackgroundColor(baseColor)
+            }
+        }
+        val row = lineRowMap[lineNumber] ?: return
+        row.setBackgroundColor(Color.parseColor("#FFF7CC"))
+        scrollViewRef?.post { scrollViewRef?.smoothScrollTo(0, row.top) }
+    }
+
+    private fun generateReportText(): String {
+        val sb = StringBuilder()
+        sb.appendLine("Protocol Validation Report")
+        sb.appendLine("==========================")
+        val issues = validationCache.filter { it.error.isNotEmpty() || it.warning.isNotEmpty() }
+        issues.forEach { entry ->
+            sb.append("Line ").append(entry.lineNumber).append(':').append(' ')
+            if (entry.error.isNotEmpty()) sb.append("ERROR: ").append(entry.error)
+            if (entry.error.isNotEmpty() && entry.warning.isNotEmpty()) sb.append(" | ")
+            if (entry.warning.isNotEmpty()) sb.append("WARN: ").append(entry.warning)
+            sb.appendLine()
+        }
+        if (issues.isEmpty()) sb.appendLine("No issues found.")
+        return sb.toString()
+    }
+
     private fun showEditLineDialog(lineIndex: Int) {
         val context = requireContext()
         val originalLine = allLines[lineIndex]
 
-        val editText = EditText(context).apply {
-            setText(originalLine)
-            setSingleLine(false)
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setPadding(16, 16, 16, 16)
-        }
+        val editText =
+            EditText(context).apply {
+                setText(originalLine)
+                setSingleLine(false)
+                isFocusable = true
+                isFocusableInTouchMode = true
+                setPadding(16, 16, 16, 16)
+            }
 
         AlertDialog.Builder(context)
             .setTitle("Edit Line #${lineIndex + 1}")
@@ -687,17 +832,21 @@ class ProtocolValidationDialog : DialogFragment() {
             .show()
     }
 
-    private fun createHeaderCell(headerText: String, gravity: Int): TextView {
+    private fun createHeaderCell(
+        headerText: String,
+        gravity: Int,
+    ): TextView {
         return TextView(requireContext()).apply {
             text = headerText
             textSize = 16f
             setTypeface(null, Typeface.BOLD)
             this.gravity = gravity
             setPadding(24, 16, 24, 16)
-            layoutParams = TableRow.LayoutParams(
-                TableRow.LayoutParams.WRAP_CONTENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-            )
+            layoutParams =
+                TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                )
         }
     }
 
@@ -707,17 +856,18 @@ class ProtocolValidationDialog : DialogFragment() {
             textSize = 12f
             setSingleLine(true)
             gravity = Gravity.END
-            layoutParams = TableRow.LayoutParams(
-                TableRow.LayoutParams.WRAP_CONTENT,
-                TableRow.LayoutParams.WRAP_CONTENT
-            )
+            layoutParams =
+                TableRow.LayoutParams(
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                )
             setPadding(4, 4, 4, 4)
         }
     }
 
     private fun createBodyCell(
         text: CharSequence,
-        weight: Float
+        weight: Float,
     ): TextView {
         return TextView(requireContext()).apply {
             this.text = text
@@ -726,18 +876,19 @@ class ProtocolValidationDialog : DialogFragment() {
             setHorizontallyScrolling(false)
             gravity = Gravity.START
             setPadding(24, 8, 24, 8)
-            layoutParams = TableRow.LayoutParams(
-                0,
-                TableRow.LayoutParams.WRAP_CONTENT,
-                weight
-            )
+            layoutParams =
+                TableRow.LayoutParams(
+                    0,
+                    TableRow.LayoutParams.WRAP_CONTENT,
+                    weight,
+                )
         }
     }
 
     private fun validateLine(
         lineNumber: Int,
         line: String,
-        labelOccurrences: Map<String, List<Int>>
+        labelOccurrences: Map<String, List<Int>>,
     ): Pair<String, String> {
         var errorMessage = ""
         var warningMessage = ""
@@ -757,25 +908,28 @@ class ProtocolValidationDialog : DialogFragment() {
         when (commandRaw) {
             "RANDOMIZE_ON" -> {
                 if (lastCommand?.uppercase() == "RANDOMIZE_ON") {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "RANDOMIZE_ON cannot be followed by another RANDOMIZE_ON without an intervening RANDOMIZE_OFF"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "RANDOMIZE_ON cannot be followed by another RANDOMIZE_ON without an intervening RANDOMIZE_OFF",
+                        )
                 }
                 randomizationLevel++
             }
             "RANDOMIZE_OFF" -> {
                 if (lastCommand?.uppercase() == "RANDOMIZE_OFF") {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "RANDOMIZE_OFF should be preceded by RANDOMIZE_ON (not another RANDOMIZE_OFF)"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "RANDOMIZE_OFF should be preceded by RANDOMIZE_ON (not another RANDOMIZE_OFF)",
+                        )
                 }
                 if (randomizationLevel <= 0) {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "RANDOMIZE_OFF without matching RANDOMIZE_ON"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "RANDOMIZE_OFF without matching RANDOMIZE_ON",
+                        )
                 } else {
                     randomizationLevel--
                 }
@@ -786,15 +940,16 @@ class ProtocolValidationDialog : DialogFragment() {
             errorMessage = appendError(errorMessage, "Unrecognized command")
             return Pair(errorMessage, warningMessage)
         } else {
-            val result = handleKnownCommandValidations(
-                commandRaw,
-                parts,
-                lineNumber,
-                line,
-                labelOccurrences,
-                errorMessage,
-                warningMessage
-            )
+            val result =
+                handleKnownCommandValidations(
+                    commandRaw,
+                    parts,
+                    lineNumber,
+                    line,
+                    labelOccurrences,
+                    errorMessage,
+                    warningMessage,
+                )
             errorMessage = result.first
             warningMessage = result.second
         }
@@ -831,7 +986,7 @@ class ProtocolValidationDialog : DialogFragment() {
         line: String,
         labelOccurrences: Map<String, List<Int>>,
         existingError: String,
-        existingWarning: String
+        existingWarning: String,
     ): Pair<String, String> {
         var errorMessage = existingError
         var warningMessage = existingWarning
@@ -857,10 +1012,11 @@ class ProtocolValidationDialog : DialogFragment() {
                         val found =
                             ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
                         if (!found) {
-                            errorMessage = appendError(
-                                errorMessage,
-                                "Sound file '$fileRef' not found in resources folder."
-                            )
+                            errorMessage =
+                                appendError(
+                                    errorMessage,
+                                    "Sound file '$fileRef' not found in resources folder.",
+                                )
                         }
                     }
                 }
@@ -872,27 +1028,30 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             "SCALE", "SCALE[RANDOMIZED]" -> {
                 if (parts.size < 2) {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "$commandRaw must have at least one parameter after the command"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "$commandRaw must have at least one parameter after the command",
+                        )
                 }
             }
             "INSTRUCTION" -> {
                 val semicolonCount = line.count { it == ';' }
                 if (semicolonCount != 3) {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "$commandRaw must have exactly 3 semicolons (4 segments)"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "$commandRaw must have exactly 3 semicolons (4 segments)",
+                        )
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                 if (parts.size < 4) {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE_TEXT"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "$commandRaw must have at least 4 segments: e.g. INPUTFIELD;HEADER;BODY;[field1;field2;...];CONTINUE_TEXT",
+                        )
                 }
             }
             "TIMER" -> {
@@ -902,7 +1061,8 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR",
             "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR",
-            "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> {
+            "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR",
+            -> {
                 if (parts.size < 2 || parts[1].isBlank()) {
                     errorMessage = appendError(errorMessage, "$commandRaw missing color value")
                 } else {
@@ -921,10 +1081,11 @@ class ProtocolValidationDialog : DialogFragment() {
                     val alignValue = parts[1].uppercase().trim()
                     val allowedAlignments = setOf("LEFT", "CENTER", "RIGHT")
                     if (!allowedAlignments.contains(alignValue)) {
-                        errorMessage = appendError(
-                            errorMessage,
-                            "$commandRaw must be one of: ${allowedAlignments.joinToString(", ")}"
-                        )
+                        errorMessage =
+                            appendError(
+                                errorMessage,
+                                "$commandRaw must be one of: ${allowedAlignments.joinToString(", ")}",
+                            )
                     }
                 }
             }
@@ -955,20 +1116,24 @@ class ProtocolValidationDialog : DialogFragment() {
                     errorMessage =
                         appendError(
                             errorMessage,
-                            "TRANSITIONS missing mode (e.g. off or slide or dissolve)"
+                            "TRANSITIONS missing mode (e.g. off or slide or dissolve)",
                         )
                 } else if (mode !in listOf("off", "slide", "slideleft", "dissolve", "fade")) {
-                    errorMessage = appendError(
-                        errorMessage,
-                        "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', or 'fade' or 'dissolve'"
-                    )
+                    errorMessage =
+                        appendError(
+                            errorMessage,
+                            "TRANSITIONS mode must be either 'off', 'slide', 'slideleft', or 'fade' or 'dissolve'",
+                        )
                 }
             }
         }
         return errorMessage to warningMessage
     }
 
-    private fun checkFileUsageRules(command: String, fileRef: String): String {
+    private fun checkFileUsageRules(
+        command: String,
+        fileRef: String,
+    ): String {
         val lowerFile = fileRef.lowercase()
         val knownExtensions = listOf(".mp3", ".wav", ".mp4", ".jpg", ".png", ".html")
         val matchedExt = knownExtensions.firstOrNull { lowerFile.endsWith(it) } ?: return ""
@@ -992,7 +1157,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun labelValidation(
         lineNumber: Int,
         line: String,
-        labelOccurrences: Map<String, List<Int>>
+        labelOccurrences: Map<String, List<Int>>,
     ): List<String> {
         val errors = mutableListOf<String>()
         val parts = line.split(";")
@@ -1039,7 +1204,10 @@ class ProtocolValidationDialog : DialogFragment() {
         return errors
     }
 
-    private fun sizeValidation(command: String, parts: List<String>): Pair<String, String> {
+    private fun sizeValidation(
+        command: String,
+        parts: List<String>,
+    ): Pair<String, String> {
         var err = ""
         var warn = ""
         if (parts.size < 2 || parts[1].isBlank()) {
@@ -1108,7 +1276,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun highlightLine(
         line: String,
-        treatSemicolonsAsLineBreaks: Boolean
+        treatSemicolonsAsLineBreaks: Boolean,
     ): SpannableStringBuilder {
         if (line.startsWith("//")) {
             val greyComment = SpannableString(line)
@@ -1116,21 +1284,24 @@ class ProtocolValidationDialog : DialogFragment() {
                 ForegroundColorSpan(Color.GRAY),
                 0,
                 line.length,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
             return SpannableStringBuilder(greyComment)
         }
 
-        val tokens = if (
-            line.uppercase().startsWith("SCALE") &&
-            (line.uppercase().startsWith("SCALE[RANDOMIZED]") ||
-                    line.uppercase() == "SCALE" ||
-                    line.uppercase().startsWith("SCALE;"))
-        ) {
-            ParsingUtils.customSplitSemicolons(line)
-        } else {
-            line.split(";")
-        }
+        val tokens =
+            if (
+                line.uppercase().startsWith("SCALE") &&
+                (
+                    line.uppercase().startsWith("SCALE[RANDOMIZED]") ||
+                        line.uppercase() == "SCALE" ||
+                        line.uppercase().startsWith("SCALE;")
+                )
+            ) {
+                ParsingUtils.customSplitSemicolons(line)
+            } else {
+                line.split(";")
+            }
 
         val spannableBuilder = SpannableStringBuilder()
         val commandUpper = tokens.firstOrNull()?.uppercase().orEmpty()
@@ -1141,16 +1312,17 @@ class ProtocolValidationDialog : DialogFragment() {
             spannableBuilder.append(token)
             val end = spannableBuilder.length
 
-            val colorForToken = when {
-                !isRecognized && index == 0 -> Color.parseColor("#ffaaaa")
-                !isRecognized -> Color.TRANSPARENT
-                else -> chooseTokenBackgroundColor(commandUpper, index, tokens.size)
-            }
+            val colorForToken =
+                when {
+                    !isRecognized && index == 0 -> Color.parseColor("#ffaaaa")
+                    !isRecognized -> Color.TRANSPARENT
+                    else -> chooseTokenBackgroundColor(commandUpper, index, tokens.size)
+                }
             spannableBuilder.setSpan(
                 BackgroundColorSpan(colorForToken),
                 start,
                 end,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
 
             if (index == 0) {
@@ -1158,7 +1330,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     StyleSpan(Typeface.BOLD),
                     start,
                     end,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
                 )
             }
 
@@ -1177,7 +1349,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun chooseTokenBackgroundColor(
         commandUpper: String,
         tokenIndex: Int,
-        totalTokens: Int
+        totalTokens: Int,
     ): Int {
         val BG_COMMAND = "#AABBCC"
         val BG_HEADER = "#CDEEFF"
@@ -1237,12 +1409,16 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    private fun colorizeIssues(errorMessage: String, warningMessage: String): SpannableString {
-        val combinedText = buildString {
-            if (errorMessage.isNotEmpty()) append(errorMessage)
-            if (errorMessage.isNotEmpty() && warningMessage.isNotEmpty()) append("\n")
-            if (warningMessage.isNotEmpty()) append(warningMessage)
-        }
+    private fun colorizeIssues(
+        errorMessage: String,
+        warningMessage: String,
+    ): SpannableString {
+        val combinedText =
+            buildString {
+                if (errorMessage.isNotEmpty()) append(errorMessage)
+                if (errorMessage.isNotEmpty() && warningMessage.isNotEmpty()) append("\n")
+                if (warningMessage.isNotEmpty()) append(warningMessage)
+            }
 
         val spannable = SpannableString(combinedText)
         if (errorMessage.isNotEmpty()) {
@@ -1251,7 +1427,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 ForegroundColorSpan(Color.RED),
                 0,
                 errorLength,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
         }
         if (warningMessage.isNotEmpty()) {
@@ -1261,7 +1437,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 ForegroundColorSpan(Color.parseColor("#FFA500")),
                 startIndex,
                 endIndex,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
         }
         return spannable
@@ -1276,11 +1452,17 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    private fun appendError(current: String, newError: String): String {
+    private fun appendError(
+        current: String,
+        newError: String,
+    ): String {
         return if (current.isEmpty()) newError else "$current; $newError"
     }
 
-    private fun appendWarning(current: String, newWarning: String): String {
+    private fun appendWarning(
+        current: String,
+        newWarning: String,
+    ): String {
         return if (current.isEmpty()) newWarning else "$current; $newWarning"
     }
 
@@ -1304,7 +1486,7 @@ class ProtocolValidationDialog : DialogFragment() {
         EVERYTHING("Everything"),
         HIDE_COMMENTS("Hide comments"),
         ERRORS_WARNINGS_ONLY("Errors & Warnings"),
-        ERRORS_ONLY("Only Errors")
+        ERRORS_ONLY("Only Errors"),
     }
 
     private fun mergeLongFormatCommands(lines: List<String>): List<String> {
