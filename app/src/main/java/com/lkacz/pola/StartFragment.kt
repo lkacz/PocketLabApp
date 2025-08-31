@@ -259,6 +259,14 @@ class StartFragment : Fragment() {
             )
         }
 
+        if (FeatureFlags.NEW_FEATURE_TWO) {
+            rootLayout.addView(
+                createMenuButton("Preview Protocol") {
+                    ProtocolPreviewDialog.newInstance().show(parentFragmentManager, "ProtocolPreviewDialog")
+                },
+            )
+        }
+
         return scrollView
     }
 
