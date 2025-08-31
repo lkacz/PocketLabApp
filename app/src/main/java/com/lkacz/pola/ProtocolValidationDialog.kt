@@ -1747,29 +1747,39 @@ class ProtocolValidationDialog : DialogFragment() {
             .setView(container)
             .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
                 val cmd = spinner.selectedItem as String
+                fun def(et: EditText, fallback: String) = et.text.toString().takeIf { it.isNotBlank() } ?: fallback
                 val newLine = when (cmd) {
-                    "INSTRUCTION" -> if (header.text.isBlank() || body.text.isBlank() || cont.text.isBlank()) null else "$cmd;${header.text};${body.text};${cont.text}"
-                    "TIMER" -> if (header.text.isBlank() || body.text.isBlank() || time.text.isBlank() || cont.text.isBlank()) null else "$cmd;${header.text};${body.text};${time.text};${cont.text}"
-                    "SCALE", "SCALE[RANDOMIZED]" -> if (header.text.isBlank() || body.text.isBlank() || items.text.isBlank() || cont.text.isBlank()) null else {
+                    "INSTRUCTION" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(cont,"Continue")}" 
+                    "TIMER" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(time,"60")};${def(cont,"Continue")}" 
+                    "SCALE", "SCALE[RANDOMIZED]" -> {
                         val itemTokens = items.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                            .ifEmpty { listOf("1","2") }
                         val itemsPart = itemTokens.joinToString(";")
-                        "$cmd;${header.text};${body.text};$itemsPart;${cont.text}"
+                        "$cmd;${def(header,"Header")};${def(body,"Body")};$itemsPart;${def(cont,"Continue")}" 
                     }
-                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> if (header.text.isBlank() || body.text.isBlank() || inputFields.text.isBlank() || cont.text.isBlank()) null else {
+                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                         val fieldTokens = inputFields.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                            .ifEmpty { listOf("field1","field2") }
                         val fieldsPart = fieldTokens.joinToString(";")
-                        "$cmd;${header.text};${body.text};$fieldsPart;${cont.text}"
+                        "$cmd;${def(header,"Header")};${def(body,"Body")};$fieldsPart;${def(cont,"Continue")}" 
                     }
-                    "LABEL" -> if (labelName.text.isBlank()) null else "$cmd;${labelName.text}" 
-                    "GOTO" -> if (gotoLabel.text.isBlank()) null else "$cmd;${gotoLabel.text}"
-                    "HTML", "TIMER_SOUND" -> if (filename.text.isBlank()) null else "$cmd;${filename.text}" 
-                    "LOG" -> if (message.text.isBlank()) null else "$cmd;${message.text}" 
-                    "END" -> "END" 
-                    else -> null
+                    "LABEL" -> {
+                        if (labelName.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;${labelName.text}" 
+                    }
+                    "GOTO" -> {
+                        if (gotoLabel.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;${gotoLabel.text}" 
+                    }
+                    "HTML", "TIMER_SOUND" -> {
+                        if (filename.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;${filename.text}" 
+                    }
+                    "LOG" -> "$cmd;${def(message,"Log message")}" 
+                    "END" -> "END"
+                    else -> return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
                 }
-                if (newLine == null) {
-                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                } else {
+                // proceed add or update
                     if (isEdit) {
                         allLines[editLineIndex!!] = newLine
                         Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
@@ -1780,7 +1790,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     hasUnsavedChanges = true
                     revalidateAndRefreshUI()
-                }
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
             .show()
