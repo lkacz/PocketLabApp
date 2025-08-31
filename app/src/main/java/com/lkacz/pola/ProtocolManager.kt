@@ -63,6 +63,17 @@ class ProtocolManager(private val context: Context) {
     // Merging logic moved to pure ProtocolTransformer for testability.
 
     private fun performManipulations() { finalProtocol = ProtocolTransformer.transform(originalProtocol) }
+    
+    init {
+        // Lightweight initialization logging when in debug builds (Timber planted in MainActivity)
+        if ((context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            try {
+                timber.log.Timber.d("ProtocolManager initialized")
+            } catch (_: Throwable) {
+                // ignore if Timber not yet planted
+            }
+        }
+    }
 
     fun getManipulatedProtocol(): BufferedReader {
         performManipulations()

@@ -57,4 +57,18 @@ class ProtocolTransformerTest {
     assertEquals(3, lines.size)
     assertEquals(setOf("LABEL;A","LABEL;B","LABEL;C"), lines.toSet())
     }
+
+    @Test
+    fun randomizeBlockWithoutExplicitOffStillProcesses() {
+        val protocol = """
+            RANDOMIZE_ON
+            LABEL;1
+            LABEL;2
+            LABEL;3
+        """.trimIndent()
+        val transformed = ProtocolTransformer.transform(protocol, rnd = Random(5))
+        val lines = transformed.lines().filter { it.isNotBlank() }
+        assertEquals(3, lines.size)
+        assertEquals(setOf("LABEL;1","LABEL;2","LABEL;3"), lines.toSet())
+    }
 }

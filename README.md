@@ -45,6 +45,14 @@ Run unit tests:
 ./gradlew.bat testDebugUnitTest
 ```
 
+### Protocol Transformation Tests
+Protocol parsing / manipulation logic is covered by pure unit tests around `ProtocolTransformer`:
+- Multi-line command merging (e.g. `INPUTFIELD;` blocks)
+- RANDOMIZE_ON / RANDOMIZE_OFF shuffling blocks (including missing OFF fallback)
+- SCALE / SCALE[RANDOMIZED] expansion with deterministic seeding in tests
+
+Add new cases in `ProtocolTransformerTest.kt` to extend coverage before changing transformation rules.
+
 ## Updating Dependencies
 List outdated (requires the versions plugin):
 ```
