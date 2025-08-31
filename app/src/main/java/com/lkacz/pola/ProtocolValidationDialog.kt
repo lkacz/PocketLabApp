@@ -303,15 +303,15 @@ class ProtocolValidationDialog : DialogFragment() {
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         1f,
                     )
-                hint = "Keyword"
+                hint = getString(R.string.hint_search_keyword)
             }
 
-    val searchButton = materialButton("Search", com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_search) {
+    val searchButton = materialButton(getString(R.string.action_search_text), com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_search) {
             searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
             revalidateAndRefreshUI()
         }
 
-    val clearButton = materialButton("Clear", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) {
+    val clearButton = materialButton(getString(R.string.action_clear_text), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) {
             searchQuery = null
             searchEditText.setText("")
             revalidateAndRefreshUI()
@@ -657,7 +657,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val warningCount = validationCache.count { it.warning.isNotEmpty() }
         val total = validationCache.size
         val summaryLabel = TextView(requireContext()).apply {
-            text = "Lines: $total  |  Errors: $errorCount  |  Warnings: $warningCount"
+            text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
             setPadding(24, 8, 24, 4)
             textSize = 13f
             setTypeface(null, Typeface.BOLD)
@@ -824,7 +824,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun navigateIssue(direction: Int) {
         if (issueLineNumbers.isEmpty()) {
-            Toast.makeText(requireContext(), "No issues", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_no_issues), Toast.LENGTH_SHORT).show()
             return
         }
         // Move index

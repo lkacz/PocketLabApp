@@ -73,4 +73,9 @@
     <string name="toast_insert_cancelled">Insert cancelled</string>
     <string name="toast_long_press_insert">Long-press a line to insert below it</string>
     <string name="error_required_field">Required</string>
+    <string name="hint_search_keyword">Keyword</string>
+    <string name="action_search_text">Search</string>
+    <string name="action_clear_text">Clear</string>
+    <string name="label_summary_counts">Lines: %1$d  |  Errors: %2$d  |  Warnings: %3$d</string>
+    <string name="toast_no_issues">No issues</string>
 </resources>
