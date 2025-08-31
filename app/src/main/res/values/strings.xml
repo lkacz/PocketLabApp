@@ -54,4 +54,23 @@
     <string name="cd_close_dialog">Close dialog</string>
     <string name="cd_search_text">Search text</string>
     <string name="cd_clear_search">Clear search</string>
+    <string name="action_add_command">Add</string>
+    <string name="cd_add_command">Add new command</string>
+    <string name="dialog_title_insert_command">Insert Command</string>
+    <string name="label_select_command">Command</string>
+    <string name="label_parameters">Parameters</string>
+    <string name="hint_header">Header text</string>
+    <string name="hint_body">Body text</string>
+    <string name="hint_continue">Continue button text</string>
+    <string name="hint_items">Items (comma separated)</string>
+    <string name="hint_time_seconds">Time (seconds)</string>
+    <string name="hint_label_name">Label name</string>
+    <string name="hint_goto_label">Target label</string>
+    <string name="hint_filename">Filename</string>
+    <string name="hint_message">Message</string>
+    <string name="hint_input_fields">Input fields (comma separated)</string>
+    <string name="toast_command_inserted">Command inserted</string>
+    <string name="toast_insert_cancelled">Insert cancelled</string>
+    <string name="toast_long_press_insert">Long-press a line to insert below it</string>
+    <string name="error_required_field">Required</string>
 </resources>

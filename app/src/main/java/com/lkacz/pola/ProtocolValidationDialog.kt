@@ -128,6 +128,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private lateinit var btnLoad: View
     private lateinit var btnSave: View
+    private lateinit var btnAdd: View
 
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -274,16 +275,18 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
             }
 
-        btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
+    btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
         btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) {
             // Always ask for a name (acts like Save As) for safety
             val defaultName = getSuggestedFileName()
             createDocumentLauncher.launch(defaultName)
         }
+    btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
-        actionBar.addView(btnLoad)
-        actionBar.addView(btnSave)
+    actionBar.addView(btnLoad)
+    actionBar.addView(btnSave)
+    actionBar.addView(btnAdd)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
 
@@ -765,6 +768,10 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                     setBackgroundColor(backgroundColor)
                     setPadding(16, 8, 16, 8)
+                    setOnLongClickListener {
+                        showInsertCommandDialog(insertAfterLine = originalLineNumber - 1)
+                        true
+                    }
                 }
 
             row.addView(createLineNumberCell(originalLineNumber))
@@ -1610,6 +1617,100 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
         return name
+    }
+
+    private fun showInsertCommandDialog(insertAfterLine: Int?) {
+        val ctx = requireContext()
+        // Container layout
+        val container = ScrollView(ctx)
+        val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(32,24,32,8) }
+        container.addView(inner)
+
+        val commands = arrayOf(
+            "INSTRUCTION", "TIMER", "SCALE", "SCALE[RANDOMIZED]", "INPUTFIELD", "INPUTFIELD[RANDOMIZED]",
+            "LABEL", "GOTO", "HTML", "TIMER_SOUND", "LOG", "END"
+        )
+        val spinner = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, commands)
+        }
+        inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD) })
+        inner.addView(spinner)
+
+        fun edit(hintRes: Int): EditText = EditText(ctx).apply { hint = getString(hintRes); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
+
+        val header = edit(R.string.hint_header)
+        val body = edit(R.string.hint_body)
+        val items = edit(R.string.hint_items)
+        val cont = edit(R.string.hint_continue)
+        val time = edit(R.string.hint_time_seconds).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        val labelName = edit(R.string.hint_label_name)
+        val gotoLabel = edit(R.string.hint_goto_label)
+        val filename = edit(R.string.hint_filename)
+        val message = edit(R.string.hint_message)
+        val inputFields = edit(R.string.hint_input_fields)
+
+        val paramGroup = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(0,16,0,0) }
+        inner.addView(TextView(ctx).apply { text = getString(R.string.label_parameters); setTypeface(null, Typeface.BOLD) })
+        inner.addView(paramGroup)
+
+        fun refreshParams() {
+            paramGroup.removeAllViews()
+            when (spinner.selectedItem as String) {
+                "INSTRUCTION" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(cont) }
+                "TIMER" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(time); paramGroup.addView(cont) }
+                "SCALE", "SCALE[RANDOMIZED]" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(items); paramGroup.addView(cont) }
+                "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(inputFields); paramGroup.addView(cont) }
+                "LABEL" -> { paramGroup.addView(labelName) }
+                "GOTO" -> { paramGroup.addView(gotoLabel) }
+                "HTML" -> { paramGroup.addView(filename) }
+                "TIMER_SOUND" -> { paramGroup.addView(filename) }
+                "LOG" -> { paramGroup.addView(message) }
+                else -> { /* END has no params */ }
+            }
+        }
+        spinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { refreshParams() }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        refreshParams()
+
+        AlertDialog.Builder(ctx)
+            .setTitle(getString(R.string.dialog_title_insert_command))
+            .setView(container)
+            .setPositiveButton(R.string.action_add_command) { _, _ ->
+                val cmd = spinner.selectedItem as String
+                val newLine = when (cmd) {
+                    "INSTRUCTION" -> if (header.text.isBlank() || body.text.isBlank() || cont.text.isBlank()) null else "$cmd;${header.text};${body.text};${cont.text}"
+                    "TIMER" -> if (header.text.isBlank() || body.text.isBlank() || time.text.isBlank() || cont.text.isBlank()) null else "$cmd;${header.text};${body.text};${time.text};${cont.text}"
+                    "SCALE", "SCALE[RANDOMIZED]" -> if (header.text.isBlank() || body.text.isBlank() || items.text.isBlank() || cont.text.isBlank()) null else {
+                        val itemTokens = items.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                        val itemsPart = itemTokens.joinToString(";")
+                        "$cmd;${header.text};${body.text};$itemsPart;${cont.text}"
+                    }
+                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> if (header.text.isBlank() || body.text.isBlank() || inputFields.text.isBlank() || cont.text.isBlank()) null else {
+                        val fieldTokens = inputFields.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+                        val fieldsPart = fieldTokens.joinToString(";")
+                        "$cmd;${header.text};${body.text};$fieldsPart;${cont.text}"
+                    }
+                    "LABEL" -> if (labelName.text.isBlank()) null else "$cmd;${labelName.text}" 
+                    "GOTO" -> if (gotoLabel.text.isBlank()) null else "$cmd;${gotoLabel.text}"
+                    "HTML", "TIMER_SOUND" -> if (filename.text.isBlank()) null else "$cmd;${filename.text}" 
+                    "LOG" -> if (message.text.isBlank()) null else "$cmd;${message.text}" 
+                    "END" -> "END" 
+                    else -> null
+                }
+                if (newLine == null) {
+                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                } else {
+                    val idx = insertAfterLine?.plus(1) ?: allLines.size
+                    allLines.add(idx, newLine)
+                    hasUnsavedChanges = true
+                    revalidateAndRefreshUI()
+                    Toast.makeText(ctx, getString(R.string.toast_command_inserted), Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
+            .show()
     }
 
     private fun getSuggestedFileName(): String {
