@@ -128,7 +128,6 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private lateinit var btnLoad: View
     private lateinit var btnSave: View
-    private lateinit var btnSaveAs: View
 
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -250,7 +249,7 @@ class ProtocolValidationDialog : DialogFragment() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(12,12,12,4) }
         }
 
-        fun barIcon(@androidx.annotation.DrawableRes iconRes: Int, cd: String, onClick: () -> Unit): ImageButton =
+    fun barIcon(@androidx.annotation.DrawableRes iconRes: Int, cd: String, onClick: () -> Unit): ImageButton =
             ImageButton(requireContext()).apply {
                 setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes))
                 // Use system selectable ripple borderless
@@ -260,29 +259,31 @@ class ProtocolValidationDialog : DialogFragment() {
                 typed.recycle()
                 contentDescription = cd
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
-                val size = (40 * resources.displayMetrics.density).toInt()
-                layoutParams = LinearLayout.LayoutParams(0, size, 1f).apply { setMargins(4,0,4,0) }
-                setPadding(0,0,0,0)
+        val size = (48 * resources.displayMetrics.density).toInt()
+        layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8,0,8,0) }
+        setPadding(8,8,8,8)
+                // Ensure icon is visible (tint to on-surface color if available)
+                try {
+                    val tv = androidx.appcompat.view.ContextThemeWrapper(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3)
+                    val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
+                    val a = tv.obtainStyledAttributes(colorAttr)
+                    val color = a.getColor(0, 0xFF444444.toInt())
+                    a.recycle()
+                    imageTintList = android.content.res.ColorStateList.valueOf(color)
+                } catch (_: Exception) { }
                 setOnClickListener { onClick() }
             }
 
         btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
-        btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
-        // Keep Save As with a subtle label below icon? For now use icon + small text vertically stacked if needed -> use MaterialButton fallback
-        btnSaveAs = com.google.android.material.button.MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = getString(R.string.action_save_as)
-            icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_save_as)
-            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_TOP
-            isAllCaps = false
-            contentDescription = getString(R.string.cd_save_as_protocol)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4,0,4,0) }
-            setOnClickListener { createDocumentLauncher.launch("protocol_modified.txt") }
+        btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) {
+            // Always ask for a name (acts like Save As) for safety
+            val defaultName = getSuggestedFileName()
+            createDocumentLauncher.launch(defaultName)
         }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
         actionBar.addView(btnLoad)
         actionBar.addView(btnSave)
-        actionBar.addView(btnSaveAs)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
 
@@ -1609,5 +1610,21 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
         return name
+    }
+
+    private fun getSuggestedFileName(): String {
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val current = prefs.getString(Prefs.KEY_CURRENT_PROTOCOL_NAME, null)
+        return if (!current.isNullOrBlank()) {
+            // Append _copy if same name already in prefs (acts like save as safeguard)
+            if (current.lowercase().endsWith(".txt")) {
+                val base = current.removeSuffix(".txt")
+                base + "_copy.txt"
+            } else {
+                current + "_copy.txt"
+            }
+        } else {
+            "protocol_${System.currentTimeMillis()}.txt"
+        }
     }
 }
