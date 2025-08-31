@@ -778,7 +778,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val commandCell = createBodyCell(lineContent, 2.0f)
             commandCell.setOnClickListener {
-                showEditLineDialog(originalLineNumber - 1)
+                // Open edit dialog with parsed fields
+                showInsertCommandDialog(insertAfterLine = originalLineNumber - 1, editLineIndex = originalLineNumber - 1)
             }
             row.addView(commandCell)
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
@@ -1619,7 +1620,7 @@ class ProtocolValidationDialog : DialogFragment() {
         return name
     }
 
-    private fun showInsertCommandDialog(insertAfterLine: Int?) {
+    private fun showInsertCommandDialog(insertAfterLine: Int?, editLineIndex: Int? = null) {
         val ctx = requireContext()
         // Container layout
         val container = ScrollView(ctx)
@@ -1674,10 +1675,39 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         refreshParams()
 
+        // Prefill if editing existing line
+        if (editLineIndex != null && editLineIndex in allLines.indices) {
+            val existing = allLines[editLineIndex]
+            val parts = existing.split(';')
+            val cmd = parts.firstOrNull()?.trim().orEmpty()
+            val spinnerIndex = commands.indexOf(cmd).takeIf { it >= 0 } ?: 0
+            spinner.setSelection(spinnerIndex)
+            // Delay param refresh until after selection applied
+            spinner.post {
+                when (cmd) {
+                    "INSTRUCTION" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2)); cont.setText(parts.getOrNull(3)) }
+                    "TIMER" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2)); time.setText(parts.getOrNull(3)); cont.setText(parts.getOrNull(4)) }
+                    "SCALE", "SCALE[RANDOMIZED]" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2));
+                        val itemSlice = if (parts.size > 4) parts.subList(3, parts.size -1) else emptyList()
+                        items.setText(itemSlice.joinToString(", "))
+                        cont.setText(parts.lastOrNull()) }
+                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2));
+                        val fieldSlice = if (parts.size > 4) parts.subList(3, parts.size -1) else emptyList()
+                        inputFields.setText(fieldSlice.joinToString(", "))
+                        cont.setText(parts.lastOrNull()) }
+                    "LABEL" -> { labelName.setText(parts.getOrNull(1)) }
+                    "GOTO" -> { gotoLabel.setText(parts.getOrNull(1)) }
+                    "HTML", "TIMER_SOUND" -> { filename.setText(parts.getOrNull(1)) }
+                    "LOG" -> { message.setText(parts.getOrNull(1)) }
+                }
+            }
+        }
+
+        val isEdit = editLineIndex != null
         AlertDialog.Builder(ctx)
             .setTitle(getString(R.string.dialog_title_insert_command))
             .setView(container)
-            .setPositiveButton(R.string.action_add_command) { _, _ ->
+            .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
                 val cmd = spinner.selectedItem as String
                 val newLine = when (cmd) {
                     "INSTRUCTION" -> if (header.text.isBlank() || body.text.isBlank() || cont.text.isBlank()) null else "$cmd;${header.text};${body.text};${cont.text}"
@@ -1702,11 +1732,16 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (newLine == null) {
                     Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
                 } else {
-                    val idx = insertAfterLine?.plus(1) ?: allLines.size
-                    allLines.add(idx, newLine)
+                    if (isEdit) {
+                        allLines[editLineIndex!!] = newLine
+                        Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
+                    } else {
+                        val idx = insertAfterLine?.plus(1) ?: allLines.size
+                        allLines.add(idx, newLine)
+                        Toast.makeText(ctx, getString(R.string.toast_command_inserted), Toast.LENGTH_SHORT).show()
+                    }
                     hasUnsavedChanges = true
                     revalidateAndRefreshUI()
-                    Toast.makeText(ctx, getString(R.string.toast_command_inserted), Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
