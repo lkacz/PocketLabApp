@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.*
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.button.MaterialButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 
@@ -19,6 +21,8 @@ class StartFragment : Fragment() {
     private lateinit var tvSelectedProtocolName: TextView
     private var protocolUri: Uri? = null
     private lateinit var sharedPref: SharedPreferences
+    private var devTapCount = 0
+    private var devButtonsAdded = false
     private val fileUriUtils = FileUriUtils()
     private val protocolReader by lazy { ProtocolReader() }
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
@@ -63,16 +67,14 @@ class StartFragment : Fragment() {
                 isFillViewport = true
             }
 
-        val rootLayout =
-            LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams =
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                    )
-                setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
-            }
+        val rootLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+            setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(32))
+        }
         scrollView.addView(rootLayout)
 
         val titleSection =
@@ -87,13 +89,12 @@ class StartFragment : Fragment() {
             }
         rootLayout.addView(titleSection)
 
-        val tvAppName =
-            TextView(requireContext()).apply {
-                text = "Pocket Labb App"
-                textSize = 34f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                gravity = Gravity.CENTER
-            }
+        val tvAppName = TextView(requireContext()).apply {
+            text = "Pocket Lab App"
+            textSize = 32f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+        }
         titleSection.addView(tvAppName)
 
         val tvAppVersion =
@@ -102,30 +103,74 @@ class StartFragment : Fragment() {
                 textSize = 14f
                 gravity = Gravity.CENTER
                 setPadding(0, dpToPx(4), 0, dpToPx(8))
+                // Secret tap to enable developer mode (7 taps)
+                setOnClickListener {
+                    if (!DeveloperModeManager.isEnabled(requireContext())) {
+                        devTapCount++
+                        val tapsRemaining = 7 - devTapCount
+                        if (tapsRemaining in 1..5) {
+                            showToast("$tapsRemaining more taps to enable developer mode")
+                        }
+                        if (devTapCount >= 7) {
+                            DeveloperModeManager.enable(requireContext())
+                            showToast("Developer mode enabled")
+                            addDeveloperButtons(rootLayout)
+                        }
+                    }
+                }
+                // Long press disables
+                setOnLongClickListener {
+                    if (DeveloperModeManager.isEnabled(requireContext())) {
+                        DeveloperModeManager.disable(requireContext())
+                        showToast("Developer mode disabled")
+                        removeDeveloperButtons(rootLayout)
+                        devTapCount = 0
+                    }
+                    true
+                }
             }
         titleSection.addView(tvAppVersion)
 
         rootLayout.addView(createDivider())
 
-        val currentProtocolLayout =
-            LinearLayout(requireContext()).apply {
+        // Helper to build a Material card section with vertical linear layout content
+    fun sectionCard(title: String?, buildContent: (LinearLayout) -> Unit): View {
+            val card = MaterialCardView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = dpToPx(16) }
+                strokeWidth = dpToPx(1)
+                radius = dpToPx(12).toFloat()
+                setContentPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
+            }
+            val inner = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                    )
-                gravity = Gravity.CENTER_HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
             }
-        rootLayout.addView(currentProtocolLayout)
+            if (!title.isNullOrBlank()) {
+                inner.addView(TextView(requireContext()).apply {
+                    text = title
+                    textSize = 14f
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                    setPadding(0,0,0,dpToPx(8))
+                })
+            }
+            buildContent(inner)
+            card.addView(inner)
+            return card
+        }
 
-        val tvCurrentProtocolLabel =
-            TextView(requireContext()).apply {
-                text = "Current Protocol:"
-                textSize = 16f
-                gravity = Gravity.CENTER
+        val protocolSection = sectionCard("CURRENT PROTOCOL") { section ->
+            val tvCurrentProtocolLabel = TextView(requireContext()).apply {
+                text = "Selected file"
+                textSize = 12f
+                setPadding(0,0,0,dpToPx(4))
             }
-        currentProtocolLayout.addView(tvCurrentProtocolLabel)
+            section.addView(tvCurrentProtocolLabel)
 
         tvSelectedProtocolName =
             TextView(requireContext()).apply {
@@ -139,99 +184,52 @@ class StartFragment : Fragment() {
                 fileUriUtils.getFileName(requireContext(), it)
             } ?: "None"
         updateProtocolNameDisplay(currentFileName)
-        currentProtocolLayout.addView(tvSelectedProtocolName)
+            section.addView(tvSelectedProtocolName)
 
-        val btnStart =
-            createMenuButton("START") {
-                showStartStudyConfirmation()
-            }.apply {
-                textSize = 22f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setPadding(0, dpToPx(8), 0, dpToPx(24))
-            }
-        rootLayout.addView(btnStart)
-
-        val tvFilesHeading =
-            TextView(requireContext()).apply {
-                text = "FILES"
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                gravity = Gravity.CENTER
-                setPadding(0, dpToPx(16), 0, dpToPx(8))
-            }
-        rootLayout.addView(tvFilesHeading)
-
-        rootLayout.addView(
-            createMenuButton("Load protocol file") {
-                showChangeProtocolConfirmation {
-                    filePicker.launch(arrayOf("text/plain"))
-                }
-            },
-        )
-
-        rootLayout.addView(
-            createMenuButton("Select Resources Folder") {
-                showChangeResourcesFolderConfirmation {
-                    resourcesFolderManager.pickResourcesFolder(folderPicker)
-                }
-            },
-        )
-
-        rootLayout.addView(
-            createMenuButton("Review Protocol") {
+            section.addView(createPrimaryButton(text = "Start Study", icon = R.drawable.ic_play, onClick = { showStartStudyConfirmation() }))
+        }
+        rootLayout.addView(protocolSection)
+        val fileOpsSection = sectionCard("PROTOCOL & FILES") { section ->
+            section.addView(createSecondaryButton(text = "Load Protocol File", icon = R.drawable.ic_folder_open, onClick = {
+                showChangeProtocolConfirmation { filePicker.launch(arrayOf("text/plain")) }
+            }))
+            section.addView(createSecondaryButton(text = "Select Resources Folder", icon = R.drawable.ic_folder_open, onClick = {
+                showChangeResourcesFolderConfirmation { resourcesFolderManager.pickResourcesFolder(folderPicker) }
+            }))
+            section.addView(createSecondaryButton(text = "Review Protocol", icon = R.drawable.ic_review, onClick = {
                 ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
-            },
-        )
-
-        rootLayout.addView(
-            createMenuButton("Use Tutorial Protocol") {
+            }))
+            section.addView(createSecondaryButton(text = "Preview Protocol", icon = R.drawable.ic_preview, onClick = {
+                ProtocolPreviewDialog.newInstance().show(parentFragmentManager, "ProtocolPreviewDialog")
+            }))
+            section.addView(createTonalButton(text = "Use Tutorial Protocol", icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/tutorial_protocol.txt"
-                    sharedPref.edit()
-                        .putString("PROTOCOL_URI", assetUriString)
-                        .putString("CURRENT_MODE", "tutorial")
-                        .apply()
+                    sharedPref.edit().putString("PROTOCOL_URI", assetUriString).putString("CURRENT_MODE", "tutorial").apply()
                     protocolUri = Uri.parse(assetUriString)
                     updateProtocolNameDisplay("Tutorial Protocol")
                 }
-            },
-        )
-
-        rootLayout.addView(
-            createMenuButton("Use Demo Protocol") {
+            }))
+            section.addView(createTonalButton(text = "Use Demo Protocol", icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/demo_protocol.txt"
-                    sharedPref.edit()
-                        .putString("PROTOCOL_URI", assetUriString)
-                        .putString("CURRENT_MODE", "demo")
-                        .apply()
+                    sharedPref.edit().putString("PROTOCOL_URI", assetUriString).putString("CURRENT_MODE", "demo").apply()
                     protocolUri = Uri.parse(assetUriString)
                     updateProtocolNameDisplay("Demo Protocol")
                 }
-            },
-        )
+            }))
+        }
+        rootLayout.addView(fileOpsSection)
 
-        val tvCustomizationHeading =
-            TextView(requireContext()).apply {
-                text = "CUSTOMIZATION"
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                gravity = Gravity.CENTER
-                setPadding(0, dpToPx(16), 0, dpToPx(8))
-            }
-        rootLayout.addView(tvCustomizationHeading)
-
-        rootLayout.addView(
-            createMenuButton("Layout") {
+        val customizationSection = sectionCard("CUSTOMIZATION") { section ->
+            section.addView(createSecondaryButton("Layout") {
                 AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
-            },
-        )
-
-        rootLayout.addView(
-            createMenuButton("Sounds") {
+            })
+            section.addView(createSecondaryButton("Sounds") {
                 AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
-            },
-        )
+            })
+        }
+        rootLayout.addView(customizationSection)
 
         val spacerView =
             View(requireContext()).apply {
@@ -243,49 +241,44 @@ class StartFragment : Fragment() {
             }
         rootLayout.addView(spacerView)
 
-        val btnAbout =
-            createMenuButton("About") {
+        val aboutSection = sectionCard(null) { section ->
+            section.addView(createSecondaryButton("About") {
                 val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
                 HtmlDialogHelper.showHtmlContent(requireContext(), "About", aboutHtmlContent)
-            }
-        rootLayout.addView(btnAbout)
-
-        // Feature Flagged developer info panel
-        if (FeatureFlags.NEW_FEATURE_ONE) {
-            rootLayout.addView(
-                createMenuButton("Dev Info") {
-                    DevInfoDialog().show(parentFragmentManager, "DevInfoDialog")
-                },
-            )
+            })
         }
+        rootLayout.addView(aboutSection)
 
-        if (FeatureFlags.NEW_FEATURE_TWO) {
-            rootLayout.addView(
-                createMenuButton("Preview Protocol") {
-                    ProtocolPreviewDialog.newInstance().show(parentFragmentManager, "ProtocolPreviewDialog")
-                },
-            )
-        }
+    // Load flags; only show dev items if developer mode or debug build
+    FeatureFlags.load(requireContext())
+    val isDev = DeveloperModeManager.isEnabled(requireContext())
+    if (isDev) addDeveloperButtons(rootLayout)
 
         return scrollView
     }
 
-    private fun createMenuButton(
-        textValue: String,
-        onClick: () -> Unit,
-    ): Button {
-        return Button(requireContext()).apply {
+    private fun baseButton(textValue: String, defStyleAttr: Int, onClick: () -> Unit, iconRes: Int? = null): MaterialButton {
+        val btn = MaterialButton(requireContext(), null, defStyleAttr).apply {
             text = textValue
-            setOnClickListener { onClick() }
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply {
-                    bottomMargin = dpToPx(8)
-                }
+            if (iconRes != null) {
+                icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
+                iconPadding = dpToPx(8)
+                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            }
         }
+        btn.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dpToPx(8) }
+        btn.setOnClickListener { onClick() }
+        return btn
     }
+    private fun createPrimaryButton(text: String, icon: Int? = null, onClick: () -> Unit) =
+        baseButton(text, com.google.android.material.R.attr.materialButtonStyle, onClick, icon).apply { isAllCaps = false }
+    private fun createSecondaryButton(text: String, icon: Int? = null, onClick: () -> Unit) =
+        baseButton(text, com.google.android.material.R.attr.materialButtonOutlinedStyle, onClick, icon).apply { isAllCaps = false }
+    private fun createTonalButton(text: String, icon: Int? = null, onClick: () -> Unit) =
+        baseButton(text, com.google.android.material.R.attr.materialButtonOutlinedStyle, onClick, icon).apply { isAllCaps = false }
 
     private fun createDivider(): View {
         return View(requireContext()).apply {
@@ -346,5 +339,31 @@ class StartFragment : Fragment() {
 
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density + 0.5f).toInt()
+    }
+
+    private fun addDeveloperButtons(rootLayout: LinearLayout) {
+        if (devButtonsAdded) return
+        devButtonsAdded = true
+        if (FeatureFlags.NEW_FEATURE_ONE) {
+            rootLayout.addView(createSecondaryButton("Dev Info") { DevInfoDialog().show(parentFragmentManager, "DevInfoDialog") })
+        }
+        // Feature flags dialog only in debug or explicit developer mode
+        if (DeveloperModeManager.isEnabled(requireContext())) {
+            rootLayout.addView(createSecondaryButton("Feature Flags") { FeatureFlagsDialog().show(parentFragmentManager, "FeatureFlagsDialog") })
+        }
+    }
+    private fun removeDeveloperButtons(rootLayout: LinearLayout) {
+        val toRemove = mutableListOf<View>()
+        for (i in 0 until rootLayout.childCount) {
+            val v = rootLayout.getChildAt(i)
+            if (v is Button) {
+                val t = v.text?.toString() ?: ""
+                if (t == "Dev Info" || t == "Feature Flags") {
+                    toRemove.add(v)
+                }
+            }
+        }
+        toRemove.forEach { rootLayout.removeView(it) }
+        devButtonsAdded = false
     }
 }
