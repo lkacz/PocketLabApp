@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<baseline version="1.0">
+    <file name="src/main/java/com/lkacz/pola/AlarmCustomizationDialog.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="9" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/AppearanceCustomizationDialog.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="9" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/ColorPickerHelper.kt">
+        <error line="15" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/EndFragment.kt">
+        <error line="7" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/FeatureFlags.kt">
+        <error line="5" column="9" source="standard:property-naming" />
+        <error line="6" column="9" source="standard:property-naming" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/HTMLFragment.kt">
+        <error line="1" column="1" source="standard:filename" />
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="12" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/InputFieldFragment.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="12" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/InstructionFragment.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="12" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/Logger.kt">
+        <error line="6" column="1" source="standard:no-wildcard-imports" />
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="142" column="21" source="standard:property-naming" />
+        <error line="143" column="27" source="standard:property-naming" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/MainActivity.kt">
+        <error line="4" column="1" source="standard:import-ordering" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/MyForegroundService.kt">
+        <error line="9" column="17" source="standard:property-naming" />
+        <error line="10" column="17" source="standard:property-naming" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/ProtocolManager.kt">
+        <error line="73" column="25" source="standard:discouraged-comment-location" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/ProtocolValidationDialog.kt">
+        <error line="13" column="1" source="standard:no-wildcard-imports" />
+        <error line="17" column="1" source="standard:no-wildcard-imports" />
+        <error line="18" column="1" source="standard:no-wildcard-imports" />
+        <error line="39" column="21" source="standard:discouraged-comment-location" />
+        <error line="1253" column="13" source="standard:property-naming" />
+        <error line="1254" column="13" source="standard:property-naming" />
+        <error line="1255" column="13" source="standard:property-naming" />
+        <error line="1256" column="13" source="standard:property-naming" />
+        <error line="1257" column="13" source="standard:property-naming" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/ScaleFragment.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="12" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/SlideTransitionHelper.kt">
+        <error line="17" column="24" source="standard:discouraged-comment-location" />
+        <error line="19" column="23" source="standard:discouraged-comment-location" />
+        <error line="45" column="23" source="standard:discouraged-comment-location" />
+        <error line="47" column="23" source="standard:discouraged-comment-location" />
+        <error line="73" column="23" source="standard:discouraged-comment-location" />
+        <error line="75" column="24" source="standard:discouraged-comment-location" />
+        <error line="101" column="23" source="standard:discouraged-comment-location" />
+        <error line="103" column="23" source="standard:discouraged-comment-location" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/StartFragment.kt">
+        <error line="8" column="1" source="standard:no-wildcard-imports" />
+        <error line="9" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/TimerFragment.kt">
+        <error line="10" column="1" source="standard:no-wildcard-imports" />
+        <error line="14" column="1" source="standard:no-wildcard-imports" />
+    </file>
+    <file name="src/main/java/com/lkacz/pola/ui/theme/Theme.kt">
+        <error line="42" column="5" source="standard:function-naming" />
+    </file>
+</baseline>
