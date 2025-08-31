@@ -376,30 +376,34 @@ class ProtocolValidationDialog : DialogFragment() {
         rootLayout.addView(togglesContainer)
 
         // Navigation + Export row
-        val navContainer = LinearLayout(requireContext()).apply {
+        val navRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(16, 0, 16, 8)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
-        val btnPrev = Button(requireContext()).apply {
-            text = "Prev Err"
-            setOnClickListener { navigateIssue(-1) }
+        fun tinyButton(text: String, iconRes: Int, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+            com.google.android.material.button.MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                this.text = text
+                isAllCaps = false
+                icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
+                iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+                iconPadding = 12
+                setOnClickListener { onClick() }
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
+            }
+        val btnPrev = tinyButton("Prev", R.drawable.ic_prev) { navigateIssue(-1) }
+        val btnNext = tinyButton("Next", R.drawable.ic_next) { navigateIssue(1) }
+        val btnExport = tinyButton("Export", R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }
+        navRow.addView(btnPrev)
+        navRow.addView(btnNext)
+        navRow.addView(btnExport)
+        val navCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,8) }
+            radius = 12f
+            strokeWidth = 1
+            setContentPadding(24,24,24,16)
+            addView(navRow)
         }
-        val btnNext = Button(requireContext()).apply {
-            text = "Next Err"
-            setOnClickListener { navigateIssue(1) }
-        }
-        val btnExport = Button(requireContext()).apply {
-            text = "Export Report"
-            setOnClickListener { exportReportLauncher.launch("protocol_validation_report.txt") }
-        }
-        navContainer.addView(btnPrev)
-        navContainer.addView(btnNext)
-        navContainer.addView(btnExport)
-        rootLayout.addView(navContainer)
+        rootLayout.addView(navCard)
 
         val progressBar =
             ProgressBar(requireContext()).apply {
