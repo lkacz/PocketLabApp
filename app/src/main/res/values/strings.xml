@@ -98,4 +98,8 @@
     <string name="cd_undo">Undo last change</string>
     <string name="toast_undo_none">Nothing to undo</string>
     <string name="toast_undo_done">Reverted last change</string>
+    <string name="action_redo">Redo</string>
+    <string name="cd_redo">Redo last undone change</string>
+    <string name="toast_redo_none">Nothing to redo</string>
+    <string name="toast_redo_done">Reapplied change</string>
 </resources>

@@ -128,9 +128,13 @@ class ProtocolValidationDialog : DialogFragment() {
 
     // Simple undo stack of previous protocol line states
     private val undoStack: ArrayDeque<List<String>> = ArrayDeque()
+    // Redo stack stores states undone (for reapplication)
+    private val redoStack: ArrayDeque<List<String>> = ArrayDeque()
     private fun pushUndoState() {
         // Limit stack size to avoid memory bloat
         if (undoStack.size > 50) undoStack.removeFirst()
+        // When a new action occurs, clear redo history (branch cut)
+        if (redoStack.isNotEmpty()) redoStack.clear()
         undoStack.addLast(allLines.toList())
     }
     private fun performUndo() {
@@ -138,10 +142,26 @@ class ProtocolValidationDialog : DialogFragment() {
             Toast.makeText(requireContext(), getString(R.string.toast_undo_none), Toast.LENGTH_SHORT).show()
             return
         }
+        // Push current state onto redo before reverting
+        redoStack.addLast(allLines.toList())
+        if (redoStack.size > 50) redoStack.removeFirst()
         allLines = undoStack.removeLast().toMutableList()
         hasUnsavedChanges = true
         revalidateAndRefreshUI()
         Toast.makeText(requireContext(), getString(R.string.toast_undo_done), Toast.LENGTH_SHORT).show()
+    }
+    private fun performRedo() {
+        if (redoStack.isEmpty()) {
+            Toast.makeText(requireContext(), getString(R.string.toast_redo_none), Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Current state becomes an undo point
+        if (undoStack.size > 50) undoStack.removeFirst()
+        undoStack.addLast(allLines.toList())
+        allLines = redoStack.removeLast().toMutableList()
+        hasUnsavedChanges = true
+        revalidateAndRefreshUI()
+        Toast.makeText(requireContext(), getString(R.string.toast_redo_done), Toast.LENGTH_SHORT).show()
     }
 
     private lateinit var btnLoad: View
@@ -303,6 +323,7 @@ class ProtocolValidationDialog : DialogFragment() {
     btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
     btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
     val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
+    val btnRedo = barIcon(R.drawable.ic_redo, getString(R.string.cd_redo)) { performRedo() }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
     actionBar.addView(btnLoad)
@@ -310,6 +331,7 @@ class ProtocolValidationDialog : DialogFragment() {
     actionBar.addView(btnNew)
     actionBar.addView(btnAdd)
     actionBar.addView(btnUndo)
+    actionBar.addView(btnRedo)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
 
