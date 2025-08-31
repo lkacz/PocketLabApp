@@ -13,14 +13,13 @@ import kotlin.random.Random
  *   but randomizes the order of those bracketed items first.
  */
 object MultiScaleHelper {
-
     /**
      * Examines [originalLine]. If it starts with "SCALE" or "SCALE[RANDOMIZED]", it processes bracketed items.
      * - If "SCALE[RANDOMIZED]", shuffle multiple bracketed items and return multiple lines
      *   (each item forming a single scale line).
      * - If just "SCALE" and multiple bracketed items, expand them into multiple lines in the typed order.
      */
-    fun expandScaleLine(originalLine: String): List<String> {
+    fun expandScaleLine(originalLine: String, rnd: Random = Random): List<String> {
         val trimmed = originalLine.trim()
 
         // Only proceed if it starts with "SCALE", ignoring case
@@ -67,7 +66,7 @@ object MultiScaleHelper {
              * For SCALE[RANDOMIZED] with multiple bracketed items, shuffle them
              * and produce multiple lines (one item per line).
              */
-            val shuffledItems = items.toMutableList().also { it.shuffle(Random) }
+            val shuffledItems = items.toMutableList().also { it.shuffle(rnd) }
             shuffledItems.map { singleItem ->
                 if (suffix.isNotBlank()) {
                     "$newDirective;${parts[1]};${parts[2]};$singleItem;$suffix"
