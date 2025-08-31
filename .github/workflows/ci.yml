@@ -37,6 +37,17 @@ jobs:
       - name: ktlint Check
         run: ./gradlew ktlintCheck --stacktrace --no-daemon
 
+      - name: Coverage Report
+        run: ./gradlew jacocoTestReport --stacktrace --no-daemon
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/build/reports/jacoco/jacocoTestReport/html
+          if-no-files-found: ignore
+
       - name: Dependency Updates (report only)
         run: ./gradlew dependencyUpdates --no-daemon || true
 

@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jlleitschuh.gradle.ktlint")
     id("com.github.ben-manes.versions")
+    jacoco
 }
 
 android {
@@ -46,6 +47,42 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// JaCoCo configuration for unit test coverage
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+tasks.withType<Test> {
+    extensions.configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        // Exclude generated classes
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+val jacocoTestReport = tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("testDebugUnitTest"))
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "androidx/**",
+        "**/databinding/**",
+        "**/generated/**",
+    )
+    val javaClasses = fileTree("${'$'}{buildDir}/intermediates/javac/debug/classes") { exclude(fileFilter) }
+    val kotlinClasses = fileTree("${'$'}{buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+    classDirectories.setFrom(files(javaClasses, kotlinClasses))
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(files("${'$'}{buildDir}/jacoco/testDebugUnitTest.exec"))
 }
 
 dependencies {

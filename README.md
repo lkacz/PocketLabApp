@@ -1,6 +1,8 @@
 # PocketLabApp
 
 ![CI](https://github.com/lkacz/PocketLabApp/actions/workflows/ci.yml/badge.svg)
+<!-- Coverage badge placeholder (can be updated with shields.io + action in future) -->
+
 
 Developer quick start.
 
@@ -52,6 +54,7 @@ Every push / PR to `main` or `dev16` runs GitHub Actions workflow (`ci.yml`):
 - Assemble debug build
 - Unit tests (`testDebugUnitTest`)
 - ktlint style check
+- JaCoCo coverage report (artifact)
 - Dependency update report (artifact)
 Failed tests upload their HTML reports as artifacts for quick diagnosis.
 
