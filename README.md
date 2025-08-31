@@ -1,5 +1,7 @@
 # PocketLabApp
 
+![CI](https://github.com/lkacz/PocketLabApp/actions/workflows/ci.yml/badge.svg)
+
 Developer quick start.
 
 ## Prerequisites
@@ -44,6 +46,14 @@ Run unit tests:
 ```
 ./gradlew.bat testDebugUnitTest
 ```
+
+### Continuous Integration
+Every push / PR to `main` or `dev16` runs GitHub Actions workflow (`ci.yml`):
+- Assemble debug build
+- Unit tests (`testDebugUnitTest`)
+- ktlint style check
+- Dependency update report (artifact)
+Failed tests upload their HTML reports as artifacts for quick diagnosis.
 
 ### Protocol Transformation Tests
 Protocol parsing / manipulation logic is covered by pure unit tests around `ProtocolTransformer`:
