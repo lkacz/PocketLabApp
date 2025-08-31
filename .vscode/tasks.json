@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run App (Emulator)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy","Bypass","-File","scripts/run-app.ps1"],
+      "group": {"kind":"build","isDefault": true}
+    },
+    {
+      "label": "Logcat (App)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-ExecutionPolicy","Bypass","-File","scripts/logcat.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Ktlint Check",
+      "type": "shell",
+      "command": "./gradlew.bat",
+      "args": ["ktlintCheck"],
+  "problemMatcher": ["$gradle"],
+      "group": "test"
+    },
+    {
+      "label": "Deprecation Warnings",
+      "type": "shell",
+      "command": "./gradlew.bat",
+      "args": ["--warning-mode","all","assembleDebug"],
+      "problemMatcher": []
+    }
+  ]
+}
