@@ -83,4 +83,9 @@
     <string name="error_unrecognized_command_title">Unrecognized Command</string>
     <string name="error_unrecognized_command_message">This line cannot be edited with the structured dialog because the command keyword is not recognized. You can edit the raw line instead.</string>
     <string name="action_edit_raw_line">Edit Raw Line</string>
+    <string name="action_new_protocol">New</string>
+    <string name="cd_new_protocol">Create new protocol</string>
+    <string name="dialog_title_new_protocol">New Protocol</string>
+    <string name="dialog_message_new_protocol_unsaved">You have unsaved changes. Do you want to save the current protocol before creating a new one?</string>
+    <string name="toast_new_protocol_created">New protocol created</string>
 </resources>

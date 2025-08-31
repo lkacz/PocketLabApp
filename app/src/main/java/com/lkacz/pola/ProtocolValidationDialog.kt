@@ -129,6 +129,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private lateinit var btnLoad: View
     private lateinit var btnSave: View
     private lateinit var btnAdd: View
+    private lateinit var btnNew: View
 
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -282,10 +283,12 @@ class ProtocolValidationDialog : DialogFragment() {
             createDocumentLauncher.launch(defaultName)
         }
     btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
+    btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
     actionBar.addView(btnLoad)
     actionBar.addView(btnSave)
+    actionBar.addView(btnNew)
     actionBar.addView(btnAdd)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
@@ -580,6 +583,29 @@ class ProtocolValidationDialog : DialogFragment() {
                 Toast.makeText(requireContext(), "Save cancelled.", Toast.LENGTH_SHORT).show()
             }
             .show()
+    }
+
+    private fun confirmNewProtocol() {
+        fun createNew() {
+            allLines.clear()
+            allLines.add("INSTRUCTION;Header;Body;Continue")
+            hasUnsavedChanges = true
+            revalidateAndRefreshUI()
+            Toast.makeText(requireContext(), getString(R.string.toast_new_protocol_created), Toast.LENGTH_SHORT).show()
+        }
+        if (hasUnsavedChanges) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.dialog_title_new_protocol))
+                .setMessage(getString(R.string.dialog_message_new_protocol_unsaved))
+                .setPositiveButton(R.string.action_save) { _, _ ->
+                    saveProtocol { createNew() }
+                }
+                .setNegativeButton(R.string.action_new_protocol) { _, _ -> createNew() }
+                .setNeutralButton(android.R.string.cancel, null)
+                .show()
+        } else {
+            createNew()
+        }
     }
 
     private fun saveProtocol(onSuccess: (() -> Unit)? = null) {
