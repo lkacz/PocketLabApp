@@ -29,4 +29,12 @@ class MediaTagHandlerTest {
         assertEquals(120, size?.width)
         assertEquals(80, size?.height)
     }
+
+    @Test
+    fun image_tag_unmodified() {
+        val html = "<p>Before <img src=\"img.png\" width=\"10\" height=\"20\"/> After</p>"
+        val handler = MediaTagHandler()
+        val out = handler.beforeFromHtml(html)
+        assertTrue(out.contains("<img src=\"img.png\" width=\"10\" height=\"20\"/>"))
+    }
 }

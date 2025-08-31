@@ -233,10 +233,10 @@ class ProtocolValidationDialog : DialogFragment() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
 
-    btnLoad = materialButton("Load", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open) { confirmLoadProtocol() }
-    btnSave = materialButton("Save", com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save) { confirmSaveDialog() }
-    btnSaveAs = materialButton("Save As", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_save_as) { createDocumentLauncher.launch("protocol_modified.txt") }
-    val btnClose = materialButton("Close", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) { confirmCloseDialog() }
+    btnLoad = materialButton(getString(R.string.action_load), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open) { confirmLoadProtocol() }.apply { contentDescription = getString(R.string.cd_load_protocol) }
+    btnSave = materialButton(getString(R.string.action_save), com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save) { confirmSaveDialog() }.apply { contentDescription = getString(R.string.cd_save_protocol) }
+    btnSaveAs = materialButton(getString(R.string.action_save_as), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_save_as) { createDocumentLauncher.launch("protocol_modified.txt") }.apply { contentDescription = getString(R.string.cd_save_as_protocol) }
+    val btnClose = materialButton(getString(R.string.action_close), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) { confirmCloseDialog() }.apply { contentDescription = getString(R.string.cd_close_dialog) }
 
         actionRow.addView(btnLoad)
         actionRow.addView(btnSave)
@@ -308,7 +308,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     ArrayAdapter(
                         requireContext(),
                         android.R.layout.simple_spinner_item,
-                        FilterOption.values().map { it.displayName },
+                        FilterOption.values().map { getString(it.labelRes) },
                     )
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 this.adapter = adapter
@@ -361,7 +361,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val cbColoring =
             CheckBox(requireContext()).apply {
-                text = "Highlight Commands"
+                text = getString(R.string.toggle_highlight_commands)
                 isChecked = coloringEnabled
                 setOnCheckedChangeListener { _, isChecked ->
                     coloringEnabled = isChecked
@@ -371,7 +371,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val cbSemicolonsBreak =
             CheckBox(requireContext()).apply {
-                text = "Split Commands"
+                text = getString(R.string.toggle_split_commands)
                 isChecked = semicolonsAsBreaks
                 setOnCheckedChangeListener { _, isChecked ->
                     semicolonsAsBreaks = isChecked
@@ -405,9 +405,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
-    val btnPrev = tinyButton("Prev", R.drawable.ic_prev) { navigateIssue(-1) }.apply { contentDescription = "Previous issue" }
-    val btnNext = tinyButton("Next", R.drawable.ic_next) { navigateIssue(1) }.apply { contentDescription = "Next issue" }
-    val btnExport = tinyButton("Export", R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }.apply { contentDescription = "Export validation report" }
+    val btnPrev = tinyButton(getString(R.string.action_prev), R.drawable.ic_prev) { navigateIssue(-1) }.apply { contentDescription = getString(R.string.cd_prev_issue) }
+    val btnNext = tinyButton(getString(R.string.action_next), R.drawable.ic_next) { navigateIssue(1) }.apply { contentDescription = getString(R.string.cd_next_issue) }
+    val btnExport = tinyButton(getString(R.string.action_export), R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }.apply { contentDescription = getString(R.string.cd_export_report) }
         navRow.addView(btnPrev)
         navRow.addView(btnNext)
         navRow.addView(btnExport)
@@ -1504,11 +1504,11 @@ class ProtocolValidationDialog : DialogFragment() {
         }
     }
 
-    private enum class FilterOption(val displayName: String) {
-        EVERYTHING("Everything"),
-        HIDE_COMMENTS("Hide comments"),
-        ERRORS_WARNINGS_ONLY("Errors & Warnings"),
-        ERRORS_ONLY("Only Errors"),
+    private enum class FilterOption(val labelRes: Int) {
+        EVERYTHING(R.string.filter_everything),
+        HIDE_COMMENTS(R.string.filter_hide_comments),
+        ERRORS_WARNINGS_ONLY(R.string.filter_errors_warnings),
+        ERRORS_ONLY(R.string.filter_errors_only),
     }
 
     private fun mergeLongFormatCommands(lines: List<String>): List<String> {

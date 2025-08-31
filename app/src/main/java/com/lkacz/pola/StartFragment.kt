@@ -92,7 +92,7 @@ class StartFragment : Fragment() {
         rootLayout.addView(titleSection)
 
         val tvAppName = TextView(requireContext()).apply {
-            text = "Pocket Lab App"
+            text = getString(R.string.app_name)
             textSize = 32f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
@@ -167,9 +167,9 @@ class StartFragment : Fragment() {
             return card
         }
 
-        val protocolSection = sectionCard("CURRENT PROTOCOL") { section ->
+    val protocolSection = sectionCard(getString(R.string.title_current_protocol)) { section ->
             val tvCurrentProtocolLabel = TextView(requireContext()).apply {
-                text = "Selected file"
+                text = getString(R.string.label_selected_file)
                 textSize = 12f
                 setPadding(0,0,0,dpToPx(4))
             }
@@ -185,27 +185,27 @@ class StartFragment : Fragment() {
         val currentFileName =
             protocolUri?.let {
                 fileUriUtils.getFileName(requireContext(), it)
-            } ?: "None"
+            } ?: getString(R.string.value_none)
         updateProtocolNameDisplay(currentFileName)
             section.addView(tvSelectedProtocolName)
 
-            section.addView(createPrimaryButton(text = "Start Study", icon = R.drawable.ic_play, onClick = { showStartStudyConfirmation() }))
+            section.addView(createPrimaryButton(text = getString(R.string.action_start_study), icon = R.drawable.ic_play, onClick = { showStartStudyConfirmation() }))
         }
         rootLayout.addView(protocolSection)
-        val fileOpsSection = sectionCard("PROTOCOL & FILES") { section ->
-            section.addView(createSecondaryButton(text = "Load Protocol File", icon = R.drawable.ic_folder_open, onClick = {
+    val fileOpsSection = sectionCard(getString(R.string.section_protocol_files)) { section ->
+            section.addView(createSecondaryButton(text = getString(R.string.action_load_protocol), icon = R.drawable.ic_folder_open, onClick = {
                 showChangeProtocolConfirmation { filePicker.launch(arrayOf("text/plain")) }
             }))
-            section.addView(createSecondaryButton(text = "Select Resources Folder", icon = R.drawable.ic_folder_open, onClick = {
+            section.addView(createSecondaryButton(text = getString(R.string.action_select_resources_folder), icon = R.drawable.ic_folder_open, onClick = {
                 showChangeResourcesFolderConfirmation { resourcesFolderManager.pickResourcesFolder(folderPicker) }
             }))
-            section.addView(createSecondaryButton(text = "Review Protocol", icon = R.drawable.ic_review, onClick = {
+            section.addView(createSecondaryButton(text = getString(R.string.action_review_protocol), icon = R.drawable.ic_review, onClick = {
                 ProtocolValidationDialog().show(parentFragmentManager, "ProtocolValidationDialog")
             }))
-            section.addView(createSecondaryButton(text = "Preview Protocol", icon = R.drawable.ic_preview, onClick = {
+            section.addView(createSecondaryButton(text = getString(R.string.action_preview_protocol), icon = R.drawable.ic_preview, onClick = {
                 ProtocolPreviewDialog.newInstance().show(parentFragmentManager, "ProtocolPreviewDialog")
             }))
-            section.addView(createTonalButton(text = "Use Tutorial Protocol", icon = R.drawable.ic_tutorial, onClick = {
+            section.addView(createTonalButton(text = getString(R.string.action_use_tutorial_protocol), icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/tutorial_protocol.txt"
                     sharedPref.edit().putString(Prefs.KEY_PROTOCOL_URI, assetUriString).putString(Prefs.KEY_CURRENT_MODE, "tutorial").apply()
@@ -213,7 +213,7 @@ class StartFragment : Fragment() {
                     updateProtocolNameDisplay("Tutorial Protocol")
                 }
             }))
-            section.addView(createTonalButton(text = "Use Demo Protocol", icon = R.drawable.ic_tutorial, onClick = {
+            section.addView(createTonalButton(text = getString(R.string.action_use_demo_protocol), icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/demo_protocol.txt"
                     sharedPref.edit().putString(Prefs.KEY_PROTOCOL_URI, assetUriString).putString(Prefs.KEY_CURRENT_MODE, "demo").apply()
@@ -224,11 +224,11 @@ class StartFragment : Fragment() {
         }
         rootLayout.addView(fileOpsSection)
 
-        val customizationSection = sectionCard("CUSTOMIZATION") { section ->
-            section.addView(createSecondaryButton("Layout") {
+    val customizationSection = sectionCard(getString(R.string.section_customization)) { section ->
+            section.addView(createSecondaryButton(getString(R.string.action_layout)) {
                 AppearanceCustomizationDialog().show(parentFragmentManager, "AppearanceCustomizationDialog")
             })
-            section.addView(createSecondaryButton("Sounds") {
+            section.addView(createSecondaryButton(getString(R.string.action_sounds)) {
                 AlarmCustomizationDialog().show(parentFragmentManager, "AlarmCustomizationDialog")
             })
         }
