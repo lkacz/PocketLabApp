@@ -102,4 +102,6 @@
     <string name="cd_redo">Redo last undone change</string>
     <string name="toast_redo_none">Nothing to redo</string>
     <string name="toast_redo_done">Reapplied change</string>
+    <string name="toast_drag_disabled">Drag disabled while search or filters active</string>
+    <string name="cd_drag_handle">Drag to reorder</string>
 </resources>

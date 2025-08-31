@@ -15,6 +15,8 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
+import android.view.DragEvent
+import android.content.ClipData
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -843,6 +845,51 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 }
 
+            // Drag handle image
+            val dragHandle = ImageView(context).apply {
+                setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_drag_handle))
+                contentDescription = getString(R.string.cd_drag_handle)
+                val p = 16
+                setPadding(p,p,p,p)
+                setOnLongClickListener {
+                    if (!searchQuery.isNullOrBlank() || filterOption != FilterOption.HIDE_COMMENTS) {
+                        Toast.makeText(context, getString(R.string.toast_drag_disabled), Toast.LENGTH_SHORT).show(); return@setOnLongClickListener true
+                    }
+                    val clip = ClipData.newPlainText("line", originalLineNumber.toString())
+                    startDragAndDrop(clip, View.DragShadowBuilder(this), originalLineNumber, 0)
+                    true
+                }
+            }
+            // Accept drop on row
+            row.setOnDragListener { v, event ->
+                when(event.action) {
+                    DragEvent.ACTION_DRAG_STARTED -> true
+                    DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.6f; true }
+                    DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
+                    DragEvent.ACTION_DROP -> {
+                        v.alpha = 1f
+                        val fromLine = event.localState as? Int ?: return@setOnDragListener true
+                        val toLine = originalLineNumber
+                        if (fromLine != toLine) {
+                            val fromIdx = fromLine - 1
+                            val toIdx = toLine - 1
+                            if (fromIdx in allLines.indices && toIdx in allLines.indices) {
+                                pushUndoState()
+                                val moving = allLines.removeAt(fromIdx)
+                                val adjustedTo = if (fromIdx < toIdx) toIdx - 1 else toIdx
+                                allLines.add(adjustedTo, moving)
+                                hasUnsavedChanges = true
+                                revalidateAndRefreshUI()
+                                Toast.makeText(context, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        true
+                    }
+                    DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                    else -> false
+                }
+            }
+            row.addView(dragHandle)
             row.addView(createLineNumberCell(originalLineNumber))
 
             val commandCell = createBodyCell(lineContent, 2.0f)
