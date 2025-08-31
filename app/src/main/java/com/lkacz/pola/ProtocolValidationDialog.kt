@@ -214,14 +214,17 @@ class ProtocolValidationDialog : DialogFragment() {
     // (Removed old topButtonRow layout; replaced with card-based action layout)
 
         // Helper to create a horizontal flow of buttons with spacing
-        fun materialButton(text: String, styleAttr: Int, onClick: () -> Unit): com.google.android.material.button.MaterialButton {
+        fun materialButton(text: String, styleAttr: Int, iconRes: Int? = null, onClick: () -> Unit): com.google.android.material.button.MaterialButton {
             return com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
                 this.text = text
                 isAllCaps = false
-                setOnClickListener { onClick() }
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginEnd = 12
+                if (iconRes != null) {
+                    icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
+                    iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+                    iconPadding = 16
                 }
+                setOnClickListener { onClick() }
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
         }
 
@@ -230,10 +233,10 @@ class ProtocolValidationDialog : DialogFragment() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
 
-        btnLoad = materialButton("Load", com.google.android.material.R.attr.materialButtonOutlinedStyle) { confirmLoadProtocol() }
-        btnSave = materialButton("Save", com.google.android.material.R.attr.materialButtonStyle) { confirmSaveDialog() }
-        btnSaveAs = materialButton("Save As", com.google.android.material.R.attr.materialButtonOutlinedStyle) { createDocumentLauncher.launch("protocol_modified.txt") }
-        val btnClose = materialButton("Close", com.google.android.material.R.attr.materialButtonOutlinedStyle) { confirmCloseDialog() }
+    btnLoad = materialButton("Load", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open) { confirmLoadProtocol() }
+    btnSave = materialButton("Save", com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save) { confirmSaveDialog() }
+    btnSaveAs = materialButton("Save As", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_save_as) { createDocumentLauncher.launch("protocol_modified.txt") }
+    val btnClose = materialButton("Close", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) { confirmCloseDialog() }
 
         actionRow.addView(btnLoad)
         actionRow.addView(btnSave)
@@ -266,12 +269,12 @@ class ProtocolValidationDialog : DialogFragment() {
                 hint = "Keyword"
             }
 
-        val searchButton = materialButton("Search", com.google.android.material.R.attr.materialButtonStyle) {
+    val searchButton = materialButton("Search", com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_search) {
             searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
             revalidateAndRefreshUI()
         }
 
-        val clearButton = materialButton("Clear", com.google.android.material.R.attr.materialButtonOutlinedStyle) {
+    val clearButton = materialButton("Clear", com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) {
             searchQuery = null
             searchEditText.setText("")
             revalidateAndRefreshUI()
