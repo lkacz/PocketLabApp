@@ -4,6 +4,8 @@ package com.lkacz.pola
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
+import android.content.ClipData
+import java.io.FileNotFoundException
 import android.database.Cursor
 import android.graphics.Color
 import android.graphics.Typeface
@@ -16,7 +18,6 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.view.DragEvent
-import android.content.ClipData
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -120,6 +121,9 @@ class ProtocolValidationDialog : DialogFragment() {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
     }
 
+    // If a direct save fails (missing original URI) we queue the desired post-save action
+    private var pendingPostSaveAction: (() -> Unit)? = null
+
     private var searchQuery: String? = null
     private var filterOption: FilterOption = FilterOption.HIDE_COMMENTS
 
@@ -193,6 +197,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
                     Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
+                    pendingPostSaveAction?.invoke()
+                    pendingPostSaveAction = null
                 } catch (e: Exception) {
                     Toast.makeText(
                         requireContext(),
@@ -705,7 +711,9 @@ class ProtocolValidationDialog : DialogFragment() {
         val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
         if (customUriString.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
+            // No existing file: fallback to Save As
+            pendingPostSaveAction = onSuccess
+            createDocumentLauncher.launch(getSuggestedFileName())
             return
         }
         val uri = Uri.parse(customUriString)
@@ -714,16 +722,24 @@ class ProtocolValidationDialog : DialogFragment() {
                 FileOutputStream(pfd.fileDescriptor).use { fos ->
                     fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
                 }
-            }
+            } ?: throw FileNotFoundException("Descriptor null for URI")
             hasUnsavedChanges = false
             revalidateAndRefreshUI()
             onSuccess?.invoke()
         } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Error saving file: ${e.message}",
-                Toast.LENGTH_SHORT,
-            ).show()
+            val msg = e.message ?: ""
+            if (e is FileNotFoundException || msg.contains("open failed", true) || msg.contains("ENOENT", true)) {
+                // Missing original target -> fallback to Save As
+                Toast.makeText(requireContext(), "Original file missing. Choose new save location.", Toast.LENGTH_SHORT).show()
+                pendingPostSaveAction = onSuccess
+                createDocumentLauncher.launch(getSuggestedFileName())
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Error saving file: ${e.message}",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
         }
     }
 
