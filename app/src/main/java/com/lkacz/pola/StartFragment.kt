@@ -49,8 +49,8 @@ class StartFragment : Fragment() {
         super.onAttach(context)
         listener = context as? OnProtocolSelectedListener
             ?: throw IllegalStateException("Host activity must implement OnProtocolSelectedListener")
-        sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
-        protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
+    sharedPref = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+    protocolUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)?.let(Uri::parse)
         resourcesFolderManager = ResourcesFolderManager(context)
     }
 
@@ -208,7 +208,7 @@ class StartFragment : Fragment() {
             section.addView(createTonalButton(text = "Use Tutorial Protocol", icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/tutorial_protocol.txt"
-                    sharedPref.edit().putString("PROTOCOL_URI", assetUriString).putString("CURRENT_MODE", "tutorial").apply()
+                    sharedPref.edit().putString(Prefs.KEY_PROTOCOL_URI, assetUriString).putString(Prefs.KEY_CURRENT_MODE, "tutorial").apply()
                     protocolUri = Uri.parse(assetUriString)
                     updateProtocolNameDisplay("Tutorial Protocol")
                 }
@@ -216,7 +216,7 @@ class StartFragment : Fragment() {
             section.addView(createTonalButton(text = "Use Demo Protocol", icon = R.drawable.ic_tutorial, onClick = {
                 showChangeProtocolConfirmation {
                     val assetUriString = "file:///android_asset/demo_protocol.txt"
-                    sharedPref.edit().putString("PROTOCOL_URI", assetUriString).putString("CURRENT_MODE", "demo").apply()
+                    sharedPref.edit().putString(Prefs.KEY_PROTOCOL_URI, assetUriString).putString(Prefs.KEY_CURRENT_MODE, "demo").apply()
                     protocolUri = Uri.parse(assetUriString)
                     updateProtocolNameDisplay("Demo Protocol")
                 }
