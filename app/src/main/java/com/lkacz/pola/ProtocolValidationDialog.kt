@@ -778,8 +778,20 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val commandCell = createBodyCell(lineContent, 2.0f)
             commandCell.setOnClickListener {
-                // Open edit dialog with parsed fields
-                showInsertCommandDialog(insertAfterLine = originalLineNumber - 1, editLineIndex = originalLineNumber - 1)
+                val raw = allLines[originalLineNumber - 1]
+                val firstToken = raw.split(';').firstOrNull()?.trim().orEmpty()
+                if (!recognizedCommands.contains(firstToken.uppercase()) && !firstToken.equals("END", true)) {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle(getString(R.string.error_unrecognized_command_title))
+                        .setMessage(getString(R.string.error_unrecognized_command_message))
+                        .setPositiveButton(R.string.action_edit_raw_line) { _, _ ->
+                            showEditLineDialog(originalLineNumber - 1)
+                        }
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show()
+                } else {
+                    showInsertCommandDialog(insertAfterLine = originalLineNumber - 1, editLineIndex = originalLineNumber - 1)
+                }
             }
             row.addView(commandCell)
             row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))

@@ -80,4 +80,7 @@
     <string name="toast_no_issues">No issues</string>
     <string name="action_update_command">Update</string>
     <string name="toast_command_updated">Command updated</string>
+    <string name="error_unrecognized_command_title">Unrecognized Command</string>
+    <string name="error_unrecognized_command_message">This line cannot be edited with the structured dialog because the command keyword is not recognized. You can edit the raw line instead.</string>
+    <string name="action_edit_raw_line">Edit Raw Line</string>
 </resources>
