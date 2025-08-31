@@ -1,15 +1,33 @@
+# IDE / Project
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Gradle
+.gradle/
+**/build/
+**/out/
+.cxx/
+externalNativeBuild/
+
+# Local config
 local.properties
+
+# Keystore / credentials
+*.jks
+*.keystore
+*.pem
+*.key
+
+# Android outputs
+*.apk
+*.ap_
+*.aab
+
+# Logs & misc
+captures/
+*.log
+.DS_Store
+
+# Optional: keep selected .idea parts (uncomment to retain)
+#!.idea/runConfigurations/
+#!.idea/codeStyles/
