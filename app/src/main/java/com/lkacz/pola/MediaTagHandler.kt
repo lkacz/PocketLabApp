@@ -17,26 +17,33 @@ import java.util.regex.Pattern
  *   This returns to the older logic that was known to display images properly.
  */
 class MediaTagHandler : Html.TagHandler {
-
     // Regex to detect <img src="..."> for optional width/height extraction:
-    private val imageTagPattern = Pattern.compile(
-        "<img\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
-        Pattern.CASE_INSENSITIVE
-    )
+    private val imageTagPattern =
+        Pattern.compile(
+            "<img\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
+            Pattern.CASE_INSENSITIVE,
+        )
     private val widthPattern = Pattern.compile("width\\s*=\\s*\"(\\d+)\"", Pattern.CASE_INSENSITIVE)
     private val heightPattern = Pattern.compile("height\\s*=\\s*\"(\\d+)\"", Pattern.CASE_INSENSITIVE)
 
     // Regex for <video> and <audio>, replaced with placeholders:
-    private val videoTagPattern = Pattern.compile(
-        "<video\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
-        Pattern.CASE_INSENSITIVE
-    )
-    private val audioTagPattern = Pattern.compile(
-        "<audio\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
-        Pattern.CASE_INSENSITIVE
-    )
+    private val videoTagPattern =
+        Pattern.compile(
+            "<video\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
+            Pattern.CASE_INSENSITIVE,
+        )
+    private val audioTagPattern =
+        Pattern.compile(
+            "<audio\\s+[^>]*src\\s*=\\s*\"([^\"]+)\"[^>]*>",
+            Pattern.CASE_INSENSITIVE,
+        )
 
-    override fun handleTag(opening: Boolean, tag: String, output: Editable, xmlReader: XMLReader) {
+    override fun handleTag(
+        opening: Boolean,
+        tag: String,
+        output: Editable,
+        xmlReader: XMLReader,
+    ) {
         // No direct in-processor logic here, everything is done via beforeFromHtml pre-processing.
     }
 
@@ -48,55 +55,62 @@ class MediaTagHandler : Html.TagHandler {
         var modifiedHtml = html
 
         // 1) Replace <video> with placeholders:
-        modifiedHtml = replaceWithCallback(modifiedHtml, videoTagPattern) { match ->
-            val entireTag = match.group(0) ?: return@replaceWithCallback ""
-            val srcValue = extractSrcAttribute(entireTag)
-            "[Video: $srcValue]"
-        }
+        modifiedHtml =
+            replaceWithCallback(modifiedHtml, videoTagPattern) { match ->
+                val entireTag = match.group(0) ?: return@replaceWithCallback ""
+                val srcValue = extractSrcAttribute(entireTag)
+                "[Video: $srcValue]"
+            }
 
         // 2) Replace <audio> with placeholders:
-        modifiedHtml = replaceWithCallback(modifiedHtml, audioTagPattern) { match ->
-            val entireTag = match.group(0) ?: return@replaceWithCallback ""
-            val srcValue = extractSrcAttribute(entireTag)
-            "[Audio: $srcValue]"
-        }
+        modifiedHtml =
+            replaceWithCallback(modifiedHtml, audioTagPattern) { match ->
+                val entireTag = match.group(0) ?: return@replaceWithCallback ""
+                val srcValue = extractSrcAttribute(entireTag)
+                "[Audio: $srcValue]"
+            }
 
         // 3) Parse <img> for optional width/height; store in [HtmlImageLoader.imageSizeMap].
-        modifiedHtml = replaceWithCallback(modifiedHtml, imageTagPattern) { match ->
-            val fullImgTag = match.group(0) ?: return@replaceWithCallback ""
-            val srcValue = extractSrcAttribute(fullImgTag) ?: return@replaceWithCallback fullImgTag
+        modifiedHtml =
+            replaceWithCallback(modifiedHtml, imageTagPattern) { match ->
+                val fullImgTag = match.group(0) ?: return@replaceWithCallback ""
+                val srcValue = extractSrcAttribute(fullImgTag) ?: return@replaceWithCallback fullImgTag
 
-            val w = extractDimension(fullImgTag, widthPattern)
-            val h = extractDimension(fullImgTag, heightPattern)
-            if (w > 0 && h > 0) {
-                HtmlImageLoader.imageSizeMap[srcValue] = SizeInfo(w, h)
+                val w = extractDimension(fullImgTag, widthPattern)
+                val h = extractDimension(fullImgTag, heightPattern)
+                if (w > 0 && h > 0) {
+                    HtmlImageLoader.imageSizeMap[srcValue] = SizeInfo(w, h)
+                }
+                // Return the original <img> tag unmodified, so it displays in normal flow.
+                fullImgTag
             }
-            // Return the original <img> tag unmodified, so it displays in normal flow.
-            fullImgTag
-        }
 
         return modifiedHtml
     }
 
-    private fun extractDimension(tag: String, pattern: Pattern): Int {
+    private fun extractDimension(
+        tag: String,
+        pattern: Pattern,
+    ): Int {
         val matcher = pattern.matcher(tag)
         return if (matcher.find()) matcher.group(1)?.toIntOrNull() ?: 0 else 0
     }
 
+    private val srcAttrPattern = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE)
     private fun extractSrcAttribute(tag: String): String {
-        val srcMatcher = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE).matcher(tag)
-        return if (srcMatcher.find()) srcMatcher.group(1) ?: "" else ""
+        val srcMatcher = srcAttrPattern.matcher(tag)
+        return if (srcMatcher.find()) srcMatcher.group(1)!! else ""
     }
 
     private fun replaceWithCallback(
         original: String,
         pattern: Pattern,
-        replacer: (Matcher) -> String
+        replacer: (Matcher) -> String,
     ): String {
         val matcher = pattern.matcher(original)
         val sb = StringBuffer()
         while (matcher.find()) {
-            val replacement = replacer(matcher)
+            val replacement = java.util.regex.Matcher.quoteReplacement(replacer(matcher))
             matcher.appendReplacement(sb, replacement)
         }
         matcher.appendTail(sb)

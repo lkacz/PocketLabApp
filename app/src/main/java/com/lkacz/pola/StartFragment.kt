@@ -22,6 +22,7 @@ class StartFragment : Fragment() {
     private var protocolUri: Uri? = null
     private lateinit var sharedPref: SharedPreferences
     private var devTapCount = 0
+    private val devTapThreshold = 7
     private var devButtonsAdded = false
     private val fileUriUtils = FileUriUtils()
     private val protocolReader by lazy { ProtocolReader() }
@@ -46,7 +47,8 @@ class StartFragment : Fragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        listener = context as OnProtocolSelectedListener
+        listener = context as? OnProtocolSelectedListener
+            ?: throw IllegalStateException("Host activity must implement OnProtocolSelectedListener")
         sharedPref = context.getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString("PROTOCOL_URI", null)?.let(Uri::parse)
         resourcesFolderManager = ResourcesFolderManager(context)
@@ -107,14 +109,15 @@ class StartFragment : Fragment() {
                 setOnClickListener {
                     if (!DeveloperModeManager.isEnabled(requireContext())) {
                         devTapCount++
-                        val tapsRemaining = 7 - devTapCount
+                        val tapsRemaining = devTapThreshold - devTapCount
                         if (tapsRemaining in 1..5) {
                             showToast("$tapsRemaining more taps to enable developer mode")
                         }
-                        if (devTapCount >= 7) {
+                        if (devTapCount >= devTapThreshold) {
                             DeveloperModeManager.enable(requireContext())
                             showToast("Developer mode enabled")
                             addDeveloperButtons(rootLayout)
+                            devTapCount = 0
                         }
                     }
                 }
@@ -345,24 +348,17 @@ class StartFragment : Fragment() {
         if (devButtonsAdded) return
         devButtonsAdded = true
         if (FeatureFlags.NEW_FEATURE_ONE) {
-            rootLayout.addView(createSecondaryButton("Dev Info") { DevInfoDialog().show(parentFragmentManager, "DevInfoDialog") })
+            rootLayout.addView(createSecondaryButton("Dev Info") { DevInfoDialog().show(parentFragmentManager, "DevInfoDialog") }.apply { tag = "DEV_BTN" })
         }
         // Feature flags dialog only in debug or explicit developer mode
         if (DeveloperModeManager.isEnabled(requireContext())) {
-            rootLayout.addView(createSecondaryButton("Feature Flags") { FeatureFlagsDialog().show(parentFragmentManager, "FeatureFlagsDialog") })
+            rootLayout.addView(createSecondaryButton("Feature Flags") { FeatureFlagsDialog().show(parentFragmentManager, "FeatureFlagsDialog") }.apply { tag = "DEV_BTN" })
         }
     }
     private fun removeDeveloperButtons(rootLayout: LinearLayout) {
-        val toRemove = mutableListOf<View>()
-        for (i in 0 until rootLayout.childCount) {
-            val v = rootLayout.getChildAt(i)
-            if (v is Button) {
-                val t = v.text?.toString() ?: ""
-                if (t == "Dev Info" || t == "Feature Flags") {
-                    toRemove.add(v)
-                }
-            }
-        }
+        val toRemove = (0 until rootLayout.childCount)
+            .map { rootLayout.getChildAt(it) }
+            .filter { it.tag == "DEV_BTN" }
         toRemove.forEach { rootLayout.removeView(it) }
         devButtonsAdded = false
     }
