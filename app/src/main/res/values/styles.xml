@@ -1,21 +1,21 @@
 <resources>
-    <!-- Light Theme -->
-    <style name="AppTheme.Light" parent="Theme.AppCompat.Light">
+    <!-- Base Material light theme -->
+    <style name="AppTheme.Light" parent="Theme.MaterialComponents.Light">
+        <!-- Legacy color attributes mapping -->
         <item name="colorPrimary">@color/light_primary</item>
-        <item name="colorPrimaryDark">@color/light_primary_dark</item>
-        <item name="colorAccent">@color/light_accent</item>
+        <item name="colorPrimaryVariant">@color/light_primary_dark</item>
+        <item name="colorOnPrimary">@color/light_text</item>
+        <item name="colorSecondary">@color/light_accent</item>
+        <item name="colorSecondaryVariant">@color/light_accent</item>
+        <item name="colorOnSecondary">@color/dark_text</item>
         <item name="android:windowBackground">@color/light_background</item>
         <item name="android:textColor">@color/dark_text</item>
-        <!-- Other attributes -->
+        <!-- Enable Material components shape & typography defaults -->
+        <item name="materialCardViewStyle">@style/Widget.MaterialComponents.CardView</item>
+        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
     </style>
 
-    <!-- Dark Theme -->
-    <style name="AppTheme.Dark" parent="Theme.AppCompat">
-        <item name="colorPrimary">@color/dark_primary</item>
-        <item name="colorPrimaryDark">@color/dark_primary_dark</item>
-        <item name="colorAccent">@color/dark_accent</item>
-        <item name="android:windowBackground">@color/dark_background</item>
-        <item name="android:textColor">@color/light_text</item>
-        <!-- Other attributes -->
-    </style>
+    <!-- Base Material dark theme -->
+    <!-- Dark theme placeholder retained for future; currently unused to simplify build.
+    <style name="AppTheme.Dark" parent="Theme.MaterialComponents"> </style> -->
 </resources>
