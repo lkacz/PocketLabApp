@@ -1803,7 +1803,42 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
         }
-        builder.show()
+        val dialog = builder.create()
+        dialog.setOnShowListener {
+            if (isEdit) {
+                // Add move buttons below form dynamically
+                val parent = container.parent as? ViewGroup ?: return@setOnShowListener
+                val moveRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,24,0,8) }
+                val btnUp = Button(ctx).apply { text = getString(R.string.action_move_up) }
+                val btnDown = Button(ctx).apply { text = getString(R.string.action_move_down) }
+                moveRow.addView(btnUp, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                moveRow.addView(btnDown, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                inner.addView(moveRow)
+                btnUp.setOnClickListener {
+                    if (editLineIndex != null && editLineIndex > 0) {
+                        java.util.Collections.swap(allLines, editLineIndex, editLineIndex - 1)
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
+                    }
+                }
+                btnDown.setOnClickListener {
+                    if (editLineIndex != null && editLineIndex < allLines.lastIndex) {
+                        java.util.Collections.swap(allLines, editLineIndex, editLineIndex + 1)
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun getSuggestedFileName(): String {

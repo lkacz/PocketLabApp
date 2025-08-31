@@ -90,4 +90,8 @@
     <string name="toast_new_protocol_created">New protocol created</string>
     <string name="action_delete_command">Delete</string>
     <string name="toast_command_deleted">Command deleted</string>
+    <string name="action_move_up">Move Up</string>
+    <string name="action_move_down">Move Down</string>
+    <string name="toast_command_moved">Command moved</string>
+    <string name="toast_move_blocked">Cannot move further</string>
 </resources>
