@@ -26,6 +26,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run-app.ps1
 - StrictMode enabled in debug to catch main-thread and VM violations.
 - Timber for structured logging.
 - LeakCanary (debug only) will show a notification if a leak is detected.
+- PerfTimer utility (`PerfTimer.track("Label") { ... }`) for quick ad-hoc performance timing in logs.
+- Dependency updates: run `./gradlew.bat :app:dependencyUpdates` to see newer versions.
 
 ## VS Code Tasks
 Press `Ctrl+Shift+B` to see tasks once `.vscode/tasks.json` is present. Includes run-app, logcat, and deprecation check.
