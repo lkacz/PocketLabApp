@@ -8,6 +8,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
+import android.os.StrictMode
+// BuildConfig is generated in the same package; no explicit import needed
+import timber.log.Timber
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +32,27 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         supportActionBar?.hide()
+
+    val isDebuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    if (isDebuggable) {
+            // StrictMode policies to surface accidental disk/network on main thread and leaks
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build()
+            )
+            if (Timber.forest().isEmpty()) {
+                Timber.plant(Timber.DebugTree())
+            }
+            Timber.d("MainActivity onCreate - debug tools initialized")
+        }
 
         Logger.resetInstance()
         logger = Logger.getInstance(this)
