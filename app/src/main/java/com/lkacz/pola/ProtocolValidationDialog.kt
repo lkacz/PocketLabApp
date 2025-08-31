@@ -338,7 +338,15 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
         filterContainer.addView(spinnerFilter)
-        rootLayout.addView(filterContainer)
+        // Wrap filter in a card for visual consistency
+        val filterCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,4) }
+            radius = 12f
+            strokeWidth = 1
+            setContentPadding(24,16,24,8)
+            addView(filterContainer)
+        }
+        rootLayout.addView(filterCard)
 
         val togglesContainer =
             LinearLayout(requireContext()).apply {
@@ -373,7 +381,14 @@ class ProtocolValidationDialog : DialogFragment() {
 
         togglesContainer.addView(cbColoring)
         togglesContainer.addView(cbSemicolonsBreak)
-        rootLayout.addView(togglesContainer)
+        val togglesCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,4,16,8) }
+            radius = 12f
+            strokeWidth = 1
+            setContentPadding(24,16,24,16)
+            addView(togglesContainer)
+        }
+        rootLayout.addView(togglesCard)
 
         // Navigation + Export row
         val navRow = LinearLayout(requireContext()).apply {
@@ -390,9 +405,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
-        val btnPrev = tinyButton("Prev", R.drawable.ic_prev) { navigateIssue(-1) }
-        val btnNext = tinyButton("Next", R.drawable.ic_next) { navigateIssue(1) }
-        val btnExport = tinyButton("Export", R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }
+    val btnPrev = tinyButton("Prev", R.drawable.ic_prev) { navigateIssue(-1) }.apply { contentDescription = "Previous issue" }
+    val btnNext = tinyButton("Next", R.drawable.ic_next) { navigateIssue(1) }.apply { contentDescription = "Next issue" }
+    val btnExport = tinyButton("Export", R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }.apply { contentDescription = "Export validation report" }
         navRow.addView(btnPrev)
         navRow.addView(btnNext)
         navRow.addView(btnExport)
