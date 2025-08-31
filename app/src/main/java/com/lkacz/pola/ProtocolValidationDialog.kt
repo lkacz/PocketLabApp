@@ -126,9 +126,9 @@ class ProtocolValidationDialog : DialogFragment() {
     private var coloringEnabled = true
     private var semicolonsAsBreaks = true
 
-    private lateinit var btnLoad: Button
-    private lateinit var btnSave: Button
-    private lateinit var btnSaveAs: Button
+    private lateinit var btnLoad: View
+    private lateinit var btnSave: View
+    private lateinit var btnSaveAs: View
 
     private val createDocumentLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -244,31 +244,47 @@ class ProtocolValidationDialog : DialogFragment() {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
 
-        val actionRow = LinearLayout(requireContext()).apply {
+        // Minimal top action bar with icon-only ImageButtons (no card, no button boxes)
+        val actionBar = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(12,12,12,4) }
         }
 
-    // Icon-only buttons for standard actions; keep text label only for Save As (less universally obvious)
-    btnLoad = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
-    btnSave = iconOnlyButton(com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
-    btnSaveAs = materialButton(getString(R.string.action_save_as), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_save_as) { createDocumentLauncher.launch("protocol_modified.txt") }.apply { contentDescription = getString(R.string.cd_save_as_protocol) }
-    val btnClose = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
+        fun barIcon(@androidx.annotation.DrawableRes iconRes: Int, cd: String, onClick: () -> Unit): ImageButton =
+            ImageButton(requireContext()).apply {
+                setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes))
+                // Use system selectable ripple borderless
+                val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
+                val typed = requireContext().obtainStyledAttributes(attrs)
+                background = typed.getDrawable(0)
+                typed.recycle()
+                contentDescription = cd
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                val size = (40 * resources.displayMetrics.density).toInt()
+                layoutParams = LinearLayout.LayoutParams(0, size, 1f).apply { setMargins(4,0,4,0) }
+                setPadding(0,0,0,0)
+                setOnClickListener { onClick() }
+            }
 
-        actionRow.addView(btnLoad)
-        actionRow.addView(btnSave)
-        actionRow.addView(btnSaveAs)
-        actionRow.addView(btnClose.apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
-
-        // Wrap in a MaterialCardView for consistency with Start screen sections
-        val actionsCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,16,16,8) }
-            radius = 12f
-            strokeWidth = 1
-            setContentPadding(24,24,24,16)
-            addView(actionRow)
+        btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
+        btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
+        // Keep Save As with a subtle label below icon? For now use icon + small text vertically stacked if needed -> use MaterialButton fallback
+        btnSaveAs = com.google.android.material.button.MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = getString(R.string.action_save_as)
+            icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_save_as)
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_TOP
+            isAllCaps = false
+            contentDescription = getString(R.string.cd_save_as_protocol)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(4,0,4,0) }
+            setOnClickListener { createDocumentLauncher.launch("protocol_modified.txt") }
         }
-        rootLayout.addView(actionsCard)
+        val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
+
+        actionBar.addView(btnLoad)
+        actionBar.addView(btnSave)
+        actionBar.addView(btnSaveAs)
+        actionBar.addView(btnClose)
+        rootLayout.addView(actionBar)
 
         val searchRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
