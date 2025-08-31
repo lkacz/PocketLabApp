@@ -214,8 +214,8 @@ class ProtocolValidationDialog : DialogFragment() {
     // (Removed old topButtonRow layout; replaced with card-based action layout)
 
         // Helper to create a horizontal flow of buttons with spacing
-        fun materialButton(text: String, styleAttr: Int, iconRes: Int? = null, onClick: () -> Unit): com.google.android.material.button.MaterialButton {
-            return com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
+        fun materialButton(text: String, styleAttr: Int, iconRes: Int? = null, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+            com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
                 this.text = text
                 isAllCaps = false
                 if (iconRes != null) {
@@ -226,17 +226,34 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
-        }
+
+        fun iconOnlyButton(styleAttr: Int, iconRes: Int, cd: String, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+            com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
+                text = "" // icon only
+                icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
+                // Fallback gravity
+                iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+                // Enforce square-ish size
+                val size = (48 * resources.displayMetrics.density).toInt()
+                minWidth = size
+                minimumHeight = size
+                iconPadding = 0
+                contentDescription = cd
+                isAllCaps = false
+                setOnClickListener { onClick() }
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
+            }
 
         val actionRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
 
-    btnLoad = materialButton(getString(R.string.action_load), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open) { confirmLoadProtocol() }.apply { contentDescription = getString(R.string.cd_load_protocol) }
-    btnSave = materialButton(getString(R.string.action_save), com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save) { confirmSaveDialog() }.apply { contentDescription = getString(R.string.cd_save_protocol) }
+    // Icon-only buttons for standard actions; keep text label only for Save As (less universally obvious)
+    btnLoad = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
+    btnSave = iconOnlyButton(com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
     btnSaveAs = materialButton(getString(R.string.action_save_as), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_save_as) { createDocumentLauncher.launch("protocol_modified.txt") }.apply { contentDescription = getString(R.string.cd_save_as_protocol) }
-    val btnClose = materialButton(getString(R.string.action_close), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) { confirmCloseDialog() }.apply { contentDescription = getString(R.string.cd_close_dialog) }
+    val btnClose = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
         actionRow.addView(btnLoad)
         actionRow.addView(btnSave)
@@ -405,9 +422,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
-    val btnPrev = tinyButton(getString(R.string.action_prev), R.drawable.ic_prev) { navigateIssue(-1) }.apply { contentDescription = getString(R.string.cd_prev_issue) }
-    val btnNext = tinyButton(getString(R.string.action_next), R.drawable.ic_next) { navigateIssue(1) }.apply { contentDescription = getString(R.string.cd_next_issue) }
-    val btnExport = tinyButton(getString(R.string.action_export), R.drawable.ic_export) { exportReportLauncher.launch("protocol_validation_report.txt") }.apply { contentDescription = getString(R.string.cd_export_report) }
+    val btnPrev = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_prev, getString(R.string.cd_prev_issue)) { navigateIssue(-1) }
+    val btnNext = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_next, getString(R.string.cd_next_issue)) { navigateIssue(1) }
+    val btnExport = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_export, getString(R.string.cd_export_report)) { exportReportLauncher.launch("protocol_validation_report.txt") }
         navRow.addView(btnPrev)
         navRow.addView(btnNext)
         navRow.addView(btnExport)
