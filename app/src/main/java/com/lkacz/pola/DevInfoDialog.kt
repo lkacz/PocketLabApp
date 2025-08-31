@@ -9,7 +9,7 @@ import androidx.fragment.app.DialogFragment
 class DevInfoDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val info = buildString {
-            appendLine("App Version: 0.5.0")
+            appendLine("App Version: ${BuildConfig.APP_VERSION} (${BuildConfig.APP_VERSION_CODE})")
             appendLine("SDK Int: ${Build.VERSION.SDK_INT}")
             appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine("FeatureFlags.NEW_FEATURE_ONE=${FeatureFlags.NEW_FEATURE_ONE}")

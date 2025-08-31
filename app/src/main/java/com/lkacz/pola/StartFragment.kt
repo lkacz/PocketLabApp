@@ -98,7 +98,7 @@ class StartFragment : Fragment() {
 
         val tvAppVersion =
             TextView(requireContext()).apply {
-                text = "(v0.5.0)"
+                text = "(v${BuildConfig.APP_VERSION})"
                 textSize = 14f
                 gravity = Gravity.CENTER
                 setPadding(0, dpToPx(4), 0, dpToPx(8))
