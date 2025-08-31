@@ -15,7 +15,7 @@ class FileUriUtils {
     ) {
         val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         context.contentResolver.takePersistableUriPermission(uri, takeFlags)
-        sharedPref.edit().putString("PROTOCOL_URI", uri.toString()).apply()
+    sharedPref.edit().putString(Prefs.KEY_PROTOCOL_URI, uri.toString()).apply()
     }
 
     fun getFileName(

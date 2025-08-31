@@ -25,7 +25,7 @@ class ProtocolManager(private val context: Context) {
                         context.contentResolver.openInputStream(uri)
                     }
                     else -> {
-                        val mode = sharedPref.getString("CURRENT_MODE", "demo")
+                        val mode = sharedPref.getString(Prefs.KEY_CURRENT_MODE, "demo")
                         val fileName =
                             if (mode == "tutorial") "tutorial_protocol.txt" else "demo_protocol.txt"
                         context.assets.open(fileName)

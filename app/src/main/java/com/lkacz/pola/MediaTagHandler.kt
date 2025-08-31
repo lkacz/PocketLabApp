@@ -74,7 +74,7 @@ class MediaTagHandler : Html.TagHandler {
         modifiedHtml =
             replaceWithCallback(modifiedHtml, imageTagPattern) { match ->
                 val fullImgTag = match.group(0) ?: return@replaceWithCallback ""
-                val srcValue = extractSrcAttribute(fullImgTag) ?: return@replaceWithCallback fullImgTag
+                val srcValue = extractSrcAttribute(fullImgTag)
 
                 val w = extractDimension(fullImgTag, widthPattern)
                 val h = extractDimension(fullImgTag, heightPattern)

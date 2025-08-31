@@ -141,8 +141,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
                     prefs.edit()
-                        .putString("PROTOCOL_URI", uri.toString())
-                        .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
+                        .putString(Prefs.KEY_PROTOCOL_URI, uri.toString())
+                        .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, getFileName(uri) ?: "Untitled")
                         .apply()
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
@@ -171,8 +171,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
                 prefs.edit()
-                    .putString("PROTOCOL_URI", uri.toString())
-                    .putString("CURRENT_PROTOCOL_NAME", getFileName(uri) ?: "Untitled")
+                    .putString(Prefs.KEY_PROTOCOL_URI, uri.toString())
+                    .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, getFileName(uri) ?: "Untitled")
                     .apply()
                 revalidateAndRefreshUI()
                 Toast.makeText(requireContext(), "Protocol loaded.", Toast.LENGTH_SHORT).show()
@@ -1490,8 +1490,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun getProtocolContent(): String {
     val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
-        val mode = prefs.getString("CURRENT_MODE", null)
-        val customUriString = prefs.getString("PROTOCOL_URI", null)
+    val mode = prefs.getString(Prefs.KEY_CURRENT_MODE, null)
+    val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
 
         if (!customUriString.isNullOrEmpty()) {
             val uri = Uri.parse(customUriString)
