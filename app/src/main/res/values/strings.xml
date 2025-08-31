@@ -104,4 +104,7 @@
     <string name="toast_redo_done">Reapplied change</string>
     <string name="toast_drag_disabled">Drag disabled while search or filters active</string>
     <string name="cd_drag_handle">Drag to reorder</string>
+    <string name="cd_increase_text_size">Increase text size</string>
+    <string name="cd_decrease_text_size">Decrease text size</string>
+    <string name="toast_text_size_limit">Text size limit reached</string>
 </resources>

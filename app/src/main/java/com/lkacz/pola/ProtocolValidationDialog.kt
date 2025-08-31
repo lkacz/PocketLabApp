@@ -127,6 +127,11 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var coloringEnabled = true
     private var semicolonsAsBreaks = true
+    // Dynamic UI text scaling factor (base 1.0f)
+    private var textScale = 1.0f
+    private val minScale = 0.6f
+    private val maxScale = 1.6f
+    private fun applyScale(baseSp: Float): Float = baseSp * textScale
 
     // Simple undo stack of previous protocol line states
     private val undoStack: ArrayDeque<List<String>> = ArrayDeque()
@@ -268,7 +273,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
 
-        fun iconOnlyButton(styleAttr: Int, iconRes: Int, cd: String, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+    fun iconOnlyButton(styleAttr: Int, iconRes: Int, cd: String, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
             com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
                 text = "" // icon only
                 icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
@@ -326,6 +331,22 @@ class ProtocolValidationDialog : DialogFragment() {
     btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
     val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
     val btnRedo = barIcon(R.drawable.ic_redo, getString(R.string.cd_redo)) { performRedo() }
+    val btnIncText = barIcon(R.drawable.ic_text_increase, getString(R.string.cd_increase_text_size)) {
+        if (textScale < maxScale) {
+            textScale = (textScale + 0.1f).coerceAtMost(maxScale)
+            revalidateAndRefreshUI()
+        } else {
+            Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+        }
+    }
+    val btnDecText = barIcon(R.drawable.ic_text_decrease, getString(R.string.cd_decrease_text_size)) {
+        if (textScale > minScale) {
+            textScale = (textScale - 0.1f).coerceAtLeast(minScale)
+            revalidateAndRefreshUI()
+        } else {
+            Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+        }
+    }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
     actionBar.addView(btnLoad)
@@ -334,6 +355,8 @@ class ProtocolValidationDialog : DialogFragment() {
     actionBar.addView(btnAdd)
     actionBar.addView(btnUndo)
     actionBar.addView(btnRedo)
+    actionBar.addView(btnIncText)
+    actionBar.addView(btnDecText)
         actionBar.addView(btnClose)
         rootLayout.addView(actionBar)
 
@@ -730,7 +753,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val summaryLabel = TextView(requireContext()).apply {
             text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
             setPadding(24, 8, 24, 4)
-            textSize = 13f
+            textSize = applyScale(13f)
             setTypeface(null, Typeface.BOLD)
         }
 
@@ -1031,7 +1054,7 @@ class ProtocolValidationDialog : DialogFragment() {
     ): TextView {
         return TextView(requireContext()).apply {
             text = headerText
-            textSize = 16f
+            textSize = applyScale(16f)
             setTypeface(null, Typeface.BOLD)
             this.gravity = gravity
             setPadding(24, 16, 24, 16)
@@ -1046,7 +1069,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun createLineNumberCell(lineNumber: Int): TextView {
         return TextView(requireContext()).apply {
             text = lineNumber.toString()
-            textSize = 12f
+            textSize = applyScale(12f)
             setSingleLine(true)
             gravity = Gravity.END
             layoutParams =
@@ -1064,7 +1087,7 @@ class ProtocolValidationDialog : DialogFragment() {
     ): TextView {
         return TextView(requireContext()).apply {
             this.text = text
-            textSize = 14f
+            textSize = applyScale(14f)
             isSingleLine = false
             setHorizontallyScrolling(false)
             gravity = Gravity.START
@@ -1763,7 +1786,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val spinner = Spinner(ctx).apply {
             adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, commands)
         }
-        inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD) })
+    inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
         inner.addView(spinner)
 
         fun edit(hintRes: Int): EditText = EditText(ctx).apply { hint = getString(hintRes); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
@@ -1780,7 +1803,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val inputFields = edit(R.string.hint_input_fields)
 
         val paramGroup = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(0,16,0,0) }
-        inner.addView(TextView(ctx).apply { text = getString(R.string.label_parameters); setTypeface(null, Typeface.BOLD) })
+    inner.addView(TextView(ctx).apply { text = getString(R.string.label_parameters); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
         inner.addView(paramGroup)
 
         fun refreshParams() {
@@ -1966,13 +1989,14 @@ class ProtocolValidationDialog : DialogFragment() {
         inner.addView(TextView(ctx).apply { 
             text = getString(R.string.error_unrecognized_command_title)
             setTypeface(null, Typeface.BOLD)
-            textSize = 16f
+            textSize = applyScale(16f)
         })
 
         inner.addView(TextView(ctx).apply { 
             text = getString(R.string.action_edit_raw_line)
             setPadding(0,16,0,8)
             setTypeface(null, Typeface.BOLD)
+            textSize = applyScale(14f)
         })
 
         val editText = EditText(ctx).apply {
