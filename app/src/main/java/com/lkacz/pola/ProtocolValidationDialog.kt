@@ -828,13 +828,55 @@ class ProtocolValidationDialog : DialogFragment() {
                 val raw = allLines[originalLineNumber - 1]
                 val firstToken = raw.split(';').firstOrNull()?.trim().orEmpty()
                 if (!recognizedCommands.contains(firstToken.uppercase()) && !firstToken.equals("END", true)) {
+                    val lineIndex = originalLineNumber - 1
+                    val options = listOf(
+                        getString(R.string.action_edit_raw_line),
+                        getString(R.string.action_delete_command),
+                        getString(R.string.action_move_up),
+                        getString(R.string.action_move_down),
+                        getString(android.R.string.cancel)
+                    )
                     AlertDialog.Builder(requireContext())
                         .setTitle(getString(R.string.error_unrecognized_command_title))
-                        .setMessage(getString(R.string.error_unrecognized_command_message))
-                        .setPositiveButton(R.string.action_edit_raw_line) { _, _ ->
-                            showEditLineDialog(originalLineNumber - 1)
+                        .setItems(options.toTypedArray()) { dialog, which ->
+                            when (which) {
+                                0 -> { // Edit
+                                    showEditLineDialog(lineIndex)
+                                }
+                                1 -> { // Delete
+                                    if (lineIndex in allLines.indices) {
+                                        pushUndoState()
+                                        allLines.removeAt(lineIndex)
+                                        hasUnsavedChanges = true
+                                        revalidateAndRefreshUI()
+                                        Toast.makeText(requireContext(), getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                2 -> { // Move Up
+                                    if (lineIndex > 0) {
+                                        pushUndoState()
+                                        java.util.Collections.swap(allLines, lineIndex, lineIndex - 1)
+                                        hasUnsavedChanges = true
+                                        revalidateAndRefreshUI()
+                                        Toast.makeText(requireContext(), getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(requireContext(), getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                3 -> { // Move Down
+                                    if (lineIndex < allLines.lastIndex) {
+                                        pushUndoState()
+                                        java.util.Collections.swap(allLines, lineIndex, lineIndex + 1)
+                                        hasUnsavedChanges = true
+                                        revalidateAndRefreshUI()
+                                        Toast.makeText(requireContext(), getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(requireContext(), getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                else -> dialog.dismiss()
+                            }
                         }
-                        .setNegativeButton(android.R.string.cancel, null)
                         .show()
                 } else {
                     showInsertCommandDialog(insertAfterLine = originalLineNumber - 1, editLineIndex = originalLineNumber - 1)
