@@ -778,11 +778,16 @@ class ProtocolValidationDialog : DialogFragment() {
                     TableLayout.LayoutParams.WRAP_CONTENT,
                 )
             isStretchAllColumns = false
-            setColumnStretchable(1, true)
+            // Columns: 0=drag handle,1=line#,2=command,3=issues
             setColumnStretchable(2, true)
+            setColumnStretchable(3, true)
             setPadding(8, 8, 8, 8)
 
             val headerRow = TableRow(context)
+            // Empty placeholder for drag handle column
+            headerRow.addView(TextView(context).apply {
+                text = ""; width = (24 * resources.displayMetrics.density).toInt()
+            })
             headerRow.addView(createHeaderCell("Line", Gravity.END))
             headerRow.addView(createHeaderCell("Command", Gravity.START))
             headerRow.addView(createHeaderCell("Error(s)", Gravity.START))
@@ -792,7 +797,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun buildContentTable(): TableLayout {
         val context = requireContext()
-        val tableLayout =
+    val tableLayout =
             TableLayout(context).apply {
                 layoutParams =
                     TableLayout.LayoutParams(
@@ -800,8 +805,9 @@ class ProtocolValidationDialog : DialogFragment() {
                         TableLayout.LayoutParams.WRAP_CONTENT,
                     )
                 isStretchAllColumns = false
-                setColumnStretchable(1, true)
-                setColumnStretchable(2, true)
+        // Columns: 0=drag handle,1=line#,2=command,3=issues
+        setColumnStretchable(2, true)
+        setColumnStretchable(3, true)
                 setPadding(8, 8, 8, 8)
             }
 
@@ -849,8 +855,9 @@ class ProtocolValidationDialog : DialogFragment() {
             val dragHandle = ImageView(context).apply {
                 setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_drag_handle))
                 contentDescription = getString(R.string.cd_drag_handle)
-                val p = 16
-                setPadding(p,p,p,p)
+                val sizePx = (32 * resources.displayMetrics.density).toInt()
+                layoutParams = TableRow.LayoutParams(sizePx, TableRow.LayoutParams.MATCH_PARENT)
+                setPadding(4,4,4,4)
                 setOnLongClickListener {
                     if (!searchQuery.isNullOrBlank() || filterOption != FilterOption.HIDE_COMMENTS) {
                         Toast.makeText(context, getString(R.string.toast_drag_disabled), Toast.LENGTH_SHORT).show(); return@setOnLongClickListener true
