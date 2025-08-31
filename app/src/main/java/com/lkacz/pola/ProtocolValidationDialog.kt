@@ -349,16 +349,23 @@ class ProtocolValidationDialog : DialogFragment() {
     }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
+    // Order: load, save, new, add, A+, A-, undo, redo, close
     actionBar.addView(btnLoad)
     actionBar.addView(btnSave)
     actionBar.addView(btnNew)
     actionBar.addView(btnAdd)
-    actionBar.addView(btnUndo)
-    actionBar.addView(btnRedo)
     actionBar.addView(btnIncText)
     actionBar.addView(btnDecText)
-        actionBar.addView(btnClose)
-        rootLayout.addView(actionBar)
+    actionBar.addView(btnUndo)
+    actionBar.addView(btnRedo)
+    actionBar.addView(btnClose)
+        // Wrap in horizontal scroll so all icons remain reachable on small screens
+        val actionScroll = HorizontalScrollView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            isHorizontalScrollBarEnabled = false
+            addView(actionBar)
+        }
+        rootLayout.addView(actionScroll)
 
         val searchRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
