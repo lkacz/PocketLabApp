@@ -107,4 +107,7 @@
     <string name="cd_increase_text_size">Increase text size</string>
     <string name="cd_decrease_text_size">Decrease text size</string>
     <string name="toast_text_size_limit">Text size limit reached</string>
+    <string name="cd_overflow_menu">More actions</string>
+    <string name="action_increase">Increase Text</string>
+    <string name="action_decrease">Decrease Text</string>
 </resources>

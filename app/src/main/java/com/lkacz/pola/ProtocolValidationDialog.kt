@@ -331,20 +331,40 @@ class ProtocolValidationDialog : DialogFragment() {
     btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
     val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
     val btnRedo = barIcon(R.drawable.ic_redo, getString(R.string.cd_redo)) { performRedo() }
-    val btnIncText = barIcon(R.drawable.ic_text_increase, getString(R.string.cd_increase_text_size)) {
-        if (textScale < maxScale) {
-            textScale = (textScale + 0.1f).coerceAtMost(maxScale)
-            revalidateAndRefreshUI()
-        } else {
-            Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
-        }
-    }
-    val btnDecText = barIcon(R.drawable.ic_text_decrease, getString(R.string.cd_decrease_text_size)) {
-        if (textScale > minScale) {
-            textScale = (textScale - 0.1f).coerceAtLeast(minScale)
-            revalidateAndRefreshUI()
-        } else {
-            Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+    // Overflow menu button
+    val btnMore = ImageButton(requireContext()).apply {
+        setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_more_vert))
+        val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
+        val typed = requireContext().obtainStyledAttributes(attrs)
+        background = typed.getDrawable(0)
+        typed.recycle()
+        contentDescription = getString(R.string.cd_overflow_menu)
+        scaleType = ImageView.ScaleType.CENTER_INSIDE
+        val size = (48 * resources.displayMetrics.density).toInt()
+        layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8,0,8,0) }
+        setPadding(8,8,8,8)
+        try {
+            val tv = androidx.appcompat.view.ContextThemeWrapper(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3)
+            val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
+            val a = tv.obtainStyledAttributes(colorAttr)
+            val color = a.getColor(0, 0xFF444444.toInt())
+            a.recycle()
+            imageTintList = android.content.res.ColorStateList.valueOf(color)
+        } catch (_: Exception) { }
+        setOnClickListener {
+            val popup = PopupMenu(requireContext(), this)
+            popup.menu.add(0, 1, 0, getString(R.string.action_new_protocol))
+            popup.menu.add(0, 2, 1, getString(R.string.action_increase) + " +")
+            popup.menu.add(0, 3, 2, getString(R.string.action_decrease) + " -")
+            popup.setOnMenuItemClickListener { mi ->
+                when (mi.itemId) {
+                    1 -> confirmNewProtocol()
+                    2 -> if (textScale < maxScale) { textScale = (textScale + 0.1f).coerceAtMost(maxScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                    3 -> if (textScale > minScale) { textScale = (textScale - 0.1f).coerceAtLeast(minScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                }
+                true
+            }
+            popup.show()
         }
     }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
@@ -352,12 +372,10 @@ class ProtocolValidationDialog : DialogFragment() {
     // Order: load, save, new, add, A+, A-, undo, redo, close
     actionBar.addView(btnLoad)
     actionBar.addView(btnSave)
-    actionBar.addView(btnNew)
     actionBar.addView(btnAdd)
-    actionBar.addView(btnIncText)
-    actionBar.addView(btnDecText)
     actionBar.addView(btnUndo)
     actionBar.addView(btnRedo)
+    actionBar.addView(btnMore)
     actionBar.addView(btnClose)
         // Wrap in horizontal scroll so all icons remain reachable on small screens
         val actionScroll = HorizontalScrollView(requireContext()).apply {
