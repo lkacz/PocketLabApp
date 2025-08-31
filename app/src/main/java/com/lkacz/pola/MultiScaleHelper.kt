@@ -56,10 +56,8 @@ object MultiScaleHelper {
         // Decide the directive
         val newDirective = if (isRandom) "SCALE[RANDOMIZED]" else "SCALE"
 
-        // The prefix is everything up to index=3 (directive + header + body)
-        // The suffix is everything after index=3, i.e. the responses
-        val prefix = parts.take(3).joinToString(";")
-        val suffix = if (parts.size > 4) parts.drop(4).joinToString(";") else ""
+    // The suffix is everything after index=3, i.e. the responses (index 4+)
+    val suffix = if (parts.size > 4) parts.drop(4).joinToString(";") else ""
 
         return if (isRandom) {
             /*

@@ -29,9 +29,22 @@ powershell -ExecutionPolicy Bypass -File scripts/run-app.ps1
 ## Debug Tooling
 - StrictMode enabled in debug to catch main-thread and VM violations.
 - Timber for structured logging.
-- LeakCanary (debug only) will show a notification if a leak is detected.
 - PerfTimer utility (`PerfTimer.track("Label") { ... }`) for quick ad-hoc performance timing in logs.
 - Dependency updates: run `./gradlew.bat :app:dependencyUpdates` to see newer versions.
+
+### Developer Mode & Feature Flags
+End-user UI is kept clean. A hidden developer mode (7 rapid taps on the designated area in the start screen) reveals:
+- Feature Flags dialog (persisted via SharedPreferences)
+- Dev Info dialog (environment + versions)
+Long-press the same area to disable developer mode. Preview Protocol is always available (not gated) for broader usability.
+
+### Protocol Validation & Transformation
+The app includes a protocol preview & validation dialog:
+- Performs deterministic transformation (merging multiline INPUTFIELD blocks, expanding SCALE / SCALE[RANDOMIZED], handling RANDOMIZE_ON blocks)
+- Pure validator (`ProtocolValidator`) enabling unit tests and consistent UI results
+- Validation features: caching, performance timing (PerfTimer), issue navigation (Prev/Next error buttons), summary counts (lines / errors / warnings), exportable textual report
+- Rules validated: command recognition, label duplication, randomization pairing, TIMER structure & ranges, INPUTFIELD structure (including randomized minimum fields), alignment enum values, size positivity & reasonable upper bounds, hex color format (#RRGGBB / #AARRGGBB)
+Add further rules + tests in `ProtocolValidatorTest.kt` before extending protocol syntax.
 
 ## VS Code Tasks
 Press `Ctrl+Shift+B` to see tasks once `.vscode/tasks.json` is present. Includes run-app, logcat, and deprecation check.
