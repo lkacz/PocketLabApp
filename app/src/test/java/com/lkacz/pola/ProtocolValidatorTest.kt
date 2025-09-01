@@ -62,4 +62,36 @@ class ProtocolValidatorTest {
         val res = validator.validate(listOf("TIMER;H;B;5000;GO"))
         assertTrue(res.first().warning.contains("over 3600"))
     }
+
+    @Test
+    fun study_id_duplicate_and_missing_value() {
+        val res = validator.validate(listOf(
+            "STUDY_ID;", // missing value
+            "STUDY_ID;ABC123" // duplicate
+        ))
+        assertTrue(res[0].error.contains("missing"))
+        assertTrue(res[1].error.contains("Duplicate"))
+    }
+
+    @Test
+    fun randomize_off_without_on_errors() {
+        val res = validator.validate(listOf("RANDOMIZE_OFF"))
+        assertTrue(res[0].error.contains("without matching"))
+    }
+
+    @Test
+    fun stray_semicolon_detected() {
+        val res = validator.validate(listOf("LABEL;A;"))
+        assertTrue(res[0].error.contains("stray semicolon"))
+    }
+
+    @Test
+    fun eight_digit_color_and_large_size_warning() {
+        val res = validator.validate(listOf(
+            "BODY_COLOR;#FF112233",
+            "BODY_SIZE;250" // should warn as unusually large
+        ))
+        assertTrue("8-digit color should be accepted", res[0].error.isEmpty())
+        assertTrue(res[1].warning.contains("unusually large"))
+    }
 }
