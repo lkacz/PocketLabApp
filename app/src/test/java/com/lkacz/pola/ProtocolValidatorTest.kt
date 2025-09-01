@@ -124,4 +124,13 @@ class ProtocolValidatorTest {
     val res = validator.validate(listOf("GOTO"))
     assertTrue(res[0].error.contains("missing target"))
     }
+
+    @Test
+    fun goto_with_valid_label_has_no_error() {
+        val res = validator.validate(listOf(
+            "LABEL;DEST",
+            "GOTO;DEST"
+        ))
+        assertTrue(res[1].error.isEmpty())
+    }
 }
