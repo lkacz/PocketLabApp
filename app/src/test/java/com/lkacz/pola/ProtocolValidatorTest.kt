@@ -122,8 +122,6 @@ class ProtocolValidatorTest {
     @Test
     fun goto_without_label_is_error() {
     val res = validator.validate(listOf("GOTO"))
-    // With no semicolon parts, command token is GOTO and is recognized, but missing target label not explicitly validated in pure validator yet.
-    // Pending enhancement: specific error. For now ensure no warning and no crash, and we record zero-length error (accepted current behavior).
-    assertTrue(res[0].error.isEmpty())
+    assertTrue(res[0].error.contains("missing target"))
     }
 }

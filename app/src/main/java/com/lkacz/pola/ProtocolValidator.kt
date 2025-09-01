@@ -93,6 +93,16 @@ class ProtocolValidator {
                     if (others.isNotEmpty()) err=append(err,"Label duplicated with line(s) ${others.joinToString(", ")}")
                 }
             }
+            "GOTO" -> {
+                val target = parts.getOrNull(1)?.trim().orEmpty()
+                if (target.isEmpty()) {
+                    err = append(err, "GOTO missing target label")
+                } else {
+                    if (!labels.containsKey(target)) {
+                        err = append(err, "GOTO target label '$target' not defined")
+                    }
+                }
+            }
             "INSTRUCTION" -> if (line.count{it==';'}!=3) err=append(err,"INSTRUCTION must have exactly 3 semicolons (4 segments)")
             "INPUTFIELD","INPUTFIELD[RANDOMIZED]" -> {
                 if (parts.size<4) err=append(err,"$command must have at least 4 segments")
