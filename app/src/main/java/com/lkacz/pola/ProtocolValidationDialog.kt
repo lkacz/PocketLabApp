@@ -835,6 +835,51 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(row)
         }
 
+        // Quick-fix row for stray semicolons (line-level errors) if any present
+        val hasStraySemicolons = validationCache.any { it.error.contains("stray semicolon", ignoreCase = true) }
+        if (hasStraySemicolons) {
+            val fixRow = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFF9E0"))
+                setPadding(16, 8, 16, 8)
+            }
+            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val msg = TextView(requireContext()).apply {
+                text = "Stray semicolons detected at line ends."
+                setTextColor(Color.parseColor("#AA8800"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+            val btn = Button(requireContext()).apply {
+                text = "Fix stray semicolons"
+                setOnClickListener {
+                    pushUndoState()
+                    var modified = false
+                    for (i in allLines.indices) {
+                        val raw = allLines[i]
+                        if (raw.trim().endsWith(";")) {
+                            val newLine = raw.replace(Regex(";\\s*$"), "")
+                            if (newLine != raw) {
+                                allLines[i] = newLine
+                                modified = true
+                            }
+                        }
+                    }
+                    if (modified) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed stray semicolons", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            layout.addView(msg)
+            layout.addView(btn)
+            fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
+            contentTable.addView(fixRow)
+        }
+
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)
