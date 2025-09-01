@@ -17,9 +17,11 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$AvdName = 'Medium_Phone_API_35',
+  [string]$AvdName = 'Pixel_8_Pro',
   [switch]$NoWipe,
-  [switch]$JustInstall
+  [switch]$JustInstall,
+  [switch]$ColdBoot,          # Force a cold boot (-wipe-data) on first start
+  [string]$LaunchActivity     # Optional fully qualified activity name (e.g. com.lkacz.pola/.MainActivity or .MainActivity)
 )
 
 $ErrorActionPreference = 'Stop'
@@ -62,29 +64,66 @@ Write-Host "ANDROID_SDK_ROOT=$env:ANDROID_SDK_ROOT"
 
 # Helper: wait for device boot
 function Wait-ForDevice{
-  param([int]$TimeoutSec=480)
+  param([int]$TimeoutSec=420)
   $sw = [Diagnostics.Stopwatch]::StartNew()
-  Write-Host "Waiting for emulator to come online..."
+  Write-Host "Waiting for emulator to come online (timeout=${TimeoutSec}s)..."
+  $lastPhase = ''
   while($sw.Elapsed.TotalSeconds -lt $TimeoutSec){
-    $state = & adb get-state 2>$null
+  $state = ''
+  try { $state = (& adb get-state 2>$null) } catch { $state = '' }
     if($state -eq 'device'){
       $boot = (& adb shell getprop sys.boot_completed 2>$null).Trim()
-      if($boot -eq '1'){ Write-Host 'Device ready.'; return }
-    }
-    Start-Sleep -Seconds 5
+      $unlock = (& adb shell getprop dev.bootcomplete 2>$null).Trim()
+      if($boot -eq '1' -and $unlock -eq '1'){
+        Write-Host "Device ready in $([int]$sw.Elapsed.TotalSeconds)s." -ForegroundColor Green
+        return
+      } elseif($lastPhase -ne 'framework'){ Write-Host 'ADB device detected; waiting for framework...' ; $lastPhase='framework' }
+    } elseif($lastPhase -ne 'adb'){ Write-Host 'ADB offline; polling...' ; $lastPhase='adb' }
+    Start-Sleep -Seconds 3
   }
   throw "Emulator failed to boot within $TimeoutSec seconds"
 }
 
-# 4. Start emulator unless already running
+function Start-Emulator([string]$Name, [switch]$Cold, [switch]$SkipSnapshots){
+  Write-Section "Starting emulator $Name";
+  $emuArgs = @('-avd', $Name, '-netdelay','none','-netspeed','full')
+  if($Cold){ $emuArgs += '-wipe-data' }
+  if($SkipSnapshots){ $emuArgs += @('-no-snapshot-load','-no-snapshot-save') }
+  # Ensure logs directory
+  $logDir = Join-Path $Root 'logs'
+  if(-not (Test-Path $logDir)){ New-Item -ItemType Directory -Path $logDir | Out-Null }
+  $timestamp = (Get-Date -Format 'yyyyMMdd_HHmmss')
+  $stdoutLog = Join-Path $logDir "emulator-${Name}-${timestamp}.out.log"
+  $stderrLog = Join-Path $logDir "emulator-${Name}-${timestamp}.err.log"
+  Write-Host "StdOut: $stdoutLog"; Write-Host "StdErr: $stderrLog"
+  Start-Process -FilePath 'emulator' -ArgumentList $emuArgs -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog | Out-Null
+  Start-Sleep -Seconds 4
+}
+
+# 4. Start emulator unless already running; include one automatic retry with cold boot on failure
 $devices = (& adb devices) -join "\n"
-if($devices -notmatch 'emulator-'){ if(-not $JustInstall){
-    Write-Section "Starting emulator $AvdName"
-  $emuArgs = @('-avd', $AvdName)
-  if(-not $NoWipe){ $emuArgs += '-no-snapshot-load' }
-  Start-Process -FilePath 'emulator' -ArgumentList $emuArgs | Out-Null
-    Wait-ForDevice
-  } else { throw 'No emulator/device connected and JustInstall specified.' }
+if($devices -notmatch 'emulator-'){
+  if($JustInstall){ throw 'No emulator/device connected and JustInstall specified.' }
+  $attempt = 1
+  $maxAttempts = 2
+  $coldFirst = $ColdBoot.IsPresent
+  while($attempt -le $maxAttempts){
+    $useCold = $coldFirst -or ($attempt -gt 1)
+    Start-Emulator -Name $AvdName -Cold:($useCold) -SkipSnapshots:(!$NoWipe)
+    try {
+      Wait-ForDevice
+      break
+    } catch {
+      if($attempt -lt $maxAttempts){
+        Write-Host "Emulator start attempt $attempt failed: $($_.Exception.Message). Retrying with cold boot..." -ForegroundColor Yellow
+        # Kill any stray emulator/qemu processes before retry
+        Get-Process | Where-Object { $_.Name -match 'emulator|qemu' } | ForEach-Object { try { $_.Kill() } catch {} }
+        Start-Sleep -Seconds 5
+        $attempt++
+        continue
+      } else { throw }
+    }
+  }
 } else {
   Write-Host 'Emulator already running.'
   Wait-ForDevice
@@ -105,6 +144,29 @@ Write-Section 'Installing APK'
 
 Write-Section 'Launching App'
 $pkg = 'com.lkacz.pola'
+
+# Resolve component if LaunchActivity provided
+$component = ''
+if($LaunchActivity){
+  if($LaunchActivity -match '/'){ # already a component
+    $component = $LaunchActivity
+  } elseif($LaunchActivity.StartsWith('.')){ # relative class
+    $component = "$pkg/$pkg$LaunchActivity"
+  } elseif($LaunchActivity -like 'com.*'){ # fully qualified class, missing slash
+    $component = "$pkg/$LaunchActivity"
+  } else { # simple class name
+    $component = "$pkg/.$LaunchActivity"
+  }
+}
+
+if($component){
+  Write-Host "Attempting explicit start: $component"
+  $res = & adb shell am start -W -n $component 2>&1
+  Write-Host $res
+  if($LASTEXITCODE -eq 0 -and $res -match 'Status: ok'){ Write-Section 'Done'; return }
+  Write-Host 'Explicit start failed; falling back to monkey.' -ForegroundColor Yellow
+}
+
 & adb shell monkey -p $pkg -c android.intent.category.LAUNCHER 1 | Write-Host
 
 Write-Section 'Done'

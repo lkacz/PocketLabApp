@@ -321,12 +321,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
             }
 
+    // Load & Save actions moved to overflow menu (keep references for potential future reinstatement)
     btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
-        btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) {
-            // Always ask for a name (acts like Save As) for safety
-            val defaultName = getSuggestedFileName()
-            createDocumentLauncher.launch(defaultName)
-        }
+        btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
     btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
     btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
     val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
@@ -352,15 +349,22 @@ class ProtocolValidationDialog : DialogFragment() {
             imageTintList = android.content.res.ColorStateList.valueOf(color)
         } catch (_: Exception) { }
         setOnClickListener {
-            val popup = PopupMenu(requireContext(), this)
-            popup.menu.add(0, 1, 0, getString(R.string.action_new_protocol))
-            popup.menu.add(0, 2, 1, getString(R.string.action_increase) + " +")
-            popup.menu.add(0, 3, 2, getString(R.string.action_decrease) + " -")
+            val popup = PopupMenu(requireContext(), this).apply {
+                menu.add(0, 1, 0, getString(R.string.action_load_protocol))
+                menu.add(0, 2, 1, getString(R.string.action_save_protocol))
+                menu.add(0, 3, 2, getString(R.string.action_save_as_protocol))
+                menu.add(0, 4, 3, getString(R.string.action_new_protocol))
+                menu.add(0, 5, 4, getString(R.string.action_increase) + " +")
+                menu.add(0, 6, 5, getString(R.string.action_decrease) + " -")
+            }
             popup.setOnMenuItemClickListener { mi ->
                 when (mi.itemId) {
-                    1 -> confirmNewProtocol()
-                    2 -> if (textScale < maxScale) { textScale = (textScale + 0.1f).coerceAtMost(maxScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
-                    3 -> if (textScale > minScale) { textScale = (textScale - 0.1f).coerceAtLeast(minScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                    1 -> confirmLoadProtocol()
+                    2 -> confirmSaveDialog()
+                    3 -> { val defaultName = getSuggestedFileName(); createDocumentLauncher.launch(defaultName) }
+                    4 -> confirmNewProtocol()
+                    5 -> if (textScale < maxScale) { textScale = (textScale + 0.1f).coerceAtMost(maxScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                    6 -> if (textScale > minScale) { textScale = (textScale - 0.1f).coerceAtLeast(minScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
                 }
                 true
             }
@@ -369,9 +373,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
-    // Order: load, save, new, add, A+, A-, undo, redo, close
-    actionBar.addView(btnLoad)
-    actionBar.addView(btnSave)
+    // Slim toolbar: only core edit actions; load/save now under overflow menu
     actionBar.addView(btnAdd)
     actionBar.addView(btnUndo)
     actionBar.addView(btnRedo)
