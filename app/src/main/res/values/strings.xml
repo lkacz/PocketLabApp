@@ -117,4 +117,5 @@
     <string name="error_duplicate_study_id">STUDY_ID already defined</string>
     <string name="error_randomize_off_without_on">RANDOMIZE_OFF without prior RANDOMIZE_ON</string>
     <string name="error_randomize_on_nested">Already inside RANDOMIZE_ON block</string>
+    <string name="action_fix_duplicate_study_id">Fix duplicate STUDY_ID</string>
 </resources>

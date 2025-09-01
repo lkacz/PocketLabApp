@@ -797,6 +797,31 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 innerLayout.addView(fixBtn)
             }
+            if (globalErrors.any { it.contains("Duplicate STUDY_ID", ignoreCase = true) }) {
+                val fixStudy = Button(requireContext()).apply {
+                    text = getString(R.string.action_fix_duplicate_study_id)
+                    setOnClickListener {
+                        pushUndoState()
+                        // Keep first STUDY_ID, remove subsequent ones
+                        var seen = false
+                        val iterator = allLines.listIterator()
+                        while (iterator.hasNext()) {
+                            val line = iterator.next()
+                            if (line.trim().uppercase().startsWith("STUDY_ID;")) {
+                                if (!seen) {
+                                    seen = true
+                                } else {
+                                    iterator.remove()
+                                }
+                            }
+                        }
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed duplicate STUDY_ID", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                innerLayout.addView(fixStudy)
+            }
             row.addView(innerLayout, TableRow.LayoutParams().apply { span = 3 })
             contentTable.addView(row)
         }
