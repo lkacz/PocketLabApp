@@ -64,4 +64,32 @@ class QuickFixesTest {
         assertTrue(res.lines[1].startsWith("SCALE;Header;Body;1;"))
         assertTrue(res.lines[2].startsWith("INPUTFIELD;H;B;field1;"))
     }
+
+    @Test
+    fun applies_safe_auto_fixes_aggregate() {
+        val lines = listOf(
+            "LABEL;A;",           // stray semicolon
+            "BODY_COLOR;#abc",    // short color
+            "TIMER;H;B;-5;Go",    // bad timer value
+            "INSTRUCTION;OnlyHeader", // malformed instruction
+            "LABEL;A",            // duplicate label
+            "GOTO;MISSING"        // missing target label
+        )
+        val agg = QuickFixes.applySafeAutoFixes(lines)
+        assertTrue(agg.totalChanges > 0)
+        // Ensure each category accounted for (some maybe zero if input not triggering all)
+        assertTrue(agg.breakdown.containsKey("straySemicolons"))
+        assertTrue(agg.breakdown.containsKey("colors"))
+        assertTrue(agg.breakdown.containsKey("timers"))
+        assertTrue(agg.breakdown.containsKey("content"))
+        assertTrue(agg.breakdown.containsKey("duplicateLabels"))
+        assertTrue(agg.breakdown.containsKey("missingLabels"))
+        // After fixes, ensure duplicate label removed
+        val labelCountA = agg.lines.count { it.startsWith("LABEL;A") }
+        assertEquals(1, labelCountA)
+        // Missing label inserted after GOTO
+        val idxGoto = agg.lines.indexOfFirst { it.startsWith("GOTO;MISSING") }
+        val idxInserted = agg.lines.indexOfFirst { it.startsWith("LABEL;MISSING") }
+        assertEquals(idxGoto + 1, idxInserted)
+    }
 }
