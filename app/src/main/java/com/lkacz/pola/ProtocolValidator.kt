@@ -32,6 +32,7 @@ class ProtocolValidator {
         val labelOccurrences = findLabelOccurrences(lines)
         var randomizationLevel = 0
         var lastCommand: String? = null
+    var studyIdSeen = false
         val results = mutableListOf<LineResult>()
         lines.forEachIndexed { idx, raw ->
             val trimmed = raw.trim()
@@ -53,6 +54,16 @@ class ProtocolValidator {
                 }
                 "RANDOMIZE_OFF" -> {
                     if (randomizationLevel <= 0) error = append(error, "RANDOMIZE_OFF without matching RANDOMIZE_ON") else randomizationLevel--
+                }
+                "STUDY_ID" -> {
+                    if (studyIdSeen) {
+                        error = append(error, "Duplicate STUDY_ID")
+                    } else {
+                        studyIdSeen = true
+                        if (parts.getOrNull(1)?.trim().isNullOrEmpty()) {
+                            error = append(error, "STUDY_ID missing required value")
+                        }
+                    }
                 }
             }
             if (!recognized) {
