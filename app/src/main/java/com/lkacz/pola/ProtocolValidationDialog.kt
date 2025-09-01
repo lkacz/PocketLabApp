@@ -943,6 +943,63 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(gotoFixRow)
         }
 
+        // Quick-fix row for malformed TIMER lines (segment count or invalid time value)
+        val hasTimerErrors = validationCache.any { it.error.contains("TIMER must") }
+        if (hasTimerErrors) {
+            val timerFixRow = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#E8F4FF"))
+                setPadding(16,8,16,8)
+            }
+            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val msg = TextView(requireContext()).apply {
+                text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"
+                setTextColor(Color.parseColor("#004B78"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+            val btn = Button(requireContext()).apply {
+                text = "Fix TIMER lines"
+                setOnClickListener {
+                    pushUndoState()
+                    var fixed = 0
+                    for (i in allLines.indices) {
+                        val raw = allLines[i]
+                        val t = raw.trim()
+                        if (t.uppercase().startsWith("TIMER")) {
+                            val parts = t.split(';').toMutableList()
+                            if (parts.isNotEmpty() && parts[0].uppercase() == "TIMER") {
+                                // Ensure at least 5 segments: TIMER;H;B;time;CONT
+                                while (parts.size < 5) parts.add("")
+                                // Assign defaults if blank
+                                val header = parts.getOrNull(1)?.takeIf { it.isNotBlank() } ?: "Header"
+                                val body = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Body"
+                                val timeStrRaw = parts.getOrNull(3)?.trim().orEmpty()
+                                val timeVal = timeStrRaw.toIntOrNull()?.takeIf { it >= 0 } ?: 60
+                                val cont = parts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "Continue"
+                                val normalized = "TIMER;$header;$body;$timeVal;$cont"
+                                if (normalized != raw) {
+                                    allLines[i] = normalized
+                                    fixed++
+                                }
+                            }
+                        }
+                    }
+                    if (fixed > 0) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Fixed $fixed TIMER line(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            lay.addView(msg)
+            lay.addView(btn)
+            timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
+            contentTable.addView(timerFixRow)
+        }
+
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)
