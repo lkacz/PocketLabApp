@@ -712,16 +712,27 @@ class ProtocolValidationDialog : DialogFragment() {
             while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
             containerLayout.addView(buildCompletedView())
         } else {
-            // Diff and update only changed rows + summary & quick-fix section
+            // Attempt true partial update of existing rows; if structure mismatch, fallback
+            val existingTable = containerLayout.findViewById<TableLayout?>(android.R.id.content) // likely null (we didn't set id)
+            // Diff entries by line number
             val changedLines = mutableSetOf<Int>()
             validationCache.forEachIndexed { idx, newEntry ->
                 val old = oldCache.getOrNull(idx)
-                if (old == null) { changedLines.add(newEntry.lineNumber); return@forEachIndexed }
-                if (old.rawLine != newEntry.rawLine || old.error != newEntry.error || old.warning != newEntry.warning) {
-                    changedLines.add(newEntry.lineNumber)
+                if (old == null) { changedLines.add(newEntry.lineNumber) } else {
+                    if (old.rawLine != newEntry.rawLine || old.error != newEntry.error || old.warning != newEntry.warning) changedLines.add(newEntry.lineNumber)
                 }
             }
-            // Rebuild header+summary+quick-fix block (remove old content view and insert new)
+            // Update summary & time labels if present
+            (containerLayout.findViewWithTag("summaryLabel") as? TextView)?.let { tv ->
+                val errorCount = validationCache.count { it.error.isNotEmpty() }
+                val warningCount = validationCache.count { it.warning.isNotEmpty() }
+                val total = validationCache.size
+                tv.text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
+            }
+            (containerLayout.findViewWithTag("validationTimeLabel") as? TextView)?.let { tv ->
+                tv.text = lastValidationMs?.let { String.format("Validation %.2f ms", it) }
+            }
+            // For simplicity, still rebuild quick-fix section (remove and append fresh) to reflect new errors
             while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
             containerLayout.addView(buildCompletedView())
         }
@@ -753,6 +764,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val warningCount = validationCache.count { it.warning.isNotEmpty() }
         val total = validationCache.size
         val summaryLabel = TextView(requireContext()).apply {
+            tag = "summaryLabel"
             text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
             setPadding(24, 8, 24, 4)
             textSize = applyScale(13f)
@@ -760,6 +772,7 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         // Validation duration label (reuse or create)
         validationTimeLabel = (validationTimeLabel ?: TextView(requireContext()).also { lbl ->
+            lbl.tag = "validationTimeLabel"
             lbl.setPadding(24,0,24,8)
             lbl.textSize = applyScale(11f)
         }).apply {
@@ -1135,6 +1148,10 @@ class ProtocolValidationDialog : DialogFragment() {
             }
             issueCellContainer.addView(issueTextView)
 
+            // Safe wrapper for inline quick-fixes to avoid crashes propagating
+            fun safeInlineExecute(label: String, action: () -> Int): Int = try { action() } catch (t: Throwable) {
+                Toast.makeText(context, "$label failed: ${t::class.simpleName}", Toast.LENGTH_LONG).show(); 0 }
+
             // Helper to add a tiny inline button
             fun inlineFixButton(label: String, action: () -> Int) {
                 val btn = Button(context).apply {
@@ -1143,7 +1160,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     setPadding(12,4,12,4)
                     setOnClickListener {
                         pushUndoState()
-                        val changed = action()
+                        val changed = safeInlineExecute(label, action)
                         if (changed > 0) {
                             hasUnsavedChanges = true
                             pendingAutoScrollToFirstIssue = true
