@@ -792,221 +792,117 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(row)
         }
 
-        // Quick-fix row for stray semicolons (line-level errors) if any present
-        val hasStraySemicolons = validationCache.any { it.error.contains("stray semicolon", ignoreCase = true) }
-        if (hasStraySemicolons) {
-            val fixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFF9E0"))
-                setPadding(16, 8, 16, 8)
+        // Helper to add a standardized quick-fix row
+        fun addQuickFixRow(bg: String, textColor: String, message: String, buttonText: String, fixAction: () -> Int) {
+            val row = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor(bg))
+                setPadding(16,8,16,8)
             }
-            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Stray semicolons detected at line ends."
-                setTextColor(Color.parseColor("#AA8800"))
+            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val msgView = TextView(requireContext()).apply {
+                text = message
+                setTextColor(Color.parseColor(textColor))
                 setTypeface(null, Typeface.BOLD)
                 textSize = applyScale(13f)
             }
             val btn = Button(requireContext()).apply {
-                text = "Fix stray semicolons"
+                text = buttonText
                 setOnClickListener {
                     pushUndoState()
-                    val res = QuickFixes.removeStraySemicolons(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
+                    val changed = fixAction()
+                    if (changed > 0) {
                         hasUnsavedChanges = true
                         pendingAutoScrollToFirstIssue = true
                         revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Removed ${res.changedCount} stray semicolon(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "$buttonText applied: $changed change(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No changes applied", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
-            layout.addView(msg)
-            layout.addView(btn)
-            fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(fixRow)
+            lay.addView(msgView)
+            lay.addView(btn)
+            row.addView(lay, TableRow.LayoutParams().apply { span = 3 })
+            contentTable.addView(row)
         }
 
-        // Quick-fix row for duplicate LABEL lines (keep first, remove subsequent duplicates)
-        val hasDuplicateLabelErrors = validationCache.any { it.error.contains("Label duplicated", ignoreCase = true) }
-        if (hasDuplicateLabelErrors) {
-            val dupRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFEEEE"))
-                setPadding(16, 8, 16, 8)
+        // Stray semicolons
+        if (validationCache.any { it.error.contains("stray semicolon", true) }) {
+            addQuickFixRow(
+                bg = "#FFF9E0",
+                textColor = "#AA8800",
+                message = "Stray semicolons detected at line ends.",
+                buttonText = "Fix stray semicolons"
+            ) {
+                val res = QuickFixes.removeStraySemicolons(allLines); allLines = res.lines.toMutableList(); res.changedCount
             }
-            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"
-                setTextColor(Color.parseColor("#BB0000"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Fix duplicate LABELs"
-                setOnClickListener {
-                    pushUndoState()
-                    val res = QuickFixes.removeDuplicateLabels(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Removed ${res.changedCount} duplicate LABEL(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show()
-                }
-            }
-            layout.addView(msg)
-            layout.addView(btn)
-            dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(dupRow)
         }
 
-        // Quick-fix row for undefined GOTO targets: create missing LABEL lines above first GOTO reference
-        val undefinedGotoTargets = mutableSetOf<String>()
-        validationCache.forEach { entry ->
-            val err = entry.error
-            val match = Regex("GOTO target label '([^']+)' not defined").find(err)
-            if (match != null) undefinedGotoTargets.add(match.groupValues[1])
+        // Duplicate LABELs
+        if (validationCache.any { it.error.contains("Label duplicated", true) }) {
+            addQuickFixRow(
+                bg = "#FFEEEE",
+                textColor = "#BB0000",
+                message = "Duplicate LABEL definitions found.",
+                buttonText = "Fix duplicate LABELs"
+            ) {
+                val res = QuickFixes.removeDuplicateLabels(allLines); allLines = res.lines.toMutableList(); res.changedCount
+            }
         }
+
+        // Undefined GOTO targets
+        val undefinedGotoTargets = validationCache.mapNotNull { entry ->
+            Regex("GOTO target label '([^']+)' not defined").find(entry.error)?.groupValues?.get(1)
+        }.toSet()
         if (undefinedGotoTargets.isNotEmpty()) {
-            val gotoFixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFF1E0"))
-                setPadding(16,8,16,8)
+            addQuickFixRow(
+                bg = "#FFF1E0",
+                textColor = "#A65E00",
+                message = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}",
+                buttonText = "Insert missing LABELs"
+            ) {
+                val res = QuickFixes.insertMissingGotoLabels(allLines); allLines = res.lines.toMutableList(); res.changedCount
             }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"
-                setTextColor(Color.parseColor("#A65E00"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Insert missing LABELs"
-                setOnClickListener {
-                    pushUndoState()
-                    val res = QuickFixes.insertMissingGotoLabels(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Inserted ${res.changedCount} missing LABEL(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No LABELs inserted", Toast.LENGTH_SHORT).show()
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(gotoFixRow)
         }
 
-        // Quick-fix row for malformed TIMER lines (segment count or invalid time value)
-        val hasTimerErrors = validationCache.any { it.error.contains("TIMER must") }
-        if (hasTimerErrors) {
-            val timerFixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#E8F4FF"))
-                setPadding(16,8,16,8)
+        // Malformed TIMER
+        if (validationCache.any { it.error.contains("TIMER must") }) {
+            addQuickFixRow(
+                bg = "#E8F4FF",
+                textColor = "#004B78",
+                message = "Malformed TIMER command(s) detected.",
+                buttonText = "Fix TIMER lines"
+            ) {
+                val res = QuickFixes.normalizeTimerLines(allLines); allLines = res.lines.toMutableList(); res.changedCount
             }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"
-                setTextColor(Color.parseColor("#004B78"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Fix TIMER lines"
-                setOnClickListener {
-                    pushUndoState()
-                    val res = QuickFixes.normalizeTimerLines(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Fixed ${res.changedCount} TIMER line(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show()
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(timerFixRow)
         }
 
-        // Quick-fix row for color normalization (invalid hex colors or named colors)
+        // Color normalization (invalid hex formats)
         val hasColorErrors = validationCache.any { entry ->
             entry.error.contains("hex color", ignoreCase = true) || entry.error.contains("invalid color format", ignoreCase = true)
         }
         if (hasColorErrors) {
-            val colorFixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#EEF9F1"))
-                setPadding(16,8,16,8)
+            addQuickFixRow(
+                bg = "#EEF9F1",
+                textColor = "#166534",
+                message = "Some color values use unsupported formats (#RGB/#ARGB or named).",
+                buttonText = "Normalize Colors"
+            ) {
+                val res = QuickFixes.normalizeColors(allLines); allLines = res.lines.toMutableList(); res.changedCount
             }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Some color values use unsupported formats (#RGB/#ARGB or named). Normalize them?"
-                setTextColor(Color.parseColor("#166534"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Normalize Colors"
-                setOnClickListener {
-                    pushUndoState()
-                    val res = QuickFixes.normalizeColors(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Normalized ${res.changedCount} color value(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No color values normalized", Toast.LENGTH_SHORT).show()
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            colorFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(colorFixRow)
         }
-
-        // Quick-fix row for malformed content commands (INSTRUCTION / SCALE / INPUTFIELD variants)
         val malformedInstruction = validationCache.any { it.trimmedLine.uppercase().startsWith("INSTRUCTION") && it.error.contains("exactly 3 semicolons", true) }
         val malformedScale = validationCache.any { it.trimmedLine.uppercase().startsWith("SCALE") && it.error.contains("must have at least one parameter", true) }
         val malformedInput = validationCache.any { it.trimmedLine.uppercase().startsWith("INPUTFIELD") && it.error.contains("at least 4 segments", true) }
         if (malformedInstruction || malformedScale || malformedInput) {
-            val normRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#F2ECFF"))
-                setPadding(16,8,16,8)
+            addQuickFixRow(
+                bg = "#F2ECFF",
+                textColor = "#4A148C",
+                message = "Malformed content command(s) detected.",
+                buttonText = "Normalize Content Commands"
+            ) {
+                val res = QuickFixes.normalizeContentCommands(allLines); allLines = res.lines.toMutableList(); res.changedCount
             }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msgs = mutableListOf<String>()
-            if (malformedInstruction) msgs.add("INSTRUCTION")
-            if (malformedScale) msgs.add("SCALE/SCALE[RANDOMIZED]")
-            if (malformedInput) msgs.add("INPUTFIELD/INPUTFIELD[RANDOMIZED]")
-            val msg = TextView(requireContext()).apply {
-                text = "Malformed ${msgs.joinToString(", ")} command(s) detected. Normalize with placeholder segments?"
-                setTextColor(Color.parseColor("#4A148C"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Normalize Content Commands"
-                setOnClickListener {
-                    pushUndoState()
-                    val res = QuickFixes.normalizeContentCommands(allLines)
-                    allLines = res.lines.toMutableList()
-                    if (res.changedCount > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Normalized ${res.changedCount} content command(s)", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(requireContext(), "No content commands changed", Toast.LENGTH_SHORT).show()
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            normRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(normRow)
         }
 
         scrollView.addView(contentTable)
