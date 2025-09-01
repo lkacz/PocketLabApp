@@ -983,6 +983,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val combinedIssuesSpannable = colorizeIssues(errorMessage, warningMessage)
 
+            // Build row
             val row =
                 TableRow(context).apply {
                     val backgroundColor =
@@ -1058,7 +1059,81 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
             row.addView(commandCell)
-            row.addView(createBodyCell(combinedIssuesSpannable, 1.0f))
+
+            // Inline issue cell possibly augmented with quick-fix button(s)
+            val issueCellContainer = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1.0f)
+                setPadding(0,0,0,0)
+            }
+            val issueTextView = createBodyCell(combinedIssuesSpannable, 1.0f).apply {
+                // remove weight handling (we already assign weight to container)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                setPadding(24,8,24,4)
+            }
+            issueCellContainer.addView(issueTextView)
+
+            // Helper to add a tiny inline button
+            fun inlineFixButton(label: String, action: () -> Int) {
+                val btn = Button(context).apply {
+                    text = label
+                    textSize = applyScale(11f)
+                    setPadding(12,4,12,4)
+                    setOnClickListener {
+                        pushUndoState()
+                        val changed = action()
+                        if (changed > 0) {
+                            hasUnsavedChanges = true
+                            pendingAutoScrollToFirstIssue = true
+                            revalidateAndRefreshUI()
+                            Toast.makeText(context, "$label applied ($changed)", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "No changes", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                // Wrap in horizontal layout to allow multiple buttons later
+                val wrap = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    setPadding(24,0,24,4)
+                    addView(btn)
+                }
+                issueCellContainer.addView(wrap)
+            }
+
+            val lowerErr = errorMessage.lowercase()
+            if (lowerErr.contains("stray semicolon")) {
+                inlineFixButton("Trim ;") {
+                    val res = QuickFixes.removeStraySemicolons(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+            if (lowerErr.contains("label duplicated")) {
+                inlineFixButton("Remove dup LABELs") {
+                    val res = QuickFixes.removeDuplicateLabels(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+            if (lowerErr.contains("goto target label")) {
+                inlineFixButton("Insert LABEL") {
+                    val res = QuickFixes.insertMissingGotoLabels(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+            if (lowerErr.contains("timer must")) {
+                inlineFixButton("Fix TIMER") {
+                    val res = QuickFixes.normalizeTimerLines(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+            if (lowerErr.contains("hex color") || lowerErr.contains("invalid color format")) {
+                inlineFixButton("Normalize Color") {
+                    val res = QuickFixes.normalizeColors(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+            if (lowerErr.contains("exactly 3 semicolons") || lowerErr.contains("at least 4 segments") || lowerErr.contains("must have at least one parameter")) {
+                inlineFixButton("Normalize Content") {
+                    val res = QuickFixes.normalizeContentCommands(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                }
+            }
+
+            row.addView(issueCellContainer)
             tableLayout.addView(row)
             lineRowMap[originalLineNumber] = row
         }
