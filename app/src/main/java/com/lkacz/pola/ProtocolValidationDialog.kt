@@ -1881,10 +1881,26 @@ class ProtocolValidationDialog : DialogFragment() {
             "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE",
             "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT"
         )
-        val spinner = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, commands)
+        // Search + dynamic filtered spinner
+        inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
+        val searchBox = EditText(ctx).apply { hint = "Search commands"; setSingleLine() }
+        inner.addView(searchBox)
+        val spinner = Spinner(ctx)
+        var filtered = commands.toList()
+        fun refreshSpinner() {
+            val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, filtered)
+            spinner.adapter = adapter
         }
-    inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
+        refreshSpinner()
+        searchBox.addTextChangedListener(object: android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val q = s?.toString()?.trim()?.lowercase().orEmpty()
+                filtered = if (q.isEmpty()) commands.toList() else commands.filter { it.lowercase().contains(q) }
+                refreshSpinner()
+            }
+        })
         inner.addView(spinner)
 
         fun edit(hintRes: Int): EditText = EditText(ctx).apply { hint = getString(hintRes); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
