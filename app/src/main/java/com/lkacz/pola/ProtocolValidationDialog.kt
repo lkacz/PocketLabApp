@@ -973,7 +973,10 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun computeValidationCache() {
         // Use pure validator for base validations then map into existing cache structure
         val results = pureValidator.validate(allLines)
-        validationCache = results.map { ValidationEntry(it.lineNumber, it.raw, it.raw.trim(), it.error, it.warning) }
+        // Hide synthetic EOF marker in UI while still surfacing its error globally
+        validationCache = results
+            .filter { it.raw != "<EOF>" }
+            .map { ValidationEntry(it.lineNumber, it.raw, it.raw.trim(), it.error, it.warning) }
         // Preserve randomizationLevel side-effect detection (EOF unmatched) using last synthetic entry if present
         val eofEntry = results.lastOrNull()?.takeIf { it.raw == "<EOF>" && it.error.isNotEmpty() }
         if (eofEntry != null) {
