@@ -770,21 +770,34 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         if (globalErrors.isNotEmpty()) {
-            val row =
-                TableRow(requireContext()).apply {
-                    setBackgroundColor(Color.parseColor("#FFEEEE"))
-                    setPadding(16, 8, 16, 8)
+            val row = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFEEEE"))
+                setPadding(16, 8, 16, 8)
+            }
+            val innerLayout = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+            val msgView = TextView(requireContext()).apply {
+                text = globalErrors.joinToString("\n")
+                setTextColor(Color.RED)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+            innerLayout.addView(msgView)
+            if (globalErrors.any { it.contains("RANDOMIZE_ON not closed", ignoreCase = true) }) {
+                val fixBtn = Button(requireContext()).apply {
+                    text = "Insert RANDOMIZE_OFF"
+                    setOnClickListener {
+                        pushUndoState()
+                        allLines.add("RANDOMIZE_OFF")
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Inserted RANDOMIZE_OFF", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            val cell =
-                createBodyCell(
-                    text = globalErrors.joinToString("\n"),
-                    weight = 1.0f,
-                ).apply {
-                    setTextColor(Color.RED)
-                    setTypeface(null, Typeface.BOLD)
-                }
-            cell.layoutParams = TableRow.LayoutParams().apply { span = 3 }
-            row.addView(cell)
+                innerLayout.addView(fixBtn)
+            }
+            row.addView(innerLayout, TableRow.LayoutParams().apply { span = 3 })
             contentTable.addView(row)
         }
 
