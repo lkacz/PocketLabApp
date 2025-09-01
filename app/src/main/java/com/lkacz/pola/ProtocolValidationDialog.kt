@@ -934,10 +934,6 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         // Quick-fix row for color normalization (invalid hex colors or named colors)
-        val colorCommands = setOf(
-            "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR",
-            "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR"
-        )
         val hasColorErrors = validationCache.any { entry ->
             entry.error.contains("hex color", ignoreCase = true) || entry.error.contains("invalid color format", ignoreCase = true)
         }
