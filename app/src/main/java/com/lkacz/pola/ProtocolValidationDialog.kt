@@ -1803,13 +1803,16 @@ class ProtocolValidationDialog : DialogFragment() {
         val gotoLabel = edit(R.string.hint_goto_label)
         val filename = edit(R.string.hint_filename)
         val message = edit(R.string.hint_message)
-    val inputFields = edit(R.string.hint_input_fields)
-    val colorValue = edit(R.string.hint_color_value)
-    val sizeValue = edit(R.string.hint_size_value).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
-    val alignmentValue = edit(R.string.hint_alignment_value)
-    val studyIdValue = edit(R.string.hint_study_id_value)
-    val transitionsMode = edit(R.string.hint_transitions_mode)
-    val genericValue = edit(R.string.hint_value)
+        val inputFields = edit(R.string.hint_input_fields)
+        val colorValue = edit(R.string.hint_color_value)
+        val sizeValue = edit(R.string.hint_size_value).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        val alignmentSpinner = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, arrayOf("LEFT", "CENTER", "RIGHT"))
+        }
+        val studyIdValue = edit(R.string.hint_study_id_value)
+        val transitionsSpinner = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, arrayOf("off","slide","slideleft","fade","dissolve"))
+        }
 
         val paramGroup = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(0,16,0,0) }
     inner.addView(TextView(ctx).apply { text = getString(R.string.label_parameters); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
@@ -1831,13 +1834,13 @@ class ProtocolValidationDialog : DialogFragment() {
                 "RANDOMIZE_ON", "RANDOMIZE_OFF", "END" -> { /* no params */ }
                 // Single-value meta
                 "STUDY_ID" -> { paramGroup.addView(studyIdValue) }
-                "TRANSITIONS" -> { paramGroup.addView(transitionsMode) }
+                "TRANSITIONS" -> { paramGroup.addView(transitionsSpinner) }
                 // Colors
                 "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> { paramGroup.addView(colorValue) }
                 // Sizes
                 "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> { paramGroup.addView(sizeValue) }
                 // Alignments
-                "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> { paramGroup.addView(alignmentValue) }
+                "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> { paramGroup.addView(alignmentSpinner) }
                 else -> { /* END has no params */ }
             }
         }
@@ -1873,13 +1876,21 @@ class ProtocolValidationDialog : DialogFragment() {
                     "LOG" -> { message.setText(parts.getOrNull(1)) }
                     // Single value commands
                     "STUDY_ID" -> { studyIdValue.setText(parts.getOrNull(1)) }
-                    "TRANSITIONS" -> { transitionsMode.setText(parts.getOrNull(1)) }
+                    "TRANSITIONS" -> {
+                        val mode = parts.getOrNull(1)?.lowercase()
+                        val idx = arrayOf("off","slide","slideleft","fade","dissolve").indexOf(mode)
+                        if (idx >= 0) transitionsSpinner.setSelection(idx)
+                    }
                     // Colors
                     "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> { colorValue.setText(parts.getOrNull(1)) }
                     // Sizes
                     "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> { sizeValue.setText(parts.getOrNull(1)) }
                     // Alignments
-                    "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> { alignmentValue.setText(parts.getOrNull(1)) }
+                    "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
+                        val valUpper = parts.getOrNull(1)?.uppercase()
+                        val idx = arrayOf("LEFT","CENTER","RIGHT").indexOf(valUpper)
+                        if (idx >= 0) alignmentSpinner.setSelection(idx)
+                    }
                 }
             }
         }
@@ -1925,23 +1936,31 @@ class ProtocolValidationDialog : DialogFragment() {
                         "$cmd;${studyIdValue.text}"
                     }
                     "TRANSITIONS" -> {
-                        if (transitionsMode.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${transitionsMode.text}"
+                        val mode = transitionsSpinner.selectedItem?.toString()?.trim().orEmpty()
+                        if (mode.isEmpty()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;$mode"
                     }
                     // Colors
                     "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> {
-                        if (colorValue.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${colorValue.text}"
+                        val cv = colorValue.text.toString().trim()
+                        if (cv.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        // quick validation
+                        val ok = try { android.graphics.Color.parseColor(cv); true } catch (e: Exception){ false }
+                        if (!ok) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;$cv"
                     }
                     // Sizes
                     "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> {
-                        if (sizeValue.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${sizeValue.text}"
+                        val sv = sizeValue.text.toString().trim()
+                        if (sv.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        if (sv.toIntOrNull() == null) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;$sv"
                     }
                     // Alignments
                     "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
-                        if (alignmentValue.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${alignmentValue.text}"
+                        val av = alignmentSpinner.selectedItem?.toString()?.uppercase()?.trim().orEmpty()
+                        if (av.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        "$cmd;$av"
                     }
                     "END" -> "END"
                     else -> return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
