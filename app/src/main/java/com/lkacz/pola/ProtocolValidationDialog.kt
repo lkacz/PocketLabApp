@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
+import java.io.FileNotFoundException
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
@@ -61,6 +62,10 @@ class ProtocolValidationDialog : DialogFragment() {
     private val lineRowMap = mutableMapOf<Int, TableRow>()
     private var scrollViewRef: ScrollView? = null
     private var pendingAutoScrollToFirstIssue = false
+    // Container that holds the dynamic (revalidated) table content; filled by revalidateAndRefreshUI
+    private var dynamicContentContainer: ViewGroup? = null
+    // Simple reentrancy guard to prevent nested refreshes causing IllegalStateException
+    private var isRefreshing = false
 
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -472,8 +477,20 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         rootLayout.addView(togglesCard)
 
-        // Navigation + Export row
-        val navRow = LinearLayout(requireContext()).apply {
+        // Placeholder for dynamic validated content (tables, quick-fixes, etc.)
+        dynamicContentContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            // Tag helps future defensive lookups if needed
+            tag = "protocol_dynamic_container"
+        }
+    rootLayout.addView(dynamicContentContainer)
+
+    // Navigation row (placed after dynamic content so content replaces properly)
+    val navRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
@@ -498,7 +515,8 @@ class ProtocolValidationDialog : DialogFragment() {
             setContentPadding(24,24,24,16)
             addView(navRow)
         }
-        rootLayout.addView(navCard)
+    // Add navigation card after dynamic content container
+    rootLayout.addView(navCard)
 
         val progressBar =
             ProgressBar(requireContext()).apply {
@@ -538,8 +556,9 @@ class ProtocolValidationDialog : DialogFragment() {
 
             withContext(Dispatchers.Main) {
                 rootLayout.removeView(progressBar)
-                val finalView = buildCompletedView()
-                rootLayout.addView(finalView)
+                // Populate dynamic container instead of adding a second instance
+                dynamicContentContainer?.removeAllViews()
+                dynamicContentContainer?.addView(buildCompletedView())
             }
         }
 
@@ -627,10 +646,15 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun confirmNewProtocol() {
         fun createNew() {
-            pushUndoState()
+            // Reset protocol state completely
+            undoStack.clear()
+            redoStack.clear()
             allLines.clear()
             allLines.add("INSTRUCTION;Header;Body;Continue")
             hasUnsavedChanges = true
+            pendingAutoScrollToFirstIssue = true
+            // Clear any currently rendered dynamic content immediately to avoid visual duplication before rebuild
+            dynamicContentContainer?.removeAllViews()
             revalidateAndRefreshUI()
             Toast.makeText(requireContext(), getString(R.string.toast_new_protocol_created), Toast.LENGTH_SHORT).show()
         }
@@ -658,56 +682,101 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         val uri = Uri.parse(customUriString)
         try {
-            requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
+            // Re-acquire (persist) permissions just in case app process restarted since selection
+            try {
+                requireContext().contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            } catch (_: SecurityException) { /* ignore if already granted */ }
+
+            // Use rwt (truncate) when possible; fall back to rw
+            val mode = try {
+                requireContext().contentResolver.openFileDescriptor(uri, "rwt")?.close(); "rwt"
+            } catch (_: Exception) { "rw" }
+
+            requireContext().contentResolver.openFileDescriptor(uri, mode)?.use { pfd ->
                 FileOutputStream(pfd.fileDescriptor).use { fos ->
                     fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
                 }
-            }
+            } ?: throw FileNotFoundException("Descriptor null for URI: $uri")
+
             hasUnsavedChanges = false
             revalidateAndRefreshUI()
             onSuccess?.invoke()
+        } catch (fnf: FileNotFoundException) {
+            // Underlying document missing (ENOENT) – prompt user to pick a new location
+            AlertDialog.Builder(requireContext())
+                .setTitle("Original file missing")
+                .setMessage("The previously selected file can't be found (it may have been moved or deleted). Save a new copy?")
+                .setPositiveButton("Save As") { _, _ ->
+                    val suggested = getSuggestedFileName(); createDocumentLauncher.launch(suggested)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Error saving file: ${e.message}",
-                Toast.LENGTH_SHORT,
-            ).show()
+            // If message hints ENOENT, offer same fallback; else simple toast
+            val msg = e.message ?: "Unknown error"
+            if (msg.contains("ENOENT", ignoreCase = true)) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("File not found")
+                    .setMessage("Cannot open the existing file (ENOENT). Save to a new file instead?")
+                    .setPositiveButton("Save As") { _, _ ->
+                        val suggested = getSuggestedFileName(); createDocumentLauncher.launch(suggested)
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            } else {
+                Toast.makeText(requireContext(), "Error saving file: $msg", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun revalidateAndRefreshUI() {
-        randomizationLevel = 0
-        globalErrors.clear()
-        lastCommand = null
-        resourceExistenceMap.clear()
+    // If fragment no longer attached, skip
+    if (!isAdded) return
+    // Prevent nested calls (e.g., triggered indirectly while already rebuilding)
+    if (isRefreshing) return
+        isRefreshing = true
+        try {
+            randomizationLevel = 0
+            globalErrors.clear()
+            lastCommand = null
+            resourceExistenceMap.clear()
 
-        val bracketedReferences = mutableSetOf<String>()
-        for (line in allLines) {
-            ResourceFileChecker.findBracketedFiles(line).forEach {
-                bracketedReferences.add(it)
+            val bracketedReferences = mutableSetOf<String>()
+            for (line in allLines) {
+                ResourceFileChecker.findBracketedFiles(line).forEach { bracketedReferences.add(it) }
             }
-        }
-        if (resourcesFolderUri != null) {
-            bracketedReferences.forEach { fileRef ->
-                val doesExist = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
-                resourceExistenceMap[fileRef] = doesExist
-            }
-        }
-
-    PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
-
-        val containerLayout = view as? LinearLayout ?: return
-        while (containerLayout.childCount > 4) {
-            containerLayout.removeViewAt(4)
-        }
-        containerLayout.addView(buildCompletedView())
-        if (pendingAutoScrollToFirstIssue) {
-            pendingAutoScrollToFirstIssue = false
-            view?.postDelayed({
-                if (issueLineNumbers.isNotEmpty()) {
-                    highlightAndScrollTo(issueLineNumbers.first())
+            if (resourcesFolderUri != null) {
+                bracketedReferences.forEach { fileRef ->
+                    val doesExist = ResourceFileChecker.fileExistsInResources(requireContext(), fileRef)
+                    resourceExistenceMap[fileRef] = doesExist
                 }
-            }, 60)
+            }
+
+            PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
+
+            dynamicContentContainer?.let { target ->
+                target.removeAllViews()
+                val built = try { buildCompletedView() } catch (e: Exception) {
+                    LinearLayout(requireContext()).apply {
+                        setPadding(32,32,32,32)
+                        addView(TextView(requireContext()).apply {
+                            text = "Error rebuilding view: ${e.message}"; setTextColor(Color.RED)
+                        })
+                    }
+                }
+                target.addView(built)
+            }
+            if (pendingAutoScrollToFirstIssue) {
+                pendingAutoScrollToFirstIssue = false
+                view?.postDelayed({
+                    if (issueLineNumbers.isNotEmpty()) highlightAndScrollTo(issueLineNumbers.first())
+                }, 60)
+            }
+        } finally {
+            isRefreshing = false
         }
     }
 
@@ -742,263 +811,11 @@ class ProtocolValidationDialog : DialogFragment() {
             globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
         }
 
-        if (globalErrors.isNotEmpty()) {
-            val row = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFEEEE"))
-                setPadding(16, 8, 16, 8)
-            }
-            val innerLayout = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-            }
-            val msgView = TextView(requireContext()).apply {
-                text = globalErrors.joinToString("\n")
-                setTextColor(Color.RED)
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            innerLayout.addView(msgView)
-            if (globalErrors.any { it.contains("RANDOMIZE_ON not closed", ignoreCase = true) }) {
-                val fixBtn = Button(requireContext()).apply {
-                    text = "Insert RANDOMIZE_OFF"
-                    setOnClickListener {
-                        pushUndoState()
-                        allLines.add("RANDOMIZE_OFF")
-                        hasUnsavedChanges = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Inserted RANDOMIZE_OFF", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                innerLayout.addView(fixBtn)
-            }
-            if (globalErrors.any { it.contains("Duplicate STUDY_ID", ignoreCase = true) }) {
-                val fixStudy = Button(requireContext()).apply {
-                    text = getString(R.string.action_fix_duplicate_study_id)
-                    setOnClickListener {
-                        pushUndoState()
-                        // Keep first STUDY_ID, remove subsequent ones
-                        var seen = false
-                        val iterator = allLines.listIterator()
-                        while (iterator.hasNext()) {
-                            val line = iterator.next()
-                            if (line.trim().uppercase().startsWith("STUDY_ID;")) {
-                                if (!seen) {
-                                    seen = true
-                                } else {
-                                    iterator.remove()
-                                }
-                            }
-                        }
-                        hasUnsavedChanges = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Removed duplicate STUDY_ID", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                innerLayout.addView(fixStudy)
-            }
-            row.addView(innerLayout, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(row)
-        }
-
-        // Quick-fix row for stray semicolons (line-level errors) if any present
-        val hasStraySemicolons = validationCache.any { it.error.contains("stray semicolon", ignoreCase = true) }
-        if (hasStraySemicolons) {
-            val fixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFF9E0"))
-                setPadding(16, 8, 16, 8)
-            }
-            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Stray semicolons detected at line ends."
-                setTextColor(Color.parseColor("#AA8800"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Fix stray semicolons"
-                setOnClickListener {
-                    pushUndoState()
-                    var modified = false
-                    for (i in allLines.indices) {
-                        val raw = allLines[i]
-                        if (raw.trim().endsWith(";")) {
-                            val newLine = raw.replace(Regex(";\\s*$"), "")
-                            if (newLine != raw) {
-                                allLines[i] = newLine
-                                modified = true
-                            }
-                        }
-                    }
-                    if (modified) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Removed stray semicolons", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            layout.addView(msg)
-            layout.addView(btn)
-            fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(fixRow)
-        }
-
-        // Quick-fix row for duplicate LABEL lines (keep first, remove subsequent duplicates)
-        val hasDuplicateLabelErrors = validationCache.any { it.error.contains("Label duplicated", ignoreCase = true) }
-        if (hasDuplicateLabelErrors) {
-            val dupRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFEEEE"))
-                setPadding(16, 8, 16, 8)
-            }
-            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"
-                setTextColor(Color.parseColor("#BB0000"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Fix duplicate LABELs"
-                setOnClickListener {
-                    pushUndoState()
-                    val seen = mutableSetOf<String>()
-                    val iterator = allLines.listIterator()
-                    var removed = 0
-                    while (iterator.hasNext()) {
-                        val line = iterator.next()
-                        val t = line.trim()
-                        if (t.uppercase().startsWith("LABEL;")) {
-                            val parts = t.split(';')
-                            val name = parts.getOrNull(1)?.trim().orEmpty()
-                            if (name.isNotEmpty()) {
-                                if (!seen.add(name)) {
-                                    iterator.remove()
-                                    removed++
-                                }
-                            }
-                        }
-                    }
-                    if (removed > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Removed $removed duplicate LABEL(s)", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            layout.addView(msg)
-            layout.addView(btn)
-            dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(dupRow)
-        }
-
-        // Quick-fix row for undefined GOTO targets: create missing LABEL lines above first GOTO reference
-        val undefinedGotoTargets = mutableSetOf<String>()
-        validationCache.forEach { entry ->
-            val err = entry.error
-            val match = Regex("GOTO target label '([^']+)' not defined").find(err)
-            if (match != null) undefinedGotoTargets.add(match.groupValues[1])
-        }
-        if (undefinedGotoTargets.isNotEmpty()) {
-            val gotoFixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#FFF1E0"))
-                setPadding(16,8,16,8)
-            }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"
-                setTextColor(Color.parseColor("#A65E00"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Insert missing LABELs"
-                setOnClickListener {
-                    pushUndoState()
-                    // For each missing label, insert LABEL;name AFTER first offending GOTO line to avoid immediately re-triggering navigation loops
-                    val toInsert = mutableListOf<Pair<Int,String>>()
-                    for (target in undefinedGotoTargets) {
-                        val firstGotoLine = validationCache.firstOrNull { it.error.contains("GOTO target label '$target' not defined") }?.lineNumber
-                        val insertionIndex = (firstGotoLine ?: (allLines.size)) // index is 1-based line number; we'll insert after, so use line number directly
-                        toInsert.add(insertionIndex to "LABEL;$target")
-                    }
-                    // Sort by insertion index to maintain order
-                    toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
-                        val (idx, line) = pair
-                        val adj = idx + offset // already points after the GOTO line
-                        if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
-                    }
-                    hasUnsavedChanges = true
-                    pendingAutoScrollToFirstIssue = true
-                    revalidateAndRefreshUI()
-                    Toast.makeText(requireContext(), "Inserted ${undefinedGotoTargets.size} LABEL(s)", Toast.LENGTH_SHORT).show()
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(gotoFixRow)
-        }
-
-        // Quick-fix row for malformed TIMER lines (segment count or invalid time value)
-        val hasTimerErrors = validationCache.any { it.error.contains("TIMER must") }
-        if (hasTimerErrors) {
-            val timerFixRow = TableRow(requireContext()).apply {
-                setBackgroundColor(Color.parseColor("#E8F4FF"))
-                setPadding(16,8,16,8)
-            }
-            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-            val msg = TextView(requireContext()).apply {
-                text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"
-                setTextColor(Color.parseColor("#004B78"))
-                setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(13f)
-            }
-            val btn = Button(requireContext()).apply {
-                text = "Fix TIMER lines"
-                setOnClickListener {
-                    pushUndoState()
-                    var fixed = 0
-                    for (i in allLines.indices) {
-                        val raw = allLines[i]
-                        val t = raw.trim()
-                        if (t.uppercase().startsWith("TIMER")) {
-                            val parts = t.split(';').toMutableList()
-                            if (parts.isNotEmpty() && parts[0].uppercase() == "TIMER") {
-                                // Ensure at least 5 segments: TIMER;H;B;time;CONT
-                                while (parts.size < 5) parts.add("")
-                                // Assign defaults if blank
-                                val header = parts.getOrNull(1)?.takeIf { it.isNotBlank() } ?: "Header"
-                                val body = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Body"
-                                val timeStrRaw = parts.getOrNull(3)?.trim().orEmpty()
-                                val timeVal = timeStrRaw.toIntOrNull()?.takeIf { it >= 0 } ?: 60
-                                val cont = parts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "Continue"
-                                val normalized = "TIMER;$header;$body;$timeVal;$cont"
-                                if (normalized != raw) {
-                                    allLines[i] = normalized
-                                    fixed++
-                                }
-                            }
-                        }
-                    }
-                    if (fixed > 0) {
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(requireContext(), "Fixed $fixed TIMER line(s)", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            lay.addView(msg)
-            lay.addView(btn)
-            timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
-            contentTable.addView(timerFixRow)
-        }
+    addGlobalErrorsRow(contentTable)
+    addStraySemicolonFixRow(contentTable)
+    addDuplicateLabelFixRow(contentTable)
+    addUndefinedGotoFixRow(contentTable)
+    addTimerFixRow(contentTable)
 
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
@@ -1010,6 +827,160 @@ class ProtocolValidationDialog : DialogFragment() {
             .map { it.lineNumber }
         issueIndex = if (issueLineNumbers.isNotEmpty()) -1 else -1
         return containerLayout
+    }
+
+    // --- Extracted helper sections (no functional change) ---
+    private fun addGlobalErrorsRow(contentTable: TableLayout) {
+        if (globalErrors.isEmpty()) return
+        val row = TableRow(requireContext()).apply {
+            setBackgroundColor(Color.parseColor("#FFEEEE"))
+            setPadding(16, 8, 16, 8)
+        }
+        val innerLayout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msgView = TextView(requireContext()).apply {
+            text = globalErrors.joinToString("\n")
+            setTextColor(Color.RED)
+            setTypeface(null, Typeface.BOLD)
+            textSize = applyScale(13f)
+        }
+        innerLayout.addView(msgView)
+        if (globalErrors.any { it.contains("RANDOMIZE_ON not closed", ignoreCase = true) }) {
+            val fixBtn = Button(requireContext()).apply {
+                text = "Insert RANDOMIZE_OFF"
+                setOnClickListener {
+                    pushUndoState(); allLines.add("RANDOMIZE_OFF"); hasUnsavedChanges = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Inserted RANDOMIZE_OFF", Toast.LENGTH_SHORT).show()
+                }
+            }
+            innerLayout.addView(fixBtn)
+        }
+        if (globalErrors.any { it.contains("Duplicate STUDY_ID", ignoreCase = true) }) {
+            val fixStudy = Button(requireContext()).apply {
+                text = getString(R.string.action_fix_duplicate_study_id)
+                setOnClickListener {
+                    pushUndoState()
+                    var seen = false
+                    val iterator = allLines.listIterator()
+                    while (iterator.hasNext()) {
+                        val line = iterator.next()
+                        if (line.trim().uppercase().startsWith("STUDY_ID;")) {
+                            if (!seen) seen = true else iterator.remove()
+                        }
+                    }
+                    hasUnsavedChanges = true
+                    revalidateAndRefreshUI()
+                    Toast.makeText(requireContext(), "Removed duplicate STUDY_ID", Toast.LENGTH_SHORT).show()
+                }
+            }
+            innerLayout.addView(fixStudy)
+        }
+        row.addView(innerLayout, TableRow.LayoutParams().apply { span = 3 })
+        contentTable.addView(row)
+    }
+
+    private fun addStraySemicolonFixRow(contentTable: TableLayout) {
+        val hasStraySemicolons = validationCache.any { it.error.contains("stray semicolon", ignoreCase = true) }
+        if (!hasStraySemicolons) return
+        val fixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFF9E0")); setPadding(16,8,16,8) }
+        val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msg = TextView(requireContext()).apply { text = "Stray semicolons detected at line ends."; setTextColor(Color.parseColor("#AA8800")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
+        val btn = Button(requireContext()).apply {
+            text = "Fix stray semicolons"
+            setOnClickListener {
+                pushUndoState(); var modified = false
+                for (i in allLines.indices) {
+                    val raw = allLines[i]
+                    if (raw.trim().endsWith(";")) {
+                        val newLine = raw.replace(Regex(";\\s*$"), "")
+                        if (newLine != raw) { allLines[i] = newLine; modified = true }
+                    }
+                }
+                if (modified) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Removed stray semicolons", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show() }
+            }
+        }
+        layout.addView(msg); layout.addView(btn); fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(fixRow)
+    }
+
+    private fun addDuplicateLabelFixRow(contentTable: TableLayout) {
+        val hasDuplicateLabelErrors = validationCache.any { it.error.contains("Label duplicated", ignoreCase = true) }
+        if (!hasDuplicateLabelErrors) return
+        val dupRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFEEEE")); setPadding(16,8,16,8) }
+        val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msg = TextView(requireContext()).apply { text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"; setTextColor(Color.parseColor("#BB0000")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
+        val btn = Button(requireContext()).apply {
+            text = "Fix duplicate LABELs"
+            setOnClickListener {
+                pushUndoState(); val seen = mutableSetOf<String>(); val iterator = allLines.listIterator(); var removed = 0
+                while (iterator.hasNext()) {
+                    val line = iterator.next(); val t = line.trim()
+                    if (t.uppercase().startsWith("LABEL;")) {
+                        val parts = t.split(';'); val name = parts.getOrNull(1)?.trim().orEmpty()
+                        if (name.isNotEmpty() && !seen.add(name)) { iterator.remove(); removed++ }
+                    }
+                }
+                if (removed > 0) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Removed $removed duplicate LABEL(s)", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show() }
+            }
+        }
+        layout.addView(msg); layout.addView(btn); dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(dupRow)
+    }
+
+    private fun addUndefinedGotoFixRow(contentTable: TableLayout) {
+        val undefinedGotoTargets = mutableSetOf<String>()
+        validationCache.forEach { entry ->
+            val match = Regex("GOTO target label '([^']+)' not defined").find(entry.error)
+            if (match != null) undefinedGotoTargets.add(match.groupValues[1])
+        }
+        if (undefinedGotoTargets.isEmpty()) return
+        val gotoFixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFF1E0")); setPadding(16,8,16,8) }
+        val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msg = TextView(requireContext()).apply { text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"; setTextColor(Color.parseColor("#A65E00")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
+        val btn = Button(requireContext()).apply {
+            text = "Insert missing LABELs"
+            setOnClickListener {
+                pushUndoState(); val toInsert = mutableListOf<Pair<Int,String>>()
+                for (target in undefinedGotoTargets) {
+                    val firstGotoLine = validationCache.firstOrNull { it.error.contains("GOTO target label '$target' not defined") }?.lineNumber
+                    val insertionIndex = firstGotoLine ?: allLines.size
+                    toInsert.add(insertionIndex to "LABEL;$target")
+                }
+                toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
+                    val (idx, line) = pair; val adj = idx + offset; if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
+                }
+                hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Inserted ${undefinedGotoTargets.size} LABEL(s)", Toast.LENGTH_SHORT).show()
+            }
+        }
+        lay.addView(msg); lay.addView(btn); gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(gotoFixRow)
+    }
+
+    private fun addTimerFixRow(contentTable: TableLayout) {
+        val hasTimerErrors = validationCache.any { it.error.contains("TIMER must") }
+        if (!hasTimerErrors) return
+        val timerFixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#E8F4FF")); setPadding(16,8,16,8) }
+        val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msg = TextView(requireContext()).apply { text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"; setTextColor(Color.parseColor("#004B78")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
+        val btn = Button(requireContext()).apply {
+            text = "Fix TIMER lines"
+            setOnClickListener {
+                pushUndoState(); var fixed = 0
+                for (i in allLines.indices) {
+                    val raw = allLines[i]; val t = raw.trim()
+                    if (t.uppercase().startsWith("TIMER")) {
+                        val parts = t.split(';').toMutableList()
+                        if (parts.isNotEmpty() && parts[0].uppercase() == "TIMER") {
+                            while (parts.size < 5) parts.add("")
+                            val header = parts.getOrNull(1)?.takeIf { it.isNotBlank() } ?: "Header"
+                            val body = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Body"
+                            val timeStrRaw = parts.getOrNull(3)?.trim().orEmpty()
+                            val timeVal = timeStrRaw.toIntOrNull()?.takeIf { it >= 0 } ?: 60
+                            val cont = parts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "Continue"
+                            val normalized = "TIMER;$header;$body;$timeVal;$cont"
+                            if (normalized != raw) { allLines[i] = normalized; fixed++ }
+                        }
+                    }
+                }
+                if (fixed > 0) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Fixed $fixed TIMER line(s)", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show() }
+            }
+        }
+        lay.addView(msg); lay.addView(btn); timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(timerFixRow)
     }
 
     private fun buildHeaderTable(): TableLayout {
@@ -1891,18 +1862,27 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun getProtocolContent(): String {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
-    val mode = prefs.getString(Prefs.KEY_CURRENT_MODE, null)
-    val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val mode = prefs.getString(Prefs.KEY_CURRENT_MODE, null)
+        val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
+        val reader = ProtocolReader()
 
         if (!customUriString.isNullOrEmpty()) {
             val uri = Uri.parse(customUriString)
-            return ProtocolReader().readFileContent(requireContext(), uri)
+            return try {
+                reader.readFileContent(requireContext(), uri)
+            } catch (e: SecurityException) {
+                // Permission lost (e.g., process death) or revoked: clear stored URI and fall back
+                prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                "// Lost permission to previously opened document. Please Load a protocol or use New."
+            } catch (e: Exception) {
+                "// Error reading file: ${e.message}".take(500)
+            }
         }
-        return if (mode == "tutorial") {
-            ProtocolReader().readFromAssets(requireContext(), "tutorial_protocol.txt")
-        } else {
-            ProtocolReader().readFromAssets(requireContext(), "demo_protocol.txt")
+        return try {
+            if (mode == "tutorial") reader.readFromAssets(requireContext(), "tutorial_protocol.txt") else reader.readFromAssets(requireContext(), "demo_protocol.txt")
+        } catch (e: Exception) {
+            "// Error loading bundled protocol: ${e.message}"
         }
     }
 
