@@ -61,6 +61,8 @@ class ProtocolValidationDialog : DialogFragment() {
     private val lineRowMap = mutableMapOf<Int, TableRow>()
     private var scrollViewRef: ScrollView? = null
     private var pendingAutoScrollToFirstIssue = false
+    private var lastValidationMs: Double? = null
+    private var validationTimeLabel: TextView? = null
 
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -693,7 +695,13 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
+        var elapsedMs = 0.0
+        PerfTimer.track("ProtocolDialog.revalidate") {
+            val start = System.nanoTime()
+            computeValidationCache()
+            elapsedMs = (System.nanoTime() - start) / 1_000_000.0
+        }
+        lastValidationMs = elapsedMs
 
         // If size changed or filters active, rebuild fully
         val containerLayout = view as? LinearLayout ?: return
@@ -749,6 +757,13 @@ class ProtocolValidationDialog : DialogFragment() {
             setPadding(24, 8, 24, 4)
             textSize = applyScale(13f)
             setTypeface(null, Typeface.BOLD)
+        }
+        // Validation duration label (reuse or create)
+        validationTimeLabel = (validationTimeLabel ?: TextView(requireContext()).also { lbl ->
+            lbl.setPadding(24,0,24,8)
+            lbl.textSize = applyScale(11f)
+        }).apply {
+            text = lastValidationMs?.let { String.format("Validation %.2f ms", it) } ?: "Validation -- ms"
         }
 
         if (randomizationLevel > 0) {
@@ -935,6 +950,7 @@ class ProtocolValidationDialog : DialogFragment() {
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)
+        containerLayout.addView(validationTimeLabel)
         containerLayout.addView(scrollView)
 
         // Build issue list for navigation (errors or warnings present)
