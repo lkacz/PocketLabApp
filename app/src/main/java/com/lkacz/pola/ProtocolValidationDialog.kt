@@ -97,24 +97,6 @@ class ProtocolValidationDialog : DialogFragment() {
     private val lineRowMap = mutableMapOf<Int, TableRow>()
     private var scrollViewRef: ScrollView? = null
 
-    // Launcher for exporting validation report
-    private val exportReportLauncher: ActivityResultLauncher<String> =
-        registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-            if (uri != null) {
-                try {
-                    requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                        FileOutputStream(pfd.fileDescriptor).use { fos ->
-                            fos.write(generateReportText().toByteArray(Charsets.UTF_8))
-                        }
-                    }
-                    Toast.makeText(requireContext(), "Report exported", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(requireContext(), "Export cancelled", Toast.LENGTH_SHORT).show()
-            }
-        }
 
     private val resourcesFolderUri: Uri? by lazy {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -542,10 +524,8 @@ class ProtocolValidationDialog : DialogFragment() {
             }
     val btnPrev = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_prev, getString(R.string.cd_prev_issue)) { navigateIssue(-1) }
     val btnNext = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_next, getString(R.string.cd_next_issue)) { navigateIssue(1) }
-    val btnExport = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_export, getString(R.string.cd_export_report)) { exportReportLauncher.launch("protocol_validation_report.txt") }
         navRow.addView(btnPrev)
         navRow.addView(btnNext)
-        navRow.addView(btnExport)
         val navCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,8) }
             radius = 12f
@@ -1031,21 +1011,6 @@ class ProtocolValidationDialog : DialogFragment() {
         scrollViewRef?.post { scrollViewRef?.smoothScrollTo(0, row.top) }
     }
 
-    private fun generateReportText(): String {
-        val sb = StringBuilder()
-        sb.appendLine("Protocol Validation Report")
-        sb.appendLine("==========================")
-        val issues = validationCache.filter { it.error.isNotEmpty() || it.warning.isNotEmpty() }
-        issues.forEach { entry ->
-            sb.append("Line ").append(entry.lineNumber).append(':').append(' ')
-            if (entry.error.isNotEmpty()) sb.append("ERROR: ").append(entry.error)
-            if (entry.error.isNotEmpty() && entry.warning.isNotEmpty()) sb.append(" | ")
-            if (entry.warning.isNotEmpty()) sb.append("WARN: ").append(entry.warning)
-            sb.appendLine()
-        }
-        if (issues.isEmpty()) sb.appendLine("No issues found.")
-        return sb.toString()
-    }
 
     private fun showEditLineDialog(lineIndex: Int) {
         val context = requireContext()

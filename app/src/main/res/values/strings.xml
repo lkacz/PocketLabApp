@@ -43,13 +43,9 @@
     <string name="toast_loading_cancelled">Loading was cancelled.</string>
     <string name="toast_saved_new_file">Saved as new file.</string>
     <string name="toast_save_as_cancelled">Save As was cancelled.</string>
-    <string name="toast_report_exported">Report exported</string>
-    <string name="toast_export_failed">Export failed: %1$s</string>
-    <string name="toast_export_cancelled">Export cancelled</string>
     <string name="toast_error_saving_file">Error saving file: %1$s</string>
     <string name="cd_prev_issue">Previous issue</string>
     <string name="cd_next_issue">Next issue</string>
-    <string name="cd_export_report">Export validation report</string>
     <string name="cd_load_protocol">Load protocol</string>
     <string name="cd_save_protocol">Save protocol</string>
     <string name="cd_save_as_protocol">Save protocol as new file</string>
