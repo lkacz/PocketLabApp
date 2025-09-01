@@ -48,6 +48,24 @@ class QuickFixesTest {
     }
 
     @Test
+    fun normalizes_timer_edge_cases() {
+        val lines = listOf(
+            "TIMER",                    // no segments
+            "TIMER;H",                  // 1 segment after command
+            "TIMER;H;B",                // 2 segments
+            "TIMER;H;B;XYZ;",           // non-numeric time and empty continue
+            "TIMER;H;B;9999999;CONT"    // huge time (kept but validator may warn)
+        )
+        val res = QuickFixes.normalizeTimerLines(lines)
+    // At least first three must be changed (they were incomplete)
+    assertTrue(res.changedCount >= 3)
+        res.lines.forEach { l ->
+            assertTrue(l.startsWith("TIMER;"))
+            assertEquals(5, l.count { it == ';' } + 1)
+        }
+    }
+
+    @Test
     fun normalizes_colors() {
         val lines = listOf("BODY_COLOR;#abc", "HEADER_COLOR;#112233")
         val res = QuickFixes.normalizeColors(lines)

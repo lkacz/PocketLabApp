@@ -854,6 +854,20 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(row)
         }
 
+        // Centralized safe executor for quick-fix actions to prevent whole-dialog crashes
+        fun executeSafeQuickFix(label: String, block: () -> Int): Int {
+            return try {
+                block()
+            } catch (t: Throwable) {
+                // Roll back to last undo state if possible
+                if (undoStack.isNotEmpty()) {
+                    allLines = undoStack.removeLast().toMutableList()
+                }
+                Toast.makeText(requireContext(), "$label failed: ${t::class.simpleName}", Toast.LENGTH_LONG).show()
+                0
+            }
+        }
+
         // Stray semicolons
         if (validationCache.any { it.error.contains("stray semicolon", true) }) {
             addQuickFixRow(
@@ -901,7 +915,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 message = "Malformed TIMER command(s) detected.",
                 buttonText = "Fix TIMER lines"
             ) {
-                val res = QuickFixes.normalizeTimerLines(allLines); allLines = res.lines.toMutableList(); res.changedCount
+                executeSafeQuickFix("Fix TIMER lines") {
+                    val res = QuickFixes.normalizeTimerLines(allLines)
+                    allLines = res.lines.toMutableList(); res.changedCount
+                }
             }
         }
 
@@ -941,9 +958,11 @@ class ProtocolValidationDialog : DialogFragment() {
                 message = "Attempt automatic safe fixes for common issues.",
                 buttonText = "Auto Fix All"
             ) {
-                val agg = QuickFixes.applySafeAutoFixes(allLines)
-                allLines = agg.lines.toMutableList()
-                agg.totalChanges
+                executeSafeQuickFix("Auto Fix All") {
+                    val agg = QuickFixes.applySafeAutoFixes(allLines)
+                    allLines = agg.lines.toMutableList()
+                    agg.totalChanges
+                }
             }
         }
 
