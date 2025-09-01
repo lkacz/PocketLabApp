@@ -96,6 +96,7 @@ class ProtocolValidationDialog : DialogFragment() {
     private var issueIndex: Int = -1
     private val lineRowMap = mutableMapOf<Int, TableRow>()
     private var scrollViewRef: ScrollView? = null
+    private var pendingAutoScrollToFirstIssue = false
 
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -736,6 +737,14 @@ class ProtocolValidationDialog : DialogFragment() {
             containerLayout.removeViewAt(4)
         }
         containerLayout.addView(buildCompletedView())
+        if (pendingAutoScrollToFirstIssue) {
+            pendingAutoScrollToFirstIssue = false
+            view?.postDelayed({
+                if (issueLineNumbers.isNotEmpty()) {
+                    highlightAndScrollTo(issueLineNumbers.first())
+                }
+            }, 60)
+        }
     }
 
     private fun buildCompletedView(): View {
@@ -2042,6 +2051,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         Toast.makeText(ctx, getString(R.string.toast_command_inserted), Toast.LENGTH_SHORT).show()
                     }
                     hasUnsavedChanges = true
+                    pendingAutoScrollToFirstIssue = true
                     revalidateAndRefreshUI()
             }
             .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
@@ -2052,6 +2062,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     pushUndoState()
                     allLines.removeAt(editLineIndex)
                     hasUnsavedChanges = true
+                    pendingAutoScrollToFirstIssue = true
                     revalidateAndRefreshUI()
                     Toast.makeText(ctx, getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
                 }
@@ -2072,6 +2083,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         pushUndoState()
                         java.util.Collections.swap(allLines, editLineIndex, editLineIndex - 1)
                         hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
                         revalidateAndRefreshUI()
                         Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
@@ -2084,6 +2096,7 @@ class ProtocolValidationDialog : DialogFragment() {
                         pushUndoState()
                         java.util.Collections.swap(allLines, editLineIndex, editLineIndex + 1)
                         hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
                         revalidateAndRefreshUI()
                         Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
@@ -2159,6 +2172,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     pushUndoState()
                     allLines[lineIndex] = newLine
                     hasUnsavedChanges = true
+                    pendingAutoScrollToFirstIssue = true
                     Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
                 }
                 revalidateAndRefreshUI()
@@ -2168,6 +2182,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 pushUndoState()
                 allLines.removeAt(lineIndex)
                 hasUnsavedChanges = true
+                pendingAutoScrollToFirstIssue = true
                 Toast.makeText(ctx, getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
                 revalidateAndRefreshUI()
             }
@@ -2178,6 +2193,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 pushUndoState()
                 java.util.Collections.swap(allLines, lineIndex, lineIndex - 1)
                 hasUnsavedChanges = true
+                pendingAutoScrollToFirstIssue = true
                 Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
                 revalidateAndRefreshUI()
@@ -2190,6 +2206,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 pushUndoState()
                 java.util.Collections.swap(allLines, lineIndex, lineIndex + 1)
                 hasUnsavedChanges = true
+                pendingAutoScrollToFirstIssue = true
                 Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
                 revalidateAndRefreshUI()
