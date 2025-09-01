@@ -954,17 +954,17 @@ class ProtocolValidationDialog : DialogFragment() {
                 text = "Insert missing LABELs"
                 setOnClickListener {
                     pushUndoState()
-                    // For each missing label, insert LABEL;name above first offending GOTO line
+                    // For each missing label, insert LABEL;name AFTER first offending GOTO line to avoid immediately re-triggering navigation loops
                     val toInsert = mutableListOf<Pair<Int,String>>()
                     for (target in undefinedGotoTargets) {
                         val firstGotoLine = validationCache.firstOrNull { it.error.contains("GOTO target label '$target' not defined") }?.lineNumber
-                        val insertionIndex = (firstGotoLine?.minus(1)) ?: allLines.size
+                        val insertionIndex = (firstGotoLine ?: (allLines.size)) // index is 1-based line number; we'll insert after, so use line number directly
                         toInsert.add(insertionIndex to "LABEL;$target")
                     }
                     // Sort by insertion index to maintain order
                     toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
                         val (idx, line) = pair
-                        val adj = idx + offset
+                        val adj = idx + offset // already points after the GOTO line
                         if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
                     }
                     hasUnsavedChanges = true
