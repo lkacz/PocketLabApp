@@ -905,6 +905,20 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
+        // Aggregate auto-fix pass (applies a set of safe transformations)
+        if (errorCount > 0) {
+            addQuickFixRow(
+                bg = "#E0F7FA",
+                textColor = "#006064",
+                message = "Attempt automatic safe fixes for common issues.",
+                buttonText = "Auto Fix All"
+            ) {
+                val agg = QuickFixes.applySafeAutoFixes(allLines)
+                allLines = agg.lines.toMutableList()
+                agg.totalChanges
+            }
+        }
+
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)

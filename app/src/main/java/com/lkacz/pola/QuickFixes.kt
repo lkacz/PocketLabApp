@@ -6,6 +6,7 @@ package com.lkacz.pola
  */
 object QuickFixes {
     data class Result(val lines: List<String>, val changedCount: Int)
+    data class AggregateResult(val lines: List<String>, val totalChanges: Int, val breakdown: Map<String, Int>)
 
     fun removeStraySemicolons(lines: List<String>): Result {
         var changed = 0
@@ -127,5 +128,24 @@ object QuickFixes {
             if (norm != null) { changed++; norm } else raw
         }
         return Result(updated, changed)
+    }
+
+    /**
+     * Apply a bundle of "safe" non-destructive fixes (those that only normalize formatting or remove clear redundancies)
+     * in a deterministic order. Returns combined result with per-fix counts.
+     */
+    fun applySafeAutoFixes(lines: List<String>): AggregateResult {
+        var current = lines
+        val breakdown = linkedMapOf<String, Int>()
+
+        removeStraySemicolons(current).also { current = it.lines; breakdown["straySemicolons"] = it.changedCount }
+        normalizeColors(current).also { current = it.lines; breakdown["colors"] = it.changedCount }
+        normalizeTimerLines(current).also { current = it.lines; breakdown["timers"] = it.changedCount }
+        normalizeContentCommands(current).also { current = it.lines; breakdown["content"] = it.changedCount }
+        removeDuplicateLabels(current).also { current = it.lines; breakdown["duplicateLabels"] = it.changedCount }
+        insertMissingGotoLabels(current).also { current = it.lines; breakdown["missingLabels"] = it.changedCount }
+
+        val total = breakdown.values.sum()
+        return AggregateResult(current, total, breakdown)
     }
 }
