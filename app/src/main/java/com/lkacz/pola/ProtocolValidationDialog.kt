@@ -1902,6 +1902,30 @@ class ProtocolValidationDialog : DialogFragment() {
             .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
                 val cmd = spinner.selectedItem as String
                 fun def(et: EditText, fallback: String) = et.text.toString().takeIf { it.isNotBlank() } ?: fallback
+                // Contextual validations
+                if (cmd == "STUDY_ID" && !isEdit) {
+                    if (allLines.any { it.trim().uppercase().startsWith("STUDY_ID;") }) {
+                        Toast.makeText(ctx, getString(R.string.error_duplicate_study_id), Toast.LENGTH_SHORT).show(); return@setPositiveButton
+                    }
+                }
+                if (cmd == "RANDOMIZE_OFF") {
+                    // Ensure a RANDOMIZE_ON appears above (and not already fully closed without open block)
+                    var open = 0
+                    for (line in allLines) {
+                        val t = line.trim().uppercase()
+                        if (t == "RANDOMIZE_ON") open++ else if (t == "RANDOMIZE_OFF" && open>0) open--
+                    }
+                    if (open <= 0) { Toast.makeText(ctx, getString(R.string.error_randomize_off_without_on), Toast.LENGTH_SHORT).show(); return@setPositiveButton }
+                }
+                if (cmd == "RANDOMIZE_ON") {
+                    // disallow nested (any currently open block forbids new ON)
+                    var open = 0
+                    for (line in allLines) {
+                        val t = line.trim().uppercase()
+                        if (t == "RANDOMIZE_ON") open++ else if (t == "RANDOMIZE_OFF" && open>0) open--
+                    }
+                    if (open > 0) { Toast.makeText(ctx, getString(R.string.error_randomize_on_nested), Toast.LENGTH_SHORT).show(); return@setPositiveButton }
+                }
                 val newLine = when (cmd) {
                     "INSTRUCTION" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(cont,"Continue")}" 
                     "TIMER" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(time,"60")};${def(cont,"Continue")}" 
@@ -1996,7 +2020,6 @@ class ProtocolValidationDialog : DialogFragment() {
         dialog.setOnShowListener {
             if (isEdit) {
                 // Add move buttons below form dynamically
-                val parent = container.parent as? ViewGroup ?: return@setOnShowListener
                 val moveRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,24,0,8) }
                 val btnUp = Button(ctx).apply { text = getString(R.string.action_move_up) }
                 val btnDown = Button(ctx).apply { text = getString(R.string.action_move_down) }

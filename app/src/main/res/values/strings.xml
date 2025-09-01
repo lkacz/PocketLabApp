@@ -114,4 +114,7 @@
     <string name="cd_overflow_menu">More actions</string>
     <string name="action_increase">Increase Text</string>
     <string name="action_decrease">Decrease Text</string>
+    <string name="error_duplicate_study_id">STUDY_ID already defined</string>
+    <string name="error_randomize_off_without_on">RANDOMIZE_OFF without prior RANDOMIZE_ON</string>
+    <string name="error_randomize_on_nested">Already inside RANDOMIZE_ON block</string>
 </resources>
