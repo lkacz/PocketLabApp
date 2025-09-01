@@ -29,43 +29,7 @@ import java.io.FileOutputStream
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
-    private val recognizedCommands =
-        setOf(
-            "BODY_ALIGNMENT",
-            "BODY_COLOR",
-            "BODY_SIZE",
-            "CONTINUE_TEXT_COLOR",
-            "CONTINUE_ALIGNMENT",
-            "CONTINUE_BACKGROUND_COLOR",
-            "CONTINUE_SIZE",
-            "HTML", // Replaced CUSTOM_HTML with HTML
-            "END",
-            "GOTO",
-            "HEADER_ALIGNMENT",
-            "HEADER_COLOR",
-            "HEADER_SIZE",
-            "INPUTFIELD",
-            "INPUTFIELD[RANDOMIZED]",
-            "INSTRUCTION",
-            "ITEM_SIZE",
-            "LABEL",
-            "LOG",
-            "RANDOMIZE_OFF",
-            "RANDOMIZE_ON",
-            "RESPONSE_BACKGROUND_COLOR",
-            "RESPONSE_SIZE",
-            "RESPONSE_TEXT_COLOR",
-            "SCALE",
-            "SCALE[RANDOMIZED]",
-            "SCREEN_BACKGROUND_COLOR",
-            "STUDY_ID",
-            "TIMER",
-            "TIMER_SOUND",
-            "TIMER_SIZE",
-            "TIMER_COLOR",
-            "TIMER_ALIGNMENT",
-            "TRANSITIONS",
-        )
+    private val recognizedCommands = ProtocolValidator.RECOGNIZED_COMMANDS
 
     private val allowedMediaCommands =
         setOf(
