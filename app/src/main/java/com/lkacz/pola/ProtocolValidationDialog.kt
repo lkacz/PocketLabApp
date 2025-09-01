@@ -64,6 +64,8 @@ class ProtocolValidationDialog : DialogFragment() {
     private var pendingAutoScrollToFirstIssue = false
     private var lastValidationMs: Double? = null
     private var validationTimeLabel: TextView? = null
+    // Re-entrancy guard for refresh (prevents nested revalidate causing inconsistent UI removal)
+    private var isRevalidating = false
 
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -541,7 +543,12 @@ class ProtocolValidationDialog : DialogFragment() {
 
             withContext(Dispatchers.Main) {
                 rootLayout.removeView(progressBar)
-                val finalView = buildCompletedView()
+                // Remove any stale dynamic content areas in case of recreation
+                for (i in rootLayout.childCount - 1 downTo 0) {
+                    val child = rootLayout.getChildAt(i)
+                    if (child.tag == "contentArea") rootLayout.removeViewAt(i)
+                }
+                val finalView = buildCompletedView().apply { tag = "contentArea" }
                 rootLayout.addView(finalView)
             }
         }
@@ -679,6 +686,15 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun revalidateAndRefreshUI() {
+    // Skip refresh if fragment is no longer attached or view hierarchy missing to avoid IllegalStateException
+    if (!isAdded || view == null) return
+    if (isRevalidating) {
+        Timber.w("revalidate suppressed (already running)")
+        return
+    }
+    isRevalidating = true
+    var previousContent: View? = null
+    var previousIndex: Int = -1
     try {
         val oldCache = validationCache
 
@@ -715,12 +731,17 @@ class ProtocolValidationDialog : DialogFragment() {
             oldCache.size != validationCache.size ||
             searchQuery != null || filterOption != FilterOption.HIDE_COMMENTS
 
-        if (mustRebuild) {
-            existingContent?.let { rootLayout.removeView(it) }
+        if (mustRebuild || existingContent == null) {
+            // Build new first; only swap after successful build
             val newContent = buildCompletedView().apply { tag = "contentArea" }
+            if (existingContent != null) {
+                previousContent = existingContent
+                previousIndex = rootLayout.indexOfChild(existingContent)
+                rootLayout.removeView(existingContent)
+            }
             rootLayout.addView(newContent)
         } else {
-            // Lightweight in-place updates (summary + time labels) inside existing content
+            // Partial updates could be implemented; for stability we rebuild via replacement
             (existingContent.findViewWithTag("summaryLabel") as? TextView)?.let { tv ->
                 val errorCount = validationCache.count { it.error.isNotEmpty() }
                 val warningCount = validationCache.count { it.warning.isNotEmpty() }
@@ -730,10 +751,12 @@ class ProtocolValidationDialog : DialogFragment() {
             (existingContent.findViewWithTag("validationTimeLabel") as? TextView)?.let { tv ->
                 tv.text = lastValidationMs?.let { String.format("Validation %.2f ms", it) }
             }
-            // For now we still rebuild rows fully (simpler & safe) to avoid stale quick-fix buttons.
+            val replacement = buildCompletedView().apply { tag = "contentArea" }
+            previousContent = existingContent
+            previousIndex = rootLayout.indexOfChild(existingContent)
             rootLayout.removeView(existingContent)
-            val fresh = buildCompletedView().apply { tag = "contentArea" }
-            rootLayout.addView(fresh)
+            // Insert at same index for stable layout order
+            if (previousIndex in 0..rootLayout.childCount) rootLayout.addView(replacement, previousIndex) else rootLayout.addView(replacement)
         }
 
         if (pendingAutoScrollToFirstIssue) {
@@ -742,11 +765,20 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         } catch (t: Throwable) {
             Timber.e(t, "revalidateAndRefreshUI crashed")
-            // Attempt rollback
+            // Attempt rollback to last undo state (do not pop it)
             if (undoStack.isNotEmpty()) {
                 allLines = undoStack.last().toMutableList()
             }
-            Toast.makeText(requireContext(), "Validation refresh error: ${t::class.simpleName}", Toast.LENGTH_LONG).show()
+            // Restore previous content if we removed it and new failed to attach
+            val rootLayout = view as? LinearLayout
+            if (rootLayout != null && previousContent != null && previousContent.parent == null) {
+                if (previousIndex in 0..rootLayout.childCount) rootLayout.addView(previousContent, previousIndex) else rootLayout.addView(previousContent)
+            }
+            context?.let { ctx ->
+                Toast.makeText(ctx, "Validation refresh error: ${t::class.simpleName}", Toast.LENGTH_LONG).show()
+            }
+        } finally {
+            isRevalidating = false
         }
     }
 
