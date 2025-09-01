@@ -931,6 +931,54 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(dupRow)
         }
 
+        // Quick-fix row for undefined GOTO targets: create missing LABEL lines above first GOTO reference
+        val undefinedGotoTargets = mutableSetOf<String>()
+        validationCache.forEach { entry ->
+            val err = entry.error
+            val match = Regex("GOTO target label '([^']+)' not defined").find(err)
+            if (match != null) undefinedGotoTargets.add(match.groupValues[1])
+        }
+        if (undefinedGotoTargets.isNotEmpty()) {
+            val gotoFixRow = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFF1E0"))
+                setPadding(16,8,16,8)
+            }
+            val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val msg = TextView(requireContext()).apply {
+                text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"
+                setTextColor(Color.parseColor("#A65E00"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+            val btn = Button(requireContext()).apply {
+                text = "Insert missing LABELs"
+                setOnClickListener {
+                    pushUndoState()
+                    // For each missing label, insert LABEL;name above first offending GOTO line
+                    val toInsert = mutableListOf<Pair<Int,String>>()
+                    for (target in undefinedGotoTargets) {
+                        val firstGotoLine = validationCache.firstOrNull { it.error.contains("GOTO target label '$target' not defined") }?.lineNumber
+                        val insertionIndex = (firstGotoLine?.minus(1)) ?: allLines.size
+                        toInsert.add(insertionIndex to "LABEL;$target")
+                    }
+                    // Sort by insertion index to maintain order
+                    toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
+                        val (idx, line) = pair
+                        val adj = idx + offset
+                        if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
+                    }
+                    hasUnsavedChanges = true
+                    pendingAutoScrollToFirstIssue = true
+                    revalidateAndRefreshUI()
+                    Toast.makeText(requireContext(), "Inserted ${undefinedGotoTargets.size} LABEL(s)", Toast.LENGTH_SHORT).show()
+                }
+            }
+            lay.addView(msg)
+            lay.addView(btn)
+            gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
+            contentTable.addView(gotoFixRow)
+        }
+
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)
