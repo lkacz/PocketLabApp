@@ -35,10 +35,10 @@
     <string name="action_export">Export</string>
     <string name="toggle_highlight_commands">Highlight Commands</string>
     <string name="toggle_split_commands">Split Commands</string>
-    <string name="filter_everything">Everything</string>
-    <string name="filter_hide_comments">Hide comments</string>
-    <string name="filter_errors_warnings">Errors &amp; Warnings</string>
-    <string name="filter_errors_only">Only Errors</string>
+    <string name="filter_everything">Show Everything</string>
+    <string name="filter_hide_comments">Hide Comments</string>
+    <string name="filter_errors_warnings">Show Only Errors &amp; Warnings</string>
+    <string name="filter_errors_only">Show Only Errors</string>
     <string name="toast_protocol_loaded">Protocol loaded.</string>
     <string name="toast_loading_cancelled">Loading was cancelled.</string>
     <string name="toast_saved_new_file">Saved as new file.</string>

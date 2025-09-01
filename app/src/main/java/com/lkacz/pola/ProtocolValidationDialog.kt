@@ -350,19 +350,20 @@ class ProtocolValidationDialog : DialogFragment() {
         } catch (_: Exception) { }
         setOnClickListener {
             val popup = PopupMenu(requireContext(), this).apply {
-                menu.add(0, 1, 0, getString(R.string.action_load_protocol))
-                menu.add(0, 2, 1, getString(R.string.action_save_protocol))
-                menu.add(0, 3, 2, getString(R.string.action_save_as_protocol))
-                menu.add(0, 4, 3, getString(R.string.action_new_protocol))
+                // Place New first for quick access
+                menu.add(0, 1, 0, getString(R.string.action_new_protocol))
+                menu.add(0, 2, 1, getString(R.string.action_load_protocol))
+                menu.add(0, 3, 2, getString(R.string.action_save_protocol))
+                menu.add(0, 4, 3, getString(R.string.action_save_as_protocol))
                 menu.add(0, 5, 4, getString(R.string.action_increase) + " +")
                 menu.add(0, 6, 5, getString(R.string.action_decrease) + " -")
             }
             popup.setOnMenuItemClickListener { mi ->
                 when (mi.itemId) {
-                    1 -> confirmLoadProtocol()
-                    2 -> confirmSaveDialog()
-                    3 -> { val defaultName = getSuggestedFileName(); createDocumentLauncher.launch(defaultName) }
-                    4 -> confirmNewProtocol()
+                    1 -> confirmNewProtocol()
+                    2 -> confirmLoadProtocol()
+                    3 -> confirmSaveDialog()
+                    4 -> { val defaultName = getSuggestedFileName(); createDocumentLauncher.launch(defaultName) }
                     5 -> if (textScale < maxScale) { textScale = (textScale + 0.1f).coerceAtMost(maxScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
                     6 -> if (textScale > minScale) { textScale = (textScale - 0.1f).coerceAtLeast(minScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
                 }
