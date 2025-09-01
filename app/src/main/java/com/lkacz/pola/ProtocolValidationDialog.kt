@@ -681,11 +681,12 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun revalidateAndRefreshUI() {
     try {
         val oldCache = validationCache
+
+        // Re-run validation + resource presence mapping
         randomizationLevel = 0
         globalErrors.clear()
         lastCommand = null
         resourceExistenceMap.clear()
-
         val bracketedReferences = mutableSetOf<String>()
         for (line in allLines) {
             ResourceFileChecker.findBracketedFiles(line).forEach { bracketedReferences.add(it) }
@@ -705,38 +706,34 @@ class ProtocolValidationDialog : DialogFragment() {
         }
         lastValidationMs = elapsedMs
 
-        // If size changed or filters active, rebuild fully
-        val containerLayout = view as? LinearLayout ?: return
-        val requiresFullRebuild = oldCache.size != validationCache.size ||
+        // Root (entire dialog view)
+        val rootLayout = view as? LinearLayout ?: return
+
+        // Locate existing dynamic content area by tag (created by buildCompletedView())
+        val existingContent = rootLayout.findViewWithTag<View>("contentArea")
+        val mustRebuild = existingContent == null ||
+            oldCache.size != validationCache.size ||
             searchQuery != null || filterOption != FilterOption.HIDE_COMMENTS
 
-        if (requiresFullRebuild) {
-            while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
-            containerLayout.addView(buildCompletedView())
+        if (mustRebuild) {
+            existingContent?.let { rootLayout.removeView(it) }
+            val newContent = buildCompletedView().apply { tag = "contentArea" }
+            rootLayout.addView(newContent)
         } else {
-            // Attempt true partial update of existing rows; if structure mismatch, fallback
-            val existingTable = containerLayout.findViewById<TableLayout?>(android.R.id.content) // likely null (we didn't set id)
-            // Diff entries by line number
-            val changedLines = mutableSetOf<Int>()
-            validationCache.forEachIndexed { idx, newEntry ->
-                val old = oldCache.getOrNull(idx)
-                if (old == null) { changedLines.add(newEntry.lineNumber) } else {
-                    if (old.rawLine != newEntry.rawLine || old.error != newEntry.error || old.warning != newEntry.warning) changedLines.add(newEntry.lineNumber)
-                }
-            }
-            // Update summary & time labels if present
-            (containerLayout.findViewWithTag("summaryLabel") as? TextView)?.let { tv ->
+            // Lightweight in-place updates (summary + time labels) inside existing content
+            (existingContent.findViewWithTag("summaryLabel") as? TextView)?.let { tv ->
                 val errorCount = validationCache.count { it.error.isNotEmpty() }
                 val warningCount = validationCache.count { it.warning.isNotEmpty() }
                 val total = validationCache.size
                 tv.text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
             }
-            (containerLayout.findViewWithTag("validationTimeLabel") as? TextView)?.let { tv ->
+            (existingContent.findViewWithTag("validationTimeLabel") as? TextView)?.let { tv ->
                 tv.text = lastValidationMs?.let { String.format("Validation %.2f ms", it) }
             }
-            // For simplicity, still rebuild quick-fix section (remove and append fresh) to reflect new errors
-            while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
-            containerLayout.addView(buildCompletedView())
+            // For now we still rebuild rows fully (simpler & safe) to avoid stale quick-fix buttons.
+            rootLayout.removeView(existingContent)
+            val fresh = buildCompletedView().apply { tag = "contentArea" }
+            rootLayout.addView(fresh)
         }
 
         if (pendingAutoScrollToFirstIssue) {
