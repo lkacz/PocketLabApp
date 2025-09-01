@@ -676,6 +676,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun revalidateAndRefreshUI() {
+        val oldCache = validationCache
         randomizationLevel = 0
         globalErrors.clear()
         lastCommand = null
@@ -683,9 +684,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val bracketedReferences = mutableSetOf<String>()
         for (line in allLines) {
-            ResourceFileChecker.findBracketedFiles(line).forEach {
-                bracketedReferences.add(it)
-            }
+            ResourceFileChecker.findBracketedFiles(line).forEach { bracketedReferences.add(it) }
         }
         if (resourcesFolderUri != null) {
             bracketedReferences.forEach { fileRef ->
@@ -694,20 +693,34 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-    PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
+        PerfTimer.track("ProtocolDialog.revalidate") { computeValidationCache() }
 
+        // If size changed or filters active, rebuild fully
         val containerLayout = view as? LinearLayout ?: return
-        while (containerLayout.childCount > 4) {
-            containerLayout.removeViewAt(4)
+        val requiresFullRebuild = oldCache.size != validationCache.size ||
+            searchQuery != null || filterOption != FilterOption.HIDE_COMMENTS
+
+        if (requiresFullRebuild) {
+            while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
+            containerLayout.addView(buildCompletedView())
+        } else {
+            // Diff and update only changed rows + summary & quick-fix section
+            val changedLines = mutableSetOf<Int>()
+            validationCache.forEachIndexed { idx, newEntry ->
+                val old = oldCache.getOrNull(idx)
+                if (old == null) { changedLines.add(newEntry.lineNumber); return@forEachIndexed }
+                if (old.rawLine != newEntry.rawLine || old.error != newEntry.error || old.warning != newEntry.warning) {
+                    changedLines.add(newEntry.lineNumber)
+                }
+            }
+            // Rebuild header+summary+quick-fix block (remove old content view and insert new)
+            while (containerLayout.childCount > 4) containerLayout.removeViewAt(4)
+            containerLayout.addView(buildCompletedView())
         }
-        containerLayout.addView(buildCompletedView())
+
         if (pendingAutoScrollToFirstIssue) {
             pendingAutoScrollToFirstIssue = false
-            view?.postDelayed({
-                if (issueLineNumbers.isNotEmpty()) {
-                    highlightAndScrollTo(issueLineNumbers.first())
-                }
-            }, 60)
+            view?.postDelayed({ if (issueLineNumbers.isNotEmpty()) highlightAndScrollTo(issueLineNumbers.first()) }, 60)
         }
     }
 
