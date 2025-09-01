@@ -67,6 +67,12 @@
     <string name="hint_filename">Filename</string>
     <string name="hint_message">Message</string>
     <string name="hint_input_fields">Input fields (comma separated)</string>
+    <string name="hint_color_value">Color (e.g. #FF0000)</string>
+    <string name="hint_size_value">Size (number)</string>
+    <string name="hint_alignment_value">Alignment (LEFT|CENTER|RIGHT)</string>
+    <string name="hint_study_id_value">Study ID</string>
+    <string name="hint_transitions_mode">Transitions mode (off|slide|slideleft|fade|dissolve)</string>
+    <string name="hint_value">Value</string>
     <string name="toast_command_inserted">Command inserted</string>
     <string name="toast_insert_cancelled">Insert cancelled</string>
     <string name="toast_long_press_insert">Long-press a line to insert below it</string>
