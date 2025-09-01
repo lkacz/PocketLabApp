@@ -880,6 +880,57 @@ class ProtocolValidationDialog : DialogFragment() {
             contentTable.addView(fixRow)
         }
 
+        // Quick-fix row for duplicate LABEL lines (keep first, remove subsequent duplicates)
+        val hasDuplicateLabelErrors = validationCache.any { it.error.contains("Label duplicated", ignoreCase = true) }
+        if (hasDuplicateLabelErrors) {
+            val dupRow = TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFEEEE"))
+                setPadding(16, 8, 16, 8)
+            }
+            val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+            val msg = TextView(requireContext()).apply {
+                text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"
+                setTextColor(Color.parseColor("#BB0000"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+            val btn = Button(requireContext()).apply {
+                text = "Fix duplicate LABELs"
+                setOnClickListener {
+                    pushUndoState()
+                    val seen = mutableSetOf<String>()
+                    val iterator = allLines.listIterator()
+                    var removed = 0
+                    while (iterator.hasNext()) {
+                        val line = iterator.next()
+                        val t = line.trim()
+                        if (t.uppercase().startsWith("LABEL;")) {
+                            val parts = t.split(';')
+                            val name = parts.getOrNull(1)?.trim().orEmpty()
+                            if (name.isNotEmpty()) {
+                                if (!seen.add(name)) {
+                                    iterator.remove()
+                                    removed++
+                                }
+                            }
+                        }
+                    }
+                    if (removed > 0) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed $removed duplicate LABEL(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            layout.addView(msg)
+            layout.addView(btn)
+            dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
+            contentTable.addView(dupRow)
+        }
+
         scrollView.addView(contentTable)
     containerLayout.addView(headerTable)
     containerLayout.addView(summaryLabel)
