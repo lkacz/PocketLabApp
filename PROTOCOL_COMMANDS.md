@@ -56,6 +56,8 @@ This document catalogs the protocol command syntax, validation rules, and availa
 | Duplicate LABELs | Remove later duplicates |
 | Undefined GOTO target | Insert missing LABEL after first offending GOTO |
 | Malformed TIMER | Normalize to TIMER;Header;Body;60;Continue |
+| Invalid short / named color | Normalize #RGB/#ARGB or named (RED, BLUE, etc.) to full hex |
+| Malformed INSTRUCTION / SCALE / INPUTFIELD | Normalize to placeholder segments (Header/Body/field/item defaults) |
 
 ## Auto-Scroll Behavior
 After any mutation (add/edit/move/quick-fix), view auto-scrolls to the first remaining issue to reduce navigation friction.
@@ -78,6 +80,7 @@ Pure validator (`ProtocolValidator`) covered by unit tests for:
 
 ## Future Ideas
 - Color quick-fix (normalize #RGB to #RRGGBB).
+	(Implemented: also handles #ARGB and limited named colors.)
 - Batch optimize large protocols (lazy row rendering, diff-based refresh).
 - Export protocol skeleton generator.
 
