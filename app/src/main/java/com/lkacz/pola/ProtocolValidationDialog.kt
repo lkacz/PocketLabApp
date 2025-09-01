@@ -18,6 +18,7 @@ import android.view.*
 import android.view.DragEvent
 import android.content.ClipData
 import android.widget.*
+import timber.log.Timber
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
@@ -678,6 +679,7 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun revalidateAndRefreshUI() {
+    try {
         val oldCache = validationCache
         randomizationLevel = 0
         globalErrors.clear()
@@ -740,6 +742,14 @@ class ProtocolValidationDialog : DialogFragment() {
         if (pendingAutoScrollToFirstIssue) {
             pendingAutoScrollToFirstIssue = false
             view?.postDelayed({ if (issueLineNumbers.isNotEmpty()) highlightAndScrollTo(issueLineNumbers.first()) }, 60)
+        }
+        } catch (t: Throwable) {
+            Timber.e(t, "revalidateAndRefreshUI crashed")
+            // Attempt rollback
+            if (undoStack.isNotEmpty()) {
+                allLines = undoStack.last().toMutableList()
+            }
+            Toast.makeText(requireContext(), "Validation refresh error: ${t::class.simpleName}", Toast.LENGTH_LONG).show()
         }
     }
 
