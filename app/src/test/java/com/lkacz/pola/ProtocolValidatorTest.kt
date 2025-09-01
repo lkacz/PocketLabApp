@@ -133,4 +133,10 @@ class ProtocolValidatorTest {
         ))
         assertTrue(res[1].error.isEmpty())
     }
+
+    @Test
+    fun timer_missing_segment_error() {
+        val res = validator.validate(listOf("TIMER;H;B;30")) // only 4 segments
+        assertTrue(res[0].error.contains("exactly 4 semicolons"))
+    }
 }
