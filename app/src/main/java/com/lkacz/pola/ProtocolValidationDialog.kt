@@ -1930,26 +1930,38 @@ class ProtocolValidationDialog : DialogFragment() {
         val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(32,24,32,8) }
         container.addView(inner)
 
-        // Extended list to include all recognized commands for insertion/editing
-        val commands = arrayOf(
+        // Grouped command metadata
+        data class CommandMeta(val name:String, val category:String)
+        val commandMetaList = listOf(
             // Content / structural
-            "INSTRUCTION", "TIMER", "SCALE", "SCALE[RANDOMIZED]", "INPUTFIELD", "INPUTFIELD[RANDOMIZED]",
-            "LABEL", "GOTO", "HTML", "TIMER_SOUND", "LOG", "END",
-            // Randomization toggles
-            "RANDOMIZE_ON", "RANDOMIZE_OFF",
+            CommandMeta("INSTRUCTION","Content"), CommandMeta("TIMER","Content"), CommandMeta("SCALE","Content"), CommandMeta("SCALE[RANDOMIZED]","Content"),
+            CommandMeta("INPUTFIELD","Content"), CommandMeta("INPUTFIELD[RANDOMIZED]","Content"), CommandMeta("LABEL","Content"), CommandMeta("GOTO","Content"),
+            CommandMeta("HTML","Content"), CommandMeta("TIMER_SOUND","Content"), CommandMeta("LOG","Content"), CommandMeta("END","Content"),
+            // Randomization
+            CommandMeta("RANDOMIZE_ON","Randomization"), CommandMeta("RANDOMIZE_OFF","Randomization"),
             // Meta
-            "STUDY_ID", "TRANSITIONS",
-            // Style / layout / appearance
-            "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR",
-            "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE",
-            "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT"
+            CommandMeta("STUDY_ID","Meta"), CommandMeta("TRANSITIONS","Meta"),
+            // Style colors
+            CommandMeta("HEADER_COLOR","Style"), CommandMeta("BODY_COLOR","Style"), CommandMeta("RESPONSE_TEXT_COLOR","Style"), CommandMeta("RESPONSE_BACKGROUND_COLOR","Style"),
+            CommandMeta("SCREEN_BACKGROUND_COLOR","Style"), CommandMeta("CONTINUE_TEXT_COLOR","Style"), CommandMeta("CONTINUE_BACKGROUND_COLOR","Style"), CommandMeta("TIMER_COLOR","Style"),
+            // Style sizes
+            CommandMeta("HEADER_SIZE","Style"), CommandMeta("BODY_SIZE","Style"), CommandMeta("ITEM_SIZE","Style"), CommandMeta("RESPONSE_SIZE","Style"),
+            CommandMeta("CONTINUE_SIZE","Style"), CommandMeta("TIMER_SIZE","Style"),
+            // Style alignment
+            CommandMeta("HEADER_ALIGNMENT","Style"), CommandMeta("BODY_ALIGNMENT","Style"), CommandMeta("CONTINUE_ALIGNMENT","Style"), CommandMeta("TIMER_ALIGNMENT","Style")
         )
-        // Search + dynamic filtered spinner
+        val allCommandNames = commandMetaList.map { it.name }
+        val categories = listOf("All","Content","Randomization","Meta","Style")
         inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
+        val categorySpinner = Spinner(ctx).apply {
+            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, categories)
+        }
+        inner.addView(categorySpinner)
+        // Search + dynamic filtered spinner
         val searchBox = EditText(ctx).apply { hint = "Search commands"; setSingleLine() }
         inner.addView(searchBox)
         val spinner = Spinner(ctx)
-        var filtered = commands.toList()
+        var filtered = allCommandNames
         fun refreshSpinner() {
             val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, filtered)
             spinner.adapter = adapter
@@ -1960,10 +1972,23 @@ class ProtocolValidationDialog : DialogFragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val q = s?.toString()?.trim()?.lowercase().orEmpty()
-                filtered = if (q.isEmpty()) commands.toList() else commands.filter { it.lowercase().contains(q) }
+                val selectedCategory = categories[categorySpinner.selectedItemPosition]
+                val base = if (selectedCategory=="All") commandMetaList else commandMetaList.filter { it.category==selectedCategory }
+                filtered = base.map { it.name }.filter { q.isEmpty() || it.lowercase().contains(q) }
                 refreshSpinner()
+                // Try to keep selection stable if possible
             }
         })
+        categorySpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val q = searchBox.text.toString().trim().lowercase()
+                val selectedCategory = categories[position]
+                val base = if (selectedCategory=="All") commandMetaList else commandMetaList.filter { it.category==selectedCategory }
+                filtered = base.map { it.name }.filter { q.isEmpty() || it.lowercase().contains(q) }
+                refreshSpinner()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
         inner.addView(spinner)
 
         fun edit(hintRes: Int): EditText = EditText(ctx).apply { hint = getString(hintRes); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
@@ -2029,8 +2054,16 @@ class ProtocolValidationDialog : DialogFragment() {
             val existing = allLines[editLineIndex]
             val parts = existing.split(';')
             val cmd = parts.firstOrNull()?.trim().orEmpty()
-            val spinnerIndex = commands.indexOf(cmd).takeIf { it >= 0 } ?: 0
-            spinner.setSelection(spinnerIndex)
+            // Set category first
+            val meta = commandMetaList.firstOrNull { it.name == cmd }
+            val catIndex = if (meta==null) 0 else categories.indexOf(meta.category).takeIf { it>=0 } ?: 0
+            categorySpinner.setSelection(catIndex)
+            // Recompute filtered after category selection
+            categorySpinner.post {
+                val currentFiltered = filtered
+                val spinnerIndex = currentFiltered.indexOf(cmd).takeIf { it >= 0 } ?: 0
+                spinner.setSelection(spinnerIndex)
+            }
             // Delay param refresh until after selection applied
             spinner.post {
                 when (cmd) {
