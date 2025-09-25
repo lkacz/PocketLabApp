@@ -67,6 +67,7 @@
     <string name="hint_filename">Filename</string>
     <string name="hint_message">Message</string>
     <string name="hint_input_fields">Input fields (comma separated)</string>
+    <string name="hint_input_field_number">Field %1$d</string>
     <string name="hint_scale_item_number">Item %1$d</string>
     <string name="hint_scale_response_number">Response %1$d</string>
     <string name="hint_color_value">Color (e.g. #FF0000)</string>
@@ -82,6 +83,7 @@
     <string name="insert_command_choose_command_hint">Select a command to see available parameters.</string>
     <string name="label_scale_items">Items</string>
     <string name="label_scale_responses">Responses</string>
+    <string name="label_inputfield_fields">Input fields</string>
     <string name="toast_command_inserted">Command inserted</string>
     <string name="toast_insert_cancelled">Insert cancelled</string>
     <string name="toast_long_press_insert">Long-press a line to insert below it</string>
@@ -128,5 +130,9 @@
     <string name="error_randomize_on_nested">Already inside RANDOMIZE_ON block</string>
     <string name="action_add_scale_item">+ New item</string>
     <string name="action_add_scale_response">+ New response</string>
+    <string name="action_add_input_field">+ New input field</string>
+    <string name="cd_remove_scale_item">Remove scale item</string>
+    <string name="cd_remove_scale_response">Remove scale response</string>
+    <string name="cd_remove_input_field">Remove input field</string>
     <string name="action_fix_duplicate_study_id">Fix duplicate STUDY_ID</string>
 </resources>

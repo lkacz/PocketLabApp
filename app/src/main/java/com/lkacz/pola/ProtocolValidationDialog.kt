@@ -2363,6 +2363,46 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         fun dp(value: Int): Int = (value * ctx.resources.displayMetrics.density).roundToInt()
+
+        fun createRemoveButton(
+            contentDescriptionText: String,
+            onRemove: () -> Unit,
+        ): ImageButton =
+            ImageButton(ctx).apply {
+                setImageDrawable(
+                    androidx.core.content.ContextCompat.getDrawable(
+                        ctx,
+                        R.drawable.ic_close,
+                    ),
+                )
+                val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
+                val typed = ctx.obtainStyledAttributes(attrs)
+                background = typed.getDrawable(0)
+                typed.recycle()
+                contentDescription = contentDescriptionText
+                scaleType = ImageView.ScaleType.CENTER
+                val size = dp(40)
+                layoutParams =
+                    LinearLayout.LayoutParams(size, size).apply {
+                        gravity = Gravity.CENTER_VERTICAL
+                        marginStart = dp(8)
+                    }
+                setPadding(dp(6), dp(6), dp(6), dp(6))
+                try {
+                    val themeWrapper =
+                        androidx.appcompat.view.ContextThemeWrapper(
+                            ctx,
+                            com.google.android.material.R.style.ThemeOverlay_Material3,
+                        )
+                    val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
+                    val a = themeWrapper.obtainStyledAttributes(colorAttr)
+                    val color = a.getColor(0, 0xFF444444.toInt())
+                    a.recycle()
+                    imageTintList = android.content.res.ColorStateList.valueOf(color)
+                } catch (_: Exception) {
+                }
+                setOnClickListener { onRemove() }
+            }
         val selectionCard =
             com.google.android.material.card.MaterialCardView(ctx).apply {
                 layoutParams =
@@ -2551,12 +2591,17 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         fun addScaleItemField(prefill: String = "") {
-            val layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply {
-                    topMargin = dp(8)
+            val row =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = dp(8)
+                        }
+                    gravity = Gravity.CENTER_VERTICAL
                 }
             val inputLayout =
                 com.google.android.material.textfield.TextInputLayout(
@@ -2564,7 +2609,12 @@ class ProtocolValidationDialog : DialogFragment() {
                     null,
                     com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
                 ).apply {
-                    this.layoutParams = layoutParams
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            0,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        )
                     boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
                 }
             val editText =
@@ -2573,7 +2623,19 @@ class ProtocolValidationDialog : DialogFragment() {
                     setSingleLine()
                 }
             inputLayout.addView(editText)
-            scaleItemsList.addView(inputLayout)
+            val removeButton =
+                createRemoveButton(getString(R.string.cd_remove_scale_item)) {
+                    scaleItemsList.removeView(row)
+                    scaleItemFields.remove(editText)
+                    if (scaleItemFields.isEmpty()) {
+                        addScaleItemField()
+                    } else {
+                        updateScaleItemHints()
+                    }
+                }
+            row.addView(inputLayout)
+            row.addView(removeButton)
+            scaleItemsList.addView(row)
             scaleItemFields.add(editText)
             updateScaleItemHints()
             if (prefill.isNotEmpty()) {
@@ -2582,12 +2644,17 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         fun addScaleResponseField(prefill: String = "") {
-            val layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply {
-                    topMargin = dp(8)
+            val row =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = dp(8)
+                        }
+                    gravity = Gravity.CENTER_VERTICAL
                 }
             val inputLayout =
                 com.google.android.material.textfield.TextInputLayout(
@@ -2595,7 +2662,12 @@ class ProtocolValidationDialog : DialogFragment() {
                     null,
                     com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
                 ).apply {
-                    this.layoutParams = layoutParams
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            0,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        )
                     boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
                 }
             val editText =
@@ -2604,7 +2676,19 @@ class ProtocolValidationDialog : DialogFragment() {
                     setSingleLine()
                 }
             inputLayout.addView(editText)
-            scaleResponsesList.addView(inputLayout)
+            val removeButton =
+                createRemoveButton(getString(R.string.cd_remove_scale_response)) {
+                    scaleResponsesList.removeView(row)
+                    scaleResponseFields.remove(editText)
+                    if (scaleResponseFields.isEmpty()) {
+                        addScaleResponseField()
+                    } else {
+                        updateScaleResponseHints()
+                    }
+                }
+            row.addView(inputLayout)
+            row.addView(removeButton)
+            scaleResponsesList.addView(row)
             scaleResponseFields.add(editText)
             updateScaleResponseHints()
             if (prefill.isNotEmpty()) {
@@ -2719,12 +2803,126 @@ class ProtocolValidationDialog : DialogFragment() {
         val gotoLabel = edit(R.string.hint_goto_label)
         val filename = edit(R.string.hint_filename)
         val message = edit(R.string.hint_message)
-        val inputFields = edit(R.string.hint_input_fields)
         val colorValue = edit(R.string.hint_color_value)
         val sizeValue =
             edit(R.string.hint_size_value).apply {
                 inputType = android.text.InputType.TYPE_CLASS_NUMBER
             }
+        val inputFieldEntries = mutableListOf<TextInputEditText>()
+        val inputFieldList =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+        fun updateInputFieldHints() {
+            inputFieldEntries.forEachIndexed { index, editText ->
+                (editText.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
+                    getString(R.string.hint_input_field_number, index + 1)
+            }
+        }
+
+        fun addInputFieldEntry(prefill: String = "") {
+            val row =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = dp(8)
+                        }
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+            val inputLayout =
+                com.google.android.material.textfield.TextInputLayout(
+                    ctx,
+                    null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
+                ).apply {
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            0,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            1f,
+                        )
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                }
+            val editText =
+                TextInputEditText(inputLayout.context).apply {
+                    setText(prefill)
+                    setSingleLine()
+                }
+            inputLayout.addView(editText)
+            val removeButton =
+                createRemoveButton(getString(R.string.cd_remove_input_field)) {
+                    inputFieldList.removeView(row)
+                    inputFieldEntries.remove(editText)
+                    if (inputFieldEntries.isEmpty()) {
+                        addInputFieldEntry()
+                    } else {
+                        updateInputFieldHints()
+                    }
+                }
+            row.addView(inputLayout)
+            row.addView(removeButton)
+            inputFieldList.addView(row)
+            inputFieldEntries.add(editText)
+            updateInputFieldHints()
+            if (prefill.isNotEmpty()) editText.setSelection(prefill.length)
+        }
+
+        fun rebuildInputFieldEntries(values: List<String>) {
+            inputFieldEntries.clear()
+            inputFieldList.removeAllViews()
+            val actual = values.ifEmpty { listOf("") }
+            actual.forEach { addInputFieldEntry(it) }
+        }
+
+        val addInputFieldButton =
+            com.google.android.material.button.MaterialButton(
+                ctx,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
+                text = getString(R.string.action_add_input_field)
+                isAllCaps = false
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                setOnClickListener {
+                    addInputFieldEntry()
+                    inputFieldEntries.lastOrNull()?.requestFocus()
+                }
+            }
+
+        val inputFieldSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                addView(
+                    TextView(ctx).apply {
+                        text = getString(R.string.label_inputfield_fields)
+                        textSize = applyScale(14f)
+                        setTypeface(null, Typeface.BOLD)
+                    },
+                )
+                addView(inputFieldList)
+                addView(addInputFieldButton)
+            }
+
+        fun collectInputFieldEntries(): List<String> =
+            inputFieldEntries.map { it.text.toString().trim() }.filter { it.isNotEmpty() }
         val alignmentSpinner =
             Spinner(ctx).apply {
                 adapter =
@@ -2839,7 +3037,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
-                    paramGroup.addView(inputFields)
+                    rebuildInputFieldEntries(emptyList())
+                    paramGroup.addView(inputFieldSection)
                     paramGroup.addView(cont)
                 }
                 "LABEL" -> {
@@ -3000,12 +3199,13 @@ class ProtocolValidationDialog : DialogFragment() {
                         header.setText(existingParts.getOrNull(1))
                         body.setText(existingParts.getOrNull(2))
                         val fieldSlice =
-                            if (existingParts.size > 4) {
-                                existingParts.subList(3, existingParts.size - 1)
-                            } else {
-                                emptyList()
+                            when {
+                                existingParts.size > 4 -> existingParts.subList(3, existingParts.size - 1)
+                                existingParts.size >= 4 -> listOfNotNull(existingParts.getOrNull(3))
+                                else -> emptyList()
                             }
-                        inputFields.setText(fieldSlice.joinToString(", "))
+                                .map { it.trim() }
+                        rebuildInputFieldEntries(fieldSlice)
                         cont.setText(existingParts.lastOrNull())
                     }
                     "LABEL" -> {
@@ -3148,12 +3348,10 @@ class ProtocolValidationDialog : DialogFragment() {
                             }
                             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                                 val fieldTokens =
-                                    inputFields.text.toString().split(',')
-                                        .map { it.trim() }
-                                        .filter { it.isNotEmpty() }
+                                    collectInputFieldEntries()
                                         .ifEmpty { listOf("field1", "field2") }
                                 val fieldsPart = fieldTokens.joinToString(";")
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;${def(cont, "Continue")}"
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;${def(cont, "Continue")}" 
                             }
                             "LABEL" -> {
                                 if (labelName.text.isBlank()) {
