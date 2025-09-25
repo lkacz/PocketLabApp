@@ -71,6 +71,8 @@
     <string name="hint_scale_item_number">Item %1$d</string>
     <string name="hint_scale_response_number">Response %1$d</string>
     <string name="hint_scale_response_label">Label target %1$d (optional)</string>
+    <string name="label_hold_to_confirm">Require hold to continue</string>
+    <string name="hint_hold_to_confirm">Adds [HOLD] to the continue button so participants must hold to advance.</string>
     <string name="cd_toggle_scale_response_branch">Toggle branching target</string>
     <string name="hint_scale_branching_helper">Branch this response to a label destination.</string>
     <string name="tip_scale_response_branch_add">Link this response to a label</string>

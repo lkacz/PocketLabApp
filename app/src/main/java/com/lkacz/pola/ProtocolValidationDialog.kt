@@ -2571,6 +2571,92 @@ class ProtocolValidationDialog : DialogFragment() {
         val header = edit(R.string.hint_header)
         val body = edit(R.string.hint_body)
         val cont = edit(R.string.hint_continue)
+        val holdToggle =
+            com.google.android.material.materialswitch.MaterialSwitch(ctx).apply {
+                text = getString(R.string.label_hold_to_confirm)
+                textSize = applyScale(14f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                setPadding(dp(4), dp(6), dp(4), dp(6))
+                // Disable internal ON/OFF text to prevent null StaticLayout crashes and rely on the label instead.
+                showText = false
+                textOn = ""
+                textOff = ""
+            }
+        val holdHelperText =
+            TextView(ctx).apply {
+                text = getString(R.string.hint_hold_to_confirm)
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        Color.parseColor("#6B7280"),
+                    ),
+                )
+                textSize = applyScale(12f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(4)
+                    }
+            }
+        val holdToggleSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                addView(holdToggle)
+                addView(holdHelperText)
+            }
+        val holdSupportedCommands =
+            setOf(
+                "INSTRUCTION",
+                "TIMER",
+                "INPUTFIELD",
+                "INPUTFIELD[RANDOMIZED]",
+                "HTML",
+            )
+        val holdDetectRegex = Regex("\\[HOLD]", RegexOption.IGNORE_CASE)
+        val holdStripRegex = Regex("\\s*\\[HOLD]", RegexOption.IGNORE_CASE)
+        var lastHoldCommand: String? = null
+
+        fun stripHoldToken(raw: String?): Pair<String, Boolean> {
+            if (raw.isNullOrBlank()) {
+                return "" to false
+            }
+            val contains = holdDetectRegex.containsMatchIn(raw)
+            val cleaned =
+                if (contains) {
+                    raw.replace(holdStripRegex, "").trim()
+                } else {
+                    raw.trim()
+                }
+            return cleaned to contains
+        }
+
+        fun applyHoldToken(base: String): String {
+            val sanitized = holdStripRegex.replace(base, "").trim()
+            return if (holdToggle.isChecked) {
+                if (sanitized.isEmpty()) {
+                    "[HOLD]"
+                } else {
+                    "$sanitized [HOLD]"
+                }
+            } else {
+                sanitized
+            }
+        }
+
         val time =
             edit(R.string.hint_time_seconds).apply {
                 inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -3179,6 +3265,27 @@ class ProtocolValidationDialog : DialogFragment() {
         parameterCard.addView(parameterContainer)
         inner.addView(parameterCard)
 
+        fun detachHoldToggleSection() {
+            (holdToggleSection.parent as? android.view.ViewGroup)?.removeView(holdToggleSection)
+        }
+
+        fun attachHoldToggleSectionFor(command: String) {
+            detachHoldToggleSection()
+            val supportsHold = holdSupportedCommands.contains(command)
+            if (supportsHold) {
+                if (!isEdit && lastHoldCommand != command) {
+                    holdToggle.isChecked = false
+                }
+                paramGroup.addView(holdToggleSection)
+                lastHoldCommand = command
+            } else {
+                if (!isEdit && lastHoldCommand != null) {
+                    holdToggle.isChecked = false
+                }
+                lastHoldCommand = null
+            }
+        }
+
         fun infoLabel(message: String, topMarginDp: Int = 16): TextView =
             TextView(ctx).apply {
                 text = message
@@ -3235,6 +3342,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 "HTML" -> {
                     paramGroup.addView(filename)
+                    paramGroup.addView(cont)
                 }
                 "TIMER_SOUND" -> {
                     paramGroup.addView(filename)
@@ -3283,6 +3391,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 else -> { /* Unhandled commands fall through */ }
             }
+
+            attachHoldToggleSectionFor(selectedCommand)
 
             if (paramGroup.childCount == 0) {
                 paramGroup.addView(infoLabel(getString(R.string.insert_command_no_parameters_hint)))
@@ -3353,13 +3463,23 @@ class ProtocolValidationDialog : DialogFragment() {
                     "INSTRUCTION" -> {
                         header.setText(existingParts.getOrNull(1))
                         body.setText(existingParts.getOrNull(2))
-                        cont.setText(existingParts.getOrNull(3))
+                        val (continueText, hadHold) = stripHoldToken(existingParts.getOrNull(3))
+                        cont.setText(continueText)
+                        if (holdSupportedCommands.contains(cmd)) {
+                            holdToggle.isChecked = hadHold
+                            lastHoldCommand = cmd
+                        }
                     }
                     "TIMER" -> {
                         header.setText(existingParts.getOrNull(1))
                         body.setText(existingParts.getOrNull(2))
                         time.setText(existingParts.getOrNull(3))
-                        cont.setText(existingParts.getOrNull(4))
+                        val (continueText, hadHold) = stripHoldToken(existingParts.getOrNull(4))
+                        cont.setText(continueText)
+                        if (holdSupportedCommands.contains(cmd)) {
+                            holdToggle.isChecked = hadHold
+                            lastHoldCommand = cmd
+                        }
                     }
                     "SCALE", "SCALE[RANDOMIZED]" -> {
                         header.setText(existingParts.getOrNull(1))
@@ -3392,7 +3512,12 @@ class ProtocolValidationDialog : DialogFragment() {
                             }
                                 .map { it.trim() }
                         rebuildInputFieldEntries(fieldSlice)
-                        cont.setText(existingParts.lastOrNull())
+                        val (continueText, hadHold) = stripHoldToken(existingParts.lastOrNull())
+                        cont.setText(continueText)
+                        if (holdSupportedCommands.contains(cmd)) {
+                            holdToggle.isChecked = hadHold
+                            lastHoldCommand = cmd
+                        }
                     }
                     "LABEL" -> {
                         labelName.setText(existingParts.getOrNull(1))
@@ -3402,6 +3527,14 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     "HTML", "TIMER_SOUND" -> {
                         filename.setText(existingParts.getOrNull(1))
+                        if (cmd == "HTML") {
+                            val (continueText, hadHold) = stripHoldToken(existingParts.getOrNull(2))
+                            cont.setText(continueText)
+                            if (holdSupportedCommands.contains(cmd)) {
+                                holdToggle.isChecked = hadHold
+                                lastHoldCommand = cmd
+                            }
+                        }
                     }
                     "LOG" -> {
                         message.setText(existingParts.getOrNull(1))
@@ -3506,10 +3639,12 @@ class ProtocolValidationDialog : DialogFragment() {
                     val newLine =
                         when (cmd) {
                             "INSTRUCTION" -> {
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(cont, "Continue")}"
+                                val continueText = applyHoldToken(def(cont, "Continue"))
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$continueText"
                             }
                             "TIMER" -> {
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(time, "60")};${def(cont, "Continue")}"
+                                val continueText = applyHoldToken(def(cont, "Continue"))
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(time, "60")};$continueText"
                             }
                             "SCALE", "SCALE[RANDOMIZED]" -> {
                                 val itemTokens =
@@ -3537,7 +3672,8 @@ class ProtocolValidationDialog : DialogFragment() {
                                     collectInputFieldEntries()
                                         .ifEmpty { listOf("field1", "field2") }
                                 val fieldsPart = fieldTokens.joinToString(";")
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;${def(cont, "Continue")}" 
+                                val continueText = applyHoldToken(def(cont, "Continue"))
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;$continueText"
                             }
                             "LABEL" -> {
                                 if (labelName.text.isBlank()) {
@@ -3553,7 +3689,28 @@ class ProtocolValidationDialog : DialogFragment() {
                                 }
                                 "$cmd;${gotoLabel.text}"
                             }
-                            "HTML", "TIMER_SOUND" -> {
+                            "HTML" -> {
+                                if (filename.text.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                val rawContinue = cont.text?.toString().orEmpty()
+                                val sanitizedInput = holdStripRegex.replace(rawContinue, "").trim()
+                                val shouldIncludeContinue = holdToggle.isChecked || sanitizedInput.isNotEmpty()
+                                val baseContinue =
+                                    when {
+                                        sanitizedInput.isNotEmpty() -> sanitizedInput
+                                        holdToggle.isChecked -> "Continue"
+                                        else -> ""
+                                    }
+                                if (shouldIncludeContinue && baseContinue.isNotEmpty()) {
+                                    val continueText = applyHoldToken(baseContinue)
+                                    "$cmd;${filename.text};$continueText"
+                                } else {
+                                    "$cmd;${filename.text}"
+                                }
+                            }
+                            "TIMER_SOUND" -> {
                                 if (filename.text.isBlank()) {
                                     Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
                                     return@setPositiveButton
