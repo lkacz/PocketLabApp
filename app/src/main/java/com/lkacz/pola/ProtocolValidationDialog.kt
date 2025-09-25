@@ -2347,8 +2347,19 @@ class ProtocolValidationDialog : DialogFragment() {
                 ),
                 CommandMeta("CONTINUE_ALIGNMENT", "Style"), CommandMeta("TIMER_ALIGNMENT", "Style"),
             )
-        val allCommandNames = commandMetaList.map { it.name }
         val categories = listOf("All", "Content", "Randomization", "Meta", "Style")
+        val isEdit = editLineIndex != null
+        val existingParts =
+            if (isEdit && editLineIndex != null && editLineIndex in allLines.indices) {
+                allLines[editLineIndex].split(';')
+            } else {
+                null
+            }
+        var selectedCommand = existingParts?.firstOrNull()?.trim().orEmpty()
+        if (selectedCommand.isBlank()) {
+            selectedCommand = commandMetaList.firstOrNull()?.name ?: ""
+        }
+
         inner.addView(
             TextView(ctx).apply {
                 text = getString(R.string.label_select_command)
@@ -2360,87 +2371,78 @@ class ProtocolValidationDialog : DialogFragment() {
             Spinner(ctx).apply {
                 adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, categories)
             }
-        inner.addView(categorySpinner)
         // Search + dynamic filtered spinner
         val searchBox =
             EditText(ctx).apply {
                 hint = "Search commands"
                 setSingleLine()
             }
-        inner.addView(searchBox)
-        val spinner = Spinner(ctx)
-        var filtered = allCommandNames
-
-        fun refreshSpinner() {
-            val adapter =
-                ArrayAdapter(
-                    ctx,
-                    android.R.layout.simple_spinner_dropdown_item,
-                    filtered,
-                )
-            spinner.adapter = adapter
-        }
-        refreshSpinner()
-        searchBox.addTextChangedListener(
-            object : android.text.TextWatcher {
-                override fun afterTextChanged(s: android.text.Editable?) {}
-
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int,
-                ) {}
-
-                override fun onTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    before: Int,
-                    count: Int,
-                ) {
-                    val q = s?.toString()?.trim()?.lowercase().orEmpty()
-                    val selectedCategory = categories[categorySpinner.selectedItemPosition]
-                    val base =
-                        if (selectedCategory == "All") {
-                            commandMetaList
-                        } else {
-                            commandMetaList.filter { it.category == selectedCategory }
-                        }
-                    filtered =
-                        base
-                            .map { it.name }
-                            .filter { q.isEmpty() || it.lowercase().contains(q) }
-                    refreshSpinner()
-                    // Try to keep selection stable if possible
-                }
-            },
-        )
-        categorySpinner.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long,
-                ) {
-                    val q = searchBox.text.toString().trim().lowercase()
-                    val selectedCategory = categories[position]
-                    val base =
-                        if (selectedCategory == "All") {
-                            commandMetaList
-                        } else {
-                            commandMetaList.filter { it.category == selectedCategory }
-                        }
-                    filtered =
-                        base
-                            .map { it.name }
-                            .filter { q.isEmpty() || it.lowercase().contains(q) }
-                    refreshSpinner()
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
+        val commandInputLayout =
+            com.google.android.material.textfield.TextInputLayout(ctx, null, com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox).apply {
+                hint = getString(R.string.label_select_command)
+                boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_DROPDOWN_MENU
+                setPadding(0, 8, 0, 0)
             }
-        inner.addView(spinner)
+        val commandDropdown =
+            com.google.android.material.textfield.MaterialAutoCompleteTextView(commandInputLayout.context).apply {
+                inputType = android.text.InputType.TYPE_NULL
+                keyListener = null
+                setOnClickListener { showDropDown() }
+                setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
+            }
+        commandInputLayout.addView(commandDropdown)
+        if (isEdit) {
+            inner.addView(
+                TextView(ctx).apply {
+                    text = selectedCommand.ifBlank { getString(R.string.value_none) }
+                    setTypeface(null, Typeface.BOLD)
+                    textSize = applyScale(15f)
+                    setPadding(16, 16, 16, 8)
+                },
+            )
+        } else {
+            inner.addView(categorySpinner)
+            inner.addView(searchBox)
+            inner.addView(commandInputLayout)
+        }
+
+        var filtered: List<CommandMeta> = commandMetaList
+
+        fun applyFilter(keepSelection: Boolean = true) {
+            if (isEdit) return
+            val query = searchBox.text.toString().trim().lowercase()
+            val selectedCategory = categories.getOrNull(categorySpinner.selectedItemPosition) ?: "All"
+            val base =
+                if (query.isNotEmpty()) {
+                    commandMetaList
+                } else if (selectedCategory == "All") {
+                    commandMetaList
+                } else {
+                    commandMetaList.filter { it.category == selectedCategory }
+                }
+            filtered =
+                base.filter { meta ->
+                    query.isEmpty() || meta.name.lowercase().contains(query)
+                }
+            val displayNames = filtered.map { it.name }
+            commandDropdown.setAdapter(ArrayAdapter(ctx, android.R.layout.simple_dropdown_item_1line, displayNames))
+            val previous = if (keepSelection) selectedCommand else null
+            selectedCommand =
+                when {
+                    previous != null && displayNames.contains(previous) -> previous
+                    displayNames.isNotEmpty() -> displayNames.first()
+                    else -> ""
+                }
+            commandDropdown.setText(selectedCommand, false)
+        }
+
+        if (!isEdit) {
+            applyFilter(keepSelection = false)
+            if (selectedCommand.isNotBlank()) {
+                commandDropdown.setText(selectedCommand, false)
+            }
+        }
 
         fun edit(hintRes: Int): EditText =
             EditText(ctx).apply {
@@ -2515,8 +2517,12 @@ class ProtocolValidationDialog : DialogFragment() {
         inner.addView(paramGroup)
 
         fun refreshParams() {
+            if (selectedCommand.isBlank()) {
+                paramGroup.removeAllViews()
+                return
+            }
             paramGroup.removeAllViews()
-            when (spinner.selectedItem as String) {
+            when (selectedCommand) {
                 "INSTRUCTION" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
@@ -2597,91 +2603,121 @@ class ProtocolValidationDialog : DialogFragment() {
                 else -> { /* END has no params */ }
             }
         }
-        spinner.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long,
-                ) {
-                    refreshParams()
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
-            }
         refreshParams()
 
-        // Prefill if editing existing line
-        if (editLineIndex != null && editLineIndex in allLines.indices) {
-            val existing = allLines[editLineIndex]
-            val parts = existing.split(';')
-            val cmd = parts.firstOrNull()?.trim().orEmpty()
-            // Set category first
-            val meta = commandMetaList.firstOrNull { it.name == cmd }
-            val catIndex =
-                meta
-                    ?.let { categories.indexOf(it.category) }
-                    ?.takeIf { it >= 0 }
-                    ?: 0
-            categorySpinner.setSelection(catIndex)
-            // Recompute filtered after category selection
-            categorySpinner.post {
-                val currentFiltered = filtered
-                val spinnerIndex = currentFiltered.indexOf(cmd).takeIf { it >= 0 } ?: 0
-                spinner.setSelection(spinnerIndex)
+        if (!isEdit) {
+            commandDropdown.setOnItemClickListener { _, _, position, _ ->
+                val meta = filtered.getOrNull(position)
+                selectedCommand = meta?.name ?: ""
+                if (meta != null) {
+                    val desiredIndex = categories.indexOf(meta.category).takeIf { it >= 0 } ?: 0
+                    if (categorySpinner.selectedItemPosition != desiredIndex) {
+                        categorySpinner.setSelection(desiredIndex)
+                    } else {
+                        refreshParams()
+                    }
+                } else {
+                    refreshParams()
+                }
             }
-            // Delay param refresh until after selection applied
-            spinner.post {
+            searchBox.addTextChangedListener(
+                object : android.text.TextWatcher {
+                    override fun afterTextChanged(s: android.text.Editable?) {}
+
+                    override fun beforeTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        count: Int,
+                        after: Int,
+                    ) {}
+
+                    override fun onTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        before: Int,
+                        count: Int,
+                    ) {
+                        applyFilter()
+                        refreshParams()
+                    }
+                },
+            )
+            categorySpinner.onItemSelectedListener =
+                object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                        parent: AdapterView<*>?,
+                        view: View?,
+                        position: Int,
+                        id: Long,
+                    ) {
+                        applyFilter()
+                        refreshParams()
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+        }
+
+        // Prefill if editing existing line
+        if (isEdit && existingParts != null) {
+            val cmd = existingParts.firstOrNull()?.trim().orEmpty()
+            if (cmd.isNotEmpty()) {
+                selectedCommand = cmd
+                refreshParams()
                 when (cmd) {
                     "INSTRUCTION" -> {
-                        header.setText(parts.getOrNull(1))
-                        body.setText(parts.getOrNull(2))
-                        cont.setText(parts.getOrNull(3))
+                        header.setText(existingParts.getOrNull(1))
+                        body.setText(existingParts.getOrNull(2))
+                        cont.setText(existingParts.getOrNull(3))
                     }
                     "TIMER" -> {
-                        header.setText(parts.getOrNull(1))
-                        body.setText(parts.getOrNull(2))
-                        time.setText(parts.getOrNull(3))
-                        cont.setText(parts.getOrNull(4))
+                        header.setText(existingParts.getOrNull(1))
+                        body.setText(existingParts.getOrNull(2))
+                        time.setText(existingParts.getOrNull(3))
+                        cont.setText(existingParts.getOrNull(4))
                     }
                     "SCALE", "SCALE[RANDOMIZED]" -> {
-                        header.setText(parts.getOrNull(1))
-                        body.setText(parts.getOrNull(2))
+                        header.setText(existingParts.getOrNull(1))
+                        body.setText(existingParts.getOrNull(2))
                         val itemSlice =
-                            if (parts.size > 4) {
-                                parts.subList(3, parts.size - 1)
+                            if (existingParts.size > 4) {
+                                existingParts.subList(3, existingParts.size - 1)
                             } else {
                                 emptyList()
                             }
                         items.setText(itemSlice.joinToString(", "))
-                        cont.setText(parts.lastOrNull())
+                        cont.setText(existingParts.lastOrNull())
                     }
                     "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                        header.setText(parts.getOrNull(1))
-                        body.setText(parts.getOrNull(2))
-                        val fieldSlice = if (parts.size > 4) parts.subList(3, parts.size - 1) else emptyList()
+                        header.setText(existingParts.getOrNull(1))
+                        body.setText(existingParts.getOrNull(2))
+                        val fieldSlice =
+                            if (existingParts.size > 4) {
+                                existingParts.subList(3, existingParts.size - 1)
+                            } else {
+                                emptyList()
+                            }
                         inputFields.setText(fieldSlice.joinToString(", "))
-                        cont.setText(parts.lastOrNull())
+                        cont.setText(existingParts.lastOrNull())
                     }
                     "LABEL" -> {
-                        labelName.setText(parts.getOrNull(1))
+                        labelName.setText(existingParts.getOrNull(1))
                     }
                     "GOTO" -> {
-                        gotoLabel.setText(parts.getOrNull(1))
+                        gotoLabel.setText(existingParts.getOrNull(1))
                     }
                     "HTML", "TIMER_SOUND" -> {
-                        filename.setText(parts.getOrNull(1))
+                        filename.setText(existingParts.getOrNull(1))
                     }
                     "LOG" -> {
-                        message.setText(parts.getOrNull(1))
+                        message.setText(existingParts.getOrNull(1))
                     }
                     // Single value commands
                     "STUDY_ID" -> {
-                        studyIdValue.setText(parts.getOrNull(1))
+                        studyIdValue.setText(existingParts.getOrNull(1))
                     }
                     "TRANSITIONS" -> {
-                        val mode = parts.getOrNull(1)?.lowercase()
+                        val mode = existingParts.getOrNull(1)?.lowercase()
                         val idx = arrayOf("off", "slide", "slideleft", "fade", "dissolve").indexOf(mode)
                         if (idx >= 0) transitionsSpinner.setSelection(idx)
                     }
@@ -2695,7 +2731,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     "CONTINUE_BACKGROUND_COLOR",
                     "TIMER_COLOR",
                     -> {
-                        colorValue.setText(parts.getOrNull(1))
+                        colorValue.setText(existingParts.getOrNull(1))
                     }
                     // Sizes
                     "HEADER_SIZE",
@@ -2705,7 +2741,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     "CONTINUE_SIZE",
                     "TIMER_SIZE",
                     -> {
-                        sizeValue.setText(parts.getOrNull(1))
+                        sizeValue.setText(existingParts.getOrNull(1))
                     }
                     // Alignments
                     "HEADER_ALIGNMENT",
@@ -2713,21 +2749,22 @@ class ProtocolValidationDialog : DialogFragment() {
                     "CONTINUE_ALIGNMENT",
                     "TIMER_ALIGNMENT",
                     -> {
-                        val valUpper = parts.getOrNull(1)?.uppercase()
+                        val valUpper = existingParts.getOrNull(1)?.uppercase()
                         val idx = arrayOf("LEFT", "CENTER", "RIGHT").indexOf(valUpper)
                         if (idx >= 0) alignmentSpinner.setSelection(idx)
                     }
                 }
             }
         }
-
-        val isEdit = editLineIndex != null
         val builder =
             AlertDialog.Builder(ctx)
                 .setTitle(getString(R.string.dialog_title_insert_command))
                 .setView(container)
                 .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
-                    val cmd = spinner.selectedItem as String
+                    val cmd = selectedCommand.takeIf { it.isNotBlank() } ?: run {
+                        Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
 
                     fun def(
                         et: EditText,
@@ -2931,55 +2968,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             }
         }
-        val dialog = builder.create()
-        dialog.setOnShowListener {
-            if (isEdit) {
-                // Add move buttons below form dynamically
-                val moveRow =
-                    LinearLayout(ctx).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        setPadding(0, 24, 0, 8)
-                    }
-                val btnUp =
-                    Button(ctx).apply {
-                        text = getString(R.string.action_move_up)
-                    }
-                val btnDown =
-                    Button(ctx).apply {
-                        text = getString(R.string.action_move_down)
-                    }
-                moveRow.addView(btnUp, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                moveRow.addView(btnDown, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                inner.addView(moveRow)
-                btnUp.setOnClickListener {
-                    if (editLineIndex != null && editLineIndex > 0) {
-                        pushUndoState()
-                        java.util.Collections.swap(allLines, editLineIndex, editLineIndex - 1)
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
-                        dialog.dismiss()
-                    } else {
-                        Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                btnDown.setOnClickListener {
-                    if (editLineIndex != null && editLineIndex < allLines.lastIndex) {
-                        pushUndoState()
-                        java.util.Collections.swap(allLines, editLineIndex, editLineIndex + 1)
-                        hasUnsavedChanges = true
-                        pendingAutoScrollToFirstIssue = true
-                        revalidateAndRefreshUI()
-                        Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
-                        dialog.dismiss()
-                    } else {
-                        Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-        dialog.show()
+        builder.create().show()
     }
 
     private fun getSuggestedFileName(): String {
@@ -3037,24 +3026,6 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         inner.addView(editText)
 
-        // Move buttons row similar to recognized edit layout
-        val moveRow =
-            LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, 24, 0, 8)
-            }
-        val btnUp =
-            Button(ctx).apply {
-                text = getString(R.string.action_move_up)
-            }
-        val btnDown =
-            Button(ctx).apply {
-                text = getString(R.string.action_move_down)
-            }
-        moveRow.addView(btnUp, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        moveRow.addView(btnDown, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        inner.addView(moveRow)
-
         val dialog =
             AlertDialog.Builder(ctx)
                 .setTitle(getString(R.string.error_unrecognized_command_title))
@@ -3080,33 +3051,6 @@ class ProtocolValidationDialog : DialogFragment() {
                     revalidateAndRefreshUI()
                 }
                 .create()
-
-        btnUp.setOnClickListener {
-            if (lineIndex > 0) {
-                pushUndoState()
-                java.util.Collections.swap(allLines, lineIndex, lineIndex - 1)
-                hasUnsavedChanges = true
-                pendingAutoScrollToFirstIssue = true
-                Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                revalidateAndRefreshUI()
-            } else {
-                Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
-            }
-        }
-        btnDown.setOnClickListener {
-            if (lineIndex < allLines.lastIndex) {
-                pushUndoState()
-                java.util.Collections.swap(allLines, lineIndex, lineIndex + 1)
-                hasUnsavedChanges = true
-                pendingAutoScrollToFirstIssue = true
-                Toast.makeText(ctx, getString(R.string.toast_command_moved), Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                revalidateAndRefreshUI()
-            } else {
-                Toast.makeText(ctx, getString(R.string.toast_move_blocked), Toast.LENGTH_SHORT).show()
-            }
-        }
         dialog.show()
     }
 }
