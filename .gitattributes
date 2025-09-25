@@ -1,0 +1,26 @@
+# Normalize text files and enforce consistent line endings
+* text=auto
+
+# Kotlin and Gradle sources stay LF on all platforms
+*.kt text eol=lf
+*.kts text eol=lf
+*.gradle text eol=lf
+*.gradle.kts text eol=lf
+*.java text eol=lf
+*.xml text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Shell scripts should remain LF
+*.sh text eol=lf
+
+# Windows PowerShell scripts keep CRLF for compatibility
+*.ps1 text eol=crlf
+
+# Binary assets stay untouched
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
