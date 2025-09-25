@@ -2,32 +2,69 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run App (Emulator)",
+      "label": "Run App (Pixel_API_34)",
       "type": "shell",
       "command": "powershell",
-      "args": ["-ExecutionPolicy","Bypass","-File","scripts/run-app.ps1"],
-      "group": {"kind":"build","isDefault": true}
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/run-app.ps1"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Builds, installs, and launches the debug APK on the Pixel_API_34 emulator."
+    },
+    {
+      "label": "Assemble Debug APK",
+      "type": "shell",
+      "command": "./gradlew.bat",
+      "args": [
+        ":app:assembleDebug"
+      ],
+      "problemMatcher": [
+        "$gradle"
+      ],
+      "group": "build",
+      "detail": "Assemble the debug variant without installing."
     },
     {
       "label": "Logcat (App)",
       "type": "shell",
       "command": "powershell",
-      "args": ["-ExecutionPolicy","Bypass","-File","scripts/logcat.ps1"],
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts/logcat.ps1"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Ktlint Check",
       "type": "shell",
       "command": "./gradlew.bat",
-      "args": ["ktlintCheck"],
-  "problemMatcher": ["$gradle"],
+      "args": [
+        "ktlintCheck"
+      ],
+      "problemMatcher": [
+        "$gradle"
+      ],
       "group": "test"
     },
     {
       "label": "Deprecation Warnings",
       "type": "shell",
       "command": "./gradlew.bat",
-      "args": ["--warning-mode","all","assembleDebug"],
+      "args": [
+        "--warning-mode",
+        "all",
+        "assembleDebug"
+      ],
       "problemMatcher": []
     }
   ]

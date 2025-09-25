@@ -47,7 +47,14 @@ The app includes a protocol preview & validation dialog:
 Add further rules + tests in `ProtocolValidatorTest.kt` before extending protocol syntax.
 
 ## VS Code Tasks
-Press `Ctrl+Shift+B` to see tasks once `.vscode/tasks.json` is present. Includes run-app, logcat, and deprecation check.
+Press `Ctrl+Shift+B` to see the curated task list:
+
+- **Run App (Pixel_API_34)** – builds the debug APK, ensures the Pixel_API_34 emulator (port 5580 with ANGLE) is running, installs, and launches the app.
+- **Assemble Debug APK** – runs `:app:assembleDebug` without touching the emulator.
+- **Logcat (App)** – tails filtered logcat output via `scripts/logcat.ps1`.
+- **Deprecation Warnings** – assembles with `--warning-mode all` for Gradle deprecation insights.
+
+These shell tasks call the PowerShell helpers under `scripts/` so they work out of the box on Windows.
 
 ## Code Style & Linting
 Using `ktlint` via a Gradle plugin (see root plugin config). Run:
