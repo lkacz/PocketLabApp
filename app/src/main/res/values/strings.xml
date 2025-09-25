@@ -67,6 +67,8 @@
     <string name="hint_filename">Filename</string>
     <string name="hint_message">Message</string>
     <string name="hint_input_fields">Input fields (comma separated)</string>
+    <string name="hint_scale_item_number">Item %1$d</string>
+    <string name="hint_scale_response_number">Response %1$d</string>
     <string name="hint_color_value">Color (e.g. #FF0000)</string>
     <string name="hint_size_value">Size (number)</string>
     <string name="hint_alignment_value">Alignment (LEFT|CENTER|RIGHT)</string>
@@ -78,6 +80,8 @@
     <string name="insert_command_parameters_hint">Fill in or update the values below.</string>
     <string name="insert_command_no_parameters_hint">This command does not require additional parameters.</string>
     <string name="insert_command_choose_command_hint">Select a command to see available parameters.</string>
+    <string name="label_scale_items">Items</string>
+    <string name="label_scale_responses">Responses</string>
     <string name="toast_command_inserted">Command inserted</string>
     <string name="toast_insert_cancelled">Insert cancelled</string>
     <string name="toast_long_press_insert">Long-press a line to insert below it</string>
@@ -122,5 +126,7 @@
     <string name="error_duplicate_study_id">STUDY_ID already defined</string>
     <string name="error_randomize_off_without_on">RANDOMIZE_OFF without prior RANDOMIZE_ON</string>
     <string name="error_randomize_on_nested">Already inside RANDOMIZE_ON block</string>
+    <string name="action_add_scale_item">+ New item</string>
+    <string name="action_add_scale_response">+ New response</string>
     <string name="action_fix_duplicate_study_id">Fix duplicate STUDY_ID</string>
 </resources>

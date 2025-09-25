@@ -19,6 +19,7 @@ import android.text.style.StyleSpan
 import android.view.*
 import android.view.DragEvent
 import android.widget.*
+import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
@@ -2352,7 +2353,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val isEdit = editLineIndex != null
         val existingParts =
             if (isEdit && editLineIndex != null && editLineIndex in allLines.indices) {
-                allLines[editLineIndex].split(';')
+                ParsingUtils.customSplitSemicolons(allLines[editLineIndex]).map { it.trim() }
             } else {
                 null
             }
@@ -2518,12 +2519,202 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val header = edit(R.string.hint_header)
         val body = edit(R.string.hint_body)
-        val items = edit(R.string.hint_items)
         val cont = edit(R.string.hint_continue)
         val time =
             edit(R.string.hint_time_seconds).apply {
                 inputType = android.text.InputType.TYPE_CLASS_NUMBER
             }
+        val scaleItemFields = mutableListOf<TextInputEditText>()
+        val scaleResponseFields = mutableListOf<TextInputEditText>()
+
+        val scaleItemsList =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+        val scaleResponsesList =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+
+        fun updateScaleItemHints() {
+            scaleItemFields.forEachIndexed { index, editText ->
+                (editText.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
+                    getString(R.string.hint_scale_item_number, index + 1)
+            }
+        }
+
+        fun updateScaleResponseHints() {
+            scaleResponseFields.forEachIndexed { index, editText ->
+                (editText.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
+                    getString(R.string.hint_scale_response_number, index + 1)
+            }
+        }
+
+        fun addScaleItemField(prefill: String = "") {
+            val layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    topMargin = dp(8)
+                }
+            val inputLayout =
+                com.google.android.material.textfield.TextInputLayout(
+                    ctx,
+                    null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
+                ).apply {
+                    this.layoutParams = layoutParams
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                }
+            val editText =
+                TextInputEditText(inputLayout.context).apply {
+                    setText(prefill)
+                    setSingleLine()
+                }
+            inputLayout.addView(editText)
+            scaleItemsList.addView(inputLayout)
+            scaleItemFields.add(editText)
+            updateScaleItemHints()
+            if (prefill.isNotEmpty()) {
+                editText.setSelection(prefill.length)
+            }
+        }
+
+        fun addScaleResponseField(prefill: String = "") {
+            val layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    topMargin = dp(8)
+                }
+            val inputLayout =
+                com.google.android.material.textfield.TextInputLayout(
+                    ctx,
+                    null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
+                ).apply {
+                    this.layoutParams = layoutParams
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                }
+            val editText =
+                TextInputEditText(inputLayout.context).apply {
+                    setText(prefill)
+                    setSingleLine()
+                }
+            inputLayout.addView(editText)
+            scaleResponsesList.addView(inputLayout)
+            scaleResponseFields.add(editText)
+            updateScaleResponseHints()
+            if (prefill.isNotEmpty()) {
+                editText.setSelection(prefill.length)
+            }
+        }
+
+        fun rebuildScaleItemFields(values: List<String>) {
+            scaleItemFields.clear()
+            scaleItemsList.removeAllViews()
+            val actual = values.ifEmpty { listOf("") }
+            actual.forEach { addScaleItemField(it) }
+        }
+
+        fun rebuildScaleResponseFields(values: List<String>) {
+            scaleResponseFields.clear()
+            scaleResponsesList.removeAllViews()
+            val actual = values.ifEmpty { listOf("", "") }
+            actual.forEach { addScaleResponseField(it) }
+        }
+
+        val addScaleItemButton =
+            com.google.android.material.button.MaterialButton(
+                ctx,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
+                text = getString(R.string.action_add_scale_item)
+                isAllCaps = false
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                setOnClickListener {
+                    addScaleItemField()
+                    scaleItemFields.lastOrNull()?.requestFocus()
+                }
+            }
+
+        val addScaleResponseButton =
+            com.google.android.material.button.MaterialButton(
+                ctx,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
+                text = getString(R.string.action_add_scale_response)
+                isAllCaps = false
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                setOnClickListener {
+                    addScaleResponseField()
+                    scaleResponseFields.lastOrNull()?.requestFocus()
+                }
+            }
+
+        val scaleItemsSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                addView(
+                    TextView(ctx).apply {
+                        text = getString(R.string.label_scale_items)
+                        textSize = applyScale(14f)
+                        setTypeface(null, Typeface.BOLD)
+                    },
+                )
+                addView(scaleItemsList)
+                addView(addScaleItemButton)
+            }
+
+        val scaleResponsesSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+                addView(
+                    TextView(ctx).apply {
+                        text = getString(R.string.label_scale_responses)
+                        textSize = applyScale(14f)
+                        setTypeface(null, Typeface.BOLD)
+                    },
+                )
+                addView(scaleResponsesList)
+                addView(addScaleResponseButton)
+            }
+
+        fun collectScaleItems(): List<String> =
+            scaleItemFields.map { it.text.toString().trim() }.filter { it.isNotEmpty() }
+
+        fun collectScaleResponses(): List<String> =
+            scaleResponseFields.map { it.text.toString().trim() }.filter { it.isNotEmpty() }
         val labelName = edit(R.string.hint_label_name)
         val gotoLabel = edit(R.string.hint_goto_label)
         val filename = edit(R.string.hint_filename)
@@ -2640,8 +2831,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
-                    paramGroup.addView(items)
-                    paramGroup.addView(cont)
+                    rebuildScaleItemFields(emptyList())
+                    rebuildScaleResponseFields(emptyList())
+                    paramGroup.addView(scaleItemsSection)
+                    paramGroup.addView(scaleResponsesSection)
                 }
                 "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                     paramGroup.addView(header)
@@ -2786,14 +2979,22 @@ class ProtocolValidationDialog : DialogFragment() {
                     "SCALE", "SCALE[RANDOMIZED]" -> {
                         header.setText(existingParts.getOrNull(1))
                         body.setText(existingParts.getOrNull(2))
-                        val itemSlice =
-                            if (existingParts.size > 4) {
-                                existingParts.subList(3, existingParts.size - 1)
+                        val rawItems = existingParts.getOrNull(3).orEmpty()
+                        val normalizedItems =
+                            if (rawItems.startsWith("[") && rawItems.endsWith("]") && rawItems.length >= 2) {
+                                rawItems.substring(1, rawItems.length - 1)
                             } else {
-                                emptyList()
+                                rawItems
                             }
-                        items.setText(itemSlice.joinToString(", "))
-                        cont.setText(existingParts.lastOrNull())
+                        val itemValues =
+                            normalizedItems
+                                .split(';')
+                                .map { it.trim() }
+                                .filter { it.isNotEmpty() }
+                        rebuildScaleItemFields(itemValues)
+                        val responses =
+                            existingParts.drop(4).map { it.trim() }.filter { it.isNotEmpty() }
+                        rebuildScaleResponseFields(responses)
                     }
                     "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                         header.setText(existingParts.getOrNull(1))
@@ -2926,12 +3127,24 @@ class ProtocolValidationDialog : DialogFragment() {
                             }
                             "SCALE", "SCALE[RANDOMIZED]" -> {
                                 val itemTokens =
-                                    items.text.toString().split(',')
-                                        .map { it.trim() }
-                                        .filter { it.isNotEmpty() }
-                                        .ifEmpty { listOf("1", "2") }
-                                val itemsPart = itemTokens.joinToString(";")
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$itemsPart;${def(cont, "Continue")}"
+                                    collectScaleItems()
+                                        .ifEmpty { listOf("Item 1") }
+                                val itemsPart =
+                                    if (itemTokens.size > 1) {
+                                        "[" + itemTokens.joinToString(";") + "]"
+                                    } else {
+                                        itemTokens.first()
+                                    }
+
+                                val responseTokens = collectScaleResponses()
+                                val responsesPart =
+                                    if (responseTokens.isNotEmpty()) {
+                                        responseTokens.joinToString(";")
+                                    } else {
+                                        "Response 1;Response 2"
+                                    }
+
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$itemsPart;$responsesPart"
                             }
                             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                                 val fieldTokens =
