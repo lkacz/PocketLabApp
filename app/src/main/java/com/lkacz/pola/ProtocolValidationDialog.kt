@@ -100,6 +100,8 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun applyScale(baseSp: Float): Float = baseSp * textScale
 
+    private var pendingSaveAsCallback: (() -> Unit)? = null
+
     // Simple undo stack of previous protocol line states
     private val undoStack: ArrayDeque<List<String>> = ArrayDeque()
 
@@ -172,14 +174,20 @@ class ProtocolValidationDialog : DialogFragment() {
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
                     Toast.makeText(requireContext(), "Saved as new file.", Toast.LENGTH_SHORT).show()
+                    pendingSaveAsCallback?.let { callback ->
+                        pendingSaveAsCallback = null
+                        callback()
+                    }
                 } catch (e: Exception) {
                     Toast.makeText(
                         requireContext(),
                         "Error saving file: ${e.message}",
                         Toast.LENGTH_SHORT,
                     ).show()
+                    pendingSaveAsCallback = null
                 }
             } else {
+                pendingSaveAsCallback = null
                 Toast.makeText(requireContext(), "Save As was cancelled.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -821,7 +829,9 @@ class ProtocolValidationDialog : DialogFragment() {
         val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val customUriString = prefs.getString(Prefs.KEY_PROTOCOL_URI, null)
         if (customUriString.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "No file to save into.", Toast.LENGTH_SHORT).show()
+            pendingSaveAsCallback = onSuccess
+            val suggested = getSuggestedFileName()
+            createDocumentLauncher.launch(suggested)
             return
         }
         val uri = Uri.parse(customUriString)
