@@ -17,7 +17,6 @@
     <string name="action_save_as_protocol">Save Protocol As...</string>
     <string name="action_select_resources_folder">Select Resources Folder</string>
     <string name="action_review_protocol">Review Protocol</string>
-    <string name="action_preview_protocol">Preview Protocol</string>
     <string name="action_use_tutorial_protocol">Use Tutorial Protocol</string>
     <string name="action_use_demo_protocol">Use Demo Protocol</string>
     <string name="section_customization">CUSTOMIZATION</string>

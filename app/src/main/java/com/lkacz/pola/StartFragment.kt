@@ -184,14 +184,6 @@ class StartFragment : Fragment() {
                     },
                 )
                 section.addView(
-                    createSecondaryButton(
-                        text = getString(R.string.action_preview_protocol),
-                        icon = R.drawable.ic_preview,
-                    ) {
-                        ProtocolPreviewDialog.newInstance().show(parentFragmentManager, "ProtocolPreviewDialog")
-                    },
-                )
-                section.addView(
                     createTonalButton(
                         text = getString(R.string.action_use_tutorial_protocol),
                         icon = R.drawable.ic_tutorial,
