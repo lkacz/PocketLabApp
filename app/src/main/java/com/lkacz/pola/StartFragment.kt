@@ -159,14 +159,6 @@ class StartFragment : Fragment() {
             sectionCard(getString(R.string.section_protocol_files)) { section ->
                 section.addView(
                     createSecondaryButton(
-                        text = getString(R.string.action_load_protocol),
-                        icon = R.drawable.ic_folder_open,
-                    ) {
-                        showChangeProtocolConfirmation { filePicker.launch(arrayOf("text/plain")) }
-                    },
-                )
-                section.addView(
-                    createSecondaryButton(
                         text = getString(R.string.action_select_resources_folder),
                         icon = R.drawable.ic_folder_open,
                     ) {
