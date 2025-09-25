@@ -66,6 +66,11 @@ class ProtocolValidationDialog : DialogFragment() {
     private var dynamicContentContainer: ViewGroup? = null
     // Simple reentrancy guard to prevent nested refreshes causing IllegalStateException
     private var isRefreshing = false
+    private var pendingLoadErrorMessage: String? = null
+    private val loadErrorPlaceholder: String = listOf(
+        "// Unable to load the previously opened protocol.",
+        "// Use Load Protocol or New Protocol to continue.",
+    ).joinToString("\n")
 
 
     private val resourcesFolderUri: Uri? by lazy {
@@ -132,6 +137,14 @@ class ProtocolValidationDialog : DialogFragment() {
         registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
             if (uri != null) {
                 try {
+                    try {
+                        requireContext().contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                        )
+                    } catch (_: SecurityException) {
+                        // Some providers may not support persistable permissions; ignore
+                    }
                     requireContext().contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                         FileOutputStream(pfd.fileDescriptor).use { fos ->
                             fos.write(allLines.joinToString("\n").toByteArray(Charsets.UTF_8))
@@ -559,6 +572,10 @@ class ProtocolValidationDialog : DialogFragment() {
                 // Populate dynamic container instead of adding a second instance
                 dynamicContentContainer?.removeAllViews()
                 dynamicContentContainer?.addView(buildCompletedView())
+                pendingLoadErrorMessage?.let { message ->
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                    pendingLoadErrorMessage = null
+                }
             }
         }
 
@@ -1870,19 +1887,44 @@ class ProtocolValidationDialog : DialogFragment() {
         if (!customUriString.isNullOrEmpty()) {
             val uri = Uri.parse(customUriString)
             return try {
-                reader.readFileContent(requireContext(), uri)
+                val content = reader.readFileContent(requireContext(), uri)
+                if (content.startsWith("Error reading file:")) {
+                    // The ProtocolReader reported an error string instead of throwing
+                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                    pendingLoadErrorMessage = content.replace("Error reading file:", "Failed to load protocol:").trim()
+                    loadErrorPlaceholder
+                } else if (content.startsWith("Error:")) {
+                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                    pendingLoadErrorMessage = content.removePrefix("Error:").trim().ifEmpty { "Unknown error when loading protocol." }
+                    loadErrorPlaceholder
+                } else {
+                    content
+                }
             } catch (e: SecurityException) {
                 // Permission lost (e.g., process death) or revoked: clear stored URI and fall back
                 prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
-                "// Lost permission to previously opened document. Please Load a protocol or use New."
+                pendingLoadErrorMessage = "Permission to access the saved protocol was revoked."
+                loadErrorPlaceholder
             } catch (e: Exception) {
-                "// Error reading file: ${e.message}".take(500)
+                pendingLoadErrorMessage = "Error reading protocol: ${e.message}"
+                loadErrorPlaceholder
             }
         }
         return try {
-            if (mode == "tutorial") reader.readFromAssets(requireContext(), "tutorial_protocol.txt") else reader.readFromAssets(requireContext(), "demo_protocol.txt")
+            val assetContent = if (mode == "tutorial") {
+                reader.readFromAssets(requireContext(), "tutorial_protocol.txt")
+            } else {
+                reader.readFromAssets(requireContext(), "demo_protocol.txt")
+            }
+            if (assetContent.startsWith("Error reading asset file:")) {
+                pendingLoadErrorMessage = assetContent.replace("Error reading asset file:", "Unable to load bundled protocol:").trim()
+                loadErrorPlaceholder
+            } else {
+                assetContent
+            }
         } catch (e: Exception) {
-            "// Error loading bundled protocol: ${e.message}"
+            pendingLoadErrorMessage = "Error loading bundled protocol: ${e.message}"
+            loadErrorPlaceholder
         }
     }
 
