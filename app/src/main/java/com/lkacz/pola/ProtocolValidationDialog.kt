@@ -393,6 +393,11 @@ class ProtocolValidationDialog : DialogFragment() {
                     popup.show()
                 }
             }
+        val spacer =
+            View(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f)
+            }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
         // Slim toolbar: only core edit actions; load/save now under overflow menu
@@ -400,6 +405,7 @@ class ProtocolValidationDialog : DialogFragment() {
         actionBar.addView(btnUndo)
         actionBar.addView(btnRedo)
         actionBar.addView(btnMore)
+        actionBar.addView(spacer)
         actionBar.addView(btnClose)
         // Wrap in horizontal scroll so all icons remain reachable on small screens
         val actionScroll =
@@ -783,6 +789,14 @@ class ProtocolValidationDialog : DialogFragment() {
             // Clear any currently rendered dynamic content immediately to avoid visual duplication before rebuild
             dynamicContentContainer?.removeAllViews()
             revalidateAndRefreshUI()
+            val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+            val untitledName = getString(R.string.value_untitled_protocol)
+            prefs
+                .edit()
+                .remove(Prefs.KEY_PROTOCOL_URI)
+                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, untitledName)
+                .putString(Prefs.KEY_CURRENT_MODE, "custom")
+                .apply()
             Toast.makeText(requireContext(), getString(R.string.toast_new_protocol_created), Toast.LENGTH_SHORT).show()
         }
         if (hasUnsavedChanges) {
@@ -2145,11 +2159,11 @@ class ProtocolValidationDialog : DialogFragment() {
                 val content = reader.readFileContent(requireContext(), uri)
                 if (content.startsWith("Error reading file:")) {
                     // The ProtocolReader reported an error string instead of throwing
-                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
                     pendingLoadErrorMessage = content.replace("Error reading file:", "Failed to load protocol:").trim()
                     loadErrorPlaceholder
                 } else if (content.startsWith("Error:")) {
-                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
                     pendingLoadErrorMessage = content.removePrefix("Error:").trim().ifEmpty { "Unknown error when loading protocol." }
                     loadErrorPlaceholder
                 } else {
@@ -2157,7 +2171,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             } catch (e: SecurityException) {
                 // Permission lost (e.g., process death) or revoked: clear stored URI and fall back
-                prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).apply()
+                prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
                 pendingLoadErrorMessage = "Permission to access the saved protocol was revoked."
                 loadErrorPlaceholder
             } catch (e: Exception) {

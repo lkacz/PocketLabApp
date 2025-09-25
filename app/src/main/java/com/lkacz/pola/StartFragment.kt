@@ -27,6 +27,7 @@ class StartFragment : Fragment() {
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
     private var protocolUri: Uri? = null
+    private var currentProtocolName: String? = null
     private lateinit var sharedPref: SharedPreferences
     private var devTapCount = 0
     private val devTapThreshold = 7
@@ -57,6 +58,7 @@ class StartFragment : Fragment() {
             ?: throw IllegalStateException("Host activity must implement OnProtocolSelectedListener")
         sharedPref = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)?.let(Uri::parse)
+        currentProtocolName = sharedPref.getString(Prefs.KEY_CURRENT_PROTOCOL_NAME, null)
         resourcesFolderManager = ResourcesFolderManager(context)
     }
 
@@ -139,8 +141,8 @@ class StartFragment : Fragment() {
                         setPadding(0, dpToPx(4), 0, dpToPx(8))
                     }
                 val currentFileName =
-                    protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
-                        ?: getString(R.string.value_none)
+                    currentProtocolName?.takeIf { it.isNotBlank() }
+                        ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
                 updateProtocolNameDisplay(currentFileName)
                 section.addView(tvSelectedProtocolName)
 
@@ -186,6 +188,7 @@ class StartFragment : Fragment() {
                                 .edit()
                                 .putString(Prefs.KEY_PROTOCOL_URI, assetUriString)
                                 .putString(Prefs.KEY_CURRENT_MODE, "tutorial")
+                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, "Tutorial Protocol")
                                 .apply()
                             protocolUri = Uri.parse(assetUriString)
                             updateProtocolNameDisplay("Tutorial Protocol")
@@ -203,6 +206,7 @@ class StartFragment : Fragment() {
                                 .edit()
                                 .putString(Prefs.KEY_PROTOCOL_URI, assetUriString)
                                 .putString(Prefs.KEY_CURRENT_MODE, "demo")
+                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, "Demo Protocol")
                                 .apply()
                             protocolUri = Uri.parse(assetUriString)
                             updateProtocolNameDisplay("Demo Protocol")
@@ -252,6 +256,16 @@ class StartFragment : Fragment() {
         if (DeveloperModeManager.isEnabled(requireContext())) addDeveloperButtons(rootLayout)
 
         return scrollView
+    }
+
+    override fun onResume() {
+        super.onResume()
+        protocolUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)?.let(Uri::parse)
+        currentProtocolName = sharedPref.getString(Prefs.KEY_CURRENT_PROTOCOL_NAME, currentProtocolName)
+        val resolvedName =
+            currentProtocolName?.takeIf { it.isNotBlank() }
+                ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
+        updateProtocolNameDisplay(resolvedName)
     }
 
     private fun sectionCard(
@@ -405,6 +419,11 @@ class StartFragment : Fragment() {
             val fileName = fileUriUtils.getFileName(ctx, uri)
             if (fileName.endsWith(".txt")) {
                 fileUriUtils.handleFileUri(ctx, uri, sharedPref)
+                sharedPref
+                    .edit()
+                    .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, fileName)
+                    .putString(Prefs.KEY_CURRENT_MODE, "custom")
+                    .apply()
                 protocolUri = uri
                 updateProtocolNameDisplay(fileName)
             } else {
@@ -435,8 +454,10 @@ class StartFragment : Fragment() {
         )
     }
 
-    private fun updateProtocolNameDisplay(protocolName: String) {
-        tvSelectedProtocolName.text = protocolName
+    private fun updateProtocolNameDisplay(protocolName: String?) {
+        currentProtocolName = protocolName
+        val displayName = protocolName?.takeIf { it.isNotBlank() } ?: getString(R.string.value_none)
+        tvSelectedProtocolName.text = displayName
     }
 
     private fun showToast(message: String) {

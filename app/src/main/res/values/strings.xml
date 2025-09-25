@@ -10,6 +10,7 @@
     <string name="title_current_protocol">CURRENT PROTOCOL</string>
     <string name="label_selected_file">Selected file</string>
     <string name="value_none">None</string>
+    <string name="value_untitled_protocol">Untitled Protocol</string>
     <string name="action_start_study">Start Study</string>
     <string name="section_protocol_files">PROTOCOL &amp; FILES</string>
     <string name="action_load_protocol">Load Protocol File</string>
