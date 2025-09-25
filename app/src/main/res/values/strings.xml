@@ -70,6 +70,11 @@
     <string name="hint_input_field_number">Field %1$d</string>
     <string name="hint_scale_item_number">Item %1$d</string>
     <string name="hint_scale_response_number">Response %1$d</string>
+    <string name="hint_scale_response_label">Label target %1$d (optional)</string>
+    <string name="cd_toggle_scale_response_branch">Toggle branching target</string>
+    <string name="hint_scale_branching_helper">Branch this response to a label destination.</string>
+    <string name="tip_scale_response_branch_add">Link this response to a label</string>
+    <string name="tip_scale_response_branch_remove">Remove branching for this response</string>
     <string name="hint_color_value">Color (e.g. #FF0000)</string>
     <string name="hint_size_value">Size (number)</string>
     <string name="hint_alignment_value">Alignment (LEFT|CENTER|RIGHT)</string>

@@ -19,6 +19,7 @@ import android.text.style.StyleSpan
 import android.view.*
 import android.view.DragEvent
 import android.widget.*
+import androidx.appcompat.widget.TooltipCompat
 import com.google.android.material.textfield.TextInputEditText
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -2565,7 +2566,15 @@ class ProtocolValidationDialog : DialogFragment() {
                 inputType = android.text.InputType.TYPE_CLASS_NUMBER
             }
         val scaleItemFields = mutableListOf<TextInputEditText>()
-        val scaleResponseFields = mutableListOf<TextInputEditText>()
+        data class ScaleResponseEntry(
+            val container: View,
+            val textField: TextInputEditText,
+            val labelField: TextInputEditText,
+            val labelContainer: View,
+            val branchButton: ImageButton,
+            var branchingEnabled: Boolean,
+        )
+        val scaleResponseEntries = mutableListOf<ScaleResponseEntry>()
 
         val scaleItemsList =
             LinearLayout(ctx).apply {
@@ -2584,9 +2593,11 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         fun updateScaleResponseHints() {
-            scaleResponseFields.forEachIndexed { index, editText ->
-                (editText.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
+            scaleResponseEntries.forEachIndexed { index, entry ->
+                (entry.textField.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
                     getString(R.string.hint_scale_response_number, index + 1)
+                (entry.labelField.parent as? com.google.android.material.textfield.TextInputLayout)?.hint =
+                    getString(R.string.hint_scale_response_label, index + 1)
             }
         }
 
@@ -2643,10 +2654,24 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
 
-        fun addScaleResponseField(prefill: String = "") {
-            val row =
-                LinearLayout(ctx).apply {
-                    orientation = LinearLayout.HORIZONTAL
+        fun parseResponsePrefill(raw: String): Pair<String, String> {
+            val trimmed = raw.trim()
+            if (trimmed.endsWith(']') && trimmed.contains('[')) {
+                val bracketStart = trimmed.lastIndexOf('[')
+                val bracketEnd = trimmed.lastIndexOf(']')
+                if (bracketStart in 0 until bracketEnd) {
+                    val textPart = trimmed.substring(0, bracketStart).trim()
+                    val labelPart = trimmed.substring(bracketStart + 1, bracketEnd).trim()
+                    return textPart to labelPart
+                }
+            }
+            return trimmed to ""
+        }
+
+        fun addScaleResponseField(prefillText: String = "", prefillLabel: String = "") {
+            val branchingInitiallyEnabled = prefillLabel.isNotEmpty()
+            val card =
+                com.google.android.material.card.MaterialCardView(ctx).apply {
                     layoutParams =
                         LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -2654,9 +2679,25 @@ class ProtocolValidationDialog : DialogFragment() {
                         ).apply {
                             topMargin = dp(8)
                         }
+                    radius = 18f
+                    strokeWidth = 1
+                    setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    setContentPadding(dp(16), dp(16), dp(16), dp(16))
+                }
+            val column =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                }
+            val headerRow =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
                 }
-            val inputLayout =
+            val responseLayout =
                 com.google.android.material.textfield.TextInputLayout(
                     ctx,
                     null,
@@ -2670,29 +2711,152 @@ class ProtocolValidationDialog : DialogFragment() {
                         )
                     boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
                 }
-            val editText =
-                TextInputEditText(inputLayout.context).apply {
-                    setText(prefill)
+            val responseField =
+                TextInputEditText(responseLayout.context).apply {
+                    setText(prefillText)
                     setSingleLine()
                 }
-            inputLayout.addView(editText)
+            responseLayout.addView(responseField)
+            headerRow.addView(responseLayout)
+
+            val branchButton =
+                ImageButton(ctx).apply {
+                    setImageDrawable(
+                        androidx.core.content.ContextCompat.getDrawable(ctx, R.drawable.ic_branch),
+                    )
+                    val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
+                    val typed = ctx.obtainStyledAttributes(attrs)
+                    background = typed.getDrawable(0)
+                    typed.recycle()
+                    contentDescription = getString(R.string.cd_toggle_scale_response_branch)
+                    scaleType = ImageView.ScaleType.CENTER
+                    val size = dp(40)
+                    layoutParams =
+                        LinearLayout.LayoutParams(size, size).apply {
+                            marginStart = dp(8)
+                        }
+                    setPadding(dp(6), dp(6), dp(6), dp(6))
+                }
+
             val removeButton =
                 createRemoveButton(getString(R.string.cd_remove_scale_response)) {
-                    scaleResponsesList.removeView(row)
-                    scaleResponseFields.remove(editText)
-                    if (scaleResponseFields.isEmpty()) {
+                    scaleResponsesList.removeView(card)
+                    scaleResponseEntries.removeAll { it.container == card }
+                    if (scaleResponseEntries.isEmpty()) {
                         addScaleResponseField()
                     } else {
                         updateScaleResponseHints()
                     }
                 }
-            row.addView(inputLayout)
-            row.addView(removeButton)
-            scaleResponsesList.addView(row)
-            scaleResponseFields.add(editText)
+
+            headerRow.addView(branchButton)
+            headerRow.addView(removeButton)
+
+            val labelLayout =
+                com.google.android.material.textfield.TextInputLayout(
+                    ctx,
+                    null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
+                ).apply {
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                }
+            val labelField =
+                TextInputEditText(labelLayout.context).apply {
+                    setText(prefillLabel)
+                    setSingleLine()
+                }
+            labelLayout.addView(labelField)
+
+            val labelContainer =
+                LinearLayout(ctx).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = dp(12)
+                        }
+                    visibility = if (branchingInitiallyEnabled) View.VISIBLE else View.GONE
+                }
+            labelContainer.addView(
+                TextView(ctx).apply {
+                    text = getString(R.string.hint_scale_branching_helper)
+                    textSize = applyScale(12f)
+                    setPadding(0, 0, 0, dp(4))
+                    setTextColor(
+                        com.google.android.material.color.MaterialColors.getColor(
+                            this,
+                            com.google.android.material.R.attr.colorOnSurfaceVariant,
+                            android.graphics.Color.parseColor("#5F6368"),
+                        ),
+                    )
+                },
+            )
+            labelContainer.addView(labelLayout)
+
+            column.addView(headerRow)
+            column.addView(labelContainer)
+            card.addView(column)
+            scaleResponsesList.addView(card)
+
+            val entry =
+                ScaleResponseEntry(
+                    card,
+                    responseField,
+                    labelField,
+                    labelContainer,
+                    branchButton,
+                    branchingInitiallyEnabled,
+                )
+            scaleResponseEntries.add(entry)
+
+            fun applyBranchState(enabled: Boolean) {
+                entry.branchingEnabled = enabled
+                labelContainer.visibility = if (enabled) View.VISIBLE else View.GONE
+                labelLayout.isEnabled = enabled
+                labelField.isEnabled = enabled
+                val activeColor =
+                    com.google.android.material.color.MaterialColors.getColor(
+                        branchButton,
+                        com.google.android.material.R.attr.colorPrimary,
+                        android.graphics.Color.parseColor("#2962FF"),
+                    )
+                val inactiveColor =
+                    com.google.android.material.color.MaterialColors.getColor(
+                        branchButton,
+                        com.google.android.material.R.attr.colorOnSurface,
+                        android.graphics.Color.parseColor("#5F6368"),
+                    )
+                branchButton.imageTintList =
+                    android.content.res.ColorStateList.valueOf(if (enabled) activeColor else inactiveColor)
+                branchButton.alpha = if (enabled) 1f else 0.72f
+                val descRes =
+                    if (enabled) R.string.tip_scale_response_branch_remove else R.string.tip_scale_response_branch_add
+                branchButton.contentDescription = getString(descRes)
+                TooltipCompat.setTooltipText(branchButton, getString(descRes))
+                if (enabled) {
+                    if (labelField.text.isNullOrBlank()) {
+                        labelField.requestFocus()
+                    }
+                } else {
+                    labelField.text?.clear()
+                }
+                updateScaleResponseHints()
+            }
+
+            applyBranchState(branchingInitiallyEnabled)
+
+            branchButton.setOnClickListener {
+                applyBranchState(!entry.branchingEnabled)
+            }
+
             updateScaleResponseHints()
-            if (prefill.isNotEmpty()) {
-                editText.setSelection(prefill.length)
+            if (prefillText.isNotEmpty()) {
+                responseField.setSelection(prefillText.length)
+            }
+            if (prefillLabel.isNotEmpty()) {
+                labelField.setSelection(prefillLabel.length)
             }
         }
 
@@ -2704,10 +2868,13 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         fun rebuildScaleResponseFields(values: List<String>) {
-            scaleResponseFields.clear()
+            scaleResponseEntries.clear()
             scaleResponsesList.removeAllViews()
             val actual = values.ifEmpty { listOf("", "") }
-            actual.forEach { addScaleResponseField(it) }
+            actual.forEach { value ->
+                val (text, label) = parseResponsePrefill(value)
+                addScaleResponseField(text, label)
+            }
         }
 
         val addScaleItemButton =
@@ -2748,7 +2915,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                 setOnClickListener {
                     addScaleResponseField()
-                    scaleResponseFields.lastOrNull()?.requestFocus()
+                    scaleResponseEntries.lastOrNull()?.textField?.requestFocus()
                 }
             }
 
@@ -2798,7 +2965,16 @@ class ProtocolValidationDialog : DialogFragment() {
             scaleItemFields.map { it.text.toString().trim() }.filter { it.isNotEmpty() }
 
         fun collectScaleResponses(): List<String> =
-            scaleResponseFields.map { it.text.toString().trim() }.filter { it.isNotEmpty() }
+            scaleResponseEntries
+                .mapNotNull { entry ->
+                    val text = entry.textField.text.toString().trim()
+                    if (text.isEmpty()) {
+                        null
+                    } else {
+                        val label = entry.labelField.text.toString().trim()
+                        if (entry.branchingEnabled && label.isNotEmpty()) "$text [$label]" else text
+                    }
+                }
         val labelName = edit(R.string.hint_label_name)
         val gotoLabel = edit(R.string.hint_goto_label)
         val filename = edit(R.string.hint_filename)
