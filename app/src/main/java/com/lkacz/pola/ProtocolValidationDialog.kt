@@ -2604,9 +2604,24 @@ class ProtocolValidationDialog : DialogFragment() {
         parameterCard.addView(parameterContainer)
         inner.addView(parameterCard)
 
+        fun infoLabel(message: String, topMarginDp: Int = 16): TextView =
+            TextView(ctx).apply {
+                text = message
+                setTextColor(Color.parseColor("#6B7280"))
+                textSize = applyScale(13f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(topMarginDp)
+                    }
+            }
+
         fun refreshParams() {
             if (selectedCommand.isBlank()) {
                 paramGroup.removeAllViews()
+                paramGroup.addView(infoLabel(getString(R.string.insert_command_choose_command_hint)))
                 return
             }
             paramGroup.removeAllViews()
@@ -2688,7 +2703,11 @@ class ProtocolValidationDialog : DialogFragment() {
                 -> {
                     paramGroup.addView(alignmentSpinner)
                 }
-                else -> { /* END has no params */ }
+                else -> { /* Unhandled commands fall through */ }
+            }
+
+            if (paramGroup.childCount == 0) {
+                paramGroup.addView(infoLabel(getString(R.string.insert_command_no_parameters_hint)))
             }
         }
         refreshParams()
