@@ -371,7 +371,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     }
 
     private fun applyHeaderAlignment(textView: TextView) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
@@ -435,11 +435,11 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
 
     private fun applyContinueButtonPadding(button: Button) {
         val density = resources.displayMetrics.density
-        val ch = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
-        val cv = SpacingManager.getContinueButtonPaddingVertical(requireContext())
-        val chPx = (ch * density + 0.5f).toInt()
-        val cvPx = (cv * density + 0.5f).toInt()
-        button.setPadding(chPx, cvPx, chPx, cvPx)
+        val horizontal = SpacingManager.getContinueButtonPaddingHorizontal(requireContext())
+        val vertical = SpacingManager.getContinueButtonPaddingVertical(requireContext())
+        val horizontalPx = (horizontal * density + 0.5f).toInt()
+        val verticalPx = (vertical * density + 0.5f).toInt()
+        button.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
     private fun parseHoldAttribute(text: String): Pair<String, Boolean> {

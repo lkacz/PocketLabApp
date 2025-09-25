@@ -170,7 +170,10 @@ if($JustInstall){
   Wait-ForDevice -DeviceId $activeDeviceId
 } else {
   $attempt = 1
-  $maxAttempts = $NoWipe.IsPresent ? 1 : 2
+  $maxAttempts = 2
+  if($NoWipe.IsPresent){
+    $maxAttempts = 1
+  }
   while(-not $activeDeviceId -and $attempt -le $maxAttempts){
     $useCold = $ColdBoot.IsPresent -or ($attempt -gt 1 -and -not $NoWipe.IsPresent)
     if($attempt -gt 1){

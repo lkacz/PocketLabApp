@@ -7,11 +7,10 @@ import android.net.Uri
 import java.io.BufferedReader
 import java.io.FileNotFoundException
 import java.io.StringReader
-import kotlin.random.Random
 
 class ProtocolManager(private val context: Context) {
     private val sharedPref: SharedPreferences =
-    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     fun readOriginalProtocol(uri: Uri? = null) {
         try {
@@ -59,11 +58,14 @@ class ProtocolManager(private val context: Context) {
      * become:
      *
      *   INPUTFIELD;MyHeader;Some text;[Field1;Field2];Continue
+     *
+     * Merging logic moved to pure ProtocolTransformer for testability.
      */
-    // Merging logic moved to pure ProtocolTransformer for testability.
 
-    private fun performManipulations() { finalProtocol = ProtocolTransformer.transform(originalProtocol) }
-    
+    private fun performManipulations() {
+        finalProtocol = ProtocolTransformer.transform(originalProtocol)
+    }
+
     init {
         // Lightweight initialization logging when in debug builds (Timber planted in MainActivity)
         if ((context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {

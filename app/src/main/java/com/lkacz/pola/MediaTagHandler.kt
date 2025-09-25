@@ -97,6 +97,7 @@ class MediaTagHandler : Html.TagHandler {
     }
 
     private val srcAttrPattern = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE)
+
     private fun extractSrcAttribute(tag: String): String {
         val srcMatcher = srcAttrPattern.matcher(tag)
         return if (srcMatcher.find()) srcMatcher.group(1)!! else ""

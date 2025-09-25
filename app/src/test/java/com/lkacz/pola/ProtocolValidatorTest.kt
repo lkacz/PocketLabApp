@@ -41,11 +41,13 @@ class ProtocolValidatorTest {
 
     @Test
     fun size_and_color_validation() {
-        val res = validator.validate(listOf(
-            "BODY_SIZE;-5",
-            "HEADER_COLOR;blue",
-            "RESPONSE_TEXT_COLOR;#FFAABB",
-        ))
+        val lines =
+            listOf(
+                "BODY_SIZE;-5",
+                "HEADER_COLOR;blue",
+                "RESPONSE_TEXT_COLOR;#FFAABB",
+            )
+        val res = validator.validate(lines)
         assertTrue(res[0].error.contains("positive number"))
         assertTrue(res[1].error.contains("hex color"))
         assertTrue(res[2].error.isEmpty())
@@ -65,10 +67,14 @@ class ProtocolValidatorTest {
 
     @Test
     fun study_id_duplicate_and_missing_value() {
-        val res = validator.validate(listOf(
-            "STUDY_ID;", // missing value
-            "STUDY_ID;ABC123" // duplicate
-        ))
+        val lines =
+            listOf(
+                // missing value
+                "STUDY_ID;",
+                // duplicate
+                "STUDY_ID;ABC123",
+            )
+        val res = validator.validate(lines)
         assertTrue(res[0].error.contains("missing"))
         assertTrue(res[1].error.contains("Duplicate"))
     }
@@ -87,10 +93,13 @@ class ProtocolValidatorTest {
 
     @Test
     fun eight_digit_color_and_large_size_warning() {
-        val res = validator.validate(listOf(
-            "BODY_COLOR;#FF112233",
-            "BODY_SIZE;250" // should warn as unusually large
-        ))
+        val lines =
+            listOf(
+                "BODY_COLOR;#FF112233",
+                // should warn as unusually large
+                "BODY_SIZE;250",
+            )
+        val res = validator.validate(lines)
         assertTrue("8-digit color should be accepted", res[0].error.isEmpty())
         assertTrue(res[1].warning.contains("unusually large"))
     }
@@ -121,16 +130,18 @@ class ProtocolValidatorTest {
 
     @Test
     fun goto_without_label_is_error() {
-    val res = validator.validate(listOf("GOTO"))
-    assertTrue(res[0].error.contains("missing target"))
+        val res = validator.validate(listOf("GOTO"))
+        assertTrue(res[0].error.contains("missing target"))
     }
 
     @Test
     fun goto_with_valid_label_has_no_error() {
-        val res = validator.validate(listOf(
-            "LABEL;DEST",
-            "GOTO;DEST"
-        ))
+        val lines =
+            listOf(
+                "LABEL;DEST",
+                "GOTO;DEST",
+            )
+        val res = validator.validate(lines)
         assertTrue(res[1].error.isEmpty())
     }
 }

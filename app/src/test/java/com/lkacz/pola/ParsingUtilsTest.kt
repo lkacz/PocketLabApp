@@ -8,13 +8,13 @@ class ParsingUtilsTest {
     fun customSplitSemicolons_basic() {
         val line = "SCALE;Header;Intro;[One;Two];Resp1;Resp2"
         val parts = ParsingUtils.customSplitSemicolons(line)
-        assertEquals(listOf("SCALE","Header","Intro","[One;Two]","Resp1","Resp2"), parts)
+        assertEquals(listOf("SCALE", "Header", "Intro", "[One;Two]", "Resp1", "Resp2"), parts)
     }
 
     @Test
     fun customSplitSemicolons_nestedBracketsIgnored() {
         val line = "INPUTFIELD;Title;Body;[A;B;C];Continue"
         val parts = ParsingUtils.customSplitSemicolons(line)
-        assertEquals(listOf("INPUTFIELD","Title","Body","[A;B;C]","Continue"), parts)
+        assertEquals(listOf("INPUTFIELD", "Title", "Body", "[A;B;C]", "Continue"), parts)
     }
 }

@@ -16,35 +16,46 @@ class FeatureFlagsDialog : DialogFragment() {
         return super.onCreateDialog(savedInstanceState).apply { setTitle("Feature Flags") }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
         FeatureFlags.load(requireContext())
         val ctx = requireContext()
-        val root = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 32, 48, 32)
-        }
-
-        fun addFlag(label: String, get: () -> Boolean, set: (Boolean) -> Unit) {
-            val cb = CheckBox(ctx).apply {
-                text = label
-                isChecked = get()
-                setOnCheckedChangeListener { _, isChecked ->
-                    set(isChecked)
-                }
+        val root =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 32, 48, 32)
             }
+
+        fun addFlag(
+            label: String,
+            get: () -> Boolean,
+            set: (Boolean) -> Unit,
+        ) {
+            val cb =
+                CheckBox(ctx).apply {
+                    text = label
+                    isChecked = get()
+                    setOnCheckedChangeListener { _, isChecked ->
+                        set(isChecked)
+                    }
+                }
             root.addView(cb)
         }
 
-    addFlag("NEW_FEATURE_ONE", { FeatureFlags.NEW_FEATURE_ONE }, { FeatureFlags.NEW_FEATURE_ONE = it })
-    addFlag("NEW_FEATURE_TWO", { FeatureFlags.NEW_FEATURE_TWO }, { FeatureFlags.NEW_FEATURE_TWO = it })
+        addFlag("NEW_FEATURE_ONE", { FeatureFlags.newFeatureOne }, { FeatureFlags.newFeatureOne = it })
+        addFlag("NEW_FEATURE_TWO", { FeatureFlags.newFeatureTwo }, { FeatureFlags.newFeatureTwo = it })
 
-        val btnSave = Button(ctx).apply {
-            text = "Save & Close"
-            setOnClickListener {
-                FeatureFlags.persist(ctx)
-                dismiss()
+        val btnSave =
+            Button(ctx).apply {
+                text = "Save & Close"
+                setOnClickListener {
+                    FeatureFlags.persist(ctx)
+                    dismiss()
+                }
             }
-        }
         root.addView(btnSave)
         return root
     }

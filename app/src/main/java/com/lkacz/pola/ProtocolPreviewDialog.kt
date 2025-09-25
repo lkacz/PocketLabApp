@@ -5,8 +5,8 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.fragment.app.DialogFragment
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import java.io.BufferedReader
 
 /**
@@ -20,19 +20,22 @@ class ProtocolPreviewDialog : DialogFragment() {
         // Read currently selected or default asset protocol
         pm.readOriginalProtocol(null)
         val br: BufferedReader = pm.getManipulatedProtocol()
-        val content = buildString {
-            br.useLines { seq -> seq.forEach { appendLine(it) } }
-        }.ifBlank { "<empty protocol>" }
+        val content =
+            buildString {
+                br.useLines { seq -> seq.forEach { appendLine(it) } }
+            }.ifBlank { "<empty protocol>" }
 
-        val scroll = ScrollView(ctx).apply {
-            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
-        val tv = TextView(ctx).apply {
-            text = content
-            setPadding(32, 32, 32, 32)
-            textSize = 12f
-            typeface = android.graphics.Typeface.MONOSPACE
-        }
+        val scroll =
+            ScrollView(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            }
+        val tv =
+            TextView(ctx).apply {
+                text = content
+                setPadding(32, 32, 32, 32)
+                textSize = 12f
+                typeface = android.graphics.Typeface.MONOSPACE
+            }
         scroll.addView(tv)
 
         return AlertDialog.Builder(ctx)

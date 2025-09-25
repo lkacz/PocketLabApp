@@ -48,7 +48,7 @@ class AlarmCustomizationDialog : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         timerSoundEditText = view.findViewById(R.id.alarmSoundEditText)
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
         // Load current timer sound from shared prefs
         val currentTimerSound =

@@ -180,7 +180,7 @@ class HtmlFragment : Fragment() {
     }
 
     private fun applyContinueAlignment(button: Button) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return

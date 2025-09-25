@@ -1262,7 +1262,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         alignAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
         spinnerContinueAlignment.adapter = alignAdapter
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val savedAlign = prefs.getString("CONTINUE_ALIGNMENT", "CENTER") ?: "CENTER"
         currentContinueAlignment = savedAlign.uppercase()
         spinnerContinueAlignment.setSelection(
@@ -1676,7 +1676,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
 
         TransitionManager.setTransitionMode(requireContext(), currentTransitionMode)
 
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         prefs.edit().putString("CONTINUE_ALIGNMENT", currentContinueAlignment).apply()
         prefs.edit().putString("HEADER_ALIGNMENT", currentHeaderAlignment).apply()
         prefs.edit().putString("BODY_ALIGNMENT", currentBodyAlignment).apply()
@@ -1755,7 +1755,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         screenBgColor = ColorManager.getScreenBackgroundColor(requireContext())
         timerTextColorVar = ColorManager.getTimerTextColor(requireContext())
 
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, 0)
         val savedTransitions = prefs.getString("TRANSITION_MODE", "off") ?: "off"
         currentTransitionMode =
             when (savedTransitions.lowercase()) {

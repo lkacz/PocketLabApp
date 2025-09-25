@@ -19,7 +19,10 @@ object MultiScaleHelper {
      *   (each item forming a single scale line).
      * - If just "SCALE" and multiple bracketed items, expand them into multiple lines in the typed order.
      */
-    fun expandScaleLine(originalLine: String, rnd: Random = Random): List<String> {
+    fun expandScaleLine(
+        originalLine: String,
+        rnd: Random = Random,
+    ): List<String> {
         val trimmed = originalLine.trim()
 
         // Only proceed if it starts with "SCALE", ignoring case
@@ -56,8 +59,8 @@ object MultiScaleHelper {
         // Decide the directive
         val newDirective = if (isRandom) "SCALE[RANDOMIZED]" else "SCALE"
 
-    // The suffix is everything after index=3, i.e. the responses (index 4+)
-    val suffix = if (parts.size > 4) parts.drop(4).joinToString(";") else ""
+        // The suffix is everything after index=3, i.e. the responses (index 4+)
+        val suffix = if (parts.size > 4) parts.drop(4).joinToString(";") else ""
 
         return if (isRandom) {
             /*

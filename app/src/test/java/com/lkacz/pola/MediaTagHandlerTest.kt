@@ -7,7 +7,7 @@ import org.junit.Test
 
 class MediaTagHandlerTest {
     @Before
-    fun clearMap(){
+    fun clearMap() {
         HtmlImageLoader.imageSizeMap.clear()
     }
 

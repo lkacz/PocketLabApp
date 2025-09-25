@@ -22,7 +22,7 @@ class AlarmHelper(private val context: Context) {
         stopAlarm() // Ensure no old playback continues
 
         // Attempt to retrieve custom timer sound from SharedPreferences
-    val prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val soundFileName = prefs.getString("CUSTOM_TIMER_SOUND", null)
 
         // If we have a custom sound name, try to locate and play it

@@ -14,11 +14,11 @@ android {
         applicationId = "com.lkacz.pola"
         minSdk = 29
         targetSdk = 33
-    versionCode = 2
-    versionName = "0.6.0"
+        versionCode = 2
+        versionName = "0.6.0"
 
-    buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
-    buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())
+        buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
+        buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -29,7 +29,10 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
     compileOptions {
@@ -41,7 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
-    buildConfig = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -66,28 +69,50 @@ tasks.withType<Test> {
     }
 }
 
-val jacocoTestReport = tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn(tasks.named("testDebugUnitTest"))
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
+val jacocoTestReport =
+    tasks.register<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("testDebugUnitTest"))
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+        val fileFilter =
+            listOf(
+                "**/R.class",
+                "**/R$*.class",
+                "**/BuildConfig.*",
+                "**/Manifest*.*",
+                "**/*Test*.*",
+                "androidx/**",
+                "**/databinding/**",
+                "**/generated/**",
+            )
+        val javaClasses =
+            fileTree("${'$'}{buildDir}/intermediates/javac/debug/classes") {
+                exclude(fileFilter)
+            }
+        val kotlinClasses =
+            fileTree("${'$'}{buildDir}/tmp/kotlin-classes/debug") {
+                exclude(fileFilter)
+            }
+        classDirectories.setFrom(
+            files(
+                javaClasses,
+                kotlinClasses,
+            ),
+        )
+        sourceDirectories.setFrom(
+            files(
+                "src/main/java",
+                "src/main/kotlin",
+            ),
+        )
+        executionData.setFrom(
+            files(
+                "${'$'}{buildDir}/jacoco/testDebugUnitTest.exec",
+            ),
+        )
     }
-    val fileFilter = listOf(
-        "**/R.class",
-        "**/R$*.class",
-        "**/BuildConfig.*",
-        "**/Manifest*.*",
-        "**/*Test*.*",
-        "androidx/**",
-        "**/databinding/**",
-        "**/generated/**",
-    )
-    val javaClasses = fileTree("${'$'}{buildDir}/intermediates/javac/debug/classes") { exclude(fileFilter) }
-    val kotlinClasses = fileTree("${'$'}{buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
-    classDirectories.setFrom(files(javaClasses, kotlinClasses))
-    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
-    executionData.setFrom(files("${'$'}{buildDir}/jacoco/testDebugUnitTest.exec"))
-}
 
 dependencies {
 

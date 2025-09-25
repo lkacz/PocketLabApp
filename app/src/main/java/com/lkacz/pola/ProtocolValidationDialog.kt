@@ -1,8 +1,10 @@
-// Filename: ProtocolValidationDialog.kt
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 package com.lkacz.pola
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.ClipData
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Color
@@ -16,7 +18,6 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.view.*
 import android.view.DragEvent
-import android.content.ClipData
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,8 +26,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.FileOutputStream
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.util.regex.Pattern
 
 class ProtocolValidationDialog : DialogFragment() {
@@ -48,6 +49,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var allLines: MutableList<String> = mutableListOf()
     private val resourceExistenceMap = mutableMapOf<String, Boolean>()
+
     private data class ValidationEntry(
         val lineNumber: Int,
         val rawLine: String,
@@ -55,6 +57,7 @@ class ProtocolValidationDialog : DialogFragment() {
         val error: String,
         val warning: String,
     )
+
     private var validationCache: List<ValidationEntry> = emptyList()
     private val pureValidator = ProtocolValidator()
     private var issueLineNumbers: List<Int> = emptyList()
@@ -62,16 +65,18 @@ class ProtocolValidationDialog : DialogFragment() {
     private val lineRowMap = mutableMapOf<Int, TableRow>()
     private var scrollViewRef: ScrollView? = null
     private var pendingAutoScrollToFirstIssue = false
+
     // Container that holds the dynamic (revalidated) table content; filled by revalidateAndRefreshUI
     private var dynamicContentContainer: ViewGroup? = null
+
     // Simple reentrancy guard to prevent nested refreshes causing IllegalStateException
     private var isRefreshing = false
     private var pendingLoadErrorMessage: String? = null
-    private val loadErrorPlaceholder: String = listOf(
-        "// Unable to load the previously opened protocol.",
-        "// Use Load Protocol or New Protocol to continue.",
-    ).joinToString("\n")
-
+    private val loadErrorPlaceholder: String =
+        listOf(
+            "// Unable to load the previously opened protocol.",
+            "// Use Load Protocol or New Protocol to continue.",
+        ).joinToString("\n")
 
     private val resourcesFolderUri: Uri? by lazy {
         ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -84,16 +89,20 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private var coloringEnabled = true
     private var semicolonsAsBreaks = true
+
     // Dynamic UI text scaling factor (base 1.0f)
     private var textScale = 1.0f
     private val minScale = 0.6f
     private val maxScale = 1.6f
+
     private fun applyScale(baseSp: Float): Float = baseSp * textScale
 
     // Simple undo stack of previous protocol line states
     private val undoStack: ArrayDeque<List<String>> = ArrayDeque()
+
     // Redo stack stores states undone (for reapplication)
     private val redoStack: ArrayDeque<List<String>> = ArrayDeque()
+
     private fun pushUndoState() {
         // Limit stack size to avoid memory bloat
         if (undoStack.size > 50) undoStack.removeFirst()
@@ -101,6 +110,7 @@ class ProtocolValidationDialog : DialogFragment() {
         if (redoStack.isNotEmpty()) redoStack.clear()
         undoStack.addLast(allLines.toList())
     }
+
     private fun performUndo() {
         if (undoStack.isEmpty()) {
             Toast.makeText(requireContext(), getString(R.string.toast_undo_none), Toast.LENGTH_SHORT).show()
@@ -114,6 +124,7 @@ class ProtocolValidationDialog : DialogFragment() {
         revalidateAndRefreshUI()
         Toast.makeText(requireContext(), getString(R.string.toast_undo_done), Toast.LENGTH_SHORT).show()
     }
+
     private fun performRedo() {
         if (redoStack.isEmpty()) {
             Toast.makeText(requireContext(), getString(R.string.toast_redo_none), Toast.LENGTH_SHORT).show()
@@ -222,10 +233,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
             }
 
-    // (Removed old topButtonRow layout; replaced with card-based action layout)
+        // (Removed old topButtonRow layout; replaced with card-based action layout)
 
         // Helper to create a horizontal flow of buttons with spacing
-        fun materialButton(text: String, styleAttr: Int, iconRes: Int? = null, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+        fun materialButton(
+            text: String,
+            styleAttr: Int,
+            iconRes: Int? = null,
+            onClick: () -> Unit,
+        ): com.google.android.material.button.MaterialButton =
             com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
                 this.text = text
                 isAllCaps = false
@@ -238,7 +254,12 @@ class ProtocolValidationDialog : DialogFragment() {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
 
-    fun iconOnlyButton(styleAttr: Int, iconRes: Int, cd: String, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
+        fun iconOnlyButton(
+            styleAttr: Int,
+            iconRes: Int,
+            cd: String,
+            onClick: () -> Unit,
+        ): com.google.android.material.button.MaterialButton =
             com.google.android.material.button.MaterialButton(requireContext(), null, styleAttr).apply {
                 text = "" // icon only
                 icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
@@ -256,12 +277,20 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
         // Minimal top action bar with icon-only ImageButtons (no card, no button boxes)
-        val actionBar = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(12,12,12,4) }
-        }
+        val actionBar =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(12, 12, 12, 4)
+                    }
+            }
 
-    fun barIcon(@androidx.annotation.DrawableRes iconRes: Int, cd: String, onClick: () -> Unit): ImageButton =
+        fun barIcon(
+            @androidx.annotation.DrawableRes iconRes: Int,
+            cd: String,
+            onClick: () -> Unit,
+        ): ImageButton =
             ImageButton(requireContext()).apply {
                 setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes))
                 // Use system selectable ripple borderless
@@ -271,92 +300,121 @@ class ProtocolValidationDialog : DialogFragment() {
                 typed.recycle()
                 contentDescription = cd
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
-        val size = (48 * resources.displayMetrics.density).toInt()
-        layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8,0,8,0) }
-        setPadding(8,8,8,8)
+                val size = (48 * resources.displayMetrics.density).toInt()
+                layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8, 0, 8, 0) }
+                setPadding(8, 8, 8, 8)
                 // Ensure icon is visible (tint to on-surface color if available)
                 try {
-                    val tv = androidx.appcompat.view.ContextThemeWrapper(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3)
+                    val tv =
+                        androidx.appcompat.view.ContextThemeWrapper(
+                            requireContext(),
+                            com.google.android.material.R.style.ThemeOverlay_Material3,
+                        )
                     val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
                     val a = tv.obtainStyledAttributes(colorAttr)
                     val color = a.getColor(0, 0xFF444444.toInt())
                     a.recycle()
                     imageTintList = android.content.res.ColorStateList.valueOf(color)
-                } catch (_: Exception) { }
+                } catch (_: Exception) {
+                }
                 setOnClickListener { onClick() }
             }
 
-    // Load & Save actions moved to overflow menu (keep references for potential future reinstatement)
-    btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
+        // Load & Save actions moved to overflow menu (keep references for potential future reinstatement)
+        btnLoad = barIcon(R.drawable.ic_folder_open, getString(R.string.cd_load_protocol)) { confirmLoadProtocol() }
         btnSave = barIcon(R.drawable.ic_save, getString(R.string.cd_save_protocol)) { confirmSaveDialog() }
-    btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
-    btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
-    val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
-    val btnRedo = barIcon(R.drawable.ic_redo, getString(R.string.cd_redo)) { performRedo() }
-    // Overflow menu button
-    val btnMore = ImageButton(requireContext()).apply {
-        setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_more_vert))
-        val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
-        val typed = requireContext().obtainStyledAttributes(attrs)
-        background = typed.getDrawable(0)
-        typed.recycle()
-        contentDescription = getString(R.string.cd_overflow_menu)
-        scaleType = ImageView.ScaleType.CENTER_INSIDE
-        val size = (48 * resources.displayMetrics.density).toInt()
-        layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8,0,8,0) }
-        setPadding(8,8,8,8)
-        try {
-            val tv = androidx.appcompat.view.ContextThemeWrapper(requireContext(), com.google.android.material.R.style.ThemeOverlay_Material3)
-            val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
-            val a = tv.obtainStyledAttributes(colorAttr)
-            val color = a.getColor(0, 0xFF444444.toInt())
-            a.recycle()
-            imageTintList = android.content.res.ColorStateList.valueOf(color)
-        } catch (_: Exception) { }
-        setOnClickListener {
-            val popup = PopupMenu(requireContext(), this).apply {
-                // Place New first for quick access
-                menu.add(0, 1, 0, getString(R.string.action_new_protocol))
-                menu.add(0, 2, 1, getString(R.string.action_load_protocol))
-                menu.add(0, 3, 2, getString(R.string.action_save_protocol))
-                menu.add(0, 4, 3, getString(R.string.action_save_as_protocol))
-                menu.add(0, 5, 4, getString(R.string.action_increase) + " +")
-                menu.add(0, 6, 5, getString(R.string.action_decrease) + " -")
-            }
-            popup.setOnMenuItemClickListener { mi ->
-                when (mi.itemId) {
-                    1 -> confirmNewProtocol()
-                    2 -> confirmLoadProtocol()
-                    3 -> confirmSaveDialog()
-                    4 -> { val defaultName = getSuggestedFileName(); createDocumentLauncher.launch(defaultName) }
-                    5 -> if (textScale < maxScale) { textScale = (textScale + 0.1f).coerceAtMost(maxScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
-                    6 -> if (textScale > minScale) { textScale = (textScale - 0.1f).coerceAtLeast(minScale); revalidateAndRefreshUI() } else Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+        btnAdd = barIcon(R.drawable.ic_add, getString(R.string.cd_add_command)) { showInsertCommandDialog(insertAfterLine = null) }
+        btnNew = barIcon(R.drawable.ic_new_file, getString(R.string.cd_new_protocol)) { confirmNewProtocol() }
+        val btnUndo = barIcon(R.drawable.ic_undo, getString(R.string.cd_undo)) { performUndo() }
+        val btnRedo = barIcon(R.drawable.ic_redo, getString(R.string.cd_redo)) { performRedo() }
+        // Overflow menu button
+        val btnMore =
+            ImageButton(requireContext()).apply {
+                setImageDrawable(androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_more_vert))
+                val attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)
+                val typed = requireContext().obtainStyledAttributes(attrs)
+                background = typed.getDrawable(0)
+                typed.recycle()
+                contentDescription = getString(R.string.cd_overflow_menu)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                val size = (48 * resources.displayMetrics.density).toInt()
+                layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(8, 0, 8, 0) }
+                setPadding(8, 8, 8, 8)
+                try {
+                    val tv =
+                        androidx.appcompat.view.ContextThemeWrapper(
+                            requireContext(),
+                            com.google.android.material.R.style.ThemeOverlay_Material3,
+                        )
+                    val colorAttr = intArrayOf(com.google.android.material.R.attr.colorOnSurface)
+                    val a = tv.obtainStyledAttributes(colorAttr)
+                    val color = a.getColor(0, 0xFF444444.toInt())
+                    a.recycle()
+                    imageTintList = android.content.res.ColorStateList.valueOf(color)
+                } catch (_: Exception) {
                 }
-                true
+                setOnClickListener {
+                    val popup =
+                        PopupMenu(requireContext(), this).apply {
+                            // Place New first for quick access
+                            menu.add(0, 1, 0, getString(R.string.action_new_protocol))
+                            menu.add(0, 2, 1, getString(R.string.action_load_protocol))
+                            menu.add(0, 3, 2, getString(R.string.action_save_protocol))
+                            menu.add(0, 4, 3, getString(R.string.action_save_as_protocol))
+                            menu.add(0, 5, 4, getString(R.string.action_increase) + " +")
+                            menu.add(0, 6, 5, getString(R.string.action_decrease) + " -")
+                        }
+                    popup.setOnMenuItemClickListener { mi ->
+                        when (mi.itemId) {
+                            1 -> confirmNewProtocol()
+                            2 -> confirmLoadProtocol()
+                            3 -> confirmSaveDialog()
+                            4 -> {
+                                val defaultName = getSuggestedFileName()
+                                createDocumentLauncher.launch(defaultName)
+                            }
+                            5 ->
+                                if (textScale < maxScale) {
+                                    textScale = (textScale + 0.1f).coerceAtMost(maxScale)
+                                    revalidateAndRefreshUI()
+                                } else {
+                                    Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                                }
+                            6 ->
+                                if (textScale > minScale) {
+                                    textScale = (textScale - 0.1f).coerceAtLeast(minScale)
+                                    revalidateAndRefreshUI()
+                                } else {
+                                    Toast.makeText(requireContext(), getString(R.string.toast_text_size_limit), Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                        true
+                    }
+                    popup.show()
+                }
             }
-            popup.show()
-        }
-    }
         val btnClose = barIcon(R.drawable.ic_close, getString(R.string.cd_close_dialog)) { confirmCloseDialog() }
 
-    // Slim toolbar: only core edit actions; load/save now under overflow menu
-    actionBar.addView(btnAdd)
-    actionBar.addView(btnUndo)
-    actionBar.addView(btnRedo)
-    actionBar.addView(btnMore)
-    actionBar.addView(btnClose)
+        // Slim toolbar: only core edit actions; load/save now under overflow menu
+        actionBar.addView(btnAdd)
+        actionBar.addView(btnUndo)
+        actionBar.addView(btnRedo)
+        actionBar.addView(btnMore)
+        actionBar.addView(btnClose)
         // Wrap in horizontal scroll so all icons remain reachable on small screens
-        val actionScroll = HorizontalScrollView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            isHorizontalScrollBarEnabled = false
-            addView(actionBar)
-        }
+        val actionScroll =
+            HorizontalScrollView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                isHorizontalScrollBarEnabled = false
+                addView(actionBar)
+            }
         rootLayout.addView(actionScroll)
 
-        val searchRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        }
+        val searchRow =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            }
 
         val searchEditText =
             EditText(requireContext()).apply {
@@ -369,26 +427,40 @@ class ProtocolValidationDialog : DialogFragment() {
                 hint = getString(R.string.hint_search_keyword)
             }
 
-    val searchButton = materialButton(getString(R.string.action_search_text), com.google.android.material.R.attr.materialButtonStyle, R.drawable.ic_search) {
-            searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
-            revalidateAndRefreshUI()
-        }
+        val searchButton =
+            materialButton(
+                getString(R.string.action_search_text),
+                com.google.android.material.R.attr.materialButtonStyle,
+                R.drawable.ic_search,
+            ) {
+                searchQuery = searchEditText.text?.toString()?.trim().takeIf { it?.isNotEmpty() == true }
+                revalidateAndRefreshUI()
+            }
 
-    val clearButton = materialButton(getString(R.string.action_clear_text), com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_close) {
-            searchQuery = null
-            searchEditText.setText("")
-            revalidateAndRefreshUI()
-        }
+        val clearButton =
+            materialButton(
+                getString(R.string.action_clear_text),
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+                R.drawable.ic_close,
+            ) {
+                searchQuery = null
+                searchEditText.setText("")
+                revalidateAndRefreshUI()
+            }
         searchRow.addView(searchEditText)
         searchRow.addView(searchButton)
         searchRow.addView(clearButton)
-        val searchCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,8) }
-            radius = 12f
-            strokeWidth = 1
-            setContentPadding(24,24,24,16)
-            addView(searchRow)
-        }
+        val searchCard =
+            com.google.android.material.card.MaterialCardView(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(16, 8, 16, 8)
+                    }
+                radius = 12f
+                strokeWidth = 1
+                setContentPadding(24, 24, 24, 16)
+                addView(searchRow)
+            }
         rootLayout.addView(searchCard)
 
         val filterContainer =
@@ -439,13 +511,17 @@ class ProtocolValidationDialog : DialogFragment() {
 
         filterContainer.addView(spinnerFilter)
         // Wrap filter in a card for visual consistency
-        val filterCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,4) }
-            radius = 12f
-            strokeWidth = 1
-            setContentPadding(24,16,24,8)
-            addView(filterContainer)
-        }
+        val filterCard =
+            com.google.android.material.card.MaterialCardView(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(16, 8, 16, 4)
+                    }
+                radius = 12f
+                strokeWidth = 1
+                setContentPadding(24, 16, 24, 8)
+                addView(filterContainer)
+            }
         rootLayout.addView(filterCard)
 
         val togglesContainer =
@@ -481,34 +557,50 @@ class ProtocolValidationDialog : DialogFragment() {
 
         togglesContainer.addView(cbColoring)
         togglesContainer.addView(cbSemicolonsBreak)
-        val togglesCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,4,16,8) }
-            radius = 12f
-            strokeWidth = 1
-            setContentPadding(24,16,24,16)
-            addView(togglesContainer)
-        }
+        val togglesCard =
+            com.google.android.material.card.MaterialCardView(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(16, 4, 16, 8)
+                    }
+                radius = 12f
+                strokeWidth = 1
+                setContentPadding(24, 16, 24, 16)
+                addView(togglesContainer)
+            }
         rootLayout.addView(togglesCard)
 
         // Placeholder for dynamic validated content (tables, quick-fixes, etc.)
-        dynamicContentContainer = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
-            // Tag helps future defensive lookups if needed
-            tag = "protocol_dynamic_container"
-        }
-    rootLayout.addView(dynamicContentContainer)
+        dynamicContentContainer =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                // Tag helps future defensive lookups if needed
+                tag = "protocol_dynamic_container"
+            }
+        rootLayout.addView(dynamicContentContainer)
 
-    // Navigation row (placed after dynamic content so content replaces properly)
-    val navRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        }
-        fun tinyButton(text: String, iconRes: Int, onClick: () -> Unit): com.google.android.material.button.MaterialButton =
-            com.google.android.material.button.MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        // Navigation row (placed after dynamic content so content replaces properly)
+        val navRow =
+            LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            }
+
+        fun tinyButton(
+            text: String,
+            iconRes: Int,
+            onClick: () -> Unit,
+        ): com.google.android.material.button.MaterialButton =
+            com.google.android.material.button.MaterialButton(
+                requireContext(),
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+            ).apply {
                 this.text = text
                 isAllCaps = false
                 icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), iconRes)
@@ -517,19 +609,37 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnClickListener { onClick() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = 12 }
             }
-    val btnPrev = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_prev, getString(R.string.cd_prev_issue)) { navigateIssue(-1) }
-    val btnNext = iconOnlyButton(com.google.android.material.R.attr.materialButtonOutlinedStyle, R.drawable.ic_next, getString(R.string.cd_next_issue)) { navigateIssue(1) }
+        val btnPrev =
+            iconOnlyButton(
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+                R.drawable.ic_prev,
+                getString(R.string.cd_prev_issue),
+            ) {
+                navigateIssue(-1)
+            }
+        val btnNext =
+            iconOnlyButton(
+                com.google.android.material.R.attr.materialButtonOutlinedStyle,
+                R.drawable.ic_next,
+                getString(R.string.cd_next_issue),
+            ) {
+                navigateIssue(1)
+            }
         navRow.addView(btnPrev)
         navRow.addView(btnNext)
-        val navCard = com.google.android.material.card.MaterialCardView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(16,8,16,8) }
-            radius = 12f
-            strokeWidth = 1
-            setContentPadding(24,24,24,16)
-            addView(navRow)
-        }
-    // Add navigation card after dynamic content container
-    rootLayout.addView(navCard)
+        val navCard =
+            com.google.android.material.card.MaterialCardView(requireContext()).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(16, 8, 16, 8)
+                    }
+                radius = 12f
+                strokeWidth = 1
+                setContentPadding(24, 24, 24, 16)
+                addView(navRow)
+            }
+        // Add navigation card after dynamic content container
+        rootLayout.addView(navCard)
 
         val progressBar =
             ProgressBar(requireContext()).apply {
@@ -705,12 +815,18 @@ class ProtocolValidationDialog : DialogFragment() {
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
-            } catch (_: SecurityException) { /* ignore if already granted */ }
+            } catch (_: SecurityException) {
+                // ignore if already granted
+            }
 
             // Use rwt (truncate) when possible; fall back to rw
-            val mode = try {
-                requireContext().contentResolver.openFileDescriptor(uri, "rwt")?.close(); "rwt"
-            } catch (_: Exception) { "rw" }
+            val mode =
+                try {
+                    requireContext().contentResolver.openFileDescriptor(uri, "rwt")?.close()
+                    "rwt"
+                } catch (_: Exception) {
+                    "rw"
+                }
 
             requireContext().contentResolver.openFileDescriptor(uri, mode)?.use { pfd ->
                 FileOutputStream(pfd.fileDescriptor).use { fos ->
@@ -727,7 +843,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 .setTitle("Original file missing")
                 .setMessage("The previously selected file can't be found (it may have been moved or deleted). Save a new copy?")
                 .setPositiveButton("Save As") { _, _ ->
-                    val suggested = getSuggestedFileName(); createDocumentLauncher.launch(suggested)
+                    val suggested = getSuggestedFileName()
+                    createDocumentLauncher.launch(suggested)
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
@@ -739,7 +856,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     .setTitle("File not found")
                     .setMessage("Cannot open the existing file (ENOENT). Save to a new file instead?")
                     .setPositiveButton("Save As") { _, _ ->
-                        val suggested = getSuggestedFileName(); createDocumentLauncher.launch(suggested)
+                        val suggested = getSuggestedFileName()
+                        createDocumentLauncher.launch(suggested)
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
@@ -750,10 +868,10 @@ class ProtocolValidationDialog : DialogFragment() {
     }
 
     private fun revalidateAndRefreshUI() {
-    // If fragment no longer attached, skip
-    if (!isAdded) return
-    // Prevent nested calls (e.g., triggered indirectly while already rebuilding)
-    if (isRefreshing) return
+        // If fragment no longer attached, skip
+        if (!isAdded) return
+        // Prevent nested calls (e.g., triggered indirectly while already rebuilding)
+        if (isRefreshing) return
         isRefreshing = true
         try {
             randomizationLevel = 0
@@ -776,14 +894,20 @@ class ProtocolValidationDialog : DialogFragment() {
 
             dynamicContentContainer?.let { target ->
                 target.removeAllViews()
-                val built = try { buildCompletedView() } catch (e: Exception) {
-                    LinearLayout(requireContext()).apply {
-                        setPadding(32,32,32,32)
-                        addView(TextView(requireContext()).apply {
-                            text = "Error rebuilding view: ${e.message}"; setTextColor(Color.RED)
-                        })
+                val built =
+                    try {
+                        buildCompletedView()
+                    } catch (e: Exception) {
+                        LinearLayout(requireContext()).apply {
+                            setPadding(32, 32, 32, 32)
+                            addView(
+                                TextView(requireContext()).apply {
+                                    text = "Error rebuilding view: ${e.message}"
+                                    setTextColor(Color.RED)
+                                },
+                            )
+                        }
                     }
-                }
                 target.addView(built)
             }
             if (pendingAutoScrollToFirstIssue) {
@@ -809,39 +933,41 @@ class ProtocolValidationDialog : DialogFragment() {
             }
 
         val headerTable = buildHeaderTable()
-    val scrollView = ScrollView(requireContext())
-    scrollViewRef = scrollView
+        val scrollView = ScrollView(requireContext())
+        scrollViewRef = scrollView
         val contentTable = buildContentTable()
 
         // Summary counts
         val errorCount = validationCache.count { it.error.isNotEmpty() }
         val warningCount = validationCache.count { it.warning.isNotEmpty() }
         val total = validationCache.size
-        val summaryLabel = TextView(requireContext()).apply {
-            text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
-            setPadding(24, 8, 24, 4)
-            textSize = applyScale(13f)
-            setTypeface(null, Typeface.BOLD)
-        }
+        val summaryLabel =
+            TextView(requireContext()).apply {
+                text = getString(R.string.label_summary_counts, total, errorCount, warningCount)
+                setPadding(24, 8, 24, 4)
+                textSize = applyScale(13f)
+                setTypeface(null, Typeface.BOLD)
+            }
 
         if (randomizationLevel > 0) {
             globalErrors.add("RANDOMIZE_ON not closed by matching RANDOMIZE_OFF")
         }
 
-    addGlobalErrorsRow(contentTable)
-    addStraySemicolonFixRow(contentTable)
-    addDuplicateLabelFixRow(contentTable)
-    addUndefinedGotoFixRow(contentTable)
-    addTimerFixRow(contentTable)
+        addGlobalErrorsRow(contentTable)
+        addStraySemicolonFixRow(contentTable)
+        addDuplicateLabelFixRow(contentTable)
+        addUndefinedGotoFixRow(contentTable)
+        addTimerFixRow(contentTable)
 
         scrollView.addView(contentTable)
-    containerLayout.addView(headerTable)
-    containerLayout.addView(summaryLabel)
+        containerLayout.addView(headerTable)
+        containerLayout.addView(summaryLabel)
         containerLayout.addView(scrollView)
 
         // Build issue list for navigation (errors or warnings present)
-        issueLineNumbers = validationCache.filter { it.error.isNotEmpty() || it.warning.isNotEmpty() }
-            .map { it.lineNumber }
+        issueLineNumbers =
+            validationCache.filter { it.error.isNotEmpty() || it.warning.isNotEmpty() }
+                .map { it.lineNumber }
         issueIndex = if (issueLineNumbers.isNotEmpty()) -1 else -1
         return containerLayout
     }
@@ -849,45 +975,53 @@ class ProtocolValidationDialog : DialogFragment() {
     // --- Extracted helper sections (no functional change) ---
     private fun addGlobalErrorsRow(contentTable: TableLayout) {
         if (globalErrors.isEmpty()) return
-        val row = TableRow(requireContext()).apply {
-            setBackgroundColor(Color.parseColor("#FFEEEE"))
-            setPadding(16, 8, 16, 8)
-        }
+        val row =
+            TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFEEEE"))
+                setPadding(16, 8, 16, 8)
+            }
         val innerLayout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-        val msgView = TextView(requireContext()).apply {
-            text = globalErrors.joinToString("\n")
-            setTextColor(Color.RED)
-            setTypeface(null, Typeface.BOLD)
-            textSize = applyScale(13f)
-        }
+        val msgView =
+            TextView(requireContext()).apply {
+                text = globalErrors.joinToString("\n")
+                setTextColor(Color.RED)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
         innerLayout.addView(msgView)
         if (globalErrors.any { it.contains("RANDOMIZE_ON not closed", ignoreCase = true) }) {
-            val fixBtn = Button(requireContext()).apply {
-                text = "Insert RANDOMIZE_OFF"
-                setOnClickListener {
-                    pushUndoState(); allLines.add("RANDOMIZE_OFF"); hasUnsavedChanges = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Inserted RANDOMIZE_OFF", Toast.LENGTH_SHORT).show()
+            val fixBtn =
+                Button(requireContext()).apply {
+                    text = "Insert RANDOMIZE_OFF"
+                    setOnClickListener {
+                        pushUndoState()
+                        allLines.add("RANDOMIZE_OFF")
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Inserted RANDOMIZE_OFF", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
             innerLayout.addView(fixBtn)
         }
         if (globalErrors.any { it.contains("Duplicate STUDY_ID", ignoreCase = true) }) {
-            val fixStudy = Button(requireContext()).apply {
-                text = getString(R.string.action_fix_duplicate_study_id)
-                setOnClickListener {
-                    pushUndoState()
-                    var seen = false
-                    val iterator = allLines.listIterator()
-                    while (iterator.hasNext()) {
-                        val line = iterator.next()
-                        if (line.trim().uppercase().startsWith("STUDY_ID;")) {
-                            if (!seen) seen = true else iterator.remove()
+            val fixStudy =
+                Button(requireContext()).apply {
+                    text = getString(R.string.action_fix_duplicate_study_id)
+                    setOnClickListener {
+                        pushUndoState()
+                        var seen = false
+                        val iterator = allLines.listIterator()
+                        while (iterator.hasNext()) {
+                            val line = iterator.next()
+                            if (line.trim().uppercase().startsWith("STUDY_ID;")) {
+                                if (!seen) seen = true else iterator.remove()
+                            }
                         }
+                        hasUnsavedChanges = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed duplicate STUDY_ID", Toast.LENGTH_SHORT).show()
                     }
-                    hasUnsavedChanges = true
-                    revalidateAndRefreshUI()
-                    Toast.makeText(requireContext(), "Removed duplicate STUDY_ID", Toast.LENGTH_SHORT).show()
                 }
-            }
             innerLayout.addView(fixStudy)
         }
         row.addView(innerLayout, TableRow.LayoutParams().apply { span = 3 })
@@ -897,47 +1031,101 @@ class ProtocolValidationDialog : DialogFragment() {
     private fun addStraySemicolonFixRow(contentTable: TableLayout) {
         val hasStraySemicolons = validationCache.any { it.error.contains("stray semicolon", ignoreCase = true) }
         if (!hasStraySemicolons) return
-        val fixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFF9E0")); setPadding(16,8,16,8) }
+        val fixRow =
+            TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFF9E0"))
+                setPadding(16, 8, 16, 8)
+            }
         val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-        val msg = TextView(requireContext()).apply { text = "Stray semicolons detected at line ends."; setTextColor(Color.parseColor("#AA8800")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
-        val btn = Button(requireContext()).apply {
-            text = "Fix stray semicolons"
-            setOnClickListener {
-                pushUndoState(); var modified = false
-                for (i in allLines.indices) {
-                    val raw = allLines[i]
-                    if (raw.trim().endsWith(";")) {
-                        val newLine = raw.replace(Regex(";\\s*$"), "")
-                        if (newLine != raw) { allLines[i] = newLine; modified = true }
+        val msg =
+            TextView(requireContext()).apply {
+                text = "Stray semicolons detected at line ends."
+                setTextColor(Color.parseColor("#AA8800"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+        val btn =
+            Button(requireContext()).apply {
+                text = "Fix stray semicolons"
+                setOnClickListener {
+                    pushUndoState()
+                    var modified = false
+                    for (i in allLines.indices) {
+                        val raw = allLines[i]
+                        if (raw.trim().endsWith(";")) {
+                            val newLine = raw.replace(Regex(";\\s*$"), "")
+                            if (newLine != raw) {
+                                allLines[i] = newLine
+                                modified = true
+                            }
+                        }
+                    }
+                    if (modified) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed stray semicolons", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show()
                     }
                 }
-                if (modified) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Removed stray semicolons", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No trailing semicolons changed", Toast.LENGTH_SHORT).show() }
             }
-        }
-        layout.addView(msg); layout.addView(btn); fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(fixRow)
+        layout.addView(msg)
+        layout.addView(btn)
+        fixRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
+        contentTable.addView(fixRow)
     }
 
     private fun addDuplicateLabelFixRow(contentTable: TableLayout) {
         val hasDuplicateLabelErrors = validationCache.any { it.error.contains("Label duplicated", ignoreCase = true) }
         if (!hasDuplicateLabelErrors) return
-        val dupRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFEEEE")); setPadding(16,8,16,8) }
+        val dupRow =
+            TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFEEEE"))
+                setPadding(16, 8, 16, 8)
+            }
         val layout = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-        val msg = TextView(requireContext()).apply { text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"; setTextColor(Color.parseColor("#BB0000")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
-        val btn = Button(requireContext()).apply {
-            text = "Fix duplicate LABELs"
-            setOnClickListener {
-                pushUndoState(); val seen = mutableSetOf<String>(); val iterator = allLines.listIterator(); var removed = 0
-                while (iterator.hasNext()) {
-                    val line = iterator.next(); val t = line.trim()
-                    if (t.uppercase().startsWith("LABEL;")) {
-                        val parts = t.split(';'); val name = parts.getOrNull(1)?.trim().orEmpty()
-                        if (name.isNotEmpty() && !seen.add(name)) { iterator.remove(); removed++ }
+        val msg =
+            TextView(requireContext()).apply {
+                text = "Duplicate LABEL definitions found. Keep first occurrence and remove duplicates?"
+                setTextColor(Color.parseColor("#BB0000"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+        val btn =
+            Button(requireContext()).apply {
+                text = "Fix duplicate LABELs"
+                setOnClickListener {
+                    pushUndoState()
+                    val seen = mutableSetOf<String>()
+                    val iterator = allLines.listIterator()
+                    var removed = 0
+                    while (iterator.hasNext()) {
+                        val line = iterator.next()
+                        val t = line.trim()
+                        if (t.uppercase().startsWith("LABEL;")) {
+                            val parts = t.split(';')
+                            val name = parts.getOrNull(1)?.trim().orEmpty()
+                            if (name.isNotEmpty() && !seen.add(name)) {
+                                iterator.remove()
+                                removed++
+                            }
+                        }
+                    }
+                    if (removed > 0) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Removed $removed duplicate LABEL(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show()
                     }
                 }
-                if (removed > 0) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Removed $removed duplicate LABEL(s)", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No duplicate LABELs removed", Toast.LENGTH_SHORT).show() }
             }
-        }
-        layout.addView(msg); layout.addView(btn); dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(dupRow)
+        layout.addView(msg)
+        layout.addView(btn)
+        dupRow.addView(layout, TableRow.LayoutParams().apply { span = 3 })
+        contentTable.addView(dupRow)
     }
 
     private fun addUndefinedGotoFixRow(contentTable: TableLayout) {
@@ -947,57 +1135,108 @@ class ProtocolValidationDialog : DialogFragment() {
             if (match != null) undefinedGotoTargets.add(match.groupValues[1])
         }
         if (undefinedGotoTargets.isEmpty()) return
-        val gotoFixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#FFF1E0")); setPadding(16,8,16,8) }
-        val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-        val msg = TextView(requireContext()).apply { text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"; setTextColor(Color.parseColor("#A65E00")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
-        val btn = Button(requireContext()).apply {
-            text = "Insert missing LABELs"
-            setOnClickListener {
-                pushUndoState(); val toInsert = mutableListOf<Pair<Int,String>>()
-                for (target in undefinedGotoTargets) {
-                    val firstGotoLine = validationCache.firstOrNull { it.error.contains("GOTO target label '$target' not defined") }?.lineNumber
-                    val insertionIndex = firstGotoLine ?: allLines.size
-                    toInsert.add(insertionIndex to "LABEL;$target")
-                }
-                toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
-                    val (idx, line) = pair; val adj = idx + offset; if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
-                }
-                hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Inserted ${undefinedGotoTargets.size} LABEL(s)", Toast.LENGTH_SHORT).show()
+        val gotoFixRow =
+            TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#FFF1E0"))
+                setPadding(16, 8, 16, 8)
             }
-        }
-        lay.addView(msg); lay.addView(btn); gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(gotoFixRow)
+        val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
+        val msg =
+            TextView(requireContext()).apply {
+                text = "Undefined GOTO target(s): ${undefinedGotoTargets.joinToString(", ")}. Insert missing LABEL lines?"
+                setTextColor(Color.parseColor("#A65E00"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+        val btn =
+            Button(requireContext()).apply {
+                text = "Insert missing LABELs"
+                setOnClickListener {
+                    pushUndoState()
+                    val toInsert = mutableListOf<Pair<Int, String>>()
+                    for (target in undefinedGotoTargets) {
+                        val firstGotoLine =
+                            validationCache.firstOrNull {
+                                it.error.contains(
+                                    "GOTO target label '$target' not defined",
+                                )
+                            }?.lineNumber
+                        val insertionIndex = firstGotoLine ?: allLines.size
+                        toInsert.add(insertionIndex to "LABEL;$target")
+                    }
+                    toInsert.sortedBy { it.first }.forEachIndexed { offset, pair ->
+                        val (idx, line) = pair
+                        val adj = idx + offset
+                        if (adj <= allLines.size) allLines.add(adj, line) else allLines.add(line)
+                    }
+                    hasUnsavedChanges = true
+                    pendingAutoScrollToFirstIssue = true
+                    revalidateAndRefreshUI()
+                    Toast.makeText(requireContext(), "Inserted ${undefinedGotoTargets.size} LABEL(s)", Toast.LENGTH_SHORT).show()
+                }
+            }
+        lay.addView(msg)
+        lay.addView(btn)
+        gotoFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
+        contentTable.addView(gotoFixRow)
     }
 
     private fun addTimerFixRow(contentTable: TableLayout) {
         val hasTimerErrors = validationCache.any { it.error.contains("TIMER must") }
         if (!hasTimerErrors) return
-        val timerFixRow = TableRow(requireContext()).apply { setBackgroundColor(Color.parseColor("#E8F4FF")); setPadding(16,8,16,8) }
+        val timerFixRow =
+            TableRow(requireContext()).apply {
+                setBackgroundColor(Color.parseColor("#E8F4FF"))
+                setPadding(16, 8, 16, 8)
+            }
         val lay = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }
-        val msg = TextView(requireContext()).apply { text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"; setTextColor(Color.parseColor("#004B78")); setTypeface(null, Typeface.BOLD); textSize = applyScale(13f) }
-        val btn = Button(requireContext()).apply {
-            text = "Fix TIMER lines"
-            setOnClickListener {
-                pushUndoState(); var fixed = 0
-                for (i in allLines.indices) {
-                    val raw = allLines[i]; val t = raw.trim()
-                    if (t.uppercase().startsWith("TIMER")) {
-                        val parts = t.split(';').toMutableList()
-                        if (parts.isNotEmpty() && parts[0].uppercase() == "TIMER") {
-                            while (parts.size < 5) parts.add("")
-                            val header = parts.getOrNull(1)?.takeIf { it.isNotBlank() } ?: "Header"
-                            val body = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Body"
-                            val timeStrRaw = parts.getOrNull(3)?.trim().orEmpty()
-                            val timeVal = timeStrRaw.toIntOrNull()?.takeIf { it >= 0 } ?: 60
-                            val cont = parts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "Continue"
-                            val normalized = "TIMER;$header;$body;$timeVal;$cont"
-                            if (normalized != raw) { allLines[i] = normalized; fixed++ }
+        val msg =
+            TextView(requireContext()).apply {
+                text = "Malformed TIMER command(s) detected. Normalize to TIMER;Header;Body;60;Continue?"
+                setTextColor(Color.parseColor("#004B78"))
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(13f)
+            }
+        val btn =
+            Button(requireContext()).apply {
+                text = "Fix TIMER lines"
+                setOnClickListener {
+                    pushUndoState()
+                    var fixed = 0
+                    for (i in allLines.indices) {
+                        val raw = allLines[i]
+                        val t = raw.trim()
+                        if (t.uppercase().startsWith("TIMER")) {
+                            val parts = t.split(';').toMutableList()
+                            if (parts.isNotEmpty() && parts[0].uppercase() == "TIMER") {
+                                while (parts.size < 5) parts.add("")
+                                val header = parts.getOrNull(1)?.takeIf { it.isNotBlank() } ?: "Header"
+                                val body = parts.getOrNull(2)?.takeIf { it.isNotBlank() } ?: "Body"
+                                val timeStrRaw = parts.getOrNull(3)?.trim().orEmpty()
+                                val timeVal = timeStrRaw.toIntOrNull()?.takeIf { it >= 0 } ?: 60
+                                val cont = parts.getOrNull(4)?.takeIf { it.isNotBlank() } ?: "Continue"
+                                val normalized = "TIMER;$header;$body;$timeVal;$cont"
+                                if (normalized != raw) {
+                                    allLines[i] = normalized
+                                    fixed++
+                                }
+                            }
                         }
                     }
+                    if (fixed > 0) {
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        revalidateAndRefreshUI()
+                        Toast.makeText(requireContext(), "Fixed $fixed TIMER line(s)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                if (fixed > 0) { hasUnsavedChanges = true; pendingAutoScrollToFirstIssue = true; revalidateAndRefreshUI(); Toast.makeText(requireContext(), "Fixed $fixed TIMER line(s)", Toast.LENGTH_SHORT).show() } else { Toast.makeText(requireContext(), "No TIMER lines changed", Toast.LENGTH_SHORT).show() }
             }
-        }
-        lay.addView(msg); lay.addView(btn); timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 }); contentTable.addView(timerFixRow)
+        lay.addView(msg)
+        lay.addView(btn)
+        timerFixRow.addView(lay, TableRow.LayoutParams().apply { span = 3 })
+        contentTable.addView(timerFixRow)
     }
 
     private fun buildHeaderTable(): TableLayout {
@@ -1016,9 +1255,12 @@ class ProtocolValidationDialog : DialogFragment() {
 
             val headerRow = TableRow(context)
             // Empty placeholder for drag handle column
-            headerRow.addView(TextView(context).apply {
-                text = ""; width = (24 * resources.displayMetrics.density).toInt()
-            })
+            headerRow.addView(
+                TextView(context).apply {
+                    text = ""
+                    width = (24 * resources.displayMetrics.density).toInt()
+                },
+            )
             headerRow.addView(createHeaderCell("Line", Gravity.END))
             headerRow.addView(createHeaderCell("Command", Gravity.START))
             headerRow.addView(createHeaderCell("Error(s)", Gravity.START))
@@ -1028,7 +1270,7 @@ class ProtocolValidationDialog : DialogFragment() {
 
     private fun buildContentTable(): TableLayout {
         val context = requireContext()
-    val tableLayout =
+        val tableLayout =
             TableLayout(context).apply {
                 layoutParams =
                     TableLayout.LayoutParams(
@@ -1036,18 +1278,19 @@ class ProtocolValidationDialog : DialogFragment() {
                         TableLayout.LayoutParams.WRAP_CONTENT,
                     )
                 isStretchAllColumns = false
-        // Columns: 0=drag handle,1=line#,2=command,3=issues
-        setColumnStretchable(2, true)
-        setColumnStretchable(3, true)
+                // Columns: 0=drag handle,1=line#,2=command,3=issues
+                setColumnStretchable(2, true)
+                setColumnStretchable(3, true)
                 setPadding(8, 8, 8, 8)
             }
 
-        val filteredEntries = validationCache.filter { entry ->
-            lineMatchesCurrentFilter(entry)
-        }
+        val filteredEntries =
+            validationCache.filter { entry ->
+                lineMatchesCurrentFilter(entry)
+            }
 
-    lineRowMap.clear()
-    filteredEntries.forEach { entry ->
+        lineRowMap.clear()
+        filteredEntries.forEach { entry ->
             val originalLineNumber = entry.lineNumber
             val trimmedLine = entry.trimmedLine
             val errorMessage = entry.error
@@ -1083,27 +1326,35 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
 
             // Drag handle image
-            val dragHandle = ImageView(context).apply {
-                setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_drag_handle))
-                contentDescription = getString(R.string.cd_drag_handle)
-                val sizePx = (32 * resources.displayMetrics.density).toInt()
-                layoutParams = TableRow.LayoutParams(sizePx, TableRow.LayoutParams.MATCH_PARENT)
-                setPadding(4,4,4,4)
-                setOnLongClickListener {
-                    if (!searchQuery.isNullOrBlank() || filterOption != FilterOption.HIDE_COMMENTS) {
-                        Toast.makeText(context, getString(R.string.toast_drag_disabled), Toast.LENGTH_SHORT).show(); return@setOnLongClickListener true
+            val dragHandle =
+                ImageView(context).apply {
+                    setImageDrawable(androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_drag_handle))
+                    contentDescription = getString(R.string.cd_drag_handle)
+                    val sizePx = (32 * resources.displayMetrics.density).toInt()
+                    layoutParams = TableRow.LayoutParams(sizePx, TableRow.LayoutParams.MATCH_PARENT)
+                    setPadding(4, 4, 4, 4)
+                    setOnLongClickListener {
+                        if (!searchQuery.isNullOrBlank() || filterOption != FilterOption.HIDE_COMMENTS) {
+                            Toast.makeText(context, getString(R.string.toast_drag_disabled), Toast.LENGTH_SHORT).show()
+                            return@setOnLongClickListener true
+                        }
+                        val clip = ClipData.newPlainText("line", originalLineNumber.toString())
+                        startDragAndDrop(clip, View.DragShadowBuilder(this), originalLineNumber, 0)
+                        true
                     }
-                    val clip = ClipData.newPlainText("line", originalLineNumber.toString())
-                    startDragAndDrop(clip, View.DragShadowBuilder(this), originalLineNumber, 0)
-                    true
                 }
-            }
             // Accept drop on row
             row.setOnDragListener { v, event ->
-                when(event.action) {
+                when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> true
-                    DragEvent.ACTION_DRAG_ENTERED -> { v.alpha = 0.6f; true }
-                    DragEvent.ACTION_DRAG_EXITED -> { v.alpha = 1f; true }
+                    DragEvent.ACTION_DRAG_ENTERED -> {
+                        v.alpha = 0.6f
+                        true
+                    }
+                    DragEvent.ACTION_DRAG_EXITED -> {
+                        v.alpha = 1f
+                        true
+                    }
                     DragEvent.ACTION_DROP -> {
                         v.alpha = 1f
                         val fromLine = event.localState as? Int ?: return@setOnDragListener true
@@ -1123,7 +1374,10 @@ class ProtocolValidationDialog : DialogFragment() {
                         }
                         true
                     }
-                    DragEvent.ACTION_DRAG_ENDED -> { v.alpha = 1f; true }
+                    DragEvent.ACTION_DRAG_ENDED -> {
+                        v.alpha = 1f
+                        true
+                    }
                     else -> false
                 }
             }
@@ -1174,9 +1428,10 @@ class ProtocolValidationDialog : DialogFragment() {
         // Use pure validator for base validations then map into existing cache structure
         val results = pureValidator.validate(allLines)
         // Hide synthetic EOF marker in UI while still surfacing its error globally
-        validationCache = results
-            .filter { it.raw != "<EOF>" }
-            .map { ValidationEntry(it.lineNumber, it.raw, it.raw.trim(), it.error, it.warning) }
+        validationCache =
+            results
+                .filter { it.raw != "<EOF>" }
+                .map { ValidationEntry(it.lineNumber, it.raw, it.raw.trim(), it.error, it.warning) }
         // Preserve randomizationLevel side-effect detection (EOF unmatched) using last synthetic entry if present
         val eofEntry = results.lastOrNull()?.takeIf { it.raw == "<EOF>" && it.error.isNotEmpty() }
         if (eofEntry != null) {
@@ -1191,11 +1446,12 @@ class ProtocolValidationDialog : DialogFragment() {
             return
         }
         // Move index
-        issueIndex = when {
-            issueIndex == -1 && direction > 0 -> 0
-            issueIndex == -1 && direction < 0 -> issueLineNumbers.lastIndex
-            else -> (issueIndex + direction + issueLineNumbers.size) % issueLineNumbers.size
-        }
+        issueIndex =
+            when {
+                issueIndex == -1 && direction > 0 -> 0
+                issueIndex == -1 && direction < 0 -> issueLineNumbers.lastIndex
+                else -> (issueIndex + direction + issueLineNumbers.size) % issueLineNumbers.size
+            }
         val lineNumber = issueLineNumbers[issueIndex]
         highlightAndScrollTo(lineNumber)
     }
@@ -1214,7 +1470,6 @@ class ProtocolValidationDialog : DialogFragment() {
         scrollViewRef?.post { scrollViewRef?.smoothScrollTo(0, row.top) }
     }
 
-
     private fun showEditLineDialog(lineIndex: Int) {
         val context = requireContext()
         val originalLine = allLines[lineIndex]
@@ -1228,13 +1483,13 @@ class ProtocolValidationDialog : DialogFragment() {
                 setPadding(16, 16, 16, 16)
             }
 
-    AlertDialog.Builder(context)
+        AlertDialog.Builder(context)
             .setTitle("Edit Line #${lineIndex + 1}")
             .setView(editText)
             .setPositiveButton("Save") { _, _ ->
                 val newLine = editText.text.toString()
                 if (newLine != originalLine) {
-            pushUndoState()
+                    pushUndoState()
                     allLines[lineIndex] = newLine
                     hasUnsavedChanges = true
                 }
@@ -1763,58 +2018,58 @@ class ProtocolValidationDialog : DialogFragment() {
         tokenIndex: Int,
         totalTokens: Int,
     ): Int {
-        val BG_COMMAND = "#AABBCC"
-        val BG_HEADER = "#CDEEFF"
-        val BG_BODY = "#FFFFE0"
-        val BG_TEAL_FOR_ITEMS = "#D1FCE3"
-        val BG_GREEN_FOR_RESPONSES = "#DAF7A6"
+        val commandColor = "#AABBCC"
+        val headerColor = "#CDEEFF"
+        val bodyColor = "#FFFFE0"
+        val itemColor = "#D1FCE3"
+        val responseColor = "#DAF7A6"
 
         if (tokenIndex == 0) {
-            return Color.parseColor(BG_COMMAND)
+            return Color.parseColor(commandColor)
         }
 
         return when (commandUpper) {
             "INSTRUCTION" -> {
                 when (tokenIndex) {
-                    1 -> Color.parseColor(BG_HEADER)
-                    2 -> Color.parseColor(BG_BODY)
-                    3 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
+                    1 -> Color.parseColor(headerColor)
+                    2 -> Color.parseColor(bodyColor)
+                    3 -> Color.parseColor(responseColor)
                     else -> Color.TRANSPARENT
                 }
             }
             "TIMER" -> {
                 when (tokenIndex) {
-                    1 -> Color.parseColor(BG_HEADER)
-                    2 -> Color.parseColor(BG_BODY)
-                    3 -> Color.parseColor(BG_TEAL_FOR_ITEMS)
-                    4 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
+                    1 -> Color.parseColor(headerColor)
+                    2 -> Color.parseColor(bodyColor)
+                    3 -> Color.parseColor(itemColor)
+                    4 -> Color.parseColor(responseColor)
                     else -> Color.TRANSPARENT
                 }
             }
             "SCALE", "SCALE[RANDOMIZED]" -> {
                 when {
-                    tokenIndex == 1 -> Color.parseColor(BG_HEADER)
-                    tokenIndex == 2 -> Color.parseColor(BG_BODY)
-                    tokenIndex == 3 -> Color.parseColor(BG_TEAL_FOR_ITEMS)
-                    tokenIndex > 3 -> Color.parseColor(BG_GREEN_FOR_RESPONSES)
+                    tokenIndex == 1 -> Color.parseColor(headerColor)
+                    tokenIndex == 2 -> Color.parseColor(bodyColor)
+                    tokenIndex == 3 -> Color.parseColor(itemColor)
+                    tokenIndex > 3 -> Color.parseColor(responseColor)
                     else -> Color.TRANSPARENT
                 }
             }
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                 if (tokenIndex == 1) {
-                    return Color.parseColor(BG_HEADER)
+                    return Color.parseColor(headerColor)
                 } else if (tokenIndex == 2) {
-                    return Color.parseColor(BG_BODY)
+                    return Color.parseColor(bodyColor)
                 } else if (tokenIndex == totalTokens - 1) {
-                    return Color.parseColor(BG_GREEN_FOR_RESPONSES)
+                    return Color.parseColor(responseColor)
                 } else if (tokenIndex >= 3) {
-                    return Color.parseColor(BG_TEAL_FOR_ITEMS)
+                    return Color.parseColor(itemColor)
                 }
                 return Color.TRANSPARENT
             }
             else -> {
                 if (tokenIndex == 1) {
-                    return Color.parseColor(BG_TEAL_FOR_ITEMS)
+                    return Color.parseColor(itemColor)
                 }
                 return Color.TRANSPARENT
             }
@@ -1911,11 +2166,12 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         }
         return try {
-            val assetContent = if (mode == "tutorial") {
-                reader.readFromAssets(requireContext(), "tutorial_protocol.txt")
-            } else {
-                reader.readFromAssets(requireContext(), "demo_protocol.txt")
-            }
+            val assetContent =
+                if (mode == "tutorial") {
+                    reader.readFromAssets(requireContext(), "tutorial_protocol.txt")
+                } else {
+                    reader.readFromAssets(requireContext(), "demo_protocol.txt")
+                }
             if (assetContent.startsWith("Error reading asset file:")) {
                 pendingLoadErrorMessage = assetContent.replace("Error reading asset file:", "Unable to load bundled protocol:").trim()
                 loadErrorPlaceholder
@@ -2002,130 +2258,344 @@ class ProtocolValidationDialog : DialogFragment() {
         return name
     }
 
-    private fun showInsertCommandDialog(insertAfterLine: Int?, editLineIndex: Int? = null) {
+    private fun showInsertCommandDialog(
+        insertAfterLine: Int?,
+        editLineIndex: Int? = null,
+    ) {
         val ctx = requireContext()
         // Container layout
         val container = ScrollView(ctx)
-        val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(32,24,32,8) }
+        val inner =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(32, 24, 32, 8)
+            }
         container.addView(inner)
 
         // Grouped command metadata
-        data class CommandMeta(val name:String, val category:String)
-        val commandMetaList = listOf(
-            // Content / structural
-            CommandMeta("INSTRUCTION","Content"), CommandMeta("TIMER","Content"), CommandMeta("SCALE","Content"), CommandMeta("SCALE[RANDOMIZED]","Content"),
-            CommandMeta("INPUTFIELD","Content"), CommandMeta("INPUTFIELD[RANDOMIZED]","Content"), CommandMeta("LABEL","Content"), CommandMeta("GOTO","Content"),
-            CommandMeta("HTML","Content"), CommandMeta("TIMER_SOUND","Content"), CommandMeta("LOG","Content"), CommandMeta("END","Content"),
-            // Randomization
-            CommandMeta("RANDOMIZE_ON","Randomization"), CommandMeta("RANDOMIZE_OFF","Randomization"),
-            // Meta
-            CommandMeta("STUDY_ID","Meta"), CommandMeta("TRANSITIONS","Meta"),
-            // Style colors
-            CommandMeta("HEADER_COLOR","Style"), CommandMeta("BODY_COLOR","Style"), CommandMeta("RESPONSE_TEXT_COLOR","Style"), CommandMeta("RESPONSE_BACKGROUND_COLOR","Style"),
-            CommandMeta("SCREEN_BACKGROUND_COLOR","Style"), CommandMeta("CONTINUE_TEXT_COLOR","Style"), CommandMeta("CONTINUE_BACKGROUND_COLOR","Style"), CommandMeta("TIMER_COLOR","Style"),
-            // Style sizes
-            CommandMeta("HEADER_SIZE","Style"), CommandMeta("BODY_SIZE","Style"), CommandMeta("ITEM_SIZE","Style"), CommandMeta("RESPONSE_SIZE","Style"),
-            CommandMeta("CONTINUE_SIZE","Style"), CommandMeta("TIMER_SIZE","Style"),
-            // Style alignment
-            CommandMeta("HEADER_ALIGNMENT","Style"), CommandMeta("BODY_ALIGNMENT","Style"), CommandMeta("CONTINUE_ALIGNMENT","Style"), CommandMeta("TIMER_ALIGNMENT","Style")
-        )
+        data class CommandMeta(val name: String, val category: String)
+        val commandMetaList =
+            listOf(
+                // Content / structural
+                CommandMeta(
+                    "INSTRUCTION",
+                    "Content",
+                ),
+                CommandMeta("TIMER", "Content"), CommandMeta("SCALE", "Content"), CommandMeta("SCALE[RANDOMIZED]", "Content"),
+                CommandMeta(
+                    "INPUTFIELD",
+                    "Content",
+                ),
+                CommandMeta("INPUTFIELD[RANDOMIZED]", "Content"), CommandMeta("LABEL", "Content"), CommandMeta("GOTO", "Content"),
+                CommandMeta(
+                    "HTML",
+                    "Content",
+                ),
+                CommandMeta("TIMER_SOUND", "Content"), CommandMeta("LOG", "Content"), CommandMeta("END", "Content"),
+                // Randomization
+                CommandMeta("RANDOMIZE_ON", "Randomization"), CommandMeta("RANDOMIZE_OFF", "Randomization"),
+                // Meta
+                CommandMeta("STUDY_ID", "Meta"), CommandMeta("TRANSITIONS", "Meta"),
+                // Style colors
+                CommandMeta(
+                    "HEADER_COLOR",
+                    "Style",
+                ),
+                CommandMeta(
+                    "BODY_COLOR",
+                    "Style",
+                ),
+                CommandMeta("RESPONSE_TEXT_COLOR", "Style"), CommandMeta("RESPONSE_BACKGROUND_COLOR", "Style"),
+                CommandMeta(
+                    "SCREEN_BACKGROUND_COLOR",
+                    "Style",
+                ),
+                CommandMeta(
+                    "CONTINUE_TEXT_COLOR",
+                    "Style",
+                ),
+                CommandMeta("CONTINUE_BACKGROUND_COLOR", "Style"), CommandMeta("TIMER_COLOR", "Style"),
+                // Style sizes
+                CommandMeta(
+                    "HEADER_SIZE",
+                    "Style",
+                ),
+                CommandMeta("BODY_SIZE", "Style"), CommandMeta("ITEM_SIZE", "Style"), CommandMeta("RESPONSE_SIZE", "Style"),
+                CommandMeta("CONTINUE_SIZE", "Style"), CommandMeta("TIMER_SIZE", "Style"),
+                // Style alignment
+                CommandMeta(
+                    "HEADER_ALIGNMENT",
+                    "Style",
+                ),
+                CommandMeta(
+                    "BODY_ALIGNMENT",
+                    "Style",
+                ),
+                CommandMeta("CONTINUE_ALIGNMENT", "Style"), CommandMeta("TIMER_ALIGNMENT", "Style"),
+            )
         val allCommandNames = commandMetaList.map { it.name }
-        val categories = listOf("All","Content","Randomization","Meta","Style")
-        inner.addView(TextView(ctx).apply { text = getString(R.string.label_select_command); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
-        val categorySpinner = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, categories)
-        }
+        val categories = listOf("All", "Content", "Randomization", "Meta", "Style")
+        inner.addView(
+            TextView(ctx).apply {
+                text = getString(R.string.label_select_command)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(14f)
+            },
+        )
+        val categorySpinner =
+            Spinner(ctx).apply {
+                adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, categories)
+            }
         inner.addView(categorySpinner)
         // Search + dynamic filtered spinner
-        val searchBox = EditText(ctx).apply { hint = "Search commands"; setSingleLine() }
+        val searchBox =
+            EditText(ctx).apply {
+                hint = "Search commands"
+                setSingleLine()
+            }
         inner.addView(searchBox)
         val spinner = Spinner(ctx)
         var filtered = allCommandNames
+
         fun refreshSpinner() {
-            val adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, filtered)
+            val adapter =
+                ArrayAdapter(
+                    ctx,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    filtered,
+                )
             spinner.adapter = adapter
         }
         refreshSpinner()
-        searchBox.addTextChangedListener(object: android.text.TextWatcher {
-            override fun afterTextChanged(s: android.text.Editable?) {}
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val q = s?.toString()?.trim()?.lowercase().orEmpty()
-                val selectedCategory = categories[categorySpinner.selectedItemPosition]
-                val base = if (selectedCategory=="All") commandMetaList else commandMetaList.filter { it.category==selectedCategory }
-                filtered = base.map { it.name }.filter { q.isEmpty() || it.lowercase().contains(q) }
-                refreshSpinner()
-                // Try to keep selection stable if possible
+        searchBox.addTextChangedListener(
+            object : android.text.TextWatcher {
+                override fun afterTextChanged(s: android.text.Editable?) {}
+
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int,
+                ) {}
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int,
+                ) {
+                    val q = s?.toString()?.trim()?.lowercase().orEmpty()
+                    val selectedCategory = categories[categorySpinner.selectedItemPosition]
+                    val base =
+                        if (selectedCategory == "All") {
+                            commandMetaList
+                        } else {
+                            commandMetaList.filter { it.category == selectedCategory }
+                        }
+                    filtered =
+                        base
+                            .map { it.name }
+                            .filter { q.isEmpty() || it.lowercase().contains(q) }
+                    refreshSpinner()
+                    // Try to keep selection stable if possible
+                }
+            },
+        )
+        categorySpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    val q = searchBox.text.toString().trim().lowercase()
+                    val selectedCategory = categories[position]
+                    val base =
+                        if (selectedCategory == "All") {
+                            commandMetaList
+                        } else {
+                            commandMetaList.filter { it.category == selectedCategory }
+                        }
+                    filtered =
+                        base
+                            .map { it.name }
+                            .filter { q.isEmpty() || it.lowercase().contains(q) }
+                    refreshSpinner()
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
-        })
-        categorySpinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val q = searchBox.text.toString().trim().lowercase()
-                val selectedCategory = categories[position]
-                val base = if (selectedCategory=="All") commandMetaList else commandMetaList.filter { it.category==selectedCategory }
-                filtered = base.map { it.name }.filter { q.isEmpty() || it.lowercase().contains(q) }
-                refreshSpinner()
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
         inner.addView(spinner)
 
-        fun edit(hintRes: Int): EditText = EditText(ctx).apply { hint = getString(hintRes); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
+        fun edit(hintRes: Int): EditText =
+            EditText(ctx).apply {
+                hint = getString(hintRes)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+            }
 
         val header = edit(R.string.hint_header)
         val body = edit(R.string.hint_body)
         val items = edit(R.string.hint_items)
         val cont = edit(R.string.hint_continue)
-        val time = edit(R.string.hint_time_seconds).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+        val time =
+            edit(R.string.hint_time_seconds).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            }
         val labelName = edit(R.string.hint_label_name)
         val gotoLabel = edit(R.string.hint_goto_label)
         val filename = edit(R.string.hint_filename)
         val message = edit(R.string.hint_message)
         val inputFields = edit(R.string.hint_input_fields)
         val colorValue = edit(R.string.hint_color_value)
-        val sizeValue = edit(R.string.hint_size_value).apply { inputType = android.text.InputType.TYPE_CLASS_NUMBER }
-        val alignmentSpinner = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, arrayOf("LEFT", "CENTER", "RIGHT"))
-        }
+        val sizeValue =
+            edit(R.string.hint_size_value).apply {
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            }
+        val alignmentSpinner =
+            Spinner(ctx).apply {
+                adapter =
+                    ArrayAdapter(
+                        ctx,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        arrayOf(
+                            "LEFT",
+                            "CENTER",
+                            "RIGHT",
+                        ),
+                    )
+            }
         val studyIdValue = edit(R.string.hint_study_id_value)
-        val transitionsSpinner = Spinner(ctx).apply {
-            adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, arrayOf("off","slide","slideleft","fade","dissolve"))
-        }
+        val transitionsSpinner =
+            Spinner(ctx).apply {
+                adapter =
+                    ArrayAdapter(
+                        ctx,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        arrayOf(
+                            "off",
+                            "slide",
+                            "slideleft",
+                            "fade",
+                            "dissolve",
+                        ),
+                    )
+            }
 
-        val paramGroup = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(0,16,0,0) }
-    inner.addView(TextView(ctx).apply { text = getString(R.string.label_parameters); setTypeface(null, Typeface.BOLD); textSize = applyScale(14f) })
+        val paramGroup =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, 16, 0, 0)
+            }
+        inner.addView(
+            TextView(ctx).apply {
+                text = getString(R.string.label_parameters)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(14f)
+            },
+        )
         inner.addView(paramGroup)
 
         fun refreshParams() {
             paramGroup.removeAllViews()
             when (spinner.selectedItem as String) {
-                "INSTRUCTION" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(cont) }
-                "TIMER" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(time); paramGroup.addView(cont) }
-                "SCALE", "SCALE[RANDOMIZED]" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(items); paramGroup.addView(cont) }
-                "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> { paramGroup.addView(header); paramGroup.addView(body); paramGroup.addView(inputFields); paramGroup.addView(cont) }
-                "LABEL" -> { paramGroup.addView(labelName) }
-                "GOTO" -> { paramGroup.addView(gotoLabel) }
-                "HTML" -> { paramGroup.addView(filename) }
-                "TIMER_SOUND" -> { paramGroup.addView(filename) }
-                "LOG" -> { paramGroup.addView(message) }
+                "INSTRUCTION" -> {
+                    paramGroup.addView(header)
+                    paramGroup.addView(body)
+                    paramGroup.addView(cont)
+                }
+                "TIMER" -> {
+                    paramGroup.addView(header)
+                    paramGroup.addView(body)
+                    paramGroup.addView(time)
+                    paramGroup.addView(cont)
+                }
+                "SCALE", "SCALE[RANDOMIZED]" -> {
+                    paramGroup.addView(header)
+                    paramGroup.addView(body)
+                    paramGroup.addView(items)
+                    paramGroup.addView(cont)
+                }
+                "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                    paramGroup.addView(header)
+                    paramGroup.addView(body)
+                    paramGroup.addView(inputFields)
+                    paramGroup.addView(cont)
+                }
+                "LABEL" -> {
+                    paramGroup.addView(labelName)
+                }
+                "GOTO" -> {
+                    paramGroup.addView(gotoLabel)
+                }
+                "HTML" -> {
+                    paramGroup.addView(filename)
+                }
+                "TIMER_SOUND" -> {
+                    paramGroup.addView(filename)
+                }
+                "LOG" -> {
+                    paramGroup.addView(message)
+                }
                 // Toggles & commands without params
                 "RANDOMIZE_ON", "RANDOMIZE_OFF", "END" -> { /* no params */ }
                 // Single-value meta
-                "STUDY_ID" -> { paramGroup.addView(studyIdValue) }
-                "TRANSITIONS" -> { paramGroup.addView(transitionsSpinner) }
+                "STUDY_ID" -> {
+                    paramGroup.addView(studyIdValue)
+                }
+                "TRANSITIONS" -> {
+                    paramGroup.addView(transitionsSpinner)
+                }
                 // Colors
-                "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> { paramGroup.addView(colorValue) }
+                "HEADER_COLOR",
+                "BODY_COLOR",
+                "RESPONSE_TEXT_COLOR",
+                "RESPONSE_BACKGROUND_COLOR",
+                "SCREEN_BACKGROUND_COLOR",
+                "CONTINUE_TEXT_COLOR",
+                "CONTINUE_BACKGROUND_COLOR",
+                "TIMER_COLOR",
+                -> {
+                    paramGroup.addView(colorValue)
+                }
                 // Sizes
-                "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> { paramGroup.addView(sizeValue) }
+                "HEADER_SIZE",
+                "BODY_SIZE",
+                "ITEM_SIZE",
+                "RESPONSE_SIZE",
+                "CONTINUE_SIZE",
+                "TIMER_SIZE",
+                -> {
+                    paramGroup.addView(sizeValue)
+                }
                 // Alignments
-                "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> { paramGroup.addView(alignmentSpinner) }
+                "HEADER_ALIGNMENT",
+                "BODY_ALIGNMENT",
+                "CONTINUE_ALIGNMENT",
+                "TIMER_ALIGNMENT",
+                -> {
+                    paramGroup.addView(alignmentSpinner)
+                }
                 else -> { /* END has no params */ }
             }
         }
-        spinner.onItemSelectedListener = object: AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { refreshParams() }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
+        spinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    refreshParams()
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
         refreshParams()
 
         // Prefill if editing existing line
@@ -2135,7 +2605,11 @@ class ProtocolValidationDialog : DialogFragment() {
             val cmd = parts.firstOrNull()?.trim().orEmpty()
             // Set category first
             val meta = commandMetaList.firstOrNull { it.name == cmd }
-            val catIndex = if (meta==null) 0 else categories.indexOf(meta.category).takeIf { it>=0 } ?: 0
+            val catIndex =
+                meta
+                    ?.let { categories.indexOf(it.category) }
+                    ?.takeIf { it >= 0 }
+                    ?: 0
             categorySpinner.setSelection(catIndex)
             // Recompute filtered after category selection
             categorySpinner.post {
@@ -2146,35 +2620,87 @@ class ProtocolValidationDialog : DialogFragment() {
             // Delay param refresh until after selection applied
             spinner.post {
                 when (cmd) {
-                    "INSTRUCTION" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2)); cont.setText(parts.getOrNull(3)) }
-                    "TIMER" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2)); time.setText(parts.getOrNull(3)); cont.setText(parts.getOrNull(4)) }
-                    "SCALE", "SCALE[RANDOMIZED]" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2));
-                        val itemSlice = if (parts.size > 4) parts.subList(3, parts.size -1) else emptyList()
+                    "INSTRUCTION" -> {
+                        header.setText(parts.getOrNull(1))
+                        body.setText(parts.getOrNull(2))
+                        cont.setText(parts.getOrNull(3))
+                    }
+                    "TIMER" -> {
+                        header.setText(parts.getOrNull(1))
+                        body.setText(parts.getOrNull(2))
+                        time.setText(parts.getOrNull(3))
+                        cont.setText(parts.getOrNull(4))
+                    }
+                    "SCALE", "SCALE[RANDOMIZED]" -> {
+                        header.setText(parts.getOrNull(1))
+                        body.setText(parts.getOrNull(2))
+                        val itemSlice =
+                            if (parts.size > 4) {
+                                parts.subList(3, parts.size - 1)
+                            } else {
+                                emptyList()
+                            }
                         items.setText(itemSlice.joinToString(", "))
-                        cont.setText(parts.lastOrNull()) }
-                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> { header.setText(parts.getOrNull(1)); body.setText(parts.getOrNull(2));
-                        val fieldSlice = if (parts.size > 4) parts.subList(3, parts.size -1) else emptyList()
+                        cont.setText(parts.lastOrNull())
+                    }
+                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                        header.setText(parts.getOrNull(1))
+                        body.setText(parts.getOrNull(2))
+                        val fieldSlice = if (parts.size > 4) parts.subList(3, parts.size - 1) else emptyList()
                         inputFields.setText(fieldSlice.joinToString(", "))
-                        cont.setText(parts.lastOrNull()) }
-                    "LABEL" -> { labelName.setText(parts.getOrNull(1)) }
-                    "GOTO" -> { gotoLabel.setText(parts.getOrNull(1)) }
-                    "HTML", "TIMER_SOUND" -> { filename.setText(parts.getOrNull(1)) }
-                    "LOG" -> { message.setText(parts.getOrNull(1)) }
+                        cont.setText(parts.lastOrNull())
+                    }
+                    "LABEL" -> {
+                        labelName.setText(parts.getOrNull(1))
+                    }
+                    "GOTO" -> {
+                        gotoLabel.setText(parts.getOrNull(1))
+                    }
+                    "HTML", "TIMER_SOUND" -> {
+                        filename.setText(parts.getOrNull(1))
+                    }
+                    "LOG" -> {
+                        message.setText(parts.getOrNull(1))
+                    }
                     // Single value commands
-                    "STUDY_ID" -> { studyIdValue.setText(parts.getOrNull(1)) }
+                    "STUDY_ID" -> {
+                        studyIdValue.setText(parts.getOrNull(1))
+                    }
                     "TRANSITIONS" -> {
                         val mode = parts.getOrNull(1)?.lowercase()
-                        val idx = arrayOf("off","slide","slideleft","fade","dissolve").indexOf(mode)
+                        val idx = arrayOf("off", "slide", "slideleft", "fade", "dissolve").indexOf(mode)
                         if (idx >= 0) transitionsSpinner.setSelection(idx)
                     }
                     // Colors
-                    "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> { colorValue.setText(parts.getOrNull(1)) }
+                    "HEADER_COLOR",
+                    "BODY_COLOR",
+                    "RESPONSE_TEXT_COLOR",
+                    "RESPONSE_BACKGROUND_COLOR",
+                    "SCREEN_BACKGROUND_COLOR",
+                    "CONTINUE_TEXT_COLOR",
+                    "CONTINUE_BACKGROUND_COLOR",
+                    "TIMER_COLOR",
+                    -> {
+                        colorValue.setText(parts.getOrNull(1))
+                    }
                     // Sizes
-                    "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> { sizeValue.setText(parts.getOrNull(1)) }
+                    "HEADER_SIZE",
+                    "BODY_SIZE",
+                    "ITEM_SIZE",
+                    "RESPONSE_SIZE",
+                    "CONTINUE_SIZE",
+                    "TIMER_SIZE",
+                    -> {
+                        sizeValue.setText(parts.getOrNull(1))
+                    }
                     // Alignments
-                    "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
+                    "HEADER_ALIGNMENT",
+                    "BODY_ALIGNMENT",
+                    "CONTINUE_ALIGNMENT",
+                    "TIMER_ALIGNMENT",
+                    -> {
                         val valUpper = parts.getOrNull(1)?.uppercase()
-                        val idx = arrayOf("LEFT","CENTER","RIGHT").indexOf(valUpper)
+                        val idx = arrayOf("LEFT", "CENTER", "RIGHT").indexOf(valUpper)
                         if (idx >= 0) alignmentSpinner.setSelection(idx)
                     }
                 }
@@ -2182,100 +2708,185 @@ class ProtocolValidationDialog : DialogFragment() {
         }
 
         val isEdit = editLineIndex != null
-        val builder = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.dialog_title_insert_command))
-            .setView(container)
-            .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
-                val cmd = spinner.selectedItem as String
-                fun def(et: EditText, fallback: String) = et.text.toString().takeIf { it.isNotBlank() } ?: fallback
-                // Contextual validations
-                if (cmd == "STUDY_ID" && !isEdit) {
-                    if (allLines.any { it.trim().uppercase().startsWith("STUDY_ID;") }) {
-                        Toast.makeText(ctx, getString(R.string.error_duplicate_study_id), Toast.LENGTH_SHORT).show(); return@setPositiveButton
+        val builder =
+            AlertDialog.Builder(ctx)
+                .setTitle(getString(R.string.dialog_title_insert_command))
+                .setView(container)
+                .setPositiveButton(if (isEdit) R.string.action_update_command else R.string.action_add_command) { _, _ ->
+                    val cmd = spinner.selectedItem as String
+
+                    fun def(
+                        et: EditText,
+                        fallback: String,
+                    ) = et.text.toString().takeIf { it.isNotBlank() } ?: fallback
+                    // Contextual validations
+                    if (cmd == "STUDY_ID" && !isEdit) {
+                        if (allLines.any { it.trim().uppercase().startsWith("STUDY_ID;") }) {
+                            Toast.makeText(ctx, getString(R.string.error_duplicate_study_id), Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
                     }
-                }
-                if (cmd == "RANDOMIZE_OFF") {
-                    // Ensure a RANDOMIZE_ON appears above (and not already fully closed without open block)
-                    var open = 0
-                    for (line in allLines) {
-                        val t = line.trim().uppercase()
-                        if (t == "RANDOMIZE_ON") open++ else if (t == "RANDOMIZE_OFF" && open>0) open--
+                    if (cmd == "RANDOMIZE_OFF") {
+                        // Ensure a RANDOMIZE_ON appears above (and not already fully closed without open block)
+                        var open = 0
+                        for (line in allLines) {
+                            val t = line.trim().uppercase()
+                            if (t == "RANDOMIZE_ON") {
+                                open++
+                            } else if (t == "RANDOMIZE_OFF" && open > 0) {
+                                open--
+                            }
+                        }
+                        if (open <= 0) {
+                            Toast.makeText(ctx, getString(R.string.error_randomize_off_without_on), Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
                     }
-                    if (open <= 0) { Toast.makeText(ctx, getString(R.string.error_randomize_off_without_on), Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                }
-                if (cmd == "RANDOMIZE_ON") {
-                    // disallow nested (any currently open block forbids new ON)
-                    var open = 0
-                    for (line in allLines) {
-                        val t = line.trim().uppercase()
-                        if (t == "RANDOMIZE_ON") open++ else if (t == "RANDOMIZE_OFF" && open>0) open--
+                    if (cmd == "RANDOMIZE_ON") {
+                        // disallow nested (any currently open block forbids new ON)
+                        var open = 0
+                        for (line in allLines) {
+                            val t = line.trim().uppercase()
+                            if (t == "RANDOMIZE_ON") {
+                                open++
+                            } else if (t == "RANDOMIZE_OFF" && open > 0) {
+                                open--
+                            }
+                        }
+                        if (open > 0) {
+                            Toast.makeText(ctx, getString(R.string.error_randomize_on_nested), Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
                     }
-                    if (open > 0) { Toast.makeText(ctx, getString(R.string.error_randomize_on_nested), Toast.LENGTH_SHORT).show(); return@setPositiveButton }
-                }
-                val newLine = when (cmd) {
-                    "INSTRUCTION" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(cont,"Continue")}" 
-                    "TIMER" -> "$cmd;${def(header,"Header")};${def(body,"Body")};${def(time,"60")};${def(cont,"Continue")}" 
-                    "SCALE", "SCALE[RANDOMIZED]" -> {
-                        val itemTokens = items.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
-                            .ifEmpty { listOf("1","2") }
-                        val itemsPart = itemTokens.joinToString(";")
-                        "$cmd;${def(header,"Header")};${def(body,"Body")};$itemsPart;${def(cont,"Continue")}" 
-                    }
-                    "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                        val fieldTokens = inputFields.text.toString().split(',').map { it.trim() }.filter { it.isNotEmpty() }
-                            .ifEmpty { listOf("field1","field2") }
-                        val fieldsPart = fieldTokens.joinToString(";")
-                        "$cmd;${def(header,"Header")};${def(body,"Body")};$fieldsPart;${def(cont,"Continue")}" 
-                    }
-                    "LABEL" -> {
-                        if (labelName.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${labelName.text}" 
-                    }
-                    "GOTO" -> {
-                        if (gotoLabel.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${gotoLabel.text}" 
-                    }
-                    "HTML", "TIMER_SOUND" -> {
-                        if (filename.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${filename.text}" 
-                    }
-                    "LOG" -> "$cmd;${def(message,"Log message")}" 
-                    "RANDOMIZE_ON", "RANDOMIZE_OFF" -> cmd
-                    "STUDY_ID" -> {
-                        if (studyIdValue.text.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;${studyIdValue.text}"
-                    }
-                    "TRANSITIONS" -> {
-                        val mode = transitionsSpinner.selectedItem?.toString()?.trim().orEmpty()
-                        if (mode.isEmpty()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;$mode"
-                    }
-                    // Colors
-                    "HEADER_COLOR", "BODY_COLOR", "RESPONSE_TEXT_COLOR", "RESPONSE_BACKGROUND_COLOR", "SCREEN_BACKGROUND_COLOR", "CONTINUE_TEXT_COLOR", "CONTINUE_BACKGROUND_COLOR", "TIMER_COLOR" -> {
-                        val cv = colorValue.text.toString().trim()
-                        if (cv.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        // quick validation
-                        val ok = try { android.graphics.Color.parseColor(cv); true } catch (e: Exception){ false }
-                        if (!ok) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;$cv"
-                    }
-                    // Sizes
-                    "HEADER_SIZE", "BODY_SIZE", "ITEM_SIZE", "RESPONSE_SIZE", "CONTINUE_SIZE", "TIMER_SIZE" -> {
-                        val sv = sizeValue.text.toString().trim()
-                        if (sv.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        if (sv.toIntOrNull() == null) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;$sv"
-                    }
-                    // Alignments
-                    "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
-                        val av = alignmentSpinner.selectedItem?.toString()?.uppercase()?.trim().orEmpty()
-                        if (av.isBlank()) return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                        "$cmd;$av"
-                    }
-                    "END" -> "END"
-                    else -> return@setPositiveButton Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
-                }
-                // proceed add or update
+                    val newLine =
+                        when (cmd) {
+                            "INSTRUCTION" -> {
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(cont, "Continue")}"
+                            }
+                            "TIMER" -> {
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(time, "60")};${def(cont, "Continue")}"
+                            }
+                            "SCALE", "SCALE[RANDOMIZED]" -> {
+                                val itemTokens =
+                                    items.text.toString().split(',')
+                                        .map { it.trim() }
+                                        .filter { it.isNotEmpty() }
+                                        .ifEmpty { listOf("1", "2") }
+                                val itemsPart = itemTokens.joinToString(";")
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$itemsPart;${def(cont, "Continue")}"
+                            }
+                            "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                                val fieldTokens =
+                                    inputFields.text.toString().split(',')
+                                        .map { it.trim() }
+                                        .filter { it.isNotEmpty() }
+                                        .ifEmpty { listOf("field1", "field2") }
+                                val fieldsPart = fieldTokens.joinToString(";")
+                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;${def(cont, "Continue")}"
+                            }
+                            "LABEL" -> {
+                                if (labelName.text.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;${labelName.text}"
+                            }
+                            "GOTO" -> {
+                                if (gotoLabel.text.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;${gotoLabel.text}"
+                            }
+                            "HTML", "TIMER_SOUND" -> {
+                                if (filename.text.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;${filename.text}"
+                            }
+                            "LOG" -> "$cmd;${def(message,"Log message")}"
+                            "RANDOMIZE_ON", "RANDOMIZE_OFF" -> cmd
+                            "STUDY_ID" -> {
+                                if (studyIdValue.text.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;${studyIdValue.text}"
+                            }
+                            "TRANSITIONS" -> {
+                                val mode = transitionsSpinner.selectedItem?.toString()?.trim().orEmpty()
+                                if (mode.isEmpty()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;$mode"
+                            }
+                            // Colors
+                            "HEADER_COLOR",
+                            "BODY_COLOR",
+                            "RESPONSE_TEXT_COLOR",
+                            "RESPONSE_BACKGROUND_COLOR",
+                            "SCREEN_BACKGROUND_COLOR",
+                            "CONTINUE_TEXT_COLOR",
+                            "CONTINUE_BACKGROUND_COLOR",
+                            "TIMER_COLOR",
+                            -> {
+                                val cv = colorValue.text.toString().trim()
+                                if (cv.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                // quick validation
+                                val ok =
+                                    try {
+                                        android.graphics.Color.parseColor(cv)
+                                        true
+                                    } catch (e: Exception) {
+                                        false
+                                    }
+                                if (!ok) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;$cv"
+                            }
+                            // Sizes
+                            "HEADER_SIZE",
+                            "BODY_SIZE",
+                            "ITEM_SIZE",
+                            "RESPONSE_SIZE",
+                            "CONTINUE_SIZE",
+                            "TIMER_SIZE",
+                            -> {
+                                val sv = sizeValue.text.toString().trim()
+                                if (sv.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                if (sv.toIntOrNull() == null) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;$sv"
+                            }
+                            // Alignments
+                            "HEADER_ALIGNMENT", "BODY_ALIGNMENT", "CONTINUE_ALIGNMENT", "TIMER_ALIGNMENT" -> {
+                                val av = alignmentSpinner.selectedItem?.toString()?.uppercase()?.trim().orEmpty()
+                                if (av.isBlank()) {
+                                    Toast.makeText(ctx, getString(R.string.error_required_field), Toast.LENGTH_SHORT).show()
+                                    return@setPositiveButton
+                                }
+                                "$cmd;$av"
+                            }
+                            "END" -> "END"
+                            else -> return@setPositiveButton Toast.makeText(
+                                ctx,
+                                getString(R.string.error_required_field),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    // proceed add or update
                     if (isEdit) {
                         pushUndoState()
                         allLines[editLineIndex!!] = newLine
@@ -2289,8 +2900,10 @@ class ProtocolValidationDialog : DialogFragment() {
                     hasUnsavedChanges = true
                     pendingAutoScrollToFirstIssue = true
                     revalidateAndRefreshUI()
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
+                }
+                .setNegativeButton(
+                    android.R.string.cancel,
+                ) { _, _ -> Toast.makeText(ctx, getString(R.string.toast_insert_cancelled), Toast.LENGTH_SHORT).show() }
 
         if (isEdit) {
             builder.setNeutralButton(R.string.action_delete_command) { _, _ ->
@@ -2308,9 +2921,19 @@ class ProtocolValidationDialog : DialogFragment() {
         dialog.setOnShowListener {
             if (isEdit) {
                 // Add move buttons below form dynamically
-                val moveRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,24,0,8) }
-                val btnUp = Button(ctx).apply { text = getString(R.string.action_move_up) }
-                val btnDown = Button(ctx).apply { text = getString(R.string.action_move_down) }
+                val moveRow =
+                    LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        setPadding(0, 24, 0, 8)
+                    }
+                val btnUp =
+                    Button(ctx).apply {
+                        text = getString(R.string.action_move_up)
+                    }
+                val btnDown =
+                    Button(ctx).apply {
+                        text = getString(R.string.action_move_down)
+                    }
                 moveRow.addView(btnUp, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                 moveRow.addView(btnDown, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                 inner.addView(moveRow)
@@ -2368,61 +2991,81 @@ class ProtocolValidationDialog : DialogFragment() {
         val original = allLines[lineIndex]
 
         val container = ScrollView(ctx)
-        val inner = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(32,24,32,8) }
+        val inner =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(32, 24, 32, 8)
+            }
         container.addView(inner)
 
-        inner.addView(TextView(ctx).apply { 
-            text = getString(R.string.error_unrecognized_command_title)
-            setTypeface(null, Typeface.BOLD)
-            textSize = applyScale(16f)
-        })
+        inner.addView(
+            TextView(ctx).apply {
+                text = getString(R.string.error_unrecognized_command_title)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(16f)
+            },
+        )
 
-        inner.addView(TextView(ctx).apply { 
-            text = getString(R.string.action_edit_raw_line)
-            setPadding(0,16,0,8)
-            setTypeface(null, Typeface.BOLD)
-            textSize = applyScale(14f)
-        })
+        inner.addView(
+            TextView(ctx).apply {
+                text = getString(R.string.action_edit_raw_line)
+                setPadding(0, 16, 0, 8)
+                setTypeface(null, Typeface.BOLD)
+                textSize = applyScale(14f)
+            },
+        )
 
-        val editText = EditText(ctx).apply {
-            setText(original)
-            isSingleLine = false
-            setPadding(16,16,16,16)
-        }
+        val editText =
+            EditText(ctx).apply {
+                setText(original)
+                isSingleLine = false
+                setPadding(16, 16, 16, 16)
+            }
         inner.addView(editText)
 
         // Move buttons row similar to recognized edit layout
-        val moveRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0,24,0,8) }
-        val btnUp = Button(ctx).apply { text = getString(R.string.action_move_up) }
-        val btnDown = Button(ctx).apply { text = getString(R.string.action_move_down) }
+        val moveRow =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(0, 24, 0, 8)
+            }
+        val btnUp =
+            Button(ctx).apply {
+                text = getString(R.string.action_move_up)
+            }
+        val btnDown =
+            Button(ctx).apply {
+                text = getString(R.string.action_move_down)
+            }
         moveRow.addView(btnUp, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         moveRow.addView(btnDown, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         inner.addView(moveRow)
 
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.error_unrecognized_command_title))
-            .setView(container)
-            .setPositiveButton(R.string.action_update_command) { _, _ ->
-                val newLine = editText.text.toString()
-                if (newLine != original) {
+        val dialog =
+            AlertDialog.Builder(ctx)
+                .setTitle(getString(R.string.error_unrecognized_command_title))
+                .setView(container)
+                .setPositiveButton(R.string.action_update_command) { _, _ ->
+                    val newLine = editText.text.toString()
+                    if (newLine != original) {
+                        pushUndoState()
+                        allLines[lineIndex] = newLine
+                        hasUnsavedChanges = true
+                        pendingAutoScrollToFirstIssue = true
+                        Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
+                    }
+                    revalidateAndRefreshUI()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.action_delete_command) { _, _ ->
                     pushUndoState()
-                    allLines[lineIndex] = newLine
+                    allLines.removeAt(lineIndex)
                     hasUnsavedChanges = true
                     pendingAutoScrollToFirstIssue = true
-                    Toast.makeText(ctx, getString(R.string.toast_command_updated), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
+                    revalidateAndRefreshUI()
                 }
-                revalidateAndRefreshUI()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton(R.string.action_delete_command) { _, _ ->
-                pushUndoState()
-                allLines.removeAt(lineIndex)
-                hasUnsavedChanges = true
-                pendingAutoScrollToFirstIssue = true
-                Toast.makeText(ctx, getString(R.string.toast_command_deleted), Toast.LENGTH_SHORT).show()
-                revalidateAndRefreshUI()
-            }
-            .create()
+                .create()
 
         btnUp.setOnClickListener {
             if (lineIndex > 0) {

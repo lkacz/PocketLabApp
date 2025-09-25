@@ -43,9 +43,7 @@ object ProgressOverlayHelper {
     /**
      * Resets the overlay after hold finishes or is canceled.
      */
-    fun resetOverlay(
-        overlayView: View,
-    ) {
+    fun resetOverlay(overlayView: View) {
         overlayView.visibility = View.INVISIBLE
         overlayView.layoutParams.width = 0
         overlayView.requestLayout()

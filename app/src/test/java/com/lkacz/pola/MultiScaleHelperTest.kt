@@ -6,7 +6,6 @@ import org.junit.Test
 import kotlin.random.Random
 
 class MultiScaleHelperTest {
-
     @Test
     fun noExpansionWhenSingleItem() {
         val line = "SCALE;Hdr;Intro;[OnlyOne];Resp1;Resp2"
@@ -19,11 +18,14 @@ class MultiScaleHelperTest {
     fun expandsMultipleItemsInOrderForNormalScale() {
         val line = "SCALE;Hdr;Intro;[A;B;C];Resp"
         val result = MultiScaleHelper.expandScaleLine(line, rnd = Random(0))
-        assertEquals(listOf(
-            "SCALE;Hdr;Intro;A;Resp",
-            "SCALE;Hdr;Intro;B;Resp",
-            "SCALE;Hdr;Intro;C;Resp",
-        ), result)
+        assertEquals(
+            listOf(
+                "SCALE;Hdr;Intro;A;Resp",
+                "SCALE;Hdr;Intro;B;Resp",
+                "SCALE;Hdr;Intro;C;Resp",
+            ),
+            result,
+        )
     }
 
     @Test
@@ -35,8 +37,8 @@ class MultiScaleHelperTest {
         assertEquals(4, resultSeed1.size)
         val items0 = resultSeed0.map { it.split(';')[3] }.toSet()
         val items1 = resultSeed1.map { it.split(';')[3] }.toSet()
-        assertEquals(setOf("A","B","C","D"), items0)
-        assertEquals(setOf("A","B","C","D"), items1)
+        assertEquals(setOf("A", "B", "C", "D"), items0)
+        assertEquals(setOf("A", "B", "C", "D"), items1)
         // High likelihood orders differ (non-deterministic assertion avoided)
         assertTrue(resultSeed0 != resultSeed1)
     }

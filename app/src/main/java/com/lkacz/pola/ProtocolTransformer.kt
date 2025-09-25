@@ -11,7 +11,10 @@ import kotlin.random.Random
  * 3. Expand SCALE / SCALE[RANDOMIZED] multi-item lines
  */
 object ProtocolTransformer {
-    fun transform(originalProtocol: String?, rnd: Random = Random): String {
+    fun transform(
+        originalProtocol: String?,
+        rnd: Random = Random,
+    ): String {
         if (originalProtocol == null) return ""
         val rawLines = originalProtocol.lines()
         val singleLineCommands = mergeMultiLineCommands(rawLines)
@@ -40,10 +43,14 @@ object ProtocolTransformer {
 
     // ---- Internal helpers (copied & trimmed from original ProtocolManager) ----
     private fun mergeMultiLineCommands(rawLines: List<String>): List<String> {
-        val recognized = setOf(
-            // Only commands realistically spanning multiple lines
-            "INPUTFIELD","INPUTFIELD[RANDOMIZED]","INSTRUCTION","HTML"
-        )
+        val recognized =
+            setOf(
+                // Only commands realistically spanning multiple lines
+                "INPUTFIELD",
+                "INPUTFIELD[RANDOMIZED]",
+                "INSTRUCTION",
+                "HTML",
+            )
         val merged = mutableListOf<String>()
         var buf = StringBuilder()
         var merging = false
@@ -59,22 +66,32 @@ object ProtocolTransformer {
                 if (first != null && recognized.contains(first)) {
                     val hasTrailing = orig.trimEnd().endsWith(";") && line.count { it == ';' } == 1
                     if (line.endsWith(";") && split.size == 1) {
-                        buf = StringBuilder(line.removeSuffix(";")); merging = true; continue
+                        buf = StringBuilder(line.removeSuffix(";"))
+                        merging = true
+                        continue
                     } else if (hasTrailing || lineEndsWithSemicolonButIncomplete(split)) {
-                        buf = StringBuilder(line.removeSuffix(";")); merging = true; continue
+                        buf = StringBuilder(line.removeSuffix(";"))
+                        merging = true
+                        continue
                     } else {
                         merged.add(line)
                     }
-                } else merged.add(line)
+                } else {
+                    merged.add(line)
+                }
             } else {
                 val endsWith = line.endsWith(";")
                 val content = if (endsWith) line.removeSuffix(";") else line
                 buf.append(";").append(content)
-                if (!endsWith) { merged.add(buf.toString()); merging = false }
+                if (!endsWith) {
+                    merged.add(buf.toString())
+                    merging = false
+                }
             }
         }
         if (merging && buf.isNotEmpty()) merged.add(buf.toString())
         return merged
     }
+
     private fun lineEndsWithSemicolonButIncomplete(split: List<String>) = split.size < 3
 }

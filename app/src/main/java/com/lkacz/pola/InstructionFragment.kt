@@ -329,7 +329,7 @@ class InstructionFragment : Fragment() {
     }
 
     private fun applyHeaderAlignment(textView: TextView) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         when (prefs.getString("HEADER_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
@@ -338,7 +338,7 @@ class InstructionFragment : Fragment() {
     }
 
     private fun applyBodyAlignment(textView: TextView) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         when (prefs.getString("BODY_ALIGNMENT", "CENTER")?.uppercase()) {
             "LEFT" -> textView.gravity = Gravity.START
             "RIGHT" -> textView.gravity = Gravity.END
@@ -347,7 +347,7 @@ class InstructionFragment : Fragment() {
     }
 
     private fun applyContinueAlignment(button: Button) {
-    val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val horiz = prefs.getString("CONTINUE_ALIGNMENT_HORIZONTAL", "RIGHT")?.uppercase()
         val vert = prefs.getString("CONTINUE_ALIGNMENT_VERTICAL", "BOTTOM")?.uppercase()
         val lp = button.layoutParams as? FrameLayout.LayoutParams ?: return

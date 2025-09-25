@@ -8,13 +8,14 @@ import kotlin.random.Random
 class ProtocolTransformerTest {
     @Test
     fun mergesMultiLineInputField() {
-        val protocol = """
+        val protocol =
+            """
             INPUTFIELD;
             Header Text;
             Body line;
             [A;B;C];
             Continue
-        """.trimIndent()
+            """.trimIndent()
         val transformed = ProtocolTransformer.transform(protocol, rnd = Random(0))
         val lines = transformed.lines().filter { it.isNotBlank() }
         assertEquals(1, lines.size)
@@ -37,38 +38,44 @@ class ProtocolTransformerTest {
         val protocol = "SCALE[RANDOMIZED];Hdr;Intro;[A;B;C];Resp"
         val transformedSeed0 = ProtocolTransformer.transform(protocol, rnd = Random(0))
         val transformedSeed1 = ProtocolTransformer.transform(protocol, rnd = Random(1))
-        val lines0 = transformedSeed0.lines(); val lines1 = transformedSeed1.lines()
-        assertEquals(3, lines0.size); assertEquals(3, lines1.size)
-        val items0 = lines0.map { it.split(";")[3] }.toSet(); val items1 = lines1.map { it.split(";")[3] }.toSet()
-        assertEquals(setOf("A","B","C"), items0); assertEquals(setOf("A","B","C"), items1)
+        val lines0 = transformedSeed0.lines()
+        val lines1 = transformedSeed1.lines()
+        assertEquals(3, lines0.size)
+        assertEquals(3, lines1.size)
+        val items0 = lines0.map { it.split(";")[3] }.toSet()
+        val items1 = lines1.map { it.split(";")[3] }.toSet()
+        assertEquals(setOf("A", "B", "C"), items0)
+        assertEquals(setOf("A", "B", "C"), items1)
     }
 
     @Test
     fun randomizeBlockShufflesDeterministically() {
-        val protocol = """
+        val protocol =
+            """
             RANDOMIZE_ON
             LABEL;A
             LABEL;B
             LABEL;C
             RANDOMIZE_OFF
-        """.trimIndent()
+            """.trimIndent()
         val transformed = ProtocolTransformer.transform(protocol, rnd = Random(42))
-    val lines = transformed.lines().filter { it.isNotBlank() }
-    assertEquals(3, lines.size)
-    assertEquals(setOf("LABEL;A","LABEL;B","LABEL;C"), lines.toSet())
+        val lines = transformed.lines().filter { it.isNotBlank() }
+        assertEquals(3, lines.size)
+        assertEquals(setOf("LABEL;A", "LABEL;B", "LABEL;C"), lines.toSet())
     }
 
     @Test
     fun randomizeBlockWithoutExplicitOffStillProcesses() {
-        val protocol = """
+        val protocol =
+            """
             RANDOMIZE_ON
             LABEL;1
             LABEL;2
             LABEL;3
-        """.trimIndent()
+            """.trimIndent()
         val transformed = ProtocolTransformer.transform(protocol, rnd = Random(5))
         val lines = transformed.lines().filter { it.isNotBlank() }
         assertEquals(3, lines.size)
-        assertEquals(setOf("LABEL;1","LABEL;2","LABEL;3"), lines.toSet())
+        assertEquals(setOf("LABEL;1", "LABEL;2", "LABEL;3"), lines.toSet())
     }
 }
