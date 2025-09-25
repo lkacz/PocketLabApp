@@ -2511,7 +2511,9 @@ class ProtocolValidationDialog : DialogFragment() {
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT,
-                    )
+                    ).apply {
+                        topMargin = dp(12)
+                    }
             }
 
         val header = edit(R.string.hint_header)
@@ -2562,19 +2564,45 @@ class ProtocolValidationDialog : DialogFragment() {
                     )
             }
 
-        val paramGroup =
+        val parameterCard =
+            com.google.android.material.card.MaterialCardView(ctx).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        setMargins(0, 0, 0, dp(16))
+                    }
+                radius = 20f
+                strokeWidth = 1
+            }
+        val parameterContainer =
             LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(0, 16, 0, 0)
+                setPadding(dp(24), dp(20), dp(24), dp(20))
             }
-        inner.addView(
+        parameterContainer.addView(
             TextView(ctx).apply {
                 text = getString(R.string.label_parameters)
                 setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(14f)
+                textSize = applyScale(15f)
             },
         )
-        inner.addView(paramGroup)
+        parameterContainer.addView(
+            TextView(ctx).apply {
+                text = getString(R.string.insert_command_parameters_hint)
+                setTextColor(Color.parseColor("#6B7280"))
+                textSize = applyScale(12f)
+                setPadding(0, dp(12), 0, dp(4))
+            },
+        )
+        val paramGroup =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+            }
+        parameterContainer.addView(paramGroup)
+        parameterCard.addView(parameterContainer)
+        inner.addView(parameterCard)
 
         fun refreshParams() {
             if (selectedCommand.isBlank()) {
