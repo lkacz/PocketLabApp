@@ -26,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.util.regex.Pattern
@@ -2360,29 +2361,68 @@ class ProtocolValidationDialog : DialogFragment() {
             selectedCommand = commandMetaList.firstOrNull()?.name ?: ""
         }
 
-        inner.addView(
+        fun dp(value: Int): Int = (value * ctx.resources.displayMetrics.density).roundToInt()
+        val selectionCard =
+            com.google.android.material.card.MaterialCardView(ctx).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        setMargins(0, 0, 0, dp(16))
+                    }
+                radius = 20f
+                strokeWidth = 1
+            }
+        val selectionContainer =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(24), dp(20), dp(24), dp(20))
+            }
+        selectionContainer.addView(
             TextView(ctx).apply {
                 text = getString(R.string.label_select_command)
                 setTypeface(null, Typeface.BOLD)
-                textSize = applyScale(14f)
+                textSize = applyScale(15f)
             },
         )
         val categorySpinner =
             Spinner(ctx).apply {
                 adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, categories)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(18)
+                    }
             }
         // Search + dynamic filtered spinner
         val searchBox =
             EditText(ctx).apply {
                 hint = "Search commands"
                 setSingleLine()
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
             }
         val commandInputLayout =
             com.google.android.material.textfield.TextInputLayout(ctx, null, com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox).apply {
                 hint = getString(R.string.label_select_command)
                 boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
                 endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_DROPDOWN_MENU
-                setPadding(0, 8, 0, 0)
+                setPadding(0, dp(8), 0, 0)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
             }
         val commandDropdown =
             com.google.android.material.textfield.MaterialAutoCompleteTextView(commandInputLayout.context).apply {
@@ -2393,19 +2433,39 @@ class ProtocolValidationDialog : DialogFragment() {
             }
         commandInputLayout.addView(commandDropdown)
         if (isEdit) {
-            inner.addView(
+            selectionContainer.addView(
                 TextView(ctx).apply {
                     text = selectedCommand.ifBlank { getString(R.string.value_none) }
                     setTypeface(null, Typeface.BOLD)
-                    textSize = applyScale(15f)
-                    setPadding(16, 16, 16, 8)
+                    textSize = applyScale(16f)
+                    setPadding(dp(16), dp(10), dp(16), dp(10))
+                    setTextColor(Color.parseColor("#1F2937"))
+                    setBackgroundColor(Color.parseColor("#EEF2FF"))
+                },
+            )
+            selectionContainer.addView(
+                TextView(ctx).apply {
+                    text = getString(R.string.insert_command_edit_locked_hint)
+                    setTextColor(Color.parseColor("#6B7280"))
+                    textSize = applyScale(12f)
+                    setPadding(0, dp(12), 0, 0)
                 },
             )
         } else {
-            inner.addView(categorySpinner)
-            inner.addView(searchBox)
-            inner.addView(commandInputLayout)
+            selectionContainer.addView(
+                TextView(ctx).apply {
+                    text = getString(R.string.insert_command_selection_hint)
+                    setTextColor(Color.parseColor("#6B7280"))
+                    textSize = applyScale(12f)
+                    setPadding(0, dp(12), 0, 0)
+                },
+            )
+            selectionContainer.addView(categorySpinner)
+            selectionContainer.addView(searchBox)
+            selectionContainer.addView(commandInputLayout)
         }
+        selectionCard.addView(selectionContainer)
+        inner.addView(selectionCard)
 
         var filtered: List<CommandMeta> = commandMetaList
 
