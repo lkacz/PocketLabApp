@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import java.io.BufferedReader
 import java.io.File
@@ -58,7 +61,6 @@ class Logger private constructor(private val context: Context) {
 
     @Volatile
     private var isBackupCreated = false
-    private val sharedExportState = Collections.synchronizedSet(mutableSetOf<String>())
 
     init {
         fileOperations.createFileAndFolder()
@@ -118,7 +120,6 @@ class Logger private constructor(private val context: Context) {
 
     fun updateOutputFolderUri(newUri: Uri?) {
         outputFolderUri = newUri
-        sharedExportState.removeAll { it.startsWith(OUTPUT_EXPORT_KEY_PREFIX) }
     }
 
     fun backupLogFile() {
@@ -134,7 +135,10 @@ class Logger private constructor(private val context: Context) {
                     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
                 )
 
-                exportLogToSharedLocations(currentFile, xlsxFile)
+                val savedLocations = exportLogToSharedLocations(currentFile, xlsxFile)
+                if (savedLocations.isNotEmpty()) {
+                    showSaveToast(savedLocations)
+                }
 
                 if (isBackupCreated) return@launch
 
@@ -231,7 +235,6 @@ class Logger private constructor(private val context: Context) {
             activeParticipantId = participantId
             activeStudyId = studyId
             isBackupCreated = false
-            sharedExportState.clear()
         } catch (ioe: IOException) {
             ioe.printStackTrace()
         }
@@ -254,52 +257,48 @@ class Logger private constructor(private val context: Context) {
         snapshot.forEach { it.join() }
     }
 
-    private fun exportLogToSharedLocations(csvFile: File, xlsxFile: File?) {
+    private fun exportLogToSharedLocations(csvFile: File, xlsxFile: File?): List<String> {
+        val savedPaths = mutableListOf<String>()
         val baseName = currentFileName.removeSuffix(".csv")
         val csvName = "${baseName}.csv"
         val xlsxName = "${baseName}.xlsx"
 
-        if (!sharedExportState.contains(DOWNLOADS_EXPORT_KEY)) {
-            val downloadsCsv = exportFileToDownloads(csvName, "text/csv", csvFile)
-            val downloadsXlsx =
+        val targetUri = outputFolderUri
+        if (targetUri != null) {
+            val folder = DocumentFile.fromTreeUri(context, targetUri)
+            if (folder != null && folder.isDirectory) {
+                val customCsvExported = exportFileToDocumentTree(folder, csvName, "text/csv", csvFile)
+                if (customCsvExported) {
+                    val folderLabel =
+                        folder.name
+                            ?: targetUri.lastPathSegment
+                            ?: context.getString(R.string.value_selected_folder)
+                    savedPaths += "$folderLabel/${csvName}"
+                }
                 if (xlsxFile?.exists() == true) {
-                    exportFileToDownloads(
+                    exportFileToDocumentTree(
+                        folder,
                         xlsxName,
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         xlsxFile,
                     )
-                } else {
-                    false
                 }
-            if (downloadsCsv || downloadsXlsx) {
-                sharedExportState.add(DOWNLOADS_EXPORT_KEY)
+            }
+        } else {
+            val downloadsCsvExported = exportFileToDownloads(csvName, "text/csv", csvFile)
+            if (downloadsCsvExported) {
+                savedPaths += "Downloads/PoLA_Data/${csvName}"
+            }
+            if (xlsxFile?.exists() == true) {
+                exportFileToDownloads(
+                    xlsxName,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    xlsxFile,
+                )
             }
         }
 
-        val targetUri = outputFolderUri
-        if (targetUri != null) {
-            val exportKey = OUTPUT_EXPORT_KEY_PREFIX + targetUri.toString()
-            if (!sharedExportState.contains(exportKey)) {
-                val folder = DocumentFile.fromTreeUri(context, targetUri)
-                if (folder != null && folder.isDirectory) {
-                    val csvExported = exportFileToDocumentTree(folder, csvName, "text/csv", csvFile)
-                    val xlsxExported =
-                        if (xlsxFile?.exists() == true) {
-                            exportFileToDocumentTree(
-                                folder,
-                                xlsxName,
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                xlsxFile,
-                            )
-                        } else {
-                            false
-                        }
-                    if (csvExported || xlsxExported) {
-                        sharedExportState.add(exportKey)
-                    }
-                }
-            }
-        }
+        return savedPaths.distinct()
     }
 
     private fun exportFileToDownloads(
@@ -359,12 +358,24 @@ class Logger private constructor(private val context: Context) {
         }
     }
 
+    private fun showSaveToast(savedPaths: List<String>) {
+        if (savedPaths.isEmpty()) return
+        val message =
+            if (savedPaths.size == 1) {
+                context.getString(R.string.toast_export_saved_single, savedPaths.first())
+            } else {
+                val joined = savedPaths.joinToString(separator = "\n") { "• $it" }
+                context.getString(R.string.toast_export_saved_multi, joined)
+            }
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context.applicationContext, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: Logger? = null
         private const val backupFolderName = "PoLA_Backup"
-        private const val DOWNLOADS_EXPORT_KEY = "downloads"
-        private const val OUTPUT_EXPORT_KEY_PREFIX = "output:"
 
         fun getInstance(context: Context): Logger {
             return INSTANCE ?: synchronized(this) {

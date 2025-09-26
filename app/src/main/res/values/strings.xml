@@ -19,6 +19,10 @@
     <string name="toast_output_folder_permission_denied">Could not access selected folder.</string>
     <string name="dialog_title_output_folder">Change output folder?</string>
     <string name="dialog_message_output_folder">The app will save exported data to the selected folder. Continue?</string>
+    <string name="value_selected_folder">selected folder</string>
+    <string name="toast_export_saved_single">Data saved to %1$s</string>
+    <string name="toast_export_saved_multi">Data saved to:
+%1$s</string>
     <string name="value_none">None</string>
     <string name="value_untitled_protocol">Untitled Protocol</string>
     <string name="action_start_study">Start Study</string>
