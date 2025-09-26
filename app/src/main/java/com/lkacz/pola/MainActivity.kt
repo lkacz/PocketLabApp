@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private lateinit var fragmentLoader: FragmentLoader
     private lateinit var logger: Logger
     private lateinit var protocolManager: ProtocolManager
+    private lateinit var sharedPref: SharedPreferences
 
     private val fragmentContainerId = ViewGroup.generateViewId()
 
@@ -55,6 +57,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
         Logger.resetInstance()
         logger = Logger.getInstance(this)
+        sharedPref = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
         val fragmentContainer =
             androidx.fragment.app.FragmentContainerView(this).apply {
@@ -76,6 +79,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         createNotificationChannel()
         val serviceIntent = Intent(this, MyForegroundService::class.java)
         startForegroundService(serviceIntent)
+
+        val hasStoredProtocol = savedInstanceState == null && !sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null).isNullOrBlank()
+        if (hasStoredProtocol) {
+            fragmentContainer.post { resumeLastProtocolIfAvailable() }
+        }
     }
 
     override fun onProtocolSelected(protocolUri: Uri?) {
@@ -276,5 +284,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             )
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
+    }
+
+    private fun resumeLastProtocolIfAvailable() {
+        val uriString = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null) ?: return
+        val parsedUri = runCatching { Uri.parse(uriString) }.getOrNull()
+        if (parsedUri != null) {
+            onProtocolSelected(parsedUri)
+        }
     }
 }

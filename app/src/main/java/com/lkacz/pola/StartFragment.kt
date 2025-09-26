@@ -184,14 +184,15 @@ class StartFragment : Fragment() {
                     ) {
                         showChangeProtocolConfirmation {
                             val assetUriString = "file:///android_asset/tutorial_protocol.txt"
+                            val tutorialName = getString(R.string.protocol_name_tutorial)
                             sharedPref
                                 .edit()
                                 .putString(Prefs.KEY_PROTOCOL_URI, assetUriString)
                                 .putString(Prefs.KEY_CURRENT_MODE, "tutorial")
-                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, "Tutorial Protocol")
+                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, tutorialName)
                                 .apply()
                             protocolUri = Uri.parse(assetUriString)
-                            updateProtocolNameDisplay("Tutorial Protocol")
+                            updateProtocolNameDisplay(tutorialName)
                         }
                     },
                 )
@@ -202,14 +203,15 @@ class StartFragment : Fragment() {
                     ) {
                         showChangeProtocolConfirmation {
                             val assetUriString = "file:///android_asset/demo_protocol.txt"
+                            val demoName = getString(R.string.protocol_name_demo)
                             sharedPref
                                 .edit()
                                 .putString(Prefs.KEY_PROTOCOL_URI, assetUriString)
                                 .putString(Prefs.KEY_CURRENT_MODE, "demo")
-                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, "Demo Protocol")
+                                .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, demoName)
                                 .apply()
                             protocolUri = Uri.parse(assetUriString)
-                            updateProtocolNameDisplay("Demo Protocol")
+                            updateProtocolNameDisplay(demoName)
                         }
                     },
                 )
@@ -432,11 +434,39 @@ class StartFragment : Fragment() {
         }
     }
 
+    private fun ensureProtocolSelection() {
+        if (protocolUri != null) return
+        val rawMode = sharedPref.getString(Prefs.KEY_CURRENT_MODE, "demo") ?: "demo"
+        val resolvedMode = if (rawMode == "tutorial") "tutorial" else "demo"
+        val assetFileName =
+            if (resolvedMode == "tutorial") {
+                "tutorial_protocol.txt"
+            } else {
+                "demo_protocol.txt"
+            }
+        val assetUriString = "file:///android_asset/$assetFileName"
+        val displayName =
+            if (resolvedMode == "tutorial") {
+                getString(R.string.protocol_name_tutorial)
+            } else {
+                getString(R.string.protocol_name_demo)
+            }
+        sharedPref
+            .edit()
+            .putString(Prefs.KEY_PROTOCOL_URI, assetUriString)
+            .putString(Prefs.KEY_CURRENT_MODE, resolvedMode)
+            .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, displayName)
+            .apply()
+        protocolUri = Uri.parse(assetUriString)
+        updateProtocolNameDisplay(displayName)
+    }
+
     private fun showStartStudyConfirmation() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
             { uri -> fileUriUtils.getFileName(requireContext(), uri) },
         ) {
+            ensureProtocolSelection()
             listener.onProtocolSelected(protocolUri)
         }
     }
