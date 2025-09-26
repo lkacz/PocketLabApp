@@ -3,11 +3,12 @@ package com.lkacz.pola
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.net.Uri
+import android.content.res.AssetFileDescriptor
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.content.getSystemService
 import androidx.documentfile.provider.DocumentFile
+import java.io.IOException
 
 class AlarmHelper(private val context: Context) {
     private val vibrator: Vibrator? = context.getSystemService()
@@ -26,37 +27,14 @@ class AlarmHelper(private val context: Context) {
         val soundFileName = prefs.getString("CUSTOM_TIMER_SOUND", null)
 
         // If we have a custom sound name, try to locate and play it
-        val customSoundUri =
-            if (!soundFileName.isNullOrBlank()) {
-                findSoundUri(soundFileName)
-            } else {
-                null
-            }
-
-        // Create a MediaPlayer for either custom sound or the default alarm sound
         mediaPlayer =
-            if (customSoundUri != null) {
-                try {
-                    MediaPlayer().apply {
-                        setDataSource(context, customSoundUri)
-                        isLooping = true
-                        prepare()
-                        start()
-                    }
-                } catch (e: Exception) {
-                    // Fallback to default if any error occurs
-                    MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
-                        isLooping = true
-                        start()
-                    }
-                }
-            } else {
-                // Default resource
-                MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
+            createCustomMediaPlayer(soundFileName)?.also { player ->
+                player.start()
+            }
+                ?: MediaPlayer.create(context, R.raw.alarm_sound)?.apply {
                     isLooping = true
                     start()
                 }
-            }
 
         // Vibration pattern (waveform) repeated indefinitely
         val pattern = longArrayOf(0, 1000, 1000)
@@ -91,15 +69,51 @@ class AlarmHelper(private val context: Context) {
         stopAlarm()
     }
 
-    /**
-     * Attempts to find a file named [fileName] in the user-selected resources folder
-     * (document tree). Returns its [Uri] if found and valid, otherwise null.
-     */
-    private fun findSoundUri(fileName: String): Uri? {
+    private fun createCustomMediaPlayer(fileName: String?): MediaPlayer? {
+        if (fileName.isNullOrBlank()) {
+            return null
+        }
+
+        return tryCreateFromResourcesFolder(fileName) ?: tryCreateFromAssets(fileName)
+    }
+
+    private fun tryCreateFromResourcesFolder(fileName: String): MediaPlayer? {
         val resourcesFolderUri = ResourcesFolderManager(context).getResourcesFolderUri() ?: return null
         val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return null
         val soundFile = parentFolder.findFile(fileName) ?: return null
         if (!soundFile.exists() || !soundFile.isFile) return null
-        return soundFile.uri
+
+        return try {
+            context.contentResolver.openFileDescriptor(soundFile.uri, "r")?.use { pfd ->
+                MediaPlayer().apply {
+                    setDataSource(pfd.fileDescriptor)
+                    isLooping = true
+                    prepare()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun tryCreateFromAssets(fileName: String): MediaPlayer? {
+        return try {
+            context.assets.openFd(fileName).use { assetFd ->
+                createMediaPlayerFromAssetFd(assetFd)
+            }
+        } catch (_: IOException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun createMediaPlayerFromAssetFd(assetFd: AssetFileDescriptor): MediaPlayer {
+        return MediaPlayer().apply {
+            setDataSource(assetFd.fileDescriptor, assetFd.startOffset, assetFd.length)
+            isLooping = true
+            prepare()
+        }
     }
 }

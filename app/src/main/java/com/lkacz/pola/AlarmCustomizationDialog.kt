@@ -54,6 +54,7 @@ class AlarmCustomizationDialog : DialogFragment() {
         presetSpinner = view.findViewById(R.id.alarmPresetSpinner)
         val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         val presets = listOf(
+            AlarmPreset(label = "Classic ring – built-in chime", filename = "pola_alarm_classic.mp3"),
             AlarmPreset(label = "Soft – gentle chime", filename = "pola_alarm_soft.wav"),
             AlarmPreset(label = "Medium – balanced tone", filename = "pola_alarm_medium.wav"),
             AlarmPreset(label = "Hard – assertive alert", filename = "pola_alarm_hard.wav"),
