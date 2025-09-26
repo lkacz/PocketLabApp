@@ -36,6 +36,7 @@ class ProtocolManager(private val context: Context) {
                 lines?.firstOrNull { it.startsWith("STUDY_ID;") }?.let {
                     val studyId = it.split(";").getOrNull(1)
                     sharedPref.edit().putString("STUDY_ID", studyId).apply()
+                    Logger.getInstance(context).updateStudyId(studyId)
                 }
             }
         } catch (e: FileNotFoundException) {

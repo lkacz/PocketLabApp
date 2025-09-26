@@ -15,9 +15,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 
 class StartFragment : Fragment() {
     interface OnProtocolSelectedListener {
@@ -26,6 +29,7 @@ class StartFragment : Fragment() {
 
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
+    private lateinit var participantIdInput: TextInputEditText
     private var protocolUri: Uri? = null
     private var currentProtocolName: String? = null
     private lateinit var sharedPref: SharedPreferences
@@ -145,6 +149,31 @@ class StartFragment : Fragment() {
                         ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
                 updateProtocolNameDisplay(currentFileName)
                 section.addView(tvSelectedProtocolName)
+
+                val participantIdLayout =
+                    TextInputLayout(requireContext()).apply {
+                        layoutParams =
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                            ).apply {
+                                bottomMargin = dpToPx(12)
+                            }
+                        hint = getString(R.string.label_participant_id)
+                        helperText = getString(R.string.helper_participant_id)
+                        endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
+                        endIconContentDescription = getString(R.string.cd_clear_participant_id)
+                    }
+                participantIdInput =
+                    TextInputEditText(participantIdLayout.context).apply {
+                        maxLines = 1
+                        setText(sharedPref.getString(Prefs.KEY_PARTICIPANT_ID, "")?.trim().orEmpty())
+                        doAfterTextChanged { editable ->
+                            persistParticipantId(editable?.toString())
+                        }
+                    }
+                participantIdLayout.addView(participantIdInput)
+                section.addView(participantIdLayout)
 
                 section.addView(
                     createPrimaryButton(
@@ -270,6 +299,13 @@ class StartFragment : Fragment() {
             currentProtocolName?.takeIf { it.isNotBlank() }
                 ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
         updateProtocolNameDisplay(resolvedName)
+        if (::participantIdInput.isInitialized) {
+            val storedValue = sharedPref.getString(Prefs.KEY_PARTICIPANT_ID, "")?.trim().orEmpty()
+            if (participantIdInput.text?.toString()?.trim() != storedValue) {
+                participantIdInput.setText(storedValue)
+                participantIdInput.setSelection(storedValue.length)
+            }
+        }
     }
 
     private fun sectionCard(
@@ -469,6 +505,9 @@ class StartFragment : Fragment() {
             protocolUri,
             { uri -> fileUriUtils.getFileName(requireContext(), uri) },
         ) {
+            val participantId = participantIdInput.text?.toString()?.trim().orEmpty()
+            persistParticipantId(participantId)
+            Logger.getInstance(requireContext()).updateParticipantId(participantId.takeIf { it.isNotBlank() })
             ensureProtocolSelection()
             listener.onProtocolSelected(protocolUri)
         }
@@ -491,6 +530,18 @@ class StartFragment : Fragment() {
         currentProtocolName = protocolName
         val displayName = protocolName?.takeIf { it.isNotBlank() } ?: getString(R.string.value_none)
         tvSelectedProtocolName.text = displayName
+    }
+
+    private fun persistParticipantId(participantId: String?) {
+        val trimmed = participantId?.trim().orEmpty()
+        with(sharedPref.edit()) {
+            if (trimmed.isEmpty()) {
+                remove(Prefs.KEY_PARTICIPANT_ID)
+            } else {
+                putString(Prefs.KEY_PARTICIPANT_ID, trimmed)
+            }
+            apply()
+        }
     }
 
     private fun clearStoredProgress() {

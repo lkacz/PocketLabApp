@@ -3,56 +3,64 @@ package com.lkacz.pola
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
-import java.io.*
+import java.io.BufferedReader
+import java.io.File
+import java.io.IOException
+import java.io.StringReader
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Collections
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class Logger private constructor(private val context: Context) {
-    private val fileOperations: FileOperations
-    private var isBackupCreated = false
     private val excelOperations = ExcelOperations()
     private val sharedPref: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
-    private val studyId: String? = sharedPref.getString("STUDY_ID", null)
-    private val fileName: String
-    private val mainFolder: File
-    private val file: File
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val pendingJobs = Collections.synchronizedList(mutableListOf<Job>())
+    private val renameLock = Any()
+
+    private val timeStamp: String =
+        SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).apply {
+            timeZone = TimeZone.getDefault()
+        }.format(Date())
+
+    private var activeParticipantId: String? =
+        sharedPref.getString(Prefs.KEY_PARTICIPANT_ID, null)?.takeIf { it.isNotBlank() }?.let { sanitizeStudyIdForFile(it) }
+    private var activeStudyId: String? =
+        sharedPref.getString("STUDY_ID", null)?.takeIf { it.isNotBlank() }?.let { sanitizeStudyIdForFile(it) }
+
+    private var currentFileName: String = buildFileName(activeParticipantId, activeStudyId)
+
+    private val storageRoot: File =
+        context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            ?: File(context.filesDir, "documents").also { it.mkdirs() }
+    private val mainFolder: File = File(storageRoot, "PoLA_Data")
+
+    @Volatile
+    private var currentFile: File = File(mainFolder, currentFileName)
+    private val fileOperations: FileOperations = FileOperations(mainFolder, currentFile)
+
+    @Volatile
+    private var isBackupCreated = false
 
     init {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-        fileName =
-            if (studyId.isNullOrEmpty()) {
-                "output_$timeStamp.csv"
-            } else {
-                "${studyId}_output_$timeStamp.csv"
-            }
-
-        val publicStorage = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        mainFolder = File(publicStorage, "PoLA_Data")
-        file = File(mainFolder, fileName)
-        fileOperations = FileOperations(mainFolder, file)
         fileOperations.createFileAndFolder()
-    }
-
-    private fun getCurrentDateTime(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        return dateFormat.format(Date())
-    }
-
-    private fun logToCSV(cells: Array<String?>) {
-        val dateTime = getCurrentDateTime().split(" ")
-        val date = dateTime[0]
-        val time = dateTime[1]
-        val sanitizedCells = cells.map { it ?: "" }
-        val logMessage = "$date\t$time\t${sanitizedCells.joinToString("\t")}\n"
-        fileOperations.writeToCSV(logMessage)
     }
 
     fun logInstructionFragment(
         header: String,
         body: String,
     ) {
-        // Column layout changed from INTRODUCTION to BODY
         logToCSV(arrayOf(header, body, null, null, null, null, null, null))
     }
 
@@ -65,9 +73,6 @@ class Logger private constructor(private val context: Context) {
         logToCSV(arrayOf(header, body, null, null, null, timeInSeconds.toString(), null, other))
     }
 
-    /**
-     * Renamed "intro" to "body" in the signature and CSV structure
-     */
     fun logScaleFragment(
         header: String,
         body: String,
@@ -78,9 +83,6 @@ class Logger private constructor(private val context: Context) {
         logToCSV(arrayOf(header, body, item, responseNumber.toString(), responseText, null, null, null))
     }
 
-    /**
-     * "intro" param changed to "body" in CSV columns
-     */
     fun logInputFieldFragment(
         header: String,
         body: String,
@@ -97,44 +99,144 @@ class Logger private constructor(private val context: Context) {
         logToCSV(arrayOf(null, null, null, null, null, null, message, null))
     }
 
+    fun updateParticipantId(newParticipantIdRaw: String?) {
+        val sanitized = newParticipantIdRaw?.takeIf { it.isNotBlank() }?.let { sanitizeStudyIdForFile(it) }
+        applyIdentifiers(sanitized, activeStudyId)
+    }
+
+    fun updateStudyId(newStudyIdRaw: String?) {
+        val sanitized = newStudyIdRaw?.takeIf { it.isNotBlank() }?.let { sanitizeStudyIdForFile(it) }
+        applyIdentifiers(activeParticipantId, sanitized)
+    }
+
     fun backupLogFile() {
-        if (!file.exists()) {
+        scope.launch {
+            awaitPendingWrites()
+            if (!currentFile.exists()) return@launch
+            try {
+                val xlsxFile = File(mainFolder, currentFileName.replace(".csv", ".xlsx"))
+                excelOperations.createXlsxBackup(
+                    xlsxFile,
+                    currentFile,
+                    BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
+                    BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
+                )
+
+                if (isBackupCreated) return@launch
+
+                val parentFile = mainFolder.parentFile ?: return@launch
+                val backupFolder = File(parentFile, backupFolderName)
+                if (!backupFolder.exists()) {
+                    backupFolder.mkdirs()
+                }
+
+                val baseName = currentFileName.removeSuffix(".csv")
+                val backupCsv = File(backupFolder, "${baseName}_backup.csv")
+                currentFile.copyTo(backupCsv, overwrite = true)
+
+                val backupXlsx = File(backupFolder, "${baseName}_backup.xlsx")
+                excelOperations.createXlsxBackup(
+                    backupXlsx,
+                    currentFile,
+                    BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
+                    BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
+                )
+
+                isBackupCreated = true
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun flushAndClose() {
+        runBlocking {
+            awaitPendingWrites()
+        }
+        scope.cancel()
+    }
+
+    private fun logToCSV(cells: Array<String?>) {
+        val (date, time) = getCurrentDateTimeComponents()
+        val rowCells = mutableListOf<String?>()
+        rowCells.add(date)
+        rowCells.add(time)
+        rowCells.addAll(cells.asList())
+        enqueueWrite(formatCsvRow(rowCells))
+    }
+
+    private fun enqueueWrite(row: String) {
+        val job = scope.launch { fileOperations.writeToCSV(row) }
+        pendingJobs.add(job)
+        job.invokeOnCompletion { pendingJobs.remove(job) }
+    }
+
+    private fun getCurrentDateTimeComponents(): Pair<String, String> {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val formatted = dateFormat.format(Date())
+        val splitIndex = formatted.indexOf(' ')
+        return if (splitIndex >= 0) {
+            Pair(formatted.substring(0, splitIndex), formatted.substring(splitIndex + 1))
+        } else {
+            Pair(formatted, "00:00:00")
+        }
+    }
+
+    private fun applyIdentifiers(participantId: String?, studyId: String?) {
+        synchronized(renameLock) {
+            if (participantId == activeParticipantId && studyId == activeStudyId) return
+            runBlocking {
+                awaitPendingWrites()
+                withContext(Dispatchers.IO) {
+                    renameLogFileLocked(participantId, studyId)
+                }
+            }
+        }
+    }
+
+    private fun renameLogFileLocked(participantId: String?, studyId: String?) {
+        val newFileName = buildFileName(participantId, studyId)
+        if (newFileName == currentFileName) {
+            activeParticipantId = participantId
+            activeStudyId = studyId
             return
         }
-        try {
-            val mainFolderXlsxFileName = fileName.replace(".csv", ".xlsx")
-            val mainFolderXlsxFile = File(mainFolder, mainFolderXlsxFileName)
-            excelOperations.createXlsxBackup(
-                mainFolderXlsxFile,
-                file,
-                BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-            )
 
-            if (isBackupCreated) return
-            val parentFile = mainFolder.parentFile ?: return
-            val backupFolder = File(parentFile, backupFolderName)
-            if (!backupFolder.exists()) {
-                backupFolder.mkdirs()
+        val newFile = File(mainFolder, newFileName)
+        try {
+            if (currentFile.exists() && currentFile != newFile) {
+                currentFile.copyTo(newFile, overwrite = true)
+                currentFile.delete()
+            } else if (!newFile.exists()) {
+                newFile.parentFile?.mkdirs()
             }
 
-            val backupFileNameCsv = fileName.replace(".csv", "_backup.csv")
-            val backupFileCsv = File(backupFolder, backupFileNameCsv)
-            file.copyTo(backupFileCsv, overwrite = true)
-
-            val backupFileNameXlsx = fileName.replace(".csv", "_backup.xlsx")
-            val backupFileXlsx = File(backupFolder, backupFileNameXlsx)
-            excelOperations.createXlsxBackup(
-                backupFileXlsx,
-                file,
-                BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-            )
-
-            isBackupCreated = true
-        } catch (e: IOException) {
-            e.printStackTrace()
+            fileOperations.updateTargetFile(newFile)
+            currentFile = newFile
+            currentFileName = newFileName
+            activeParticipantId = participantId
+            activeStudyId = studyId
+            isBackupCreated = false
+        } catch (ioe: IOException) {
+            ioe.printStackTrace()
         }
+    }
+
+    private fun buildFileName(participantId: String?, studyId: String?): String {
+        val parts = mutableListOf<String>()
+        if (!participantId.isNullOrBlank()) {
+            parts += participantId
+        }
+        if (!studyId.isNullOrBlank()) {
+            parts += studyId
+        }
+        parts += "output_${timeStamp}"
+        return parts.joinToString("_") + ".csv"
+    }
+
+    private suspend fun awaitPendingWrites() {
+        val snapshot: List<Job> = synchronized(pendingJobs) { pendingJobs.toList() }
+        snapshot.forEach { it.join() }
     }
 
     companion object {
@@ -149,7 +251,26 @@ class Logger private constructor(private val context: Context) {
         }
 
         fun resetInstance() {
+            INSTANCE?.flushAndClose()
             INSTANCE = null
         }
     }
+}
+
+internal fun sanitizeStudyIdForFile(raw: String): String {
+    return raw.trim().replace("[^A-Za-z0-9-_]".toRegex(), "_")
+}
+
+internal fun sanitizeCsvCell(cell: String?): String {
+    return cell
+        ?.replace("\r", " ")
+        ?.replace("\n", " ")
+        ?.replace('\t', ' ')
+        ?.trim()
+        ?: ""
+}
+
+internal fun formatCsvRow(cells: List<String?>): String {
+    val sanitized = cells.map { sanitizeCsvCell(it) }
+    return sanitized.joinToString("\t", postfix = "\n")
 }
