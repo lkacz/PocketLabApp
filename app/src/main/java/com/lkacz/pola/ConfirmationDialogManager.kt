@@ -22,8 +22,8 @@ class ConfirmationDialogManager(private val context: Context) {
         // Check if the protocol is a demo or tutorial, and set the protocolName accordingly
         val protocolName =
             when (protocolUri?.toString()) {
-                "file:///android_asset/tutorial_protocol.txt" -> "Tutorial Protocol"
-                null -> "Demo Protocol" // Assuming null Uri indicates the demo protocol
+                "file:///android_asset/tutorial_protocol.txt" -> context.getString(R.string.protocol_name_tutorial)
+                null -> context.getString(R.string.protocol_name_demo) // Assuming null Uri indicates the demo protocol
                 else -> protocolUri.let(getFileName)
             }
 

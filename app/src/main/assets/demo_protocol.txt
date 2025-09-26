@@ -1,91 +1,54 @@
-// PoLA Showcase Demo Protocol 2025
-// This script demonstrates customization commands, HOLD actions, randomization, branching labels, and HTML content.
+// Demo protocol: Outdoor Mindfulness Walk (2025)
+// This protocol guides participants through a brief outdoor mindfulness sequence with fast timers for demonstration purposes.
 
-STUDY_ID;POLA_DEMO_2025
+STUDY_ID;OUTDOOR_MINDFULNESS_V1
 
-LOG;🎯 Demo session launched
+LOG;Outdoor mindfulness pilot launched
 
-HEADER_SIZE;28
+HEADER_SIZE;26
 BODY_SIZE;18
 CONTINUE_SIZE;18
-HEADER_COLOR;#4A3AFF
-BODY_COLOR;#202124
-SCREEN_BACKGROUND_COLOR;#F2F6FF
-CONTINUE_BACKGROUND_COLOR;#FFE066
-CONTINUE_TEXT_COLOR;#1F1F1F
+HEADER_COLOR;#1B5E20
+BODY_COLOR;#2E3D2F
+SCREEN_BACKGROUND_COLOR;#F4F8F2
+CONTINUE_BACKGROUND_COLOR;#A5D6A7
+CONTINUE_TEXT_COLOR;#1B5E20
 CONTINUE_ALIGNMENT;CENTER;BOTTOM
 TRANSITIONS;fade
 
-INSTRUCTION;Welcome to the PoLA Showcase;Hold the golden button to join a five-minute tour of everything Pocket Lab can do — jokes, science, and surprisingly little paperwork.;Let's do this[HOLD]
+INSTRUCTION;Welcome to the Demo Mindfulness Walk;<p>Preview a <strong>sub-30-second</strong> version of this outdoor mindfulness sequence.</p><p><strong>You'll:</strong></p><ul><li>Record where you'll practice</li><li>Log how you feel before and after the walk</li><li>Capture quick sensory observations</li></ul>;Begin check-in[HOLD]
 
-TIMER_SOUND;alarm_sound.mp3
-TIMER;Tiny time machine;Strike your best scientist pose before the alarm chirps. Bonus points for lab goggles you definitely packed.;5;Pose locked in
+INPUTFIELD;Safety and setting;<p>Log your planned location and how someone can reach you while you're outside.</p><p><em>Include safety considerations so facilitators can support you if plans change.</em></p>;[Location you'll use;Who can contact you;Essential safety considerations];Save plan[HOLD]
 
-LOG;Scientist pose timer completed
+SCALE;Emotion check-in (before walk);<p>Before heading out, choose the option that best reflects your current emotional tone.</p>;Emotion rating (pre);Very unpleasant;Somewhat uneasy;Neutral;Somewhat pleasant;Very pleasant
 
-INPUTFIELD;Invent your researcher persona;For the drama of it all, tell us who you are today and what fuels your field work.;[Alias;Favorite field snack;Least favorite spreadsheet function];Commit profile[HOLD]
+TIMER;Grounding breath;<p>Take <strong>20 seconds</strong> of slow breathing: inhale for four counts, exhale for six.</p><p>Use this as a mini reset before stepping outside.</p>;20;Breathwork complete
 
-HEADER_ALIGNMENT;CENTER
-BODY_ALIGNMENT;CENTER
+LOG;Baseline breathwork recorded
 
-INSTRUCTION;Protocol Manager shout-out;Yes, you can build this whole adventure with the Protocol Manager GUI — but bragging to colleagues about hand-editing text is part of the fun.;Next brag[HOLD]
+INSTRUCTION;Head outdoors;<p>Transition to your chosen outdoor spot.</p><p>If conditions shift, pause and adjust your plan before continuing.</p>;I'm outside[HOLD]
 
-TRANSITIONS;slide
+TIMER;Sensory settling;<p>For <strong>25 seconds</strong>, cycle attention among sight, sound, and physical sensation.</p><p>Notice changes without evaluating them.</p>;25;Sensory scan complete
+
+INPUTFIELD;What stood out?;<p>Capture three sensory observations from this scan so you can review them later.</p><ul><li>Visual details</li><li>Auditory notes</li><li>Tactile sensations</li></ul>;[What caught your eye;What sounds were most noticeable;What did you feel on your skin];Log observations[HOLD]
 
 RANDOMIZE_ON
-INSTRUCTION;Mystery micro-challenge;Deliver a dramatic sigh that says “my data cleaned itself”. Judges are fictional but impressed.;Mission accomplished[HOLD]
-INSTRUCTION;Mystery micro-challenge;Perform three seconds of interpretive data visualisation dance. Pie charts count as spins.;Chart complete[HOLD]
-INSTRUCTION;Mystery micro-challenge;Invent a secret handshake with an imaginary participant. Remember: consent is mutual nodding.;Handshake perfected[HOLD]
+INSTRUCTION;Reflection prompt;<p>Notice the temperature on your skin.<br><em>Where do you feel it most strongly?</em></p>;Noted[HOLD]
+INSTRUCTION;Reflection prompt;<p>Observe motion around you—people, leaves, clouds—and silently describe it in neutral language.</p>;Motion observed[HOLD]
+INSTRUCTION;Reflection prompt;<p>Sense the air quality or scents around you.<br><em>How are they shifting moment to moment?</em></p>;Scent logged[HOLD]
 RANDOMIZE_OFF
 
-TRANSITIONS;slideleft
+TIMER;Mindful walk;<p>Walk mindfully for <strong>20 seconds</strong>.</p><p>Match your breath to your steps and notice contact with the ground on each footfall.</p>;20;Walk complete
 
-SCALE[RANDOMIZED];Mood telemetry;How would you describe your researcher vibe right now?;Mood selector;Radiantly confident;Mildly caffeinated;Plotting world-saving;Wondering about snacks
+SCALE;Emotion check-in (after walk);<p>After this short outdoor focus, choose the option that best reflects your current emotional tone.</p>;Emotion rating (post);Much lower than before;Slightly lower;About the same;Slightly higher;Much higher
 
-BODY_ALIGNMENT;LEFT
-CONTINUE_ALIGNMENT;RIGHT;BOTTOM
-TRANSITIONS;fade
+INPUTFIELD;Post-walk reflection;<p>Log one word for your mood and a quick insight you want to revisit later.</p><p><em>These notes help track how brief outdoor practice shifts your experience.</em></p>;[Mood word;Insight to revisit];Reflection saved[HOLD]
 
-LOG;Preparing branching finale
+HTML;mindfulness_resources.html;Open practice tips
 
-SCALE;Choose your finale;Pick how we wrap this tour. Each option unlocks a different mini-scene.;Ending style;Trigger confetti[CONFETTI];Summon lab assistant[ASSISTANT];Wrap with gratitude[THANKS]
+LOG;Resource sheet opened
 
-LABEL;CONFETTI
-HEADER_COLOR;#FF4081
-SCREEN_BACKGROUND_COLOR;#FFF3F7
-INSTRUCTION;Confetti protocol;Confetti cannons are imaginary, but enthusiasm is mandatory. Hold to celebrate responsibly.;Celebrate[HOLD]
-LOG;Confetti ending selected
-GOTO;AFTER_ENDINGS
-
-LABEL;ASSISTANT
-HEADER_COLOR;#00BCD4
-SCREEN_BACKGROUND_COLOR;#E0F7FA
-INSTRUCTION;Lab assistant materializes;Please welcome your invisible assistant, Dr. Quantum the raccoon. They prefer fish-shaped crackers.;Wave hello[HOLD]
-LOG;Assistant ending selected
-GOTO;AFTER_ENDINGS
-
-LABEL;THANKS
-HEADER_COLOR;#4CAF50
-SCREEN_BACKGROUND_COLOR;#E8F5E9
-INSTRUCTION;Gratitude finale;Take a breath, thank future-you for scheduling QA time, and hold to lock in that appreciation.;Appreciated[HOLD]
-LOG;Gratitude ending selected
-GOTO;AFTER_ENDINGS
-
-LABEL;AFTER_ENDINGS
-HEADER_COLOR;#4A3AFF
-SCREEN_BACKGROUND_COLOR;#FFFFFF
-BODY_ALIGNMENT;CENTER
-CONTINUE_ALIGNMENT;CENTER;BOTTOM
-
-HTML;immersive_briefing.html;Read the easter egg
-
-TRANSITIONS;fade
-
-TIMER;Cool-down countdown;Five more seconds to jot down the wildest idea you had during this tour.;5;Idea captured
-
-LOG;Demo cool-down timer finished
-
-INSTRUCTION;Mission complete;That’s the PoLA demo — randomized antics, HOLD-to-commit choices, branchy endings, and styling galore. Go build your own experiment next!;Finish heroically[HOLD]
+INSTRUCTION;Wrap up;<p>Thank yourself for making time outdoors today.</p><p>If you plan another session, add it to your calendar while the intention is fresh.</p>;Session complete[HOLD]
 
 END
 

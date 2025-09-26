@@ -4,7 +4,7 @@
     <string name="app_version">Ver 0.2</string>
     <string name="select_protocol_file">Select Protocol File</string>
     <string name="select_file_button">Select your protocol</string>
-    <string name="use_demo_button">Load DEMO protocol</string>
+    <string name="use_demo_button">Load demo protocol</string>
     <string name="start_protocol_button">Start</string>
     <string name="selected_protocol">Selected:</string>
     <string name="title_current_protocol">CURRENT PROTOCOL</string>
@@ -116,7 +116,7 @@
     <string name="insert_command_no_parameters_hint">This command does not require additional parameters.</string>
     <string name="insert_command_choose_command_hint">Select a command to see available parameters.</string>
     <string name="protocol_name_tutorial">Tutorial Protocol</string>
-    <string name="protocol_name_demo">Demo Protocol</string>
+    <string name="protocol_name_demo">Demo protocol</string>
     <string name="label_scale_items">Items</string>
     <string name="label_scale_responses">Responses</string>
     <string name="label_inputfield_fields">Input fields</string>
