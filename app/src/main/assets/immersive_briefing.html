@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Immersive Briefing</title>
+    <style>
+      body {
+        font-family: "Roboto", "Helvetica", sans-serif;
+        margin: 24px;
+        background: #f1faee;
+        color: #1d3557;
+        line-height: 1.6;
+      }
+      h1 {
+        color: #e63946;
+      }
+      section {
+        margin-bottom: 24px;
+        padding: 16px;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(29, 53, 87, 0.12);
+      }
+      ul {
+        padding-left: 20px;
+      }
+      .callout {
+        background: #a8dadc;
+        color: #1d3557;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Immersive Briefing</h1>
+    <section>
+      <p>
+        This custom HTML slide accompanies the full PoLA command tutorial. Use it to review
+        the segments that were just demonstrated and to understand which resource files are
+        referenced by the multimedia placeholders (<code>&lt;audio&gt;</code>, <code>&lt;video&gt;</code>,
+        and <code>&lt;html&gt;</code> tokens) within the protocol.
+      </p>
+    </section>
+    <section>
+      <h2>Highlighted features</h2>
+      <ul>
+        <li>Appearance configuration (colors, sizes, alignments, transitions)</li>
+        <li>Randomization blocks and randomized input fields</li>
+        <li>Timers with audio alerts and hold-protected continue buttons</li>
+        <li>Branching with labels and goto commands</li>
+        <li>Inline multimedia references for narration, ambience, and video</li>
+      </ul>
+    </section>
+    <section class="callout">
+      Place the referenced media files in the selected Resources folder before running the
+      protocol:
+      <ul>
+        <li><strong>tutorial_voiceover.mp3</strong> &mdash; narration for the welcome slide</li>
+        <li><strong>tutorial_ambient_loop.wav</strong> &mdash; subtle ambience looped in the background</li>
+        <li><strong>tutorial_checkpoint_video.mp4</strong> &mdash; short clip illustrating video playback</li>
+        <li><strong>tutorial_success_chime.wav</strong> &mdash; chime played by the TIMER_SOUND command</li>
+      </ul>
+      <p>
+        Adjust these filenames in the protocol if you prefer different assets.
+      </p>
+    </section>
+    <section>
+      <p>
+        When you close this HTML view, return to the PoLA tutorial to continue with the
+        remaining command demonstrations.
+      </p>
+    </section>
+  </body>
+</html>
