@@ -2570,22 +2570,43 @@ class ProtocolValidationDialog : DialogFragment() {
 
         val header = edit(R.string.hint_header)
         val body = edit(R.string.hint_body)
-        val cont = edit(R.string.hint_continue)
-        val holdToggle =
-            com.google.android.material.materialswitch.MaterialSwitch(ctx).apply {
-                text = getString(R.string.label_hold_to_confirm)
-                textSize = applyScale(14f)
+        val cont =
+            edit(R.string.hint_continue).apply {
                 layoutParams =
                     LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        0,
                         LinearLayout.LayoutParams.WRAP_CONTENT,
-                    )
-                setPadding(dp(4), dp(6), dp(4), dp(6))
-                // Disable internal ON/OFF text to prevent null StaticLayout crashes and rely on the label instead.
-                showText = false
-                textOn = ""
-                textOff = ""
+                        1f,
+                    ).apply {
+                        topMargin = 0
+                    }
+                setSingleLine()
             }
+        val holdToggle =
+            com.google.android.material.checkbox.MaterialCheckBox(ctx).apply {
+                text = getString(R.string.action_hold_label)
+                textSize = applyScale(13f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        marginStart = dp(12)
+                    }
+                visibility = View.GONE
+                contentDescription = getString(R.string.cd_hold_toggle_off)
+                setPadding(dp(4), dp(4), dp(4), dp(4))
+            }
+        TooltipCompat.setTooltipText(holdToggle, getString(R.string.hint_hold_to_confirm))
+        holdToggle.setOnCheckedChangeListener { _, isChecked ->
+            val cdRes =
+                if (isChecked) {
+                    R.string.cd_hold_toggle_on
+                } else {
+                    R.string.cd_hold_toggle_off
+                }
+            holdToggle.contentDescription = getString(cdRes)
+        }
         val holdHelperText =
             TextView(ctx).apply {
                 text = getString(R.string.hint_hold_to_confirm)
@@ -2597,6 +2618,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     ),
                 )
                 textSize = applyScale(12f)
+                visibility = View.GONE
                 layoutParams =
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
@@ -2605,9 +2627,10 @@ class ProtocolValidationDialog : DialogFragment() {
                         topMargin = dp(4)
                     }
             }
-        val holdToggleSection =
+        val continueRow =
             LinearLayout(ctx).apply {
-                orientation = LinearLayout.VERTICAL
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
                 layoutParams =
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
@@ -2615,7 +2638,18 @@ class ProtocolValidationDialog : DialogFragment() {
                     ).apply {
                         topMargin = dp(12)
                     }
+                addView(cont)
                 addView(holdToggle)
+            }
+        val continueSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                addView(continueRow)
                 addView(holdHelperText)
             }
         val holdSupportedCommands =
@@ -2650,7 +2684,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 if (sanitized.isEmpty()) {
                     "[HOLD]"
                 } else {
-                    "$sanitized [HOLD]"
+                    "$sanitized[HOLD]"
                 }
             } else {
                 sanitized
@@ -3265,24 +3299,27 @@ class ProtocolValidationDialog : DialogFragment() {
         parameterCard.addView(parameterContainer)
         inner.addView(parameterCard)
 
-        fun detachHoldToggleSection() {
-            (holdToggleSection.parent as? android.view.ViewGroup)?.removeView(holdToggleSection)
-        }
-
-        fun attachHoldToggleSectionFor(command: String) {
-            detachHoldToggleSection()
-            val supportsHold = holdSupportedCommands.contains(command)
+        fun updateHoldToggleVisibility(
+            command: String,
+            continueIncluded: Boolean,
+        ) {
+            val supportsHold = continueIncluded && holdSupportedCommands.contains(command)
             if (supportsHold) {
+                holdToggle.visibility = View.VISIBLE
+                holdHelperText.visibility = View.VISIBLE
                 if (!isEdit && lastHoldCommand != command) {
                     holdToggle.isChecked = false
                 }
-                paramGroup.addView(holdToggleSection)
                 lastHoldCommand = command
             } else {
-                if (!isEdit && lastHoldCommand != null) {
+                holdToggle.visibility = View.GONE
+                holdHelperText.visibility = View.GONE
+                if (!isEdit) {
                     holdToggle.isChecked = false
                 }
-                lastHoldCommand = null
+                if (!holdSupportedCommands.contains(command)) {
+                    lastHoldCommand = null
+                }
             }
         }
 
@@ -3304,20 +3341,24 @@ class ProtocolValidationDialog : DialogFragment() {
             if (selectedCommand.isBlank()) {
                 paramGroup.removeAllViews()
                 paramGroup.addView(infoLabel(getString(R.string.insert_command_choose_command_hint)))
+                updateHoldToggleVisibility("", continueIncluded = false)
                 return
             }
             paramGroup.removeAllViews()
+            var continueIncluded = false
             when (selectedCommand) {
                 "INSTRUCTION" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
-                    paramGroup.addView(cont)
+                    paramGroup.addView(continueSection)
+                    continueIncluded = true
                 }
                 "TIMER" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
                     paramGroup.addView(time)
-                    paramGroup.addView(cont)
+                    paramGroup.addView(continueSection)
+                    continueIncluded = true
                 }
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     paramGroup.addView(header)
@@ -3332,7 +3373,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     paramGroup.addView(body)
                     rebuildInputFieldEntries(emptyList())
                     paramGroup.addView(inputFieldSection)
-                    paramGroup.addView(cont)
+                    paramGroup.addView(continueSection)
+                    continueIncluded = true
                 }
                 "LABEL" -> {
                     paramGroup.addView(labelName)
@@ -3342,7 +3384,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
                 "HTML" -> {
                     paramGroup.addView(filename)
-                    paramGroup.addView(cont)
+                    paramGroup.addView(continueSection)
+                    continueIncluded = true
                 }
                 "TIMER_SOUND" -> {
                     paramGroup.addView(filename)
@@ -3392,7 +3435,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 else -> { /* Unhandled commands fall through */ }
             }
 
-            attachHoldToggleSectionFor(selectedCommand)
+            updateHoldToggleVisibility(selectedCommand, continueIncluded)
 
             if (paramGroup.childCount == 0) {
                 paramGroup.addView(infoLabel(getString(R.string.insert_command_no_parameters_hint)))
