@@ -304,6 +304,8 @@ class StartFragment : Fragment() {
             }
         rootLayout.addView(fileSection)
 
+        rootLayout.addView(createDivider())
+
         val customizationSection =
             sectionCard(getString(R.string.section_customization)) { section ->
                 section.addView(
@@ -319,15 +321,7 @@ class StartFragment : Fragment() {
             }
         rootLayout.addView(customizationSection)
 
-        val spacerView =
-            View(requireContext()).apply {
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        dpToPx(32),
-                    )
-            }
-        rootLayout.addView(spacerView)
+        rootLayout.addView(createDivider())
 
         val aboutSection =
             sectionCard(getString(R.string.section_other)) { section ->
