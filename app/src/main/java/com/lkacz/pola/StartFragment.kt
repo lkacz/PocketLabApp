@@ -125,44 +125,57 @@ class StartFragment : Fragment() {
                 textSize = 32f
                 setTypeface(typeface, Typeface.BOLD)
                 gravity = Gravity.CENTER
-            }
-        titleSection.addView(tvAppName)
-
-        val tvAppVersion =
-            TextView(requireContext()).apply {
-                text = "(v${BuildConfig.APP_VERSION})"
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setPadding(0, dpToPx(4), 0, dpToPx(8))
                 setOnClickListener { handleDeveloperTap(rootLayout) }
                 setOnLongClickListener { handleDeveloperLongPress(rootLayout) }
             }
-        titleSection.addView(tvAppVersion)
+        titleSection.addView(tvAppName)
 
         rootLayout.addView(createDivider())
 
-        val protocolSection =
-            sectionCard(getString(R.string.title_current_protocol)) { section ->
-                val tvCurrentProtocolLabel =
-                    TextView(requireContext()).apply {
-                        text = getString(R.string.label_selected_file)
-                        textSize = 12f
-                        setPadding(0, 0, 0, dpToPx(4))
+        val studySection =
+            sectionCard(null) { section ->
+                val protocolRow =
+                    LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        layoutParams =
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                            )
+                        setPadding(0, 0, 0, dpToPx(8))
                     }
-                section.addView(tvCurrentProtocolLabel)
+                protocolRow.addView(
+                    TextView(requireContext()).apply {
+                        text = getString(R.string.label_protocol_prefix)
+                        textSize = 16f
+                        setTypeface(typeface, Typeface.BOLD)
+                        layoutParams =
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                            )
+                    },
+                )
 
                 tvSelectedProtocolName =
                     TextView(requireContext()).apply {
                         textSize = 16f
                         setTypeface(typeface, Typeface.BOLD)
-                        gravity = Gravity.CENTER
-                        setPadding(0, dpToPx(4), 0, dpToPx(8))
+                        setPadding(dpToPx(4), 0, 0, 0)
+                        layoutParams =
+                            LinearLayout.LayoutParams(
+                                0,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                1f,
+                            )
                     }
                 val currentFileName =
                     currentProtocolName?.takeIf { it.isNotBlank() }
                         ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
                 updateProtocolNameDisplay(currentFileName)
-                section.addView(tvSelectedProtocolName)
+                protocolRow.addView(tvSelectedProtocolName)
+                section.addView(protocolRow)
 
                 val participantIdLayout =
                     TextInputLayout(requireContext()).apply {
@@ -198,43 +211,19 @@ class StartFragment : Fragment() {
                     },
                 )
             }
-        rootLayout.addView(protocolSection)
+        rootLayout.addView(studySection)
 
-        val fileOpsSection =
-            sectionCard(getString(R.string.section_protocol_files)) { section ->
-                section.addView(
-                    TextView(requireContext()).apply {
-                        text = getString(R.string.label_selected_output_folder)
-                        textSize = 12f
-                        setPadding(0, 0, 0, dpToPx(4))
-                    },
-                )
+        rootLayout.addView(createDivider())
 
-                tvSelectedOutputFolder =
-                    TextView(requireContext()).apply {
-                        textSize = 14f
-                        setPadding(0, 0, 0, dpToPx(12))
-                    }
-                updateOutputFolderDisplay(outputFolderUri)
-                section.addView(tvSelectedOutputFolder)
-
+        val protocolsSection =
+            sectionCard(getString(R.string.section_protocols)) { section ->
                 section.addView(
                     createSecondaryButton(
-                        text = getString(R.string.action_select_output_folder),
+                        text = getString(R.string.action_load_protocol),
                         icon = R.drawable.ic_folder_open,
                     ) {
-                        showChangeOutputFolderConfirmation {
-                            outputFolderPicker.launch(outputFolderUri)
-                        }
-                    },
-                )
-                section.addView(
-                    createSecondaryButton(
-                        text = getString(R.string.action_select_resources_folder),
-                        icon = R.drawable.ic_folder_open,
-                    ) {
-                        showChangeResourcesFolderConfirmation {
-                            resourcesFolderManager.pickResourcesFolder(folderPicker)
+                        showChangeProtocolConfirmation {
+                            filePicker.launch(arrayOf("text/plain"))
                         }
                     },
                 )
@@ -287,7 +276,50 @@ class StartFragment : Fragment() {
                     },
                 )
             }
-        rootLayout.addView(fileOpsSection)
+        rootLayout.addView(protocolsSection)
+
+        rootLayout.addView(createDivider())
+
+        val fileSection =
+            sectionCard(getString(R.string.section_file)) { section ->
+                section.addView(
+                    TextView(requireContext()).apply {
+                        text = getString(R.string.label_selected_output_folder)
+                        textSize = 12f
+                        setPadding(0, 0, 0, dpToPx(4))
+                    },
+                )
+
+                tvSelectedOutputFolder =
+                    TextView(requireContext()).apply {
+                        textSize = 14f
+                        setPadding(0, 0, 0, dpToPx(12))
+                    }
+                updateOutputFolderDisplay(outputFolderUri)
+                section.addView(tvSelectedOutputFolder)
+
+                section.addView(
+                    createSecondaryButton(
+                        text = getString(R.string.action_select_output_folder),
+                        icon = R.drawable.ic_folder_open,
+                    ) {
+                        showChangeOutputFolderConfirmation {
+                            outputFolderPicker.launch(outputFolderUri)
+                        }
+                    },
+                )
+                section.addView(
+                    createSecondaryButton(
+                        text = getString(R.string.action_select_resources_folder),
+                        icon = R.drawable.ic_folder_open,
+                    ) {
+                        showChangeResourcesFolderConfirmation {
+                            resourcesFolderManager.pickResourcesFolder(folderPicker)
+                        }
+                    },
+                )
+            }
+        rootLayout.addView(fileSection)
 
         val customizationSection =
             sectionCard(getString(R.string.section_customization)) { section ->
@@ -315,11 +347,25 @@ class StartFragment : Fragment() {
         rootLayout.addView(spacerView)
 
         val aboutSection =
-            sectionCard(null) { section ->
+            sectionCard(getString(R.string.section_other)) { section ->
                 section.addView(
-                    createSecondaryButton("About") {
-                        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
-                        HtmlDialogHelper.showHtmlContent(requireContext(), "About", aboutHtmlContent)
+                    createSecondaryButton(getString(R.string.action_about)) {
+                        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "manual.html")
+                        HtmlDialogHelper.showHtmlContent(
+                            requireContext(),
+                            getString(R.string.action_about),
+                            aboutHtmlContent,
+                        )
+                    },
+                )
+                section.addView(
+                    createSecondaryButton(getString(R.string.action_manual)) {
+                        val manualHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
+                        HtmlDialogHelper.showHtmlContent(
+                            requireContext(),
+                            getString(R.string.action_manual),
+                            manualHtmlContent,
+                        )
                     },
                 )
             }

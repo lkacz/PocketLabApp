@@ -9,6 +9,7 @@
     <string name="selected_protocol">Selected:</string>
     <string name="title_current_protocol">CURRENT PROTOCOL</string>
     <string name="label_selected_file">Selected file</string>
+    <string name="label_protocol_prefix">Protocol:</string>
     <string name="label_participant_id">Participant ID</string>
     <string name="helper_participant_id">Used to label exported data files.</string>
     <string name="cd_clear_participant_id">Clear participant ID</string>
@@ -26,7 +27,8 @@
     <string name="value_none">None</string>
     <string name="value_untitled_protocol">Untitled Protocol</string>
     <string name="action_start_study">Start Study</string>
-    <string name="section_protocol_files">PROTOCOL &amp; FILES</string>
+    <string name="section_file">FILES</string>
+    <string name="section_protocols">PROTOCOLS</string>
     <string name="action_load_protocol">Load Protocol File</string>
     <string name="action_save_protocol">Save Protocol</string>
     <string name="action_save_as_protocol">Save Protocol As...</string>
@@ -35,8 +37,10 @@
     <string name="action_use_tutorial_protocol">Use Tutorial Protocol</string>
     <string name="action_use_demo_protocol">Use Demo Protocol</string>
     <string name="section_customization">CUSTOMIZATION</string>
+    <string name="section_other">OTHER</string>
     <string name="action_layout">Layout</string>
     <string name="action_sounds">Sounds</string>
+    <string name="action_manual">Manual</string>
     <string name="action_about">About</string>
     <string name="action_load">Load</string>
     <string name="action_save">Save</string>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>About Pocket Lab App</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: inherit;
+            background: transparent;
+        }
+
+        main {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 28px 24px 48px;
+        }
+
+        header {
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: clamp(2.2rem, 3vw, 2.8rem);
+            line-height: 1.2;
+        }
+
+        h2 {
+            margin-top: 40px;
+            font-size: clamp(1.4rem, 2vw, 1.8rem);
+        }
+
+        p {
+            margin: 0 0 14px 0;
+        }
+
+        table.meta {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0 12px 0;
+        }
+
+        table.meta th {
+            text-align: left;
+            padding: 6px 16px 6px 0;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        table.meta td {
+            padding: 6px 0;
+        }
+
+        ul {
+            margin: 0 0 20px 22px;
+        }
+
+        .callout {
+            border-left: 4px solid #3f51b5;
+            background: rgba(63, 81, 181, 0.08);
+            padding: 16px 18px;
+            border-radius: 10px;
+            margin: 24px 0;
+        }
+
+        .lead {
+            font-size: 1.05rem;
+        }
+
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            margin-top: 48px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(128, 128, 128, 0.25);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <h1>About PoLA (Pocket Lab App)</h1>
+        <p class="lead">A mobile research companion for behavioral scientists and field studies.</p>
+        <table class="meta">
+            <tr>
+                <th>Version</th>
+                <td>1.0.0</td>
+            </tr>
+            <tr>
+                <th>Developed by</th>
+                <td><i>Łukasz D. Kaczmarek, PhD, Adam Mickiewicz University, Psychophysiology Laboratory</i></td>
+            </tr>
+            <tr>
+                <th>License</th>
+                <td>GNU GPLv3 — community contributions are welcome.</td>
+            </tr>
+        </table>
+    </header>
+
+    <section id="mission">
+        <h2>Why PoLA exists</h2>
+        <p>PoLA puts full experimental control in your pocket. It was designed for researchers who need to deliver structured tasks, capture responses in the field, and adapt protocols quickly without recompiling an app. Studies are stored as human-readable text files that PoLA interprets at runtime, enabling rapid iteration, reproducibility, and transparent auditing.</p>
+        <p>Sessions can range from brief questionnaires to multi-stage experiments with timers, branching, custom layouts, and embedded media. Participants interact with a touch-first interface, while facilitators benefit from precise timing, robust logging, and straightforward data exports.</p>
+    </section>
+
+    <section id="capabilities">
+        <h2>Key capabilities</h2>
+        <ul>
+            <li><strong>Protocol-driven workflow:</strong> Update tasks instantly by editing a plain-text script—no rebuild required.</li>
+            <li><strong>Protocol Manager GUI:</strong> Author and troubleshoot studies visually, then refine the underlying script when needed.</li>
+            <li><strong>Rich participant experiences:</strong> Combine instructions, timers, scales, free response fields, HTML overlays, audio, video, and images in a single flow.</li>
+            <li><strong>Detailed logging:</strong> Automatic study logs capture navigation events, timestamps, and device context for auditing.</li>
+            <li><strong>Flexible styling:</strong> Tune typography, alignment, spacing, and button treatments to match your branding or accessibility goals.</li>
+            <li><strong>Randomization &amp; branching:</strong> Shuffle stimuli, branch to labeled sections, and orchestrate complex study paths with simple commands.</li>
+            <li><strong>Offline-first execution:</strong> Run complete studies without a network connection and export data securely when ready.</li>
+            <li><strong>Researcher utilities:</strong> Built-in protocol validation, undo/redo, quick fixes, and developer tools streamline iteration.</li>
+        </ul>
+    </section>
+
+    <section id="workflow">
+        <h2>How it fits into your workflow</h2>
+        <div class="callout">
+            <strong>Typical cycle</strong>
+            <p>Draft a protocol, review it in Protocol Manager, pilot on a device, adjust styling, then deploy to participants. Exported data can be synchronized with your analysis pipeline immediately after each run.</p>
+        </div>
+        <ul>
+            <li><strong>Edit &amp; preview:</strong> Make quick changes inside Protocol Manager or any text editor, then preview on-device.</li>
+            <li><strong>Distribute resources:</strong> Store accompanying HTML, audio, video, and imagery in the resources folder for seamless playback.</li>
+            <li><strong>Monitor progress:</strong> Leverage session logs and optional developer tools to diagnose issues in the field.</li>
+        </ul>
+    </section>
+
+    <section id="community">
+        <h2>Project ethos</h2>
+        <p>PoLA is maintained as open-source software to encourage transparent research workflows. Contributions are welcome—whether you are proposing new commands, improving accessibility, translating UI strings, or documenting study templates.</p>
+    </section>
+
+    <section id="contact">
+        <h2>Contact</h2>
+        <p>Questions, collaboration ideas, or bug reports are welcome at <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a>. For roadmap updates and issue tracking, visit the project repository: <a href="https://github.com/lkacz/PocketLabApp" target="_blank" rel="noopener">github.com/lkacz/PocketLabApp</a>.</p>
+    </section>
+
+    <footer>
+        <p>Looking for guidance on running a study? Open the <strong>Manual</strong> from PoLA’s home screen for setup checklists, customization tips, and the complete command reference.</p>
+    </footer>
+</main>
+</body>
+</html>

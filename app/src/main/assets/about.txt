@@ -189,59 +189,80 @@
 <body>
 <main>
   <header>
-    <h1 id="top">About PoLA (Pocket Lab App)</h1>
-    <p class="tagline">A mobile research companion for behavioral scientists and field studies.</p>
+    <h1 id="top">Pocket Lab App Manual</h1>
+    <p class="tagline">How to prepare, launch, and quality-check PoLA study runs.</p>
     <table class="meta">
       <tr>
-        <th>Version</th>
-        <td>1.0.0</td>
+        <th>Audience</th>
+        <td>Researchers and facilitators configuring Pocket Lab App studies.</td>
       </tr>
       <tr>
-        <th>Developed by</th>
-        <td><i>Łukasz D. Kaczmarek, PhD, Adam Mickiewicz University, Psychophysiology Laboratory</i></td>
+        <th>Includes</th>
+        <td>Quick-start setup, workflow guidance, and the full command reference.</td>
       </tr>
       <tr>
-        <th>License</th>
-        <td>GNU GPLv3 — community contributions are welcome.</td>
+        <th>Last updated</th>
+        <td>September 2025</td>
       </tr>
     </table>
   </header>
 
-  <nav class="quick-links" aria-label="Quick links">
+  <nav class="quick-links" aria-label="Manual overview">
     <strong>Jump to:</strong>
     <ul>
-      <li><a href="#overview">Overview</a></li>
-      <li><a href="#features">Key features</a></li>
-      <li><a href="#manual">Protocol command manual</a></li>
-      <li><a href="#contact">Contact &amp; support</a></li>
+      <li><a href="#quickstart">Quick start</a></li>
+      <li><a href="#participant">Participant setup</a></li>
+      <li><a href="#files">Files &amp; exports</a></li>
+      <li><a href="#customization">Customization &amp; tips</a></li>
+      <li><a href="#command-reference">Command reference</a></li>
+      <li><a href="#support">Support</a></li>
     </ul>
   </nav>
 
-  <section id="overview">
-    <h2>Overview</h2>
-    <div class="section-body">
-      <p>PoLA (Pocket Lab App) puts full experimental control in your pocket. It is purpose-built for behavioral scientists who need to deliver structured tasks, capture responses in the field, and adapt studies quickly without recompiling the app. Protocols are stored as human-readable text files that the app interprets at runtime, enabling rapid iteration, reproducibility, and transparent auditing.</p>
-      <p>Studies can range from brief surveys to multi-stage experiments with timers, branching logic, customized layouts, and embedded media. Participants navigate the study through a touch-first interface, while researchers benefit from encrypted on-device storage, exportable logs, and precise control over timing, spacing, and presentation.</p>
-    </div>
-    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
-  </section>
-
-  <section id="features">
-    <h2>Key features</h2>
+  <section id="quickstart">
+    <h2>Quick start</h2>
+    <p>Complete these steps before inviting a participant to begin:</p>
     <ul>
-      <li><strong>Protocol-driven workflow:</strong> Update behavioral tasks by editing a plain-text script—no rebuild required.</li>
-      <li><strong>Protocol Manager GUI:</strong> Build protocols with the visual Protocol Manager, then export to text when you need fine-grained control.</li>
-      <li><strong>Rich participant experiences:</strong> Combine instructions, timers, scales, open fields, HTML snippets, images, audio, and video in a single flow.</li>
-      <li><strong>Research-oriented logging:</strong> Automatic study logs capture navigation, timestamps, and device context for auditing.</li>
-      <li><strong>Flexible styling:</strong> Fine-tune typography, alignment, colors, spacing, and button placement to match study branding or accessibility needs.</li>
-      <li><strong>Randomization and branching:</strong> Shuffle stimuli or direct participants to labeled sections with <code>RANDOMIZE_ON</code> / <code>RANDOMIZE_OFF</code>, labels, and <code>GOTO</code> commands.</li>
-      <li><strong>Offline-first execution:</strong> Run complete protocols without a network connection and export data securely when ready.</li>
-      <li><strong>Researcher utilities:</strong> Built-in protocol validator, undo/redo, quick fixes, and developer tools accelerate authoring and QA.</li>
+      <li><strong>Load protocol:</strong> Choose <em>Load Protocol</em> to import a plain-text study script. The runtime interprets commands line by line, so you can update behavior without rebuilding the app.</li>
+      <li><strong>Review the flow:</strong> Open <em>Protocol Manager</em> to scan for warnings, search commands, and verify branching before deployment.</li>
+      <li><strong>Explore bundled studies:</strong> Use the tutorial or demo protocol to preview the interface and confirm device capabilities like audio playback.</li>
     </ul>
     <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
   </section>
 
-  <section id="manual">
+  <section id="participant">
+    <h2>Participant setup</h2>
+    <ul>
+      <li><strong>Protocol name:</strong> Confirm the active script shown beneath <em>Protocol:</em>. Tap another protocol option to swap it instantly.</li>
+      <li><strong>Participant ID:</strong> Capture an identifier to tag exports. Clear the field between sessions to avoid cross-participant mixes.</li>
+      <li><strong>Resume vs. restart:</strong> If PoLA detects an interrupted session, it offers to resume. Choose <em>Don’t continue</em> when starting a fresh run.</li>
+      <li><strong>Start Study:</strong> Launch the sequence once all devices, timers, and accessories are ready. The app logs the exact start time.</li>
+    </ul>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="files">
+    <h2>Files &amp; exports</h2>
+    <ul>
+      <li><strong>Select output folder:</strong> Choose a writable directory where CSV exports and logs will be stored. Verify access on the device before field work.</li>
+      <li><strong>Select resources folder:</strong> Point PoLA to the directory that holds audio, video, images, and HTML referenced in your protocol.</li>
+      <li><strong>Back up regularly:</strong> Copy both protocol scripts and exported data to secure storage after each session.</li>
+    </ul>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="customization">
+    <h2>Customization &amp; tips</h2>
+    <ul>
+      <li><strong>Layout:</strong> Adjust typography, button colors, and alignment in the Layout dialog. Use the restore defaults action if styling becomes inconsistent.</li>
+      <li><strong>Sounds:</strong> Configure alarm tones or mute them in the Sounds dialog. Timer commands will reuse the selected audio.</li>
+      <li><strong>Facilitator tips:</strong> Tap the app title seven times to unlock developer tools. Long-press it to disable developer mode.</li>
+      <li><strong>Protocol hygiene:</strong> Use descriptive label names, and test branching paths with the tutorial or demo protocol before collecting data.</li>
+    </ul>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="command-reference">
     <h2>Protocol command manual</h2>
     <p>This reference describes every command the runtime understands. Protocols are plain-text files encoded in UTF-8. Each non-empty line represents one command. Values are separated with semicolons (<code>;</code>). Lines beginning with <code>//</code> are comments and ignored during execution.</p>
 
@@ -409,8 +430,8 @@
     <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
   </section>
 
-  <section id="contact">
-    <h2>Contact &amp; support</h2>
+  <section id="support">
+    <h2>Support</h2>
     <p>Questions, collaboration ideas, or bug reports are welcome at <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a>. Contributions from the community—new commands, UI refinements, translations—are encouraged under the GNU GPLv3 license.</p>
     <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
   </section>
