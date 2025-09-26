@@ -59,6 +59,11 @@
     <string name="label_parameters">Parameters</string>
     <string name="hint_header">Header text</string>
     <string name="hint_body">Body text</string>
+    <string name="label_media_section">Multimedia</string>
+    <string name="hint_media_section">Optional sound, video, and custom HTML placeholders will be appended to the body text. Add pictures manually by typing &lt;image.jpg&gt; directly in the text.</string>
+    <string name="hint_media_sound">Sound file (mp3/wav, optional volume e.g. sound.mp3,75)</string>
+    <string name="hint_media_video">Video file (mp4, optional volume e.g. intro.mp4,60)</string>
+    <string name="hint_media_custom_html">Custom HTML file (e.g. extra.html)</string>
     <string name="hint_continue">Continue button text</string>
     <string name="hint_items">Items (comma separated)</string>
     <string name="hint_time_seconds">Time (seconds)</string>
@@ -103,6 +108,10 @@
     <string name="toast_insert_cancelled">Insert cancelled</string>
     <string name="toast_long_press_insert">Long-press a line to insert below it</string>
     <string name="error_required_field">Required</string>
+    <string name="error_media_not_supported">This command does not support multimedia placeholders.</string>
+    <string name="error_media_sound_extension">Sound must use .mp3 or .wav.</string>
+    <string name="error_media_video_extension">Video must use .mp4.</string>
+    <string name="error_media_html_extension">Custom HTML must end with .html.</string>
     <string name="hint_search_keyword">Keyword</string>
     <string name="action_search_text">Search</string>
     <string name="action_clear_text">Clear</string>

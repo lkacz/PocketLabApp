@@ -2731,7 +2731,190 @@ class ProtocolValidationDialog : DialogFragment() {
                 addView(randomizeToggle)
                 addView(randomizeHelperText)
             }
-    TooltipCompat.setTooltipText(randomizeToggle, getString(R.string.hint_randomize_scale))
+        TooltipCompat.setTooltipText(randomizeToggle, getString(R.string.hint_randomize_scale))
+
+        val commandsWithMedia =
+            setOf(
+                "INSTRUCTION",
+                "TIMER",
+                "SCALE",
+                "SCALE[RANDOMIZED]",
+                "INPUTFIELD",
+                "INPUTFIELD[RANDOMIZED]",
+            )
+    var currentMediaCommand: String? = null
+    var mediaPrefillApplied = false
+
+        val mediaSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(12)
+                    }
+            }
+        val mediaHeader =
+            TextView(ctx).apply {
+                text = getString(R.string.label_media_section)
+                textSize = applyScale(14f)
+                setTypeface(null, Typeface.BOLD)
+            }
+        val mediaHelperText =
+            TextView(ctx).apply {
+                text = getString(R.string.hint_media_section)
+                setTextColor(Color.parseColor("#6B7280"))
+                textSize = applyScale(12f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(4)
+                    }
+            }
+
+        fun buildMediaInputLayout(hintRes: Int): Pair<com.google.android.material.textfield.TextInputLayout, TextInputEditText> {
+            val inputLayout =
+                com.google.android.material.textfield.TextInputLayout(
+                    ctx,
+                    null,
+                    com.google.android.material.R.style.Widget_MaterialComponents_TextInputLayout_OutlinedBox,
+                ).apply {
+                    hint = getString(hintRes)
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            topMargin = dp(12)
+                        }
+                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                }
+            val editText =
+                TextInputEditText(inputLayout.context).apply {
+                    setSingleLine()
+                }
+            inputLayout.addView(editText)
+            return inputLayout to editText
+        }
+
+        val (soundInputLayout, soundInput) = buildMediaInputLayout(R.string.hint_media_sound)
+        val (videoInputLayout, videoInput) = buildMediaInputLayout(R.string.hint_media_video)
+        val (customHtmlInputLayout, customHtmlInput) = buildMediaInputLayout(R.string.hint_media_custom_html)
+
+        mediaSection.addView(mediaHeader)
+        mediaSection.addView(mediaHelperText)
+        mediaSection.addView(soundInputLayout)
+        mediaSection.addView(videoInputLayout)
+        mediaSection.addView(customHtmlInputLayout)
+
+        fun resetMediaInputs() {
+            if (soundInput.text?.isNotEmpty() == true) soundInput.setText("")
+            if (videoInput.text?.isNotEmpty() == true) videoInput.setText("")
+            if (customHtmlInput.text?.isNotEmpty() == true) customHtmlInput.setText("")
+        }
+
+        data class MediaPrefill(
+            val sound: String = "",
+            val video: String = "",
+            val customHtml: String = "",
+        )
+
+        val trailingMediaRegex =
+            Regex("<([^>]+\\.(?:mp3|wav|mp4|html)(?:,[^>]+)?)>\\s*$", RegexOption.IGNORE_CASE)
+
+        fun extractMediaPlaceholders(raw: String): Pair<String, MediaPrefill> {
+            var workingText = raw.trimEnd()
+            var soundValue = ""
+            var videoValue = ""
+            var htmlValue = ""
+            while (true) {
+                val match = trailingMediaRegex.find(workingText) ?: break
+                val value = match.groupValues[1]
+                val filePart = value.substringBefore(',').trim()
+                val ext = filePart.substringAfterLast('.', "").lowercase()
+                val consumed =
+                    when {
+                        (ext == "mp3" || ext == "wav") && soundValue.isEmpty() -> {
+                            soundValue = value
+                            true
+                        }
+                        ext == "mp4" && videoValue.isEmpty() -> {
+                            videoValue = value
+                            true
+                        }
+                        ext == "html" && htmlValue.isEmpty() -> {
+                            htmlValue = value
+                            true
+                        }
+                        else -> false
+                    }
+                if (!consumed) {
+                    break
+                }
+                workingText = workingText.removeRange(match.range).trimEnd()
+            }
+            return workingText to MediaPrefill(soundValue, videoValue, htmlValue)
+        }
+
+        fun populateMediaInputs(prefill: MediaPrefill) {
+            resetMediaInputs()
+            if (prefill.sound.isNotEmpty()) {
+                soundInput.setText(prefill.sound)
+            }
+            if (prefill.video.isNotEmpty()) {
+                videoInput.setText(prefill.video)
+            }
+            if (prefill.customHtml.isNotEmpty()) {
+                customHtmlInput.setText(prefill.customHtml)
+            }
+        }
+
+        fun normalizedMediaValue(editText: TextInputEditText): String {
+            val raw = editText.text?.toString()?.trim().orEmpty()
+            if (raw.isEmpty()) return ""
+            return raw.removePrefix("<").removeSuffix(">").trim()
+        }
+
+        fun hasAllowedExtension(
+            value: String,
+            allowed: Set<String>,
+        ): Boolean {
+            val filePart = value.substringBefore(',').trim()
+            if (!filePart.contains('.')) return false
+            val ext = filePart.substringAfterLast('.', "").lowercase()
+            return allowed.contains(ext)
+        }
+
+        fun appendMediaPlaceholders(
+            base: String,
+            applyMedia: Boolean,
+            soundValue: String,
+            videoValue: String,
+            htmlValue: String,
+        ): String {
+            if (!applyMedia) return base
+            var result = base.trimEnd()
+            fun appendIfNeeded(value: String) {
+                if (value.isBlank()) return
+                val placeholder = "<$value>"
+                if (!result.contains(placeholder)) {
+                    result =
+                        if (result.isEmpty()) {
+                            placeholder
+                        } else {
+                            "$result $placeholder"
+                        }
+                }
+            }
+            appendIfNeeded(soundValue)
+            appendIfNeeded(videoValue)
+            appendIfNeeded(htmlValue)
+            return result.trim()
+        }
 
         randomizeToggle.setOnCheckedChangeListener { _, isChecked ->
             if (isProgrammaticRandomizeChange) {
@@ -3396,6 +3579,29 @@ class ProtocolValidationDialog : DialogFragment() {
         parameterCard.addView(parameterContainer)
         inner.addView(parameterCard)
 
+        fun attachMediaSectionFor(
+            command: String,
+            resetIfChanged: Boolean,
+        ) {
+            if (resetIfChanged && currentMediaCommand != command) {
+                resetMediaInputs()
+                mediaPrefillApplied = false
+            }
+            (mediaSection.parent as? ViewGroup)?.removeView(mediaSection)
+            mediaSection.visibility = View.VISIBLE
+            paramGroup.addView(mediaSection)
+            currentMediaCommand = command
+        }
+
+        fun detachMediaSection(reset: Boolean) {
+            (mediaSection.parent as? ViewGroup)?.removeView(mediaSection)
+            if (reset) {
+                resetMediaInputs()
+                mediaPrefillApplied = false
+            }
+            currentMediaCommand = null
+        }
+
         fun detachRandomizeSection() {
             (randomizeSection.parent as? ViewGroup)?.removeView(randomizeSection)
             randomizeSection.visibility = View.GONE
@@ -3414,6 +3620,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 return
             }
             detachRandomizeSection()
+            if (!isEdit) {
+                mediaPrefillApplied = false
+            }
             val helperRes = if (base == "SCALE") R.string.hint_randomize_scale else R.string.hint_randomize_inputfields
             randomizeHelperText.text = getString(helperRes)
             TooltipCompat.setTooltipText(randomizeToggle, getString(helperRes))
@@ -3472,17 +3681,21 @@ class ProtocolValidationDialog : DialogFragment() {
                 paramGroup.removeAllViews()
                 paramGroup.addView(infoLabel(getString(R.string.insert_command_choose_command_hint)))
                 updateHoldToggleVisibility("", continueIncluded = false)
+                detachMediaSection(reset = true)
+                mediaPrefillApplied = false
                 return
             }
             paramGroup.removeAllViews()
             detachRandomizeSection()
             var continueIncluded = false
+            var shouldAttachMedia = false
             when (selectedCommand) {
                 "INSTRUCTION" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
                     paramGroup.addView(continueSection)
                     continueIncluded = true
+                    shouldAttachMedia = true
                 }
                 "TIMER" -> {
                     paramGroup.addView(header)
@@ -3490,6 +3703,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     paramGroup.addView(time)
                     paramGroup.addView(continueSection)
                     continueIncluded = true
+                    shouldAttachMedia = true
                 }
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     paramGroup.addView(header)
@@ -3499,6 +3713,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     rebuildScaleResponseFields(emptyList())
                     paramGroup.addView(scaleItemsSection)
                     paramGroup.addView(scaleResponsesSection)
+                    shouldAttachMedia = true
                 }
                 "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                     paramGroup.addView(header)
@@ -3508,6 +3723,7 @@ class ProtocolValidationDialog : DialogFragment() {
                     paramGroup.addView(inputFieldSection)
                     paramGroup.addView(continueSection)
                     continueIncluded = true
+                    shouldAttachMedia = true
                 }
                 "LABEL" -> {
                     paramGroup.addView(labelName)
@@ -3566,6 +3782,13 @@ class ProtocolValidationDialog : DialogFragment() {
                     paramGroup.addView(alignmentSpinner)
                 }
                 else -> { /* Unhandled commands fall through */ }
+            }
+
+            if (shouldAttachMedia) {
+                val resetMedia = !isEdit && currentMediaCommand != selectedCommand
+                attachMediaSectionFor(selectedCommand, resetIfChanged = resetMedia)
+            } else {
+                detachMediaSection(reset = true)
             }
 
             updateHoldToggleVisibility(selectedCommand, continueIncluded)
@@ -3638,7 +3861,15 @@ class ProtocolValidationDialog : DialogFragment() {
                 when (cmd) {
                     "INSTRUCTION" -> {
                         header.setText(existingParts.getOrNull(1))
-                        body.setText(existingParts.getOrNull(2))
+                        val originalBody = existingParts.getOrNull(2).orEmpty()
+                        val (bodyWithoutMedia, mediaPrefill) = extractMediaPlaceholders(originalBody)
+                        body.setText(bodyWithoutMedia)
+                        if (!mediaPrefillApplied) {
+                            populateMediaInputs(mediaPrefill)
+                            if (mediaPrefill.sound.isNotEmpty() || mediaPrefill.video.isNotEmpty() || mediaPrefill.customHtml.isNotEmpty()) {
+                                mediaPrefillApplied = true
+                            }
+                        }
                         val (continueText, hadHold) = stripHoldToken(existingParts.getOrNull(3))
                         cont.setText(continueText)
                         if (holdSupportedCommands.contains(cmd)) {
@@ -3648,7 +3879,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     "TIMER" -> {
                         header.setText(existingParts.getOrNull(1))
-                        body.setText(existingParts.getOrNull(2))
+                        val originalBody = existingParts.getOrNull(2).orEmpty()
+                        val (bodyWithoutMedia, mediaPrefill) = extractMediaPlaceholders(originalBody)
+                        body.setText(bodyWithoutMedia)
+                        if (!mediaPrefillApplied) {
+                            populateMediaInputs(mediaPrefill)
+                            if (mediaPrefill.sound.isNotEmpty() || mediaPrefill.video.isNotEmpty() || mediaPrefill.customHtml.isNotEmpty()) {
+                                mediaPrefillApplied = true
+                            }
+                        }
                         time.setText(existingParts.getOrNull(3))
                         val (continueText, hadHold) = stripHoldToken(existingParts.getOrNull(4))
                         cont.setText(continueText)
@@ -3659,7 +3898,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     "SCALE", "SCALE[RANDOMIZED]" -> {
                         header.setText(existingParts.getOrNull(1))
-                        body.setText(existingParts.getOrNull(2))
+                        val originalBody = existingParts.getOrNull(2).orEmpty()
+                        val (bodyWithoutMedia, mediaPrefill) = extractMediaPlaceholders(originalBody)
+                        body.setText(bodyWithoutMedia)
+                        if (!mediaPrefillApplied) {
+                            populateMediaInputs(mediaPrefill)
+                            if (mediaPrefill.sound.isNotEmpty() || mediaPrefill.video.isNotEmpty() || mediaPrefill.customHtml.isNotEmpty()) {
+                                mediaPrefillApplied = true
+                            }
+                        }
                         val rawItems = existingParts.getOrNull(3).orEmpty()
                         val normalizedItems =
                             if (rawItems.startsWith("[") && rawItems.endsWith("]") && rawItems.length >= 2) {
@@ -3679,7 +3926,15 @@ class ProtocolValidationDialog : DialogFragment() {
                     }
                     "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                         header.setText(existingParts.getOrNull(1))
-                        body.setText(existingParts.getOrNull(2))
+                        val originalBody = existingParts.getOrNull(2).orEmpty()
+                        val (bodyWithoutMedia, mediaPrefill) = extractMediaPlaceholders(originalBody)
+                        body.setText(bodyWithoutMedia)
+                        if (!mediaPrefillApplied) {
+                            populateMediaInputs(mediaPrefill)
+                            if (mediaPrefill.sound.isNotEmpty() || mediaPrefill.video.isNotEmpty() || mediaPrefill.customHtml.isNotEmpty()) {
+                                mediaPrefillApplied = true
+                            }
+                        }
                         val fieldSlice =
                             when {
                                 existingParts.size > 4 -> existingParts.subList(3, existingParts.size - 1)
@@ -3773,6 +4028,28 @@ class ProtocolValidationDialog : DialogFragment() {
                         et: EditText,
                         fallback: String,
                     ) = et.text.toString().takeIf { it.isNotBlank() } ?: fallback
+                    val soundValue = normalizedMediaValue(soundInput)
+                    val videoValue = normalizedMediaValue(videoInput)
+                    val customHtmlValue = normalizedMediaValue(customHtmlInput)
+                    val mediaValuesProvided =
+                        soundValue.isNotEmpty() || videoValue.isNotEmpty() || customHtmlValue.isNotEmpty()
+                    val commandSupportsMedia = commandsWithMedia.contains(cmd)
+                    if (!commandSupportsMedia && mediaValuesProvided) {
+                        Toast.makeText(ctx, getString(R.string.error_media_not_supported), Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    if (soundValue.isNotEmpty() && !hasAllowedExtension(soundValue, setOf("mp3", "wav"))) {
+                        Toast.makeText(ctx, getString(R.string.error_media_sound_extension), Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    if (videoValue.isNotEmpty() && !hasAllowedExtension(videoValue, setOf("mp4"))) {
+                        Toast.makeText(ctx, getString(R.string.error_media_video_extension), Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    if (customHtmlValue.isNotEmpty() && !hasAllowedExtension(customHtmlValue, setOf("html"))) {
+                        Toast.makeText(ctx, getString(R.string.error_media_html_extension), Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
                     // Contextual validations
                     if (cmd == "STUDY_ID" && !isEdit) {
                         if (allLines.any { it.trim().uppercase().startsWith("STUDY_ID;") }) {
@@ -3815,14 +4092,68 @@ class ProtocolValidationDialog : DialogFragment() {
                     val newLine =
                         when (cmd) {
                             "INSTRUCTION" -> {
+                                val headerText = def(header, "Header")
+                                val rawBody = body.text.toString()
+                                val baseBody =
+                                    if (rawBody.isNotBlank()) {
+                                        rawBody
+                                    } else if (commandSupportsMedia && mediaValuesProvided) {
+                                        ""
+                                    } else {
+                                        "Body"
+                                    }
+                                val bodyText =
+                                    appendMediaPlaceholders(
+                                        baseBody,
+                                        commandSupportsMedia,
+                                        soundValue,
+                                        videoValue,
+                                        customHtmlValue,
+                                    ).ifBlank { "Body" }
                                 val continueText = applyHoldToken(def(cont, "Continue"))
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$continueText"
+                                "$cmd;$headerText;$bodyText;$continueText"
                             }
                             "TIMER" -> {
+                                val headerText = def(header, "Header")
+                                val rawBody = body.text.toString()
+                                val baseBody =
+                                    if (rawBody.isNotBlank()) {
+                                        rawBody
+                                    } else if (commandSupportsMedia && mediaValuesProvided) {
+                                        ""
+                                    } else {
+                                        "Body"
+                                    }
+                                val bodyText =
+                                    appendMediaPlaceholders(
+                                        baseBody,
+                                        commandSupportsMedia,
+                                        soundValue,
+                                        videoValue,
+                                        customHtmlValue,
+                                    ).ifBlank { "Body" }
                                 val continueText = applyHoldToken(def(cont, "Continue"))
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};${def(time, "60")};$continueText"
+                                "$cmd;$headerText;$bodyText;${def(time, "60")};$continueText"
                             }
                             "SCALE", "SCALE[RANDOMIZED]" -> {
+                                val headerText = def(header, "Header")
+                                val rawBody = body.text.toString()
+                                val baseBody =
+                                    if (rawBody.isNotBlank()) {
+                                        rawBody
+                                    } else if (commandSupportsMedia && mediaValuesProvided) {
+                                        ""
+                                    } else {
+                                        "Body"
+                                    }
+                                val bodyText =
+                                    appendMediaPlaceholders(
+                                        baseBody,
+                                        commandSupportsMedia,
+                                        soundValue,
+                                        videoValue,
+                                        customHtmlValue,
+                                    ).ifBlank { "Body" }
                                 val itemTokens =
                                     collectScaleItems()
                                         .ifEmpty { listOf("Item 1") }
@@ -3841,15 +4172,33 @@ class ProtocolValidationDialog : DialogFragment() {
                                         "Response 1;Response 2"
                                     }
 
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$itemsPart;$responsesPart"
+                                "$cmd;$headerText;$bodyText;$itemsPart;$responsesPart"
                             }
                             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
+                                val headerText = def(header, "Header")
+                                val rawBody = body.text.toString()
+                                val baseBody =
+                                    if (rawBody.isNotBlank()) {
+                                        rawBody
+                                    } else if (commandSupportsMedia && mediaValuesProvided) {
+                                        ""
+                                    } else {
+                                        "Body"
+                                    }
+                                val bodyText =
+                                    appendMediaPlaceholders(
+                                        baseBody,
+                                        commandSupportsMedia,
+                                        soundValue,
+                                        videoValue,
+                                        customHtmlValue,
+                                    ).ifBlank { "Body" }
                                 val fieldTokens =
                                     collectInputFieldEntries()
                                         .ifEmpty { listOf("field1", "field2") }
                                 val fieldsPart = fieldTokens.joinToString(";")
                                 val continueText = applyHoldToken(def(cont, "Continue"))
-                                "$cmd;${def(header, "Header")};${def(body, "Body")};$fieldsPart;$continueText"
+                                "$cmd;$headerText;$bodyText;$fieldsPart;$continueText"
                             }
                             "LABEL" -> {
                                 if (labelName.text.isBlank()) {
