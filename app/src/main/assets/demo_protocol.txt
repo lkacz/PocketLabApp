@@ -5,22 +5,9 @@ STUDY_ID;OUTDOOR_MINDFULNESS_V1
 
 LOG;Outdoor mindfulness pilot launched
 
-HEADER_SIZE;26
-BODY_SIZE;18
-CONTINUE_SIZE;18
-HEADER_COLOR;#1B5E20
-BODY_COLOR;#2E3D2F
-SCREEN_BACKGROUND_COLOR;#F4F8F2
-CONTINUE_BACKGROUND_COLOR;#A5D6A7
-CONTINUE_TEXT_COLOR;#1B5E20
-CONTINUE_ALIGNMENT;CENTER;BOTTOM
-TRANSITIONS;fade
-
 INSTRUCTION;Welcome to the Demo Mindfulness Walk;<p>Preview a <strong>sub-30-second</strong> version of this outdoor mindfulness sequence.</p><p><strong>You'll:</strong></p><ul><li>Record where you'll practice</li><li>Log how you feel before and after the walk</li><li>Capture quick sensory observations</li></ul>;Begin check-in[HOLD]
 
-INPUTFIELD;Safety and setting;<p>Log your planned location and how someone can reach you while you're outside.</p><p><em>Include safety considerations so facilitators can support you if plans change.</em></p>;[Location you'll use;Who can contact you;Essential safety considerations];Save plan[HOLD]
-
-SCALE;Emotion check-in (before walk);<p>Before heading out, choose the option that best reflects your current emotional tone.</p>;Emotion rating (pre);Very unpleasant;Somewhat uneasy;Neutral;Somewhat pleasant;Very pleasant
+SCALE;Emotion;<p>Choose the option that best reflects your current emotional tone.</p>;Emotion rating;Very unpleasant;Somewhat uneasy;Neutral;Somewhat pleasant;Very pleasant
 
 TIMER;Grounding breath;<p>Take <strong>20 seconds</strong> of slow breathing: inhale for four counts, exhale for six.</p><p>Use this as a mini reset before stepping outside.</p>;20;Breathwork complete
 
@@ -40,15 +27,11 @@ RANDOMIZE_OFF
 
 TIMER;Mindful walk;<p>Walk mindfully for <strong>20 seconds</strong>.</p><p>Match your breath to your steps and notice contact with the ground on each footfall.</p>;20;Walk complete
 
-SCALE;Emotion check-in (after walk);<p>After this short outdoor focus, choose the option that best reflects your current emotional tone.</p>;Emotion rating (post);Much lower than before;Slightly lower;About the same;Slightly higher;Much higher
+SCALE;Emotion;<p>Choose the option that best reflects your current emotional tone.</p>;Emotion rating;Very unpleasant;Somewhat uneasy;Neutral;Somewhat pleasant;Very pleasant
 
 INPUTFIELD;Post-walk reflection;<p>Log one word for your mood and a quick insight you want to revisit later.</p><p><em>These notes help track how brief outdoor practice shifts your experience.</em></p>;[Mood word;Insight to revisit];Reflection saved[HOLD]
 
-HTML;mindfulness_resources.html;Open practice tips
-
-LOG;Resource sheet opened
-
-INSTRUCTION;Wrap up;<p>Thank yourself for making time outdoors today.</p><p>If you plan another session, add it to your calendar while the intention is fresh.</p>;Session complete[HOLD]
+INSTRUCTION;Complete;Please hand over the phone to the research assistant;--------[HOLD]
 
 END
 

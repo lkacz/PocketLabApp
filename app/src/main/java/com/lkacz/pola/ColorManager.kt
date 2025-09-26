@@ -24,7 +24,7 @@ object ColorManager {
     private const val DEFAULT_BUTTON_TEXT_COLOR = Color.WHITE
     private const val DEFAULT_BUTTON_BACKGROUND_COLOR = Color.BLUE
     private const val DEFAULT_ITEM_TEXT_COLOR = Color.BLUE
-    private const val DEFAULT_RESPONSE_TEXT_COLOR = Color.RED
+    private val DEFAULT_RESPONSE_TEXT_COLOR = Color.parseColor("#F5C04C")
     private const val DEFAULT_SCREEN_BACKGROUND_COLOR = Color.WHITE
     private const val DEFAULT_CONTINUE_TEXT_COLOR = Color.WHITE
     private const val DEFAULT_CONTINUE_BACKGROUND_COLOR = Color.DKGRAY

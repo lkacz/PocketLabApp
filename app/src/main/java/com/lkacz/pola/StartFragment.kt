@@ -184,7 +184,7 @@ class StartFragment : Fragment() {
                         setText(sharedPref.getString(Prefs.KEY_PARTICIPANT_ID, "")?.trim().orEmpty())
                         doAfterTextChanged { editable ->
                             persistParticipantId(editable?.toString())
-                        }++
+                        }
                     }
                 participantIdLayout.addView(participantIdInput)
                 section.addView(participantIdLayout)
