@@ -29,11 +29,11 @@ class FragmentLoader(
         currentIndex = if (resumeIndex >= 0) resumeIndex - 1 else -1
     }
 
-    fun loadNextFragment(): Fragment {
+    fun loadNextFragment(): Fragment? {
         while (true) {
             currentIndex++
             if (currentIndex >= lines.size) {
-                return EndFragment()
+                return null
             }
             val line = lines[currentIndex]
             if (line.isBlank()) continue
@@ -198,7 +198,7 @@ class FragmentLoader(
                     return createHtmlFragment(parts)
                 }
                 "END" -> {
-                    return EndFragment()
+                    return null
                 }
                 else -> {
                     continue
@@ -207,7 +207,7 @@ class FragmentLoader(
         }
     }
 
-    fun jumpToLabelAndLoad(label: String): Fragment {
+    fun jumpToLabelAndLoad(label: String): Fragment? {
         jumpToLabel(label)
         return loadNextFragment()
     }
@@ -255,9 +255,9 @@ class FragmentLoader(
     private fun createInputFieldFragment(
         parts: List<String>,
         isRandom: Boolean,
-    ): Fragment {
+    ): Fragment? {
         if (parts.size < 4) {
-            return EndFragment()
+            return null
         }
         val heading = parts[1]
         val body = parts[2]

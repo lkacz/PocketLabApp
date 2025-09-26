@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private lateinit var protocolManager: ProtocolManager
     private lateinit var sharedPref: SharedPreferences
     private var pendingResumeIndex: Int? = null
+    private var hasCompletedProtocol = false
 
     private val fragmentContainerId = ViewGroup.generateViewId()
 
@@ -111,96 +112,19 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
     fun loadNextFragment() {
         val newFragment = fragmentLoader.loadNextFragment()
-        val mode = TransitionManager.getTransitionMode(this)
-        val currentFragment = supportFragmentManager.findFragmentById(fragmentContainerId)
-
-        newFragment.apply {
-            allowEnterTransitionOverlap = true
-            allowReturnTransitionOverlap = true
-        }
-
-        handleProgressFor(newFragment)
-
-        when (mode) {
-            "off" -> {
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-            }
-
-            "slide" -> {
-                currentFragment?.view?.startAnimation(SlideTransitionHelper.outLeftAnimation(350L))
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-                newFragment.lifecycleScope.launch {
-                    delay(10)
-                    newFragment.view?.startAnimation(SlideTransitionHelper.inRightAnimation(350L))
-                }
-            }
-
-            "slideLeft" -> {
-                currentFragment?.view?.startAnimation(SlideTransitionHelper.outRightAnimation(350L))
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-                newFragment.lifecycleScope.launch {
-                    delay(10)
-                    newFragment.view?.startAnimation(SlideTransitionHelper.inLeftAnimation(350L))
-                }
-            }
-
-            "dissolve" -> {
-                val dissolveOut = Fade().apply { duration = 350 }
-                val dissolveIn = Fade().apply { duration = 350 }
-                currentFragment?.exitTransition = dissolveOut
-                newFragment.enterTransition = dissolveIn
-
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-            }
-
-            "fade" -> {
-                val fadeOut =
-                    Fade().apply {
-                        duration = 350
-                    }
-                val fadeIn =
-                    Fade().apply {
-                        duration = 350
-                        startDelay = 350
-                    }
-                currentFragment?.exitTransition = fadeOut
-                newFragment.enterTransition = fadeIn
-
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-            }
-
-            else -> {
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, newFragment)
-                    commit()
-                }
-            }
-        }
+        navigateToFragment(newFragment)
     }
 
     fun loadFragmentByLabel(label: String) {
         val newFragment = fragmentLoader.jumpToLabelAndLoad(label)
+        navigateToFragment(newFragment)
+    }
+
+    private fun navigateToFragment(newFragment: Fragment?) {
+        if (newFragment == null) {
+            onProtocolCompleted()
+            return
+        }
         val mode = TransitionManager.getTransitionMode(this)
         val currentFragment = supportFragmentManager.findFragmentById(fragmentContainerId)
 
@@ -209,7 +133,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             allowReturnTransitionOverlap = true
         }
 
-        handleProgressFor(newFragment)
+    handleProgressUpdate()
 
         when (mode) {
             "off" -> {
@@ -313,18 +237,26 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             .show()
     }
 
-    private fun handleProgressFor(fragment: Fragment) {
+    private fun handleProgressUpdate() {
         if (!::fragmentLoader.isInitialized) return
-        when (fragment) {
-            is EndFragment -> clearProtocolProgress()
-            else -> {
-                val index = fragmentLoader.getCurrentCommandIndex()
-                if (index >= 0) {
-                    sharedPref.edit()
-                        .putInt(Prefs.KEY_PROTOCOL_PROGRESS_INDEX, index)
-                        .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, true)
-                        .apply()
-                }
+        val index = fragmentLoader.getCurrentCommandIndex()
+        if (index >= 0) {
+            sharedPref.edit()
+                .putInt(Prefs.KEY_PROTOCOL_PROGRESS_INDEX, index)
+                .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, true)
+                .apply()
+        }
+    }
+
+    private fun onProtocolCompleted() {
+        if (hasCompletedProtocol) return
+        hasCompletedProtocol = true
+        clearProtocolProgress()
+        logger.backupLogFile()
+        lifecycleScope.launch {
+            delay(500)
+            if (!isFinishing) {
+                finish()
             }
         }
     }
