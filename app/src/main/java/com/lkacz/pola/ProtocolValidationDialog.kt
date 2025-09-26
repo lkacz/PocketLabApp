@@ -170,6 +170,8 @@ class ProtocolValidationDialog : DialogFragment() {
                     prefs.edit()
                         .putString(Prefs.KEY_PROTOCOL_URI, uri.toString())
                         .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, getFileName(uri) ?: "Untitled")
+                        .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                        .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
                         .apply()
                     hasUnsavedChanges = false
                     revalidateAndRefreshUI()
@@ -206,6 +208,8 @@ class ProtocolValidationDialog : DialogFragment() {
                 prefs.edit()
                     .putString(Prefs.KEY_PROTOCOL_URI, uri.toString())
                     .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, getFileName(uri) ?: "Untitled")
+                    .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                    .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
                     .apply()
                 revalidateAndRefreshUI()
                 Toast.makeText(requireContext(), "Protocol loaded.", Toast.LENGTH_SHORT).show()
@@ -805,6 +809,8 @@ class ProtocolValidationDialog : DialogFragment() {
             prefs
                 .edit()
                 .remove(Prefs.KEY_PROTOCOL_URI)
+                .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
                 .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, untitledName)
                 .putString(Prefs.KEY_CURRENT_MODE, "custom")
                 .apply()
@@ -2172,11 +2178,21 @@ class ProtocolValidationDialog : DialogFragment() {
                 val content = reader.readFileContent(requireContext(), uri)
                 if (content.startsWith("Error reading file:")) {
                     // The ProtocolReader reported an error string instead of throwing
-                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
+                    prefs.edit()
+                        .remove(Prefs.KEY_PROTOCOL_URI)
+                        .remove(Prefs.KEY_CURRENT_PROTOCOL_NAME)
+                        .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                        .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+                        .apply()
                     pendingLoadErrorMessage = content.replace("Error reading file:", "Failed to load protocol:").trim()
                     loadErrorPlaceholder
                 } else if (content.startsWith("Error:")) {
-                    prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
+                    prefs.edit()
+                        .remove(Prefs.KEY_PROTOCOL_URI)
+                        .remove(Prefs.KEY_CURRENT_PROTOCOL_NAME)
+                        .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                        .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+                        .apply()
                     pendingLoadErrorMessage = content.removePrefix("Error:").trim().ifEmpty { "Unknown error when loading protocol." }
                     loadErrorPlaceholder
                 } else {
@@ -2184,7 +2200,12 @@ class ProtocolValidationDialog : DialogFragment() {
                 }
             } catch (e: SecurityException) {
                 // Permission lost (e.g., process death) or revoked: clear stored URI and fall back
-                prefs.edit().remove(Prefs.KEY_PROTOCOL_URI).remove(Prefs.KEY_CURRENT_PROTOCOL_NAME).apply()
+                prefs.edit()
+                    .remove(Prefs.KEY_PROTOCOL_URI)
+                    .remove(Prefs.KEY_CURRENT_PROTOCOL_NAME)
+                    .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+                    .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+                    .apply()
                 pendingLoadErrorMessage = "Permission to access the saved protocol was revoked."
                 loadErrorPlaceholder
             } catch (e: Exception) {

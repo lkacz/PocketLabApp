@@ -8,8 +8,6 @@
 // ITEM_SIZE;30
 // RESPONSE_SIZE;24
 
-
-
 INPUTFIELD;About you no brackets;Plesae provide information about you;Favourite food;Interests;City of Origin;Complete[HOLD]
 
 TIMER_SOUND;sound9.wav

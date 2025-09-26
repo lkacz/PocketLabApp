@@ -12,9 +12,12 @@ import android.transition.Fade
 import android.os.StrictMode
 // BuildConfig is generated in the same package; no explicit import needed
 import timber.log.Timber
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
@@ -26,6 +29,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private lateinit var logger: Logger
     private lateinit var protocolManager: ProtocolManager
     private lateinit var sharedPref: SharedPreferences
+    private var pendingResumeIndex: Int? = null
 
     private val fragmentContainerId = ViewGroup.generateViewId()
 
@@ -80,9 +84,8 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         val serviceIntent = Intent(this, MyForegroundService::class.java)
         startForegroundService(serviceIntent)
 
-        val hasStoredProtocol = savedInstanceState == null && !sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null).isNullOrBlank()
-        if (hasStoredProtocol) {
-            fragmentContainer.post { resumeLastProtocolIfAvailable() }
+        if (savedInstanceState == null) {
+            maybeShowResumeProtocolPrompt(fragmentContainer)
         }
     }
 
@@ -91,6 +94,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol = protocolManager.getManipulatedProtocol()
         fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
+        val resumeIndex = pendingResumeIndex
+        if (resumeIndex != null) {
+            fragmentLoader.prepareForResume(resumeIndex)
+        } else {
+            clearProtocolProgress()
+        }
+        pendingResumeIndex = null
         loadNextFragment()
     }
 
@@ -108,6 +118,8 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             allowEnterTransitionOverlap = true
             allowReturnTransitionOverlap = true
         }
+
+        handleProgressFor(newFragment)
 
         when (mode) {
             "off" -> {
@@ -197,6 +209,8 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             allowReturnTransitionOverlap = true
         }
 
+        handleProgressFor(newFragment)
+
         when (mode) {
             "off" -> {
                 supportFragmentManager.beginTransaction().apply {
@@ -275,6 +289,53 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         }
     }
 
+    private fun maybeShowResumeProtocolPrompt(container: View) {
+        val storedUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)
+        val storedIndex = sharedPref.getInt(Prefs.KEY_PROTOCOL_PROGRESS_INDEX, -1)
+        val wasInProgress = sharedPref.getBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+        val shouldPrompt = !storedUri.isNullOrBlank() && storedIndex >= 0 && wasInProgress
+        if (shouldPrompt) {
+            container.post { showResumeProtocolDialog(storedIndex) }
+        }
+    }
+
+    private fun showResumeProtocolDialog(resumeIndex: Int) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_resume_protocol_title))
+            .setMessage(getString(R.string.dialog_resume_protocol_message))
+            .setPositiveButton(R.string.dialog_resume_protocol_continue) { _, _ ->
+                resumeLastProtocolIfAvailable(resumeIndex)
+            }
+            .setNegativeButton(R.string.dialog_resume_protocol_start_over) { _, _ ->
+                clearProtocolProgress()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun handleProgressFor(fragment: Fragment) {
+        if (!::fragmentLoader.isInitialized) return
+        when (fragment) {
+            is EndFragment -> clearProtocolProgress()
+            else -> {
+                val index = fragmentLoader.getCurrentCommandIndex()
+                if (index >= 0) {
+                    sharedPref.edit()
+                        .putInt(Prefs.KEY_PROTOCOL_PROGRESS_INDEX, index)
+                        .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, true)
+                        .apply()
+                }
+            }
+        }
+    }
+
+    private fun clearProtocolProgress() {
+        sharedPref.edit()
+            .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+            .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+            .apply()
+    }
+
     private fun createNotificationChannel() {
         val channel =
             NotificationChannel(
@@ -286,11 +347,14 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         manager.createNotificationChannel(channel)
     }
 
-    private fun resumeLastProtocolIfAvailable() {
+    private fun resumeLastProtocolIfAvailable(resumeIndex: Int) {
         val uriString = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null) ?: return
         val parsedUri = runCatching { Uri.parse(uriString) }.getOrNull()
         if (parsedUri != null) {
+            pendingResumeIndex = resumeIndex
             onProtocolSelected(parsedUri)
+        } else {
+            clearProtocolProgress()
         }
     }
 }

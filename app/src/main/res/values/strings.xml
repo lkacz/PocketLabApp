@@ -129,6 +129,10 @@
     <string name="dialog_title_new_protocol">New Protocol</string>
     <string name="dialog_message_new_protocol_unsaved">You have unsaved changes. Do you want to save the current protocol before creating a new one?</string>
     <string name="toast_new_protocol_created">New protocol created</string>
+    <string name="dialog_resume_protocol_title">Resume protocol?</string>
+    <string name="dialog_resume_protocol_message">It looks like a protocol run was interrupted. Do you want to continue where you left off?</string>
+    <string name="dialog_resume_protocol_continue">Continue where you left off</string>
+    <string name="dialog_resume_protocol_start_over">Don\u2019t continue</string>
     <string name="action_delete_command">Delete</string>
     <string name="toast_command_deleted">Command deleted</string>
     <string name="action_move_up">Move Up</string>

@@ -191,6 +191,7 @@ class StartFragment : Fragment() {
                                 .putString(Prefs.KEY_CURRENT_MODE, "tutorial")
                                 .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, tutorialName)
                                 .apply()
+                            clearStoredProgress()
                             protocolUri = Uri.parse(assetUriString)
                             updateProtocolNameDisplay(tutorialName)
                         }
@@ -210,6 +211,7 @@ class StartFragment : Fragment() {
                                 .putString(Prefs.KEY_CURRENT_MODE, "demo")
                                 .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, demoName)
                                 .apply()
+                            clearStoredProgress()
                             protocolUri = Uri.parse(assetUriString)
                             updateProtocolNameDisplay(demoName)
                         }
@@ -426,6 +428,7 @@ class StartFragment : Fragment() {
                     .putString(Prefs.KEY_CURRENT_PROTOCOL_NAME, fileName)
                     .putString(Prefs.KEY_CURRENT_MODE, "custom")
                     .apply()
+                clearStoredProgress()
                 protocolUri = uri
                 updateProtocolNameDisplay(fileName)
             } else {
@@ -488,6 +491,14 @@ class StartFragment : Fragment() {
         currentProtocolName = protocolName
         val displayName = protocolName?.takeIf { it.isNotBlank() } ?: getString(R.string.value_none)
         tvSelectedProtocolName.text = displayName
+    }
+
+    private fun clearStoredProgress() {
+        sharedPref
+            .edit()
+            .remove(Prefs.KEY_PROTOCOL_PROGRESS_INDEX)
+            .putBoolean(Prefs.KEY_PROTOCOL_IN_PROGRESS, false)
+            .apply()
     }
 
     private fun showToast(message: String) {

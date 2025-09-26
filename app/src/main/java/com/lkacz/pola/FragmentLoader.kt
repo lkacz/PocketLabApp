@@ -23,6 +23,12 @@ class FragmentLoader(
         }
     }
 
+    fun getCurrentCommandIndex(): Int = currentIndex
+
+    fun prepareForResume(resumeIndex: Int) {
+        currentIndex = if (resumeIndex >= 0) resumeIndex - 1 else -1
+    }
+
     fun loadNextFragment(): Fragment {
         while (true) {
             currentIndex++
