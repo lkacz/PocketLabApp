@@ -2484,8 +2484,9 @@ class ProtocolValidationDialog : DialogFragment() {
                 setOnFocusChangeListener { _, hasFocus -> if (hasFocus) showDropDown() }
             }
         commandInputLayout.addView(commandDropdown)
+        var lockedCommandLabel: TextView? = null
         if (isEdit) {
-            selectionContainer.addView(
+            val lockedLabel =
                 TextView(ctx).apply {
                     text = selectedCommand.ifBlank { getString(R.string.value_none) }
                     setTypeface(null, Typeface.BOLD)
@@ -2493,8 +2494,9 @@ class ProtocolValidationDialog : DialogFragment() {
                     setPadding(dp(16), dp(10), dp(16), dp(10))
                     setTextColor(Color.parseColor("#1F2937"))
                     setBackgroundColor(Color.parseColor("#EEF2FF"))
-                },
-            )
+                }
+            lockedCommandLabel = lockedLabel
+            selectionContainer.addView(lockedLabel)
             selectionContainer.addView(
                 TextView(ctx).apply {
                     text = getString(R.string.insert_command_edit_locked_hint)
@@ -2663,6 +2665,101 @@ class ProtocolValidationDialog : DialogFragment() {
         val holdDetectRegex = Regex("\\[HOLD]", RegexOption.IGNORE_CASE)
         val holdStripRegex = Regex("\\s*\\[HOLD]", RegexOption.IGNORE_CASE)
         var lastHoldCommand: String? = null
+
+        val randomizableCommandPairs =
+            listOf(
+                "SCALE" to "SCALE[RANDOMIZED]",
+                "INPUTFIELD" to "INPUTFIELD[RANDOMIZED]",
+            )
+        val randomizableCommandMap = randomizableCommandPairs.toMap()
+        val randomizedToBaseMap = randomizableCommandPairs.associate { (base, randomized) -> randomized to base }
+
+        fun baseCommandName(command: String): String = randomizedToBaseMap[command] ?: command
+
+        fun commandWithRandomization(
+            base: String,
+            randomize: Boolean,
+        ): String = if (randomize) randomizableCommandMap[base] ?: base else base
+
+        fun isRandomizedCommandName(command: String): Boolean = randomizedToBaseMap.containsKey(command)
+
+        val randomizeToggle =
+            com.google.android.material.checkbox.MaterialCheckBox(ctx).apply {
+                text = getString(R.string.label_randomize_order)
+                textSize = applyScale(13f)
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    )
+                visibility = View.GONE
+                contentDescription = getString(R.string.cd_randomize_toggle_off)
+                setPadding(dp(4), dp(6), dp(4), dp(6))
+            }
+        var isProgrammaticRandomizeChange = false
+        val randomizeHelperText =
+            TextView(ctx).apply {
+                text = getString(R.string.hint_randomize_scale)
+                setTextColor(
+                    com.google.android.material.color.MaterialColors.getColor(
+                        this,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        Color.parseColor("#6B7280"),
+                    ),
+                )
+                textSize = applyScale(12f)
+                visibility = View.GONE
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(4)
+                    }
+            }
+        val randomizeSection =
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        topMargin = dp(8)
+                    }
+                visibility = View.GONE
+                addView(randomizeToggle)
+                addView(randomizeHelperText)
+            }
+    TooltipCompat.setTooltipText(randomizeToggle, getString(R.string.hint_randomize_scale))
+
+        randomizeToggle.setOnCheckedChangeListener { _, isChecked ->
+            if (isProgrammaticRandomizeChange) {
+                return@setOnCheckedChangeListener
+            }
+            val base = baseCommandName(selectedCommand)
+            if (!randomizableCommandMap.containsKey(base)) {
+                isProgrammaticRandomizeChange = true
+                randomizeToggle.isChecked = false
+                isProgrammaticRandomizeChange = false
+                randomizeToggle.contentDescription = getString(R.string.cd_randomize_toggle_off)
+                return@setOnCheckedChangeListener
+            }
+            val updatedCommand = commandWithRandomization(base, isChecked)
+            if (updatedCommand != selectedCommand) {
+                selectedCommand = updatedCommand
+                val cdRes = if (isChecked) R.string.cd_randomize_toggle_on else R.string.cd_randomize_toggle_off
+                randomizeToggle.contentDescription = getString(cdRes)
+                if (!isEdit) {
+                    commandDropdown.setText(selectedCommand, false)
+                } else {
+                    lockedCommandLabel?.text = selectedCommand.ifBlank { getString(R.string.value_none) }
+                }
+            } else {
+                val cdRes = if (isChecked) R.string.cd_randomize_toggle_on else R.string.cd_randomize_toggle_off
+                randomizeToggle.contentDescription = getString(cdRes)
+            }
+        }
 
         fun stripHoldToken(raw: String?): Pair<String, Boolean> {
             if (raw.isNullOrBlank()) {
@@ -3299,6 +3396,39 @@ class ProtocolValidationDialog : DialogFragment() {
         parameterCard.addView(parameterContainer)
         inner.addView(parameterCard)
 
+        fun detachRandomizeSection() {
+            (randomizeSection.parent as? ViewGroup)?.removeView(randomizeSection)
+            randomizeSection.visibility = View.GONE
+            randomizeToggle.visibility = View.GONE
+            randomizeHelperText.visibility = View.GONE
+        }
+
+        fun attachRandomizeSectionFor(command: String) {
+            val base = baseCommandName(command)
+            if (!randomizableCommandMap.containsKey(base)) {
+                detachRandomizeSection()
+                isProgrammaticRandomizeChange = true
+                randomizeToggle.isChecked = false
+                isProgrammaticRandomizeChange = false
+                randomizeToggle.contentDescription = getString(R.string.cd_randomize_toggle_off)
+                return
+            }
+            detachRandomizeSection()
+            val helperRes = if (base == "SCALE") R.string.hint_randomize_scale else R.string.hint_randomize_inputfields
+            randomizeHelperText.text = getString(helperRes)
+            TooltipCompat.setTooltipText(randomizeToggle, getString(helperRes))
+            val isRandom = isRandomizedCommandName(command)
+            isProgrammaticRandomizeChange = true
+            randomizeToggle.isChecked = isRandom
+            isProgrammaticRandomizeChange = false
+            val cdRes = if (isRandom) R.string.cd_randomize_toggle_on else R.string.cd_randomize_toggle_off
+            randomizeToggle.contentDescription = getString(cdRes)
+            randomizeSection.visibility = View.VISIBLE
+            randomizeToggle.visibility = View.VISIBLE
+            randomizeHelperText.visibility = View.VISIBLE
+            paramGroup.addView(randomizeSection)
+        }
+
         fun updateHoldToggleVisibility(
             command: String,
             continueIncluded: Boolean,
@@ -3345,6 +3475,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 return
             }
             paramGroup.removeAllViews()
+            detachRandomizeSection()
             var continueIncluded = false
             when (selectedCommand) {
                 "INSTRUCTION" -> {
@@ -3363,6 +3494,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 "SCALE", "SCALE[RANDOMIZED]" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
+                    attachRandomizeSectionFor(selectedCommand)
                     rebuildScaleItemFields(emptyList())
                     rebuildScaleResponseFields(emptyList())
                     paramGroup.addView(scaleItemsSection)
@@ -3371,6 +3503,7 @@ class ProtocolValidationDialog : DialogFragment() {
                 "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                     paramGroup.addView(header)
                     paramGroup.addView(body)
+                    attachRandomizeSectionFor(selectedCommand)
                     rebuildInputFieldEntries(emptyList())
                     paramGroup.addView(inputFieldSection)
                     paramGroup.addView(continueSection)
