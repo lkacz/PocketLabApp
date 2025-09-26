@@ -32,7 +32,7 @@ class StartFragment : Fragment() {
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
     private lateinit var participantIdInput: TextInputEditText
-    private lateinit var tvSelectedOutputFolder: TextView
+    private var tvSelectedOutputFolder: TextView? = null
     private var protocolUri: Uri? = null
     private var currentProtocolName: String? = null
     private lateinit var sharedPref: SharedPreferences
@@ -187,7 +187,6 @@ class StartFragment : Fragment() {
                                 bottomMargin = dpToPx(12)
                             }
                         hint = getString(R.string.label_participant_id)
-                        helperText = getString(R.string.helper_participant_id)
                         endIconMode = TextInputLayout.END_ICON_CLEAR_TEXT
                         endIconContentDescription = getString(R.string.cd_clear_participant_id)
                     }
@@ -282,22 +281,6 @@ class StartFragment : Fragment() {
 
         val fileSection =
             sectionCard(getString(R.string.section_file)) { section ->
-                section.addView(
-                    TextView(requireContext()).apply {
-                        text = getString(R.string.label_selected_output_folder)
-                        textSize = 12f
-                        setPadding(0, 0, 0, dpToPx(4))
-                    },
-                )
-
-                tvSelectedOutputFolder =
-                    TextView(requireContext()).apply {
-                        textSize = 14f
-                        setPadding(0, 0, 0, dpToPx(12))
-                    }
-                updateOutputFolderDisplay(outputFolderUri)
-                section.addView(tvSelectedOutputFolder)
-
                 section.addView(
                     createSecondaryButton(
                         text = getString(R.string.action_select_output_folder),
@@ -670,13 +653,13 @@ class StartFragment : Fragment() {
     }
 
     private fun updateOutputFolderDisplay(uri: Uri?) {
-        if (!::tvSelectedOutputFolder.isInitialized) return
+        val textView = tvSelectedOutputFolder ?: return
         val displayName =
             uri?.let {
                 DocumentFile.fromTreeUri(requireContext(), it)?.name
                     ?: it.lastPathSegment
             } ?: getString(R.string.value_none)
-        tvSelectedOutputFolder.text = displayName
+        textView.text = displayName
     }
 
     private fun clearStoredProgress() {
