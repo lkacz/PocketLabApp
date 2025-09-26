@@ -174,20 +174,41 @@ class ProtocolValidator {
             "INSTRUCTION" -> if (line.count { it == ';' } != 3) err = append(err, "INSTRUCTION must have exactly 3 semicolons (4 segments)")
             "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
                 if (parts.size < 4) err = append(err, "$command must have at least 4 segments")
-                // Expect at least one field entry inside bracket form or as trailing segments
-                // Format: INPUTFIELD;HEADER;BODY;field1,field2,...;[optional more]
-                val fieldSegment = parts.getOrNull(3)?.trim().orEmpty()
-                if (fieldSegment.isEmpty()) err = append(err, "$command needs at least one field definition in 4th segment")
-                // Randomized variant should list at least 2 fields to make sense
-                if (command == "INPUTFIELD[RANDOMIZED]") {
-                    val definedFields =
-                        fieldSegment
-                            .split(",")
-                            .map { it.trim() }
-                            .count { it.isNotEmpty() }
-                    if (definedFields < 2) {
-                        warn = append(warn, "Randomized input field has fewer than 2 fields")
+
+                fun parseFieldTokens(raw: String): List<String> {
+                    val trimmed = raw.trim()
+                    if (trimmed.isEmpty()) return emptyList()
+                    if (trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length >= 2) {
+                        val inner = trimmed.substring(1, trimmed.length - 1)
+                        return inner.split(';', ',').map { it.trim() }.filter { it.isNotEmpty() }
                     }
+                    return trimmed.split(';', ',').map { it.trim() }.filter { it.isNotEmpty() }
+                }
+
+                val tailSegments = parts.drop(3)
+                val candidateSegments =
+                    when {
+                        tailSegments.isEmpty() -> emptyList()
+                        tailSegments.size == 1 -> tailSegments
+                        else -> {
+                            val last = tailSegments.last().trim()
+                            val looksLikeContinue =
+                                last.contains("[HOLD]", ignoreCase = true) ||
+                                    last.equals("continue", ignoreCase = true) ||
+                                    last.equals("complete", ignoreCase = true) ||
+                                    last.equals("next", ignoreCase = true)
+                            val trimmed = if (looksLikeContinue) tailSegments.dropLast(1) else tailSegments
+                            if (trimmed.isEmpty()) tailSegments else trimmed
+                        }
+                    }
+
+                val definedFields = candidateSegments.flatMap { parseFieldTokens(it) }
+
+                if (definedFields.isEmpty()) {
+                    err = append(err, "$command needs at least one field definition in 4th segment")
+                }
+                if (command == "INPUTFIELD[RANDOMIZED]" && definedFields.size < 2) {
+                    warn = append(warn, "Randomized input field has fewer than 2 fields")
                 }
             }
             "SCALE", "SCALE[RANDOMIZED]" ->
