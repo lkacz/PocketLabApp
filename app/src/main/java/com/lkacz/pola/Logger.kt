@@ -1,8 +1,12 @@
 package com.lkacz.pola
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.documentfile.provider.DocumentFile
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -40,6 +44,8 @@ class Logger private constructor(private val context: Context) {
         sharedPref.getString("STUDY_ID", null)?.takeIf { it.isNotBlank() }?.let { sanitizeStudyIdForFile(it) }
 
     private var currentFileName: String = buildFileName(activeParticipantId, activeStudyId)
+    private var outputFolderUri: Uri? =
+        sharedPref.getString(Prefs.KEY_OUTPUT_FOLDER_URI, null)?.let(Uri::parse)
 
     private val storageRoot: File =
         context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -52,6 +58,7 @@ class Logger private constructor(private val context: Context) {
 
     @Volatile
     private var isBackupCreated = false
+    private val sharedExportState = Collections.synchronizedSet(mutableSetOf<String>())
 
     init {
         fileOperations.createFileAndFolder()
@@ -109,6 +116,11 @@ class Logger private constructor(private val context: Context) {
         applyIdentifiers(activeParticipantId, sanitized)
     }
 
+    fun updateOutputFolderUri(newUri: Uri?) {
+        outputFolderUri = newUri
+        sharedExportState.removeAll { it.startsWith(OUTPUT_EXPORT_KEY_PREFIX) }
+    }
+
     fun backupLogFile() {
         scope.launch {
             awaitPendingWrites()
@@ -121,6 +133,8 @@ class Logger private constructor(private val context: Context) {
                     BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
                     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
                 )
+
+                exportLogToSharedLocations(currentFile, xlsxFile)
 
                 if (isBackupCreated) return@launch
 
@@ -217,6 +231,7 @@ class Logger private constructor(private val context: Context) {
             activeParticipantId = participantId
             activeStudyId = studyId
             isBackupCreated = false
+            sharedExportState.clear()
         } catch (ioe: IOException) {
             ioe.printStackTrace()
         }
@@ -239,10 +254,117 @@ class Logger private constructor(private val context: Context) {
         snapshot.forEach { it.join() }
     }
 
+    private fun exportLogToSharedLocations(csvFile: File, xlsxFile: File?) {
+        val baseName = currentFileName.removeSuffix(".csv")
+        val csvName = "${baseName}.csv"
+        val xlsxName = "${baseName}.xlsx"
+
+        if (!sharedExportState.contains(DOWNLOADS_EXPORT_KEY)) {
+            val downloadsCsv = exportFileToDownloads(csvName, "text/csv", csvFile)
+            val downloadsXlsx =
+                if (xlsxFile?.exists() == true) {
+                    exportFileToDownloads(
+                        xlsxName,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        xlsxFile,
+                    )
+                } else {
+                    false
+                }
+            if (downloadsCsv || downloadsXlsx) {
+                sharedExportState.add(DOWNLOADS_EXPORT_KEY)
+            }
+        }
+
+        val targetUri = outputFolderUri
+        if (targetUri != null) {
+            val exportKey = OUTPUT_EXPORT_KEY_PREFIX + targetUri.toString()
+            if (!sharedExportState.contains(exportKey)) {
+                val folder = DocumentFile.fromTreeUri(context, targetUri)
+                if (folder != null && folder.isDirectory) {
+                    val csvExported = exportFileToDocumentTree(folder, csvName, "text/csv", csvFile)
+                    val xlsxExported =
+                        if (xlsxFile?.exists() == true) {
+                            exportFileToDocumentTree(
+                                folder,
+                                xlsxName,
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                xlsxFile,
+                            )
+                        } else {
+                            false
+                        }
+                    if (csvExported || xlsxExported) {
+                        sharedExportState.add(exportKey)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun exportFileToDownloads(
+        displayName: String,
+        mimeType: String,
+        sourceFile: File,
+    ): Boolean {
+        if (!sourceFile.exists()) return false
+        return try {
+            val resolver = context.contentResolver
+            val relativePath = Environment.DIRECTORY_DOWNLOADS + "/PoLA_Data/"
+            val selection =
+                "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND ${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
+            val selectionArgs = arrayOf(displayName, relativePath)
+            resolver.delete(MediaStore.Downloads.EXTERNAL_CONTENT_URI, selection, selectionArgs)
+
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+
+            val uri: Uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return false
+            resolver.openOutputStream(uri)?.use { output ->
+                sourceFile.inputStream().use { input -> input.copyTo(output) }
+            } ?: return false
+
+            values.clear()
+            values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            true
+        } catch (ioe: IOException) {
+            ioe.printStackTrace()
+            false
+        }
+    }
+
+    private fun exportFileToDocumentTree(
+        folder: DocumentFile,
+        displayName: String,
+        mimeType: String,
+        sourceFile: File,
+    ): Boolean {
+        if (!sourceFile.exists()) return false
+        return try {
+            folder.findFile(displayName)?.let { existing -> existing.delete() }
+            val target = folder.createFile(mimeType, displayName) ?: return false
+            context.contentResolver.openOutputStream(target.uri)?.use { output ->
+                sourceFile.inputStream().use { input -> input.copyTo(output) }
+            } ?: return false
+            true
+        } catch (ioe: IOException) {
+            ioe.printStackTrace()
+            false
+        }
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: Logger? = null
         private const val backupFolderName = "PoLA_Backup"
+        private const val DOWNLOADS_EXPORT_KEY = "downloads"
+        private const val OUTPUT_EXPORT_KEY_PREFIX = "output:"
 
         fun getInstance(context: Context): Logger {
             return INSTANCE ?: synchronized(this) {

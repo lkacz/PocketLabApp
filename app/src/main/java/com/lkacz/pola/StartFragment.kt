@@ -1,6 +1,7 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Typeface
 import android.net.Uri
@@ -16,6 +17,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -30,9 +32,11 @@ class StartFragment : Fragment() {
     private lateinit var listener: OnProtocolSelectedListener
     private lateinit var tvSelectedProtocolName: TextView
     private lateinit var participantIdInput: TextInputEditText
+    private lateinit var tvSelectedOutputFolder: TextView
     private var protocolUri: Uri? = null
     private var currentProtocolName: String? = null
     private lateinit var sharedPref: SharedPreferences
+    private var outputFolderUri: Uri? = null
     private var devTapCount = 0
     private val devTapThreshold = 7
     private var devButtonsAdded = false
@@ -56,6 +60,15 @@ class StartFragment : Fragment() {
             }
         }
 
+    private val outputFolderPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                handleOutputFolderSelection(uri)
+            } else {
+                showToast(getString(R.string.toast_output_folder_cancelled))
+            }
+        }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         listener = context as? OnProtocolSelectedListener
@@ -63,6 +76,7 @@ class StartFragment : Fragment() {
         sharedPref = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         protocolUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)?.let(Uri::parse)
         currentProtocolName = sharedPref.getString(Prefs.KEY_CURRENT_PROTOCOL_NAME, null)
+        outputFolderUri = sharedPref.getString(Prefs.KEY_OUTPUT_FOLDER_URI, null)?.let(Uri::parse)
         resourcesFolderManager = ResourcesFolderManager(context)
     }
 
@@ -189,6 +203,32 @@ class StartFragment : Fragment() {
         val fileOpsSection =
             sectionCard(getString(R.string.section_protocol_files)) { section ->
                 section.addView(
+                    TextView(requireContext()).apply {
+                        text = getString(R.string.label_selected_output_folder)
+                        textSize = 12f
+                        setPadding(0, 0, 0, dpToPx(4))
+                    },
+                )
+
+                tvSelectedOutputFolder =
+                    TextView(requireContext()).apply {
+                        textSize = 14f
+                        setPadding(0, 0, 0, dpToPx(12))
+                    }
+                updateOutputFolderDisplay(outputFolderUri)
+                section.addView(tvSelectedOutputFolder)
+
+                section.addView(
+                    createSecondaryButton(
+                        text = getString(R.string.action_select_output_folder),
+                        icon = R.drawable.ic_folder_open,
+                    ) {
+                        showChangeOutputFolderConfirmation {
+                            outputFolderPicker.launch(outputFolderUri)
+                        }
+                    },
+                )
+                section.addView(
                     createSecondaryButton(
                         text = getString(R.string.action_select_resources_folder),
                         icon = R.drawable.ic_folder_open,
@@ -295,10 +335,12 @@ class StartFragment : Fragment() {
         super.onResume()
         protocolUri = sharedPref.getString(Prefs.KEY_PROTOCOL_URI, null)?.let(Uri::parse)
         currentProtocolName = sharedPref.getString(Prefs.KEY_CURRENT_PROTOCOL_NAME, currentProtocolName)
+        outputFolderUri = sharedPref.getString(Prefs.KEY_OUTPUT_FOLDER_URI, null)?.let(Uri::parse)
         val resolvedName =
             currentProtocolName?.takeIf { it.isNotBlank() }
                 ?: protocolUri?.let { fileUriUtils.getFileName(requireContext(), it) }
         updateProtocolNameDisplay(resolvedName)
+        updateOutputFolderDisplay(outputFolderUri)
         if (::participantIdInput.isInitialized) {
             val storedValue = sharedPref.getString(Prefs.KEY_PARTICIPANT_ID, "")?.trim().orEmpty()
             if (participantIdInput.text?.toString()?.trim() != storedValue) {
@@ -526,6 +568,15 @@ class StartFragment : Fragment() {
         )
     }
 
+    private fun showChangeOutputFolderConfirmation(onConfirm: () -> Unit) {
+        AlertDialogBuilderUtils.showConfirmation(
+            requireContext(),
+            getString(R.string.dialog_title_output_folder),
+            getString(R.string.dialog_message_output_folder),
+            onConfirm,
+        )
+    }
+
     private fun updateProtocolNameDisplay(protocolName: String?) {
         currentProtocolName = protocolName
         val displayName = protocolName?.takeIf { it.isNotBlank() } ?: getString(R.string.value_none)
@@ -542,6 +593,44 @@ class StartFragment : Fragment() {
             }
             apply()
         }
+    }
+
+    private fun handleOutputFolderSelection(uri: Uri) {
+        val resolver = requireContext().contentResolver
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        try {
+            resolver.takePersistableUriPermission(uri, flags)
+        } catch (_: SecurityException) {
+            showToast(getString(R.string.toast_output_folder_permission_denied))
+            return
+        }
+        outputFolderUri?.takeIf { it != uri }?.let {
+            try {
+                resolver.releasePersistableUriPermission(it, flags)
+            } catch (_: SecurityException) {
+                // Ignore if permission was already revoked
+            } catch (_: IllegalArgumentException) {
+                // Ignore if permission cannot be released
+            }
+        }
+        outputFolderUri = uri
+        sharedPref
+            .edit()
+            .putString(Prefs.KEY_OUTPUT_FOLDER_URI, uri.toString())
+            .apply()
+        updateOutputFolderDisplay(uri)
+        Logger.getInstance(requireContext()).updateOutputFolderUri(uri)
+        showToast(getString(R.string.toast_output_folder_set))
+    }
+
+    private fun updateOutputFolderDisplay(uri: Uri?) {
+        if (!::tvSelectedOutputFolder.isInitialized) return
+        val displayName =
+            uri?.let {
+                DocumentFile.fromTreeUri(requireContext(), it)?.name
+                    ?: it.lastPathSegment
+            } ?: getString(R.string.value_none)
+        tvSelectedOutputFolder.text = displayName
     }
 
     private fun clearStoredProgress() {

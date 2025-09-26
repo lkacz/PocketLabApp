@@ -12,6 +12,13 @@
     <string name="label_participant_id">Participant ID</string>
     <string name="helper_participant_id">Used to label exported data files.</string>
     <string name="cd_clear_participant_id">Clear participant ID</string>
+    <string name="label_selected_output_folder">Output folder</string>
+    <string name="action_select_output_folder">Select Output Folder</string>
+    <string name="toast_output_folder_set">Output folder updated.</string>
+    <string name="toast_output_folder_cancelled">Folder selection was cancelled.</string>
+    <string name="toast_output_folder_permission_denied">Could not access selected folder.</string>
+    <string name="dialog_title_output_folder">Change output folder?</string>
+    <string name="dialog_message_output_folder">The app will save exported data to the selected folder. Continue?</string>
     <string name="value_none">None</string>
     <string name="value_untitled_protocol">Untitled Protocol</string>
     <string name="action_start_study">Start Study</string>
