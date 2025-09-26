@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reaction Time (5)</title>
+<style>
+  html,body{margin:0;height:100%}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0f0f0f;color:#f2f2f2}
+  .wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px}
+  #target{width:100%;max-width:520px;height:40vh;min-height:260px;border-radius:16px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:clamp(20px,6vw,36px);user-select:none;-webkit-user-select:none;outline:none;border:2px solid #333;background:#222;transition:background .12s,color .12s,border-color .12s}
+  #target.wait{background:#222;color:#bbb}
+  #target.ready{background:#12a150;color:#fff;border-color:#1bd071}
+  #target.soon{background:#8e1a1a;color:#fff;border-color:#c33}
+  button{width:100%;max-width:520px;padding:14px 18px;font-size:18px;border-radius:12px;border:none;background:#2563eb;color:#fff}
+  button:disabled{opacity:.6}
+  ol{margin:0;padding-left:22px;width:100%;max-width:520px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .row{width:100%;max-width:520px;color:#cfcfcf;min-height:1.5em;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <button id="start">Start 5 Trials</button>
+  <div id="target" class="wait" role="button" tabindex="0" aria-label="Reaction target" aria-disabled="true">Tap when green</div>
+  <div class="row" id="status"></div>
+  <ol id="list"></ol>
+  <div class="row" id="avg"></div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const N=5;
+  const startBtn=document.getElementById('start');
+  const box=document.getElementById('target');
+  const status=document.getElementById('status');
+  const list=document.getElementById('list');
+  const avg=document.getElementById('avg');
+  let trial=0, times=[], timer=null, readyAt=0, state='idle';
+
+  const now = () => (window.performance && performance.now) ? performance.now() : Date.now();
+
+  function reset() {
+    trial=0; times=[]; clearTimeout(timer); timer=null; state='idle';
+    startBtn.disabled=false; startBtn.textContent='Start 5 Trials';
+    list.innerHTML=''; avg.textContent=''; status.textContent='';
+    box.className='wait'; box.textContent='Tap when green';
+    box.setAttribute('aria-disabled','true');
+  }
+
+  function scheduleReady() {
+    const delay=1000+Math.floor(Math.random()*2001);
+    timer=setTimeout(() => {
+      state='ready'; readyAt=now();
+      box.className='ready'; box.textContent='TAP!';
+      status.textContent='Trial '+trial+' of '+N;
+    }, delay);
+  }
+
+  function startTrial() {
+    trial++; state='waiting';
+    box.className='wait'; box.textContent='Wait...'; status.textContent='Get ready';
+    box.setAttribute('aria-disabled','false');
+    clearTimeout(timer); scheduleReady();
+  }
+
+  function finish() {
+    state='done'; startBtn.disabled=false; startBtn.textContent='Run Again';
+    box.className='wait'; box.textContent='Done';
+    const mean = times.reduce((a,b)=>a+b,0)/times.length;
+    avg.textContent='Average: '+Math.round(mean)+' ms';
+    box.setAttribute('aria-disabled','true');
+  }
+
+  function record(rt) {
+    times.push(rt);
+    const li=document.createElement('li');
+    li.textContent='Trial '+times.length+': '+Math.round(rt)+' ms';
+    list.appendChild(li);
+    if(times.length>=N) finish(); else startTrial();
+  }
+
+  function tooSoon() {
+    box.className='soon'; box.textContent='Too soon';
+    status.textContent='Trial restarted';
+    clearTimeout(timer);
+    setTimeout(()=>{ if(state==='done')return; state='waiting'; box.className='wait'; box.textContent='Wait...'; scheduleReady(); }, 600);
+  }
+
+  function onPress(e){
+    if(e && e.preventDefault) e.preventDefault();
+    if(state==='waiting'){ tooSoon(); return; }
+    if(state==='ready'){ record(now()-readyAt); return; }
+  }
+
+  startBtn.addEventListener('click', () => {
+    if(state==='idle' || state==='done'){ startBtn.disabled=true; startBtn.textContent='Running...'; startTrial(); }
+  });
+
+  box.addEventListener('pointerdown', onPress, {passive:false});
+  box.addEventListener('keydown', (e)=>{ if(e.key===' '||e.key==='Enter') onPress(e); });
+
+  reset();
+})();
+</script>
+</body>
+</html>

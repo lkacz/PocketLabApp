@@ -1,11 +1,10 @@
 STUDY_ID;TUTORIAL_ALL_FEATURES
 
 // RESOURCES FOLDER CONTENTS:
-// - tutorial_voiceover.mp3 (narration attached as multimedia placeholder)
-// - tutorial_ambient_loop.wav (looping ambience referenced in multimedia placeholders)
-// - tutorial_checkpoint_video.mp4 (short mp4 clip referenced from an instruction slide)
-// - tutorial_success_chime.wav (used by TIMER_SOUND)
-// - immersive_briefing.html (custom HTML slide generated alongside this protocol)
+// - pola_pic.jpg (sunset field photograph used as an inline image placeholder)
+// - pola_video.mp4 (short landscape clip appended to an instruction slide)
+// - pola_reaction_time.html (custom HTML reaction-time explainer page)
+// - pola_sound.mp3 (calming audio clip referenced as ambient sound and timer chime)
 
 // TRANSITIONS command sets the animation between fragments.
 TRANSITIONS;slide
@@ -37,17 +36,17 @@ TIMER_ALIGNMENT;CENTER
 // LOG command writes an informational entry into the exported execution log.
 LOG;[INFO] Tutorial appearance configured and ready
 
-// INSTRUCTION with multimedia placeholders for audio, video, and HTML references.
-INSTRUCTION;Welcome to the complete PoLA tutorial;This slide explains that every command, variant, and styling option will be demonstrated in this run. Explore the narration, ambient loop, and sample video to see how multimedia placeholders append to the body text.<tutorial_voiceover.mp3,70> <tutorial_ambient_loop.wav,40> <tutorial_checkpoint_video.mp4>;Begin the feature tour
+// INSTRUCTION with multimedia placeholders for audio, image, and video references.
+INSTRUCTION;Welcome to the complete PoLA tutorial;This slide showcases the PoLA media kit: enjoy the ambient soundtrack, branded image, and landscape video while you learn how placeholders append layered content.<pola_sound.mp3,60> <pola_pic.jpg> <pola_video.mp4,55>;Begin the feature tour
 
-// HTML command opens the immersive briefing that accompanies this protocol. The continue action is protected with a hold gesture.
-HTML;immersive_briefing.html;Return to the tutorial flow[HOLD]
+// HTML command opens the reaction-time explainer bundled with the tutorial. The continue action is protected with a hold gesture.
+HTML;pola_reaction_time.html;Return to the tutorial flow[HOLD]
 
 // TIMER illustrates scheduled reminders; the continue button still requires a hold gesture to reinforce intent.
 TIMER;Timed reminder demo;This TIMER waits 10 seconds to simulate a delayed prompt, reminding participants that timed tasks are possible within PoLA.;10;Ready for the next feature[HOLD]
 
 // TIMER_SOUND plays a chime from the resources folder once the preceding timer completes.
-TIMER_SOUND;tutorial_success_chime.wav
+TIMER_SOUND;pola_sound.mp3
 
 // SCALE captures a single rating with descriptive anchors.
 SCALE;Confidence check;Rate how confident you feel about navigating PoLA commands after reviewing the introduction.;Confidence level;Very unsure;Somewhat unsure;Neutral;Growing confident;Highly confident
