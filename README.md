@@ -6,6 +6,13 @@
 
 Developer quick start.
 
+## Release status
+- **Current version:** 1.0.0 (see [`CHANGELOG.md`](./CHANGELOG.md))
+- **Build targets:** Debug and release builds validated with Gradle 8 / Java 17
+- **Quality gates:** `ktlintCheck`, `testDebugUnitTest`, and `assembleRelease` must pass before tagging a release
+
+Refer to the changelog for detailed highlights and known considerations for the 1.0.0 rollout.
+
 ## Prerequisites
 - Android Studio / Android SDK (see `local.properties`)
 - Java 17 runtime (Gradle 8.x compatible) or as required by Android Gradle Plugin
