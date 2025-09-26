@@ -1,49 +1,424 @@
-<h2>About PoLA (Pocket Lab App)</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
 
-<b>Version:</b> 0.1<br>
-<b>Developed by:</b> <i>Lukasz Kaczmarek, PhD., Adam Mickiewicz University, AMU Psychophysiology Laboratory: Gaming & Streaming</i><br>
-<b>Release Date:</b> <i>March 14th, 2024</i><br>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+    }
 
-<hr>
+    main {
+      padding: 18px;
+    }
 
-<b>Overview:</b><br>
-<p>PoLA (Pocket Lab App) is a mobile application designed to advance the way behavioral research is conducted. Developed with the needs of researchers and participants in mind, PoLA offers a versatile platform for conducting a wide range of studies, from simple surveys to complex experimental protocols, in real-time and naturalistic settings. Leveraging the integration with PoLA's AI-powered <a href="https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-hela">HELPFUL ASSISTANT (HelA)</a>, it streamlines the process of experimental research development.</p>
+    header {
+      margin-bottom: 16px;
+    }
 
-<b>Key Features:</b>
-<ul>
-    <li><b>Dynamic Study Protocols:</b> Easily upload and manage custom study protocols. Create and revise protocols effortlessly using natural language instructions with HelA.</li>
-    <li><b>Real-time Data Collection:</b> Securely collect and store responses on the device, maintaining data integrity and confidentiality.</li>
-    <li><b>Alarm Management:</b> Schedule notifications and reminders to keep participants engaged and ensure timely task completion.</li>
-    <li><b>User-friendly Interface:</b> Minimum instruction is needed for participants to navigate through studies, enhanced by tutorials and demo protocols.</li>
-    <li><b>Offline Functionality:</b> Enables studies to be conducted without an internet connection, in any location.</li>
-       <li>
-         <b>AI-Powered Protocol Creation:</b> HelA assists in the generation and revision of experimental protocols using natural language processing. Redirect to <a href="https://chat.openai.com/g/g-Vz0JnWtqf-pola-helpful-assistant-hela">HELPFUL ASSISTANT</a>.
-       </li>
-</ul>
+    h1, h2, h3 {
+      line-height: 1.25;
+      margin-top: 0;
+    }
 
-<p><b>Getting Started:</b> Upon installation, explore the app through running demo and tutorial protocols. Utilize HelA for protocol creation and revision by providing natural language instructions.</p>
+    h2, h3 {
+      margin-top: 32px;
+    }
 
-<b>Development and Support:</b><br>
-<p>PoLA is an open-source project led by <i>Lukasz Kaczmarek, PhD</i>, from Adam Mickiewicz University. The app and HelA are continuously improved based on user feedback and research community needs. For inquiries, collaboration, or feedback, contact Dr. Kaczmarek at <i>lkacz@amu.edu.pl</i>.</p>
+    p {
+      margin: 0 0 12px 0;
+    }
 
-<b>Contact Us:</b><br>
-<p>For support, feedback, or inquiries about collaboration, please contact us at <i>lkacz@amu.edu.pl</i>.</p>
+    table.meta {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+    }
 
-<b>Contribute:</b><br>
-<p>Contributions from the research and developer communities are welcome. Whether it's suggesting new features, reporting bugs, or contributing code, your input helps enhance PoLA for everyone. Visit our GitHub page to get involved. Contributing under the GNU General Public License (GPL), your modifications will remain free and open.</p>
+    table.meta th {
+      text-align: left;
+      padding: 4px 12px 4px 0;
+      white-space: nowrap;
+      font-weight: 600;
+      vertical-align: top;
+    }
 
-<b>Acknowledgments:</b><br>
-<p>Gratitude is extended to all researchers, participants, and developers involved in PoLA's development and testing. Your contributions are crucial for meeting the evolving needs of the behavioral research community.</p>
+    table.meta td {
+      padding: 4px 0;
+    }
 
-<b>License:</b><br>
-<p>PoLA is licensed under the <i>GNU General Public License (GPL) version 3</i>, promoting the freedom to share, modify, and distribute the software under its terms.</p>
+    nav.quick-links {
+      border: 1px solid rgba(128, 128, 128, 0.4);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      background: rgba(128, 128, 128, 0.08);
+    }
 
-<b>Disclaimer:</b><br>
-<p>PoLA and HelA are provided "as is," without any warranty. The developers are not liable for any damages arising from the software's use.</p>
+    nav.quick-links ul {
+      list-style: none;
+      margin: 8px 0 0 0;
+      padding: 0;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-<hr>
+    nav.quick-links li {
+      margin: 0;
+    }
 
-<b>Read the full documentation:</b> For more detailed information, please visit
-<a href="https://raw.githubusercontent.com/lkacz/pocketlabapp/main/Pocket%20Lab%20App%20documentation.pdf">https://raw.githubusercontent.com/lkacz/pocketlabapp/main/Pocket%20Lab%20App%20documentation.pdf</a>
+    section {
+      margin-bottom: 36px;
+    }
 
-<p>Thank you for choosing PoLA for your research needs. We look forward to being part of your journey in unlocking new insights and advancing behavioral science.</p>
+    .section-body > p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul, ol {
+      margin: 0 0 16px 24px;
+    }
+
+    details {
+      border: 1px solid rgba(128, 128, 128, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      background: rgba(128, 128, 128, 0.06);
+    }
+
+    details summary {
+      font-weight: 600;
+      cursor: pointer;
+      margin: -12px -16px 12px -16px;
+      padding: 12px 16px;
+      list-style: none;
+    }
+
+    details summary::marker {
+      display: none;
+    }
+
+    details[open] summary {
+      border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+      margin-bottom: 16px;
+    }
+
+    dl.commands {
+      margin: 0;
+    }
+
+    dl.commands dt {
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-weight: 600;
+      margin: 16px 0 4px 0;
+    }
+
+    dl.commands dt:first-of-type {
+      margin-top: 0;
+    }
+
+    dl.commands dd {
+      margin: 0 0 8px 16px;
+    }
+
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 20px 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .chip-list li {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(128, 128, 128, 0.15);
+      font-size: 13px;
+    }
+
+    .callout {
+      border-left: 4px solid #3f51b5;
+      padding: 12px 16px;
+      background: rgba(63, 81, 181, 0.08);
+      border-radius: 8px;
+      margin: 12px 0 20px 0;
+    }
+
+    .back-to-top {
+      font-size: 13px;
+      text-align: right;
+      margin-top: 16px;
+    }
+
+    a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code {
+      background: rgba(128, 128, 128, 0.2);
+      padding: 0 4px;
+      border-radius: 4px;
+      font-size: 90%;
+    }
+
+    footer {
+      border-top: 1px solid rgba(128, 128, 128, 0.25);
+      padding-top: 16px;
+      margin-top: 32px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="top">About PoLA (Pocket Lab App)</h1>
+    <p class="tagline">A mobile research companion for behavioral scientists and field studies.</p>
+    <table class="meta">
+      <tr>
+        <th>Version</th>
+        <td>1.0.0</td>
+      </tr>
+      <tr>
+        <th>Developed by</th>
+        <td><i>Łukasz D. Kaczmarek, PhD, Adam Mickiewicz University, Psychophysiology Laboratory</i></td>
+      </tr>
+      <tr>
+        <th>License</th>
+        <td>GNU GPLv3 — community contributions are welcome.</td>
+      </tr>
+    </table>
+  </header>
+
+  <nav class="quick-links" aria-label="Quick links">
+    <strong>Jump to:</strong>
+    <ul>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#features">Key features</a></li>
+      <li><a href="#manual">Protocol command manual</a></li>
+      <li><a href="#contact">Contact &amp; support</a></li>
+    </ul>
+  </nav>
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <div class="section-body">
+      <p>PoLA (Pocket Lab App) puts full experimental control in your pocket. It is purpose-built for behavioral scientists who need to deliver structured tasks, capture responses in the field, and adapt studies quickly without recompiling the app. Protocols are stored as human-readable text files that the app interprets at runtime, enabling rapid iteration, reproducibility, and transparent auditing.</p>
+      <p>Studies can range from brief surveys to multi-stage experiments with timers, branching logic, customized layouts, and embedded media. Participants navigate the study through a touch-first interface, while researchers benefit from encrypted on-device storage, exportable logs, and precise control over timing, spacing, and presentation.</p>
+    </div>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="features">
+    <h2>Key features</h2>
+    <ul>
+      <li><strong>Protocol-driven workflow:</strong> Update behavioral tasks by editing a plain-text script—no rebuild required.</li>
+      <li><strong>Protocol Manager GUI:</strong> Build protocols with the visual Protocol Manager, then export to text when you need fine-grained control.</li>
+      <li><strong>Rich participant experiences:</strong> Combine instructions, timers, scales, open fields, HTML snippets, images, audio, and video in a single flow.</li>
+      <li><strong>Research-oriented logging:</strong> Automatic study logs capture navigation, timestamps, and device context for auditing.</li>
+      <li><strong>Flexible styling:</strong> Fine-tune typography, alignment, colors, spacing, and button placement to match study branding or accessibility needs.</li>
+      <li><strong>Randomization and branching:</strong> Shuffle stimuli or direct participants to labeled sections with <code>RANDOMIZE_ON</code> / <code>RANDOMIZE_OFF</code>, labels, and <code>GOTO</code> commands.</li>
+      <li><strong>Offline-first execution:</strong> Run complete protocols without a network connection and export data securely when ready.</li>
+      <li><strong>Researcher utilities:</strong> Built-in protocol validator, undo/redo, quick fixes, and developer tools accelerate authoring and QA.</li>
+    </ul>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="manual">
+    <h2>Protocol command manual</h2>
+    <p>This reference describes every command the runtime understands. Protocols are plain-text files encoded in UTF-8. Each non-empty line represents one command. Values are separated with semicolons (<code>;</code>). Lines beginning with <code>//</code> are comments and ignored during execution.</p>
+
+    <div class="callout">
+      <strong>Quick tips:</strong>
+      <ul>
+        <li>Wrap values containing semicolons inside quotation marks (<code>"value;with;semicolons"</code>) or use square brackets.</li>
+        <li>Resource references (images, audio) should match the filenames stored in your project resources.</li>
+        <li>Commands are case-insensitive, but the conventional style is UPPERCASE.</li>
+        <li>Media placeholders such as <code>&lt;audio.mp3&gt;</code>, <code>&lt;video.mp4,60&gt;</code>, or <code>&lt;custom.html&gt;</code> can be embedded in most text fields.</li>
+      </ul>
+    </div>
+
+    <nav class="quick-links" aria-label="Manual shortcuts">
+      <strong>Sections:</strong>
+      <ul>
+        <li><a href="#manual-flow">Study metadata &amp; flow control</a></li>
+        <li><a href="#manual-content">Instructional &amp; survey content</a></li>
+        <li><a href="#manual-media">Media &amp; interaction helpers</a></li>
+        <li><a href="#manual-layout">Layout &amp; styling commands</a></li>
+        <li><a href="#manual-practices">Best practices</a></li>
+      </ul>
+    </nav>
+
+    <details id="manual-flow" open>
+      <summary>Study metadata &amp; flow control</summary>
+      <dl class="commands">
+        <dt id="cmd-study-id"><code>STUDY_ID;identifier</code></dt>
+        <dd>Defines a unique identifier stored in exports and logs, helping you group sessions that belong to the same protocol version. Only one <code>STUDY_ID</code> is allowed per file.<br><strong>Example:</strong> <code>STUDY_ID;POLA_FIELD_STUDY_01</code></dd>
+
+        <dt id="cmd-label"><code>LABEL;Name</code></dt>
+        <dd>Marks a jump target. Labels are case-sensitive and should avoid spaces where possible. Duplicate labels trigger validation errors.<br><strong>Example:</strong> <code>LABEL;INTRO_COMPLETED</code></dd>
+
+        <dt id="cmd-goto"><code>GOTO;LabelName</code></dt>
+        <dd>Transfers execution to the line immediately after the labeled command. Use this to branch participants based on earlier responses.<br><strong>Example:</strong> <code>GOTO;FOLLOW_UP_BRANCH</code></dd>
+
+        <dt id="cmd-log"><code>LOG;message</code></dt>
+        <dd>Writes a custom entry to the session log without presenting UI. Useful for marking experimental phases, counterbalancing groups, or debugging.<br><strong>Example:</strong> <code>LOG;Condition=A</code></dd>
+
+        <dt id="cmd-randomize"><code>RANDOMIZE_ON</code> … <code>RANDOMIZE_OFF</code></dt>
+        <dd>Wraps a block of commands that should be presented in randomized order. Ensure every <code>RANDOMIZE_ON</code> has a matching <code>RANDOMIZE_OFF</code>. Nested randomization is not permitted.</dd>
+
+        <dt id="cmd-transitions"><code>TRANSITIONS;mode</code></dt>
+        <dd>Controls screen-to-screen animations. Accepted modes: <code>off</code>, <code>slide</code>, <code>slideleft</code>, <code>fade</code>, <code>dissolve</code>.<br><strong>Example:</strong> <code>TRANSITIONS;slide</code></dd>
+
+        <dt id="cmd-end"><code>END</code></dt>
+        <dd>Terminates the protocol immediately and shows the completion screen. Avoid trailing parameters.</dd>
+      </dl>
+    </details>
+
+    <details id="manual-content" open>
+      <summary>Instructional &amp; survey content</summary>
+      <dl class="commands">
+        <dt id="cmd-instruction"><code>INSTRUCTION;Header;Body;Continue text</code></dt>
+        <dd>Displays a formatted instruction page. Body text can include HTML, media placeholders, and accessibility modifiers like <code>[TAP]</code> or <code>[HOLD]</code> (attach to the continue text).<br><strong>Example:</strong> <code>INSTRUCTION;Welcome;&lt;b&gt;Please read carefully.&lt;/b&gt;;Start</code></dd>
+
+        <dt id="cmd-html"><code>HTML;file.html;Continue text</code></dt>
+        <dd>Loads an HTML file from the resources folder and renders it inside the study screen, preserving layouts and embedded media.<br><strong>Example:</strong> <code>HTML;consent_form.html;I agree</code></dd>
+
+        <dt id="cmd-inputfield"><code>INPUTFIELD;Header;Body;[Field1;Field2;…];Continue text</code></dt>
+        <dd>Collects free-text responses. Fields can be listed inline (<code>Field1;Field2</code>) or wrapped in brackets to include semicolons within labels. Append <code>[HOLD]</code> to the continue caption to require a long press.<br><strong>Example:</strong> <code>INPUTFIELD;Background survey;Tell us about yourself;[Age;Occupation;City];Continue</code></dd>
+
+        <dt id="cmd-inputfield-rand"><code>INPUTFIELD[RANDOMIZED]</code></dt>
+        <dd>Presents the listed input fields in a randomized order while keeping header, body, and continue text fixed.</dd>
+
+        <dt id="cmd-scale"><code>SCALE;Header;Body;Item label;Response1;…</code></dt>
+        <dd>Shows a single-item scale with tap targets. Responses may include optional branch labels in square brackets. <code>Response text[Label]</code> directs flow to a matching <code>LABEL</code> when selected.<br><strong>Example:</strong> <code>SCALE;Mood check;How do you feel now?;Mood;Very low;Low;Neutral;High;Very high</code></dd>
+
+        <dt id="cmd-scale-rand"><code>SCALE[RANDOMIZED]</code></dt>
+        <dd>Randomizes the order of response options to reduce order effects. Branch labels remain attached to their original response text.</dd>
+
+        <dt id="cmd-timer"><code>TIMER;Header;Body;Seconds;Continue text</code></dt>
+        <dd>Displays a countdown timer. When the timer reaches zero, participants may proceed using the continue button (or immediately if you specify <code>0</code> seconds).<br><strong>Example:</strong> <code>TIMER;Break;Rest for one minute;60;Resume task</code></dd>
+      </dl>
+    </details>
+
+    <details id="manual-media" open>
+      <summary>Media &amp; interaction helpers</summary>
+      <dl class="commands">
+        <dt id="cmd-timer-sound"><code>TIMER_SOUND;file.mp3</code></dt>
+        <dd>Sets the audio file used by subsequent <code>TIMER</code> screens. Place the referenced file in the resources folder. Optional volume can follow the filename (e.g., <code>file.mp3,70</code>).</dd>
+
+        <dt id="cmd-resource-placeholders"><code>&lt;resource placeholders&gt;</code></dt>
+        <dd>Within any textual field you can embed:
+          <ul>
+            <li><code>&lt;audio.mp3,80&gt;</code> — plays audio at 80% volume.</li>
+            <li><code>&lt;video.mp4,60&gt;</code> — plays video at 60% volume (0–100).</li>
+            <li><code>&lt;image.jpg&gt;</code> — displays an inline image.</li>
+            <li><code>&lt;custom.html&gt;</code> — injects HTML content into instruction screens.</li>
+          </ul>
+        </dd>
+      </dl>
+    </details>
+
+    <details id="manual-layout" open>
+      <summary>Layout &amp; styling commands</summary>
+      <p>Apply these commands before the screens you want to style. Settings remain active until changed again or reset via another command.</p>
+      <dl class="commands">
+        <dt><code>HEADER_SIZE;value</code></dt>
+        <dd>Sets header text size (SP). <strong>Accepted values:</strong> decimal numbers such as <code>24</code>.</dd>
+
+        <dt><code>BODY_SIZE;value</code></dt>
+        <dd>Adjusts body text size (SP). <strong>Accepted values:</strong> decimal numbers.</dd>
+
+        <dt><code>ITEM_SIZE;value</code></dt>
+        <dd>Controls the size of scale item labels. <strong>Accepted values:</strong> decimal numbers.</dd>
+
+        <dt><code>RESPONSE_SIZE;value</code></dt>
+        <dd>Changes response button text size. <strong>Accepted values:</strong> decimal numbers.</dd>
+
+        <dt><code>CONTINUE_SIZE;value</code></dt>
+        <dd>Updates the continue button text size. <strong>Accepted values:</strong> decimal numbers.</dd>
+
+        <dt><code>TIMER_SIZE;value</code></dt>
+        <dd>Sets the countdown digits size. <strong>Accepted values:</strong> decimal numbers.</dd>
+
+        <dt><code>HEADER_ALIGNMENT;LEFT|CENTER|RIGHT</code></dt>
+        <dd>Aligns header text horizontally. <strong>Accepted values:</strong> keywords <code>LEFT</code>, <code>CENTER</code>, or <code>RIGHT</code>.</dd>
+
+        <dt><code>BODY_ALIGNMENT;LEFT|CENTER|RIGHT</code></dt>
+        <dd>Aligns body copy. <strong>Accepted values:</strong> <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>.</dd>
+
+        <dt><code>CONTINUE_ALIGNMENT;Horizontal;Vertical</code></dt>
+        <dd>Places the continue button. <strong>Accepted values:</strong> horizontal keyword (<code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>) plus vertical keyword (<code>TOP</code> or <code>BOTTOM</code>).</dd>
+
+        <dt><code>TIMER_ALIGNMENT;LEFT|CENTER|RIGHT</code></dt>
+        <dd>Aligns the timer component. <strong>Accepted values:</strong> <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>.</dd>
+
+        <dt><code>HEADER_COLOR;#RRGGBB</code></dt>
+        <dd>Sets header text color. <strong>Accepted values:</strong> hex codes (e.g., <code>#FF0055</code>) or HTML color names.</dd>
+
+        <dt><code>BODY_COLOR;#RRGGBB</code></dt>
+        <dd>Sets body text color. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>RESPONSE_TEXT_COLOR;#RRGGBB</code></dt>
+        <dd>Colors the response text. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>RESPONSE_BACKGROUND_COLOR;#RRGGBB</code></dt>
+        <dd>Colors the background of response buttons. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>SCREEN_BACKGROUND_COLOR;#RRGGBB</code></dt>
+        <dd>Sets the entire screen background. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>CONTINUE_TEXT_COLOR;#RRGGBB</code></dt>
+        <dd>Sets continue button text color. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>CONTINUE_BACKGROUND_COLOR;#RRGGBB</code></dt>
+        <dd>Sets continue button background color. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+
+        <dt><code>TIMER_COLOR;#RRGGBB</code></dt>
+        <dd>Sets timer digits color. <strong>Accepted values:</strong> hex codes or HTML names.</dd>
+      </dl>
+    </details>
+
+    <details id="manual-practices" open>
+      <summary>Best practices</summary>
+      <ul>
+        <li><strong>Validate early:</strong> Use the in-app protocol validator to catch missing labels, malformed commands, or resource mismatches.</li>
+        <li><strong>Use comments:</strong> Prefix lines with <code>//</code> to annotate sections or disable commands temporarily.</li>
+        <li><strong>Back up resources:</strong> Store referenced media inside the PoLA resources folder so sessions remain consistent across devices.</li>
+        <li><strong>Version your scripts:</strong> Pair each public release with a tagged protocol file and bump <code>STUDY_ID</code> as you iterate.</li>
+      </ul>
+    </details>
+
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <section id="contact">
+    <h2>Contact &amp; support</h2>
+    <p>Questions, collaboration ideas, or bug reports are welcome at <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a>. Contributions from the community—new commands, UI refinements, translations—are encouraged under the GNU GPLv3 license.</p>
+    <div class="back-to-top"><a href="#top">Back to top ↑</a></div>
+  </section>
+
+  <footer>
+    <p>For comprehensive documentation, including data export formats and developer guides, visit the project repository: <a href="https://github.com/lkacz/PocketLabApp" target="_blank" rel="noopener">github.com/lkacz/PocketLabApp</a>.</p>
+    <p>Thank you for exploring PoLA. We hope these tools help you run precise, participant-friendly studies wherever your research takes you.</p>
+  </footer>
+</main>
+</body>
+</html>

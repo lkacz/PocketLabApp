@@ -1,403 +1,91 @@
-// dupa
-// protocol.txt manual
-// Participant ID Entry
+// PoLA Showcase Demo Protocol 2025
+// This script demonstrates customization commands, HOLD actions, randomization, branching labels, and HTML content.
 
-//HEADER_SIZE;40
-//BODY_SIZE;20
-//BUTTON_SIZE;24
-// ITEM_SIZE;30
-// RESPONSE_SIZE;24
+STUDY_ID;POLA_DEMO_2025
 
-INPUTFIELD;About you no brackets;Plesae provide information about you;Favourite food;Interests;City of Origin;Complete[HOLD]
-
-TIMER_SOUND;sound9.wav
-
-// VERIFIED:
-// RESPONSES_SPACING;1
-// HEADER_ALIGNMENT;RIGHT
-// HEADER_COLOR;#FF0000
-// BODY_ALIGNMENT;CENTER
-// BODY_COLOR;green
-// ITEM_SIZE;20
-// RESPONSE_SIZE;24
-
-// CONTINUE_TEXT_COLOR;#ff0000
-// CONTINUE_BACKGROUND_COLOR;#00ff00
-// CONTINUE_ALIGNMENT;LEFT
-
-// NOT WORKING:
-// ITEM_COLOR;#00ff00
-// BODY_COLOR;#00ff00
-// SCREEN_BACKGROUND_COLOR;#F5F5F5
-// CONTINUE_BUTTON_ALIGNMENT;LEFT
-
-// Timer for 30 Minutes Solo Walk
-// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-
-TIMER;
-Walking;
-Coś tam coś tam<sound.mp3><video.mp4><custom.html>;
-5;
-Walk
-
-IDZIEMY DALEJ
-Instruction;Read this instruction;Listen to this sound, watch this movie, and click this html button<sound.mp3><video.mp4><custom.html>;Continue
-INPUTFIELD;Inputfield testing;Let's test<sound.mp3><video.mp4><custom.html>;Participant ID;CONTINUE[HOLD]
-
-CUSTOM_HTML;custom.html
-
-
-CONTINUE_ALIGNMENT;
-RIGHT;BOTTOM
-
-INPUTFIELD;
-    Inputfield testing;
-    Let's test;
-    [Participant ID;Interests;City of Origin];
-    CONTINUE[HOLD]
-
-INPUTFIELD;Inputfield testing;Let's test;[Participant ID;Interests;City of Origin];CONTINUE[HOLD]
-INPUTFIELD;Inputfield testing;Let's test;Participant ID;CONTINUE[HOLD]
-INPUTFIELD;Inputfield testing;Let's test;[Participant ID];CONTINUE[HOLD]
-
-
-TIMER;
-Walking;
-Coś tam coś tam;
-5;
-IDZIEMY DALEJ
-
-
-
-SCALE;Multiscale test;This scale has serveral items that will be presented in the same order as they are typed in. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
-
-
-
-
-INPUTFIELD;About you;Plesae provide information about you;[Favourite food;Interests;City of Origin];Complete[HOLD]
-TIMER;Walking;Walk for a minute;60;Continue[HOLD]
-CUSTOM_HTML;pola_snake.html;Skip[HOLD]
-INSTRUCTION;Welcome;Plese hold the button to proceede.;Continue[HOLD]
-
-
-CONTINUE_ALIGNMENT;RIGHT;BOTTOM
-INSTRUCTION;nothing;Tere fere.;DALEJ
-INSTRUCTION;hold;Tere fere.;DALEJ[HOLD]
-
-
-
-
-TRANSITIONS;fade
-
-CONTINUE_ALIGNMENT;RIGHT;TOP
-
-HEADER_SIZE;32
-BODY_SIZE;32
-
-
-INPUTFIELD;Inputfield testing;Let's test<picdupa.jpg>how input filed works without randomizing. In this case all items are presented in the way they are on the list. Every participant gets the same pre-defined order;CONTINUE;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality;Participant ID;Interests;City of Origin;Nationality
-INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
-TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ;5
-CUSTOM_HTML;pola_snake.html
-
-TRANSITIONS;off
-INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuoytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
-TRANSITIONS;fade
-INSTRUCTION;dfgdsfgdgs;uitvyiutjyituferwytoifuwerjytfoeriwu tferyjteyrwifeyjiowue tfeftyjeriufyerwjifouwjfbfejrtfyuierjyiou vtfjiuo;DALEJ
-TRANSITIONS;dissolve
-INSTRUCTION;gvrt4t4;ytreytre mtgytrt etr tert  twerterwui w trheuwi tehroui vtfjiuo;DALEJ
-
-TIMER_SIZE;20
-TIMER_COLOR;cyan
-TIMER_ALIGNMENT;left
-
-
-TIMER_SIZE;40
-TIMER_COLOR;red
-TIMER_ALIGNMENT;right
-TIMER;Walking;Coś tam coś tam;IDZIEMY DALEJ;5
-
-
-
-
-
-
-
-INPUTFIELD[RANDOMIZED];Randomized inputfield testing;<fupa.mp3>Let's test how input filed works with randomizing. In this case all items are presented shuffeld. Each participant gets a different items order;Participant ID;Interests;City of Origin;Nationality
-
-SCALE[RANDOMIZED];Randomized scale test;This scale<codas.html> has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
-
-// version with bracket that is allowed despite only one item inside the brakcets
-SCALE;Single item scale test;This scale has only one<ruch.mp4>item. Check how this works.;[Pierwszy i jedyny item];Response 1;Response 2;Response 3
-
-// version without brackets that is also allowed
-SCALE;Single item scale test;This scale has only one item. Check how this works.;Pierwszy i jedyny item;Response 1;Response 2;Response 3
-
-SCALE;Multiscale test;This scale has serveral items that will be presented in the same order as they are typed in. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
-
-SCALE[RANDOMIZED];Randomized scale test;This scale has randomized items. Check how this works.;[Pierwszy item;Drugi item;Trzeci item];Response 1;Response 2;Response 3
-
-// mind that for multiscale with several items only the first will be presented in most cases, co you can throw it as a warning.
-SCALE;Branching test;This scale has only one item. But allows to skip based on your response. Check how this works.;Wybierz co ci pasuje;Response 1[Version1];Response 2[Version2];Response 3[Version3]
-
-LABEL;Version1
-INSTRUCTION;Werjsa 1;Tere fere.;DALEJ[TAP]
-GOTO;AFTER_VERSIONS
-
-LABEL;Version2
-INSTRUCTION;Werjsa 2;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;Version3
-INSTRUCTION;Werjsa 3;Tere fere.;DALEJ
-GOTO;AFTER_VERSIONS
-
-LABEL;AFTER_VERSIONS
-
-
-
-
-
-
-CONTINUE_TEXT_COLOR;#000000
-CONTINUE_BACKGROUND_COLOR;#FFFFFF
-INSTRUCTION;Header;Body;DALEJ
-
-RESPONSE_TEXT_COLOR;GREEN
-RESPONSE_BACKGROUND_COLOR;RED
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-CONTINUE_TEXT_COLOR;#FFFFFF
-CONTINUE_BACKGROUND_COLOR;#000000
-INSTRUCTION;Header;Body;DALEJ
-
-
-RESPONSE_TEXT_COLOR;RED
-RESPONSE_BACKGROUND_COLOR;GREEN
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-CONTINUE_TEXT_COLOR;#000000
-CONTINUE_BACKGROUND_COLOR;#FFFFFF
-INSTRUCTION;Header;Body;DALEJ
-
-
-
-
-
-
-
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-INSTRUCTION;Header;Body;DALEJ
-
-CONTINUE_TEXT_COLOR;#0000ff
-CONTINUE_BACKGROUND_COLOR;#ff0000
-INSTRUCTION;Header;Body;DALEJ
-
-TRANSITIONS;off
-RESPONSE_SIZE;14
-
-TRANSITIONS;slide
-RESPONSE_SIZE;24
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-
-CUSTOM_HTML;wiki.html
-
-MULTISCALE;Multiscale;This is sound<sound.mp3>;[Pierwszy item,Drugi item,Trzeci item];Wersja pierwsza;Wersja druga;Wersja trzecia
-
-
-RANDOMIZE_OFF
-
-RANDOMIZE_ON
-
-TIMER_SOUND;sound.mp3
-TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
-
-TIMER_SOUND;sound.wav
-TIMER;Timer 2 no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;5
-
-
-
-SCALE;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-
-TRANSITIONS;off;
-
-CUSTOM_HTML;pola_snake.html
-
-TRANSITIONS;slide
+LOG;🎯 Demo session launched
 
 HEADER_SIZE;28
+BODY_SIZE;18
+CONTINUE_SIZE;18
+HEADER_COLOR;#4A3AFF
+BODY_COLOR;#202124
+SCREEN_BACKGROUND_COLOR;#F2F6FF
+CONTINUE_BACKGROUND_COLOR;#FFE066
+CONTINUE_TEXT_COLOR;#1F1F1F
+CONTINUE_ALIGNMENT;CENTER;BOTTOM
+TRANSITIONS;fade
 
-RANDOMIZED_MULTISCALE;Randomized multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+INSTRUCTION;Welcome to the PoLA Showcase;Hold the golden button to join a five-minute tour of everything Pocket Lab can do — jokes, science, and surprisingly little paperwork.;Let's do this[HOLD]
 
-TRANSITIONS;off
+TIMER_SOUND;alarm_sound.mp3
+TIMER;Tiny time machine;Strike your best scientist pose before the alarm chirps. Bonus points for lab goggles you definitely packed.;5;Pose locked in
 
-HEADER_SIZE;8
+LOG;Scientist pose timer completed
 
-// Emotions Scale After Walking With a Friend
-MULTISCALE;Multiscale no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
+INPUTFIELD;Invent your researcher persona;For the drama of it all, tell us who you are today and what fuels your field work.;[Alias;Favorite field snack;Least favorite spreadsheet function];Commit profile[HOLD]
 
-SCALE;State no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
+HEADER_ALIGNMENT;CENTER
+BODY_ALIGNMENT;CENTER
 
-INPUTFIELD;Inputfield no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
+INSTRUCTION;Protocol Manager shout-out;Yes, you can build this whole adventure with the Protocol Manager GUI — but bragging to colleagues about hand-editing text is part of the fun.;Next brag[HOLD]
 
-TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;
-TIMER;Timer no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3>;CONTINUE;90000
+TRANSITIONS;slide
 
+RANDOMIZE_ON
+INSTRUCTION;Mystery micro-challenge;Deliver a dramatic sigh that says “my data cleaned itself”. Judges are fictional but impressed.;Mission accomplished[HOLD]
+INSTRUCTION;Mystery micro-challenge;Perform three seconds of interpretive data visualisation dance. Pie charts count as spins.;Chart complete[HOLD]
+INSTRUCTION;Mystery micro-challenge;Invent a secret handshake with an imaginary participant. Remember: consent is mutual nodding.;Handshake perfected[HOLD]
+RANDOMIZE_OFF
 
-INSTRUCTION;Instruction no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE
+TRANSITIONS;slideleft
 
-TAP_INSTRUCTION;Instruction no vid no script;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>;CONTINUE
+SCALE[RANDOMIZED];Mood telemetry;How would you describe your researcher vibe right now?;Mood selector;Radiantly confident;Mildly caffeinated;Plotting world-saving;Wondering about snacks
 
+BODY_ALIGNMENT;LEFT
+CONTINUE_ALIGNMENT;RIGHT;BOTTOM
+TRANSITIONS;fade
 
-RANDOMIZATION_ON
+LOG;Preparing branching finale
 
+SCALE;Choose your finale;Pick how we wrap this tour. Each option unlocks a different mini-scene.;Ending style;Trigger confetti[CONFETTI];Summon lab assistant[ASSISTANT];Wrap with gratitude[THANKS]
 
+LABEL;CONFETTI
+HEADER_COLOR;#FF4081
+SCREEN_BACKGROUND_COLOR;#FFF3F7
+INSTRUCTION;Confetti protocol;Confetti cannons are imaginary, but enthusiasm is mandatory. Hold to celebrate responsibly.;Celebrate[HOLD]
+LOG;Confetti ending selected
+GOTO;AFTER_ENDINGS
 
+LABEL;ASSISTANT
+HEADER_COLOR;#00BCD4
+SCREEN_BACKGROUND_COLOR;#E0F7FA
+INSTRUCTION;Lab assistant materializes;Please welcome your invisible assistant, Dr. Quantum the raccoon. They prefer fish-shaped crackers.;Wave hello[HOLD]
+LOG;Assistant ending selected
+GOTO;AFTER_ENDINGS
 
+LABEL;THANKS
+HEADER_COLOR;#4CAF50
+SCREEN_BACKGROUND_COLOR;#E8F5E9
+INSTRUCTION;Gratitude finale;Take a breath, thank future-you for scheduling QA time, and hold to lock in that appreciation.;Appreciated[HOLD]
+LOG;Gratitude ending selected
+GOTO;AFTER_ENDINGS
 
+LABEL;AFTER_ENDINGS
+HEADER_COLOR;#4A3AFF
+SCREEN_BACKGROUND_COLOR;#FFFFFF
+BODY_ALIGNMENT;CENTER
+CONTINUE_ALIGNMENT;CENTER;BOTTOM
 
+HTML;immersive_briefing.html;Read the easter egg
 
+TRANSITIONS;fade
 
+TIMER;Cool-down countdown;Five more seconds to jot down the wildest idea you had during this tour.;5;Idea captured
 
+LOG;Demo cool-down timer finished
 
+INSTRUCTION;Mission complete;That’s the PoLA demo — randomized antics, HOLD-to-commit choices, branchy endings, and styling galore. Go build your own experiment next!;Finish heroically[HOLD]
 
-
-
-
-// Emotions Scale After Walking With a Friend
-MULTISCALE;Multiscale no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-
-SCALE;State no vid;This is <b>bold</b>. This is <font color ='green'></font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-INPUTFIELD;Inputfield no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
-
-TIMER;Timer no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has HTML<custom.html>;CONTINUE;5
-
-INSTRUCTION;Instruction no vid;This is <b></b>. This<> is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
-
-TAP_INSTRUCTION;Instruction no vid;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br><br>It has HTML<custom.html>;CONTINUE
-
-RANDOMIZED_MULTISCALE;Randomized multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-// Emotions Scale After Walking With a Friend
-MULTISCALE;Multiscale;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;[Pierwszy item;Drugi item;Trzeci item];Wersja pierwsza[Version1];Wersja druga[Version2];Wersja trzecia[Version3];Również wersja trzecia[Version3]
-
-SCALE;State;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-INPUTFIELD;Inputfield;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE;Participant ID;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b> bold</b>;Pupa<b>bold</b>
-
-TIMER;Timer;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE;5
-
-INSTRUCTION;Instruction;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE
-
-TAP_INSTRUCTION;Instruction;This is <b>bold</b>. This is <font color ='green'>green</font><br>This is a pic:<br><pic.jpg,200,100><br>This is sound<sound.mp3><br>It has video<video.mp4><br>It has HTML<custom.html>;CONTINUE
-
-
-
-
-// Emotions Scale After Walking With a Friend
-// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;Emotional state;Please rate how you are feeling right now<video.mp4><pola_snake.html>.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-
-
-INSTRUCTION;Study Overview<custom.html>;Welcome<br>Pics kodem html <img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><pic.jpg,150,50><br>NOW
-
-TAP_INSTRUCTION;Study;Start<custom.html><video.mp4>;START THE STUDY
-
-
-// Triple Tap Instruction to Start the Study
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Study;Start<sound.mp3>;START THE STUDY
-
-// Triple Tap Instruction to Start the Study
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Start;Study<video.mp4>;START THE STUDY
-
-INSTRUCTION;Listening session;Listen to this .wav audio<sound.wav>;CONTINUE
-INSTRUCTION;Listening session;Listen to this .mp3 audio<sound.mp3>;CONTINUE
-INSTRUCTION;Listening session;Listen to this audio played silently<sound.mp3,30>;CONTINUE
-
-INSTRUCTION;Watching session;Watch this video<video.mp4>;CONTINUE
-
-// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;<font color='green'>ParticipantID</font>Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.<video.mp4>;CONTINUE NOW;Participant ID
-
-
-
-// General Study Overview
-// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Study<br><i>Overview</i>;Welcome<br><img src="pic.jpg" width="400" height="200"><br><br><img src="pic2.png" width="400" height="200">to our<br><i>walking</i> study. In this study, <small>you'll first walk</small> alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE<br><img src="pic.jpg" width="50" height="50"><br>NOW
-
-
-// Timer for 30 Minutes Solo Walk
-// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking<br>Timer Solo;30 minutes of walking time<br><br>starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times]<video.mp4>;SET ALARM OFF<br>AND<br>CONTINUE
-
-// Triple Tap Instruction to Start the Study
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Study<br>Start Confirmation;When you are ready to<br>start, please tap quickly three times anywhere on the screen to reveal the start button.<video.mp4>;START<br>THE STUDY
-
-// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;Participant ID Entry;Please<b>enter</b>the Participant ID for this session and then hand the phone over to the participant.;CONTINUE NOW;Participant ID
-
-// Triple Tap Instruction to Start the Study
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Study Start Confirmation;When you are ready to start, please tap quickly three times anywhere on the screen to reveal the start button.;START THE STUDY
-
-// General Study Overview
-// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Study Overview;Welcome to our walking study. In this study, you'll first walk alone and then with a friend. After each walk, you'll be asked to rate your emotional state. Please follow all instructions carefully.;CONTINUE
-
-// Instruction for Walking Solo
-// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Walking Task Solo;Please walk in the park alone for 30 minutes. Start now and continue walking until you hear an alarm.;START WALKING
-
-// Timer for 30 Minutes Solo Walk
-// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking Timer Solo;30 minutes of walking time starts now. Please continue walking until you hear the alarm. >>>>> [NOTE: For demonstration purposes, you can skip the waiting time by tapping the screen quickly 20 times];SET ALARM OFF AND CONTINUE;1800
-
-// Emotions Scale After Walking Solo
-// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-BRANCHING_SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative[Part2];Somewhat negative;Neutral;Somewhat positive;Very positive
-
-// Instruction for Walking With a Friend
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Syncing With Your Friend;Please wait for your friend. Once both of you are together and ready to start the joint session, triple-tap your screen to begin.;My Friend is here and we are ready to continue
-
-// Instruction for Walking With a Friend
-// Syntax: TAP_INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-TAP_INSTRUCTION;Walking Task With Friend;Triple-tap and push the 'Start Walking' button with your friend at the same time. When the timer starts, start walking and continue until you hear the alarm.;START WALKING
-
-// Timer for 30 Minutes Walk With Friend
-// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.;SET OFF ALARM AND CONTINUE;1800
-
-// Emotions Scale After Walking With a Friend
-// Syntax: SCALE;HEADER_TEXT;BODY_TEXT;ITEM_TEXT;RESPONSE1_TEXT;...;RESPONSE9_TEXT
-SCALE;Emotional state;Please rate how you are feeling right now.;Emotions;Very negative;Somewhat negative;Neutral;Somewhat positive;Very positive
-
-// Additional Comments Box
-// Syntax: INPUTFIELD;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;INPUTFIELD#1
-INPUTFIELD;Additional Comments;Please provide any additional comments about your experience.;SUBMIT;Your Comments
-
-// Thank You Note
-// Syntax: INSTRUCTION;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT
-INSTRUCTION;Thank You;Thank you for participating in the study. Your contribution is highly appreciated. >>>>> [NOTE: Browse to the Documents folder on your smartphone to inspect the generated output files. Tap the next screen 20 times to close the app];FINISH
-
-// Log Study End
-// Syntax: LOG;Text
-LOG;The study ended at this moment.
-
-// Timer for 30 Minutes Walk With Friend
-// Syntax: TIMER;HEADER_TEXT;BODY_TEXT;BUTTON_TEXT;NumberOfSeconds
-TIMER;Walking Timer With Friend;30 minutes of walking time with your friend starts now. Please continue walking until you hear the alarm.<custom.html>;SET OFF ALARM AND CONTINUE;3
-
-CUSTOM_HTML;pola_snake.html
-
-HEADER_SIZE;58
+END
 
