@@ -27,7 +27,20 @@ class FileUriUtils {
         context: Context,
         uri: Uri,
     ): String {
+        val scheme = uri.scheme.orEmpty()
+        if (scheme == "file") {
+            val path = uri.path.orEmpty()
+            if (path.startsWith("/android_asset/")) {
+                val assetName = path.substringAfterLast('/')
+                return when (assetName) {
+                    "demo_protocol.txt" -> context.getString(R.string.protocol_name_demo)
+                    "tutorial_protocol.txt" -> context.getString(R.string.protocol_name_tutorial)
+                    else -> assetName.ifBlank { "Unknown" }
+                }
+            }
+        }
+
         val docFile = DocumentFile.fromSingleUri(context, uri)
-        return docFile?.name ?: "Unknown"
+        return docFile?.name ?: uri.lastPathSegment ?: "Unknown"
     }
 }
