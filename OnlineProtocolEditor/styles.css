@@ -109,6 +109,30 @@ body {
   margin-bottom: 16px;
 }
 
+.inline-action-row {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0 0 12px;
+}
+
+.inline-action-row > button {
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.inline-action-row > button:hover,
+.inline-action-row > button:focus-visible {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  outline: none;
+}
+
 .toolbar-divider {
   width: 1px;
   height: 24px;
@@ -358,6 +382,7 @@ body {
   background: var(--table-header-bg);
   position: sticky;
   top: 0;
+  z-index: 2;
 }
 
 #validationTable th,
@@ -365,6 +390,10 @@ body {
   text-align: left;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border-soft);
+}
+
+#validationTable th {
+  background: var(--table-header-bg);
 }
 
 #validationTable tbody tr:hover {

@@ -88,6 +88,25 @@ const randomizablePairs = {
 
 const COMMAND_CATEGORIES = ["All", "Content", "Randomization", "Meta", "Style"];
 
+const COMMAND_PRIORITY = {
+  Content: [
+    "INSTRUCTION",
+    "SCALE",
+    "SCALE[RANDOMIZED]",
+    "INPUTFIELD",
+    "INPUTFIELD[RANDOMIZED]",
+    "TIMER",
+    "TIMER_SOUND",
+    "HTML",
+    "LABEL",
+    "GOTO",
+    "LOG",
+    "END",
+  ],
+  Randomization: ["RANDOMIZE_ON", "RANDOMIZE_OFF"],
+  Meta: ["STUDY_ID", "TRANSITIONS"],
+};
+
 const orderedRecognizedCommands = Array.from(recognizedCommands).sort((a, b) =>
   a.localeCompare(b),
 );
@@ -1335,7 +1354,19 @@ function populateCommandsList() {
 
   [...orderedCategories, ...leftoverCategories].forEach((category) => {
     const commands = commandsByCategory.get(category) || [];
-    commands.sort((a, b) => a.localeCompare(b));
+    const priority = COMMAND_PRIORITY[category] || [];
+    commands.sort((a, b) => {
+      const indexA = priority.indexOf(a);
+      const indexB = priority.indexOf(b);
+      const aHasPriority = indexA !== -1;
+      const bHasPriority = indexB !== -1;
+      if (aHasPriority || bHasPriority) {
+        if (!aHasPriority) return 1;
+        if (!bHasPriority) return -1;
+        return indexA - indexB;
+      }
+      return a.localeCompare(b);
+    });
     if (!commands.length) return;
 
     const group = document.createElement("section");

@@ -103,5 +103,11 @@ List outdated (requires the versions plugin):
 - If `No connected devices!` ensure emulator running (`scripts/run-app.ps1 -JustInstall` after).
 - For deprecations: `./gradlew.bat --warning-mode all assembleDebug`.
 
+## License
+- Pocket Lab App is released under the [GNU General Public License v3](./LICENSE.md).
+- The software thrives in research and educational settings; consult the maintainers before any clinical or commercial deployment.
+- The application stores protocol files and captured data locally and does not transmit them elsewhere unless you explicitly export or sync them.
+- Use the software at your own risk; it is provided **as is** without warranties. Validate protocols, supervise fieldwork, and comply with institutional and legal requirements.
+
 ---
 Generated helper docs. Extend as project grows.

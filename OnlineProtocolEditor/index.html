@@ -19,7 +19,6 @@
           <button id="loadButton" type="button">Load…</button>
           <button id="saveButton" type="button">Save</button>
           <button id="downloadButton" type="button">Download</button>
-          <button id="insertButton" type="button">Insert Command</button>
           <button id="templatesButton" type="button">Templates</button>
           <div role="separator" class="toolbar-divider" aria-hidden="true"></div>
           <button id="aboutButton" type="button" class="link-button">About</button>
@@ -31,6 +30,9 @@
           </label>
         </div>
         <div id="commandSuggestion" class="suggestion-bar" role="status" aria-live="polite"></div>
+        <div class="inline-action-row">
+          <button id="insertButton" type="button" class="primary">Insert Command</button>
+        </div>
         <div class="protocol-input-wrapper">
           <pre id="protocolGhost" class="protocol-ghost" aria-hidden="true"><span class="ghost-prefix"></span><span class="ghost-suggestion"></span></pre>
           <textarea
@@ -277,6 +279,14 @@
             <p>PoLA is maintained as open-source software to encourage transparent research workflows. Contributions are welcome—whether you are proposing new commands, improving accessibility, translating UI strings, or documenting study templates.</p>
           </section>
 
+          <section id="about-license">
+            <h2>License &amp; data handling</h2>
+            <p>Pocket Lab App is free software released under the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank" rel="noopener">GNU General Public License v3</a>. You are free to study, modify, and share it as long as derivative work stays under the same license and preserves attribution.</p>
+            <p>The editor and Android app keep protocols and collected responses on the device you control; nothing is uploaded unless you explicitly export or sync it. Always review deployments for local ethics, privacy, and safety requirements.</p>
+            <div class="callout">
+              <strong>Reminder:</strong> PoLA is provided <em>as is</em> with no warranties. Validate your studies, supervise fieldwork, and contact <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a> before commercial or clinical use.</div>
+          </section>
+
           <section id="about-contact">
             <h2>Contact</h2>
             <p>Questions, collaboration ideas, or bug reports are welcome at <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a>. For roadmap updates and issue tracking, visit the project repository: <a href="https://github.com/lkacz/PocketLabApp" target="_blank" rel="noopener">github.com/lkacz/PocketLabApp</a>.</p>
@@ -325,6 +335,7 @@
               <li><a href="#manual-authoring">Editor essentials</a></li>
               <li><a href="#manual-saving">Save &amp; share</a></li>
               <li><a href="#manual-android">Run on Android</a></li>
+              <li><a href="#manual-license">License &amp; data policy</a></li>
               <li><a href="#manual-command-reference">Command reference</a></li>
               <li><a href="#manual-support">Support</a></li>
             </ul>
@@ -543,6 +554,17 @@
               </ul>
             </details>
 
+            <div class="back-to-top"><a href="#manualTop">Back to top ↑</a></div>
+          </section>
+
+          <section id="manual-license">
+            <h2>License &amp; data policy</h2>
+            <ul>
+              <li><strong>Open source:</strong> PoLA is distributed under the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank" rel="noopener">GNU GPLv3</a>. Share improvements under the same license and retain attribution.</li>
+              <li><strong>Local-first data:</strong> Protocols, responses, and logs stay on the device or storage location you choose. Nothing is transmitted elsewhere unless you export or synchronize it yourself.</li>
+              <li><strong>Use at your own risk:</strong> The software is provided <em>as is</em> with no warranties. Validate your study setup, supervise deployments, and follow institutional, legal, and ethical requirements.</li>
+              <li><strong>Commercial or clinical use:</strong> Coordinate with the maintainers via <a href="mailto:lkacz@amu.edu.pl">lkacz@amu.edu.pl</a> before pursuing non-research deployments.</li>
+            </ul>
             <div class="back-to-top"><a href="#manualTop">Back to top ↑</a></div>
           </section>
 
