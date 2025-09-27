@@ -154,102 +154,12 @@ Failures publish HTML reports for quick diagnosis.
 
 ---
 
-## User guide (March 2024)
+## Documentation hub
 
-### Introduction
-
-PoLA streamlines experimental work outside traditional labs. Running on Android, it orchestrates experiment flow, timers, self-report collection, and logging. Paired with PoLA’s Helpful Assistant (HeLA), you can draft or revise protocols in natural language.
-
-![PoLA Promo Outdoor](https://github.com/lkacz/PocketLabApp/assets/35294398/9b4649cd-0a11-4488-bb5e-2397065116a8)
-
-### Installation
-
-1. Download the latest APK from [GitHub releases](https://github.com/lkacz/PocketLabApp/releases).
-2. Enable installation from unknown sources on the target device.
-3. Install the APK.
-
-### Getting started
-
-Launch PoLA and experiment with bundled demo and tutorial protocols. Upload a `.txt` protocol tailored to your study to run a session.
-
-### Creating a protocol
-
-A protocol is a plain-text file where each non-empty line is a command. Example:
-
-```txt
-// This scale collects mood before the walk
-STUDY_ID;MindfulWalkStudy
-SCALE;Pre-Walk Mood;How do you feel right now?;Your Current Mood;Very Stressed;Stressed;Neutral;Relaxed;Very Relaxed
-TIMER;Walk Time;Enjoy your mindful walk. Press 'Continue' when you finish.;Continue;900
-```
-
-Use any editor or the Online Protocol Editor to author and validate commands.
-
-### Commands overview
-
-PoLA understands concise, semicolon-delimited commands:
-
-- `INSTRUCTION` – show text plus a continue button.
-- `TIMER` – countdown with optional audio cue.
-- `SCALE` / `MULTISCALE` / `RANDOMIZED_MULTISCALE` – collect ratings.
-- `INPUTFIELD` – gather free text (up to 10 fields).
-- `LOG` – record milestones in exports.
-- `LABEL` / `GOTO` – branch logic.
-- `RANDOMIZE_ON`…`RANDOMIZE_OFF` – shuffle enclosed commands.
-
-![PoLA Commands](https://github.com/lkacz/PocketLabApp/assets/35294398/124f792e-421e-49ea-9464-091996c63f07)
-
-#### Command reference quick look
-
-- **`STUDY_ID;STUDY_ID_TEXT`** – prefixes output files with the study identifier. Example: `STUDY_ID;MyFirstStudy`.
-- **`SCALE;HEADER;BODY;ITEM;RESPONSE1;...;RESPONSE9`** – single-question scale with up to nine responses.
-- **`MULTISCALE;HEADER;BODY;[ITEM1;ITEM2];RESPONSE1;...`** – multiple items sharing the same response set.
-- **`RANDOMIZED_MULTISCALE;...`** – same as `MULTISCALE`, but items randomize per session.
-- **`TIMER;HEADER;BODY;BUTTON;SECONDS`** – displays a countdown timer, revealing the button at zero.
-- **`INPUTFIELD;HEADER;BODY;BUTTON;FIELD1;...`** – collects textual responses (up to ten fields).
-- **`INSTRUCTION;HEADER;BODY;BUTTON`** – static instruction with continue button.
-- **`TAP_INSTRUCTION;...`** – like `INSTRUCTION`, but requires a triple tap to reveal the button.
-- **`LOG;Text`** – writes custom markers to the export log.
-- **`END`** – optional terminator; commands below are ignored at runtime.
-- Lines not starting with a command are treated as comments and ignored.
-
-Consult the PDF or Online Protocol Editor manual for extended syntax, multimedia placeholders, and appearance commands (`HEADER_COLOR`, `CONTINUE_ALIGNMENT`, etc.).
-
-### Uploading the protocol
-
-1. Connect the device via USB or use cloud storage.
-2. Copy the protocol `.txt` onto the device.
-3. In PoLA, choose **Load Protocol** and select the file.
-
-### Running an experiment
-
-1. Start PoLA and load the protocol.
-2. Hand the device to the participant.
-3. Collect responses; PoLA logs events automatically.
-4. End session and retrieve exported data.
-
-### Output & data analysis
-
-PoLA stores CSV/XLSX outputs under `PoLA_Data` and `PoLA_Backup` in the device’s Documents directory with timestamps for easy aggregation.
-
-### Limitations & considerations
-
-- Requires researcher facilitation to initiate protocols.
-- Best for moderate-complexity tasks.
-- Aggregating across participants is manual.
-- UI/documentation currently English-only.
-- AI assistance (HeLA) is experimental; review its suggestions critically.
-
-### Future directions
-
-Planned enhancements include richer instructions, additional self-report formats, branching logic, presentation customization, and deeper sensor integrations. Community feedback drives prioritization.
-
-### Developer information
-
-- Lukasz Kaczmarek, PhD – AMU Psychophysiology Laboratory
-- Email: [lkacz@amu.edu.pl](mailto:lkacz@amu.edu.pl)
-
----
+- `OnlineProtocolEditor/README.md` – live manual for the web-based editor, including template tags, favorites, validation workflows, and hosting tips.
+- Offline copy: open the editor manual in your browser and export to PDF when you need a printable packet.
+- Release notes: see [`CHANGELOG.md`](./CHANGELOG.md) for app highlights and upgrade notes.
+- Troubleshooting & FAQs: start with the editor manual and the comments in `OnlineProtocolEditor/templates/index.json`; open a GitHub issue if something’s missing.
 
 ## HeLA (Helpful Assistant for PoLA)
 
@@ -377,8 +287,8 @@ Inform honestly if a requested behaviour is not supported. PoLA is not suited fo
 
 ## Additional assets
 
-- `PocketLabApp_Documentation_20240318.pdf` – printable user documentation.
 - Online Protocol Editor (web) with integrated manual (`OnlineProtocolEditor/`).
+- Historical documentation snapshots are available from git history if you need the retired PDF.
 
 ## License & data policy
 
