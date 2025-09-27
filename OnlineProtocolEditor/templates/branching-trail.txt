@@ -1,52 +1,21 @@
-// Branching example using LABEL and GOTO
-// Assign a study identifier shared across branches
+// Branching example that routes participants to different instructions
+// Each response option points to a matching LABEL via the square-bracket suffix
 
-STUDY_ID;BranchingTrail01
+INSTRUCTION;Route briefing;Review today's conditions, then choose the matching route.;Continue
 
-// Brief the participant before they choose a route
+SCALE;Route selection;Which route fits the current conditions?;Route choice;Sunny route[SUNNY_ROUTE];Rainy route[RAINY_ROUTE]
 
-INSTRUCTION;Route briefing;Tap continue after deciding which route matches your conditions.;Continue
-
-// Replace this GOTO with logic tied to prior responses or custom rules.
-
-GOTO;SUNNY_ROUTE
-
-// Mark the section that handles sunny-day steps
-
+// First condition
 LABEL;SUNNY_ROUTE
-
-// Outline tasks specific to sunny conditions
-
 INSTRUCTION;Sunny route tasks;Document wildlife activity in open light.;Continue
+GOTO;ROUTE_CHECKOUT
 
-// Jump to the shared check-in section
-
-GOTO;ROUTE_CHECKIN
-
-// Mark the section that handles rainy-day steps
-
+// Second condition
 LABEL;RAINY_ROUTE
-
-// Outline tasks specific to wet weather
-
 INSTRUCTION;Rainy route tasks;Note puddles, slick spots, and limited visibility.;Continue
+GOTO;ROUTE_CHECKOUT
 
-// Jump back to the shared check-in
-
-GOTO;ROUTE_CHECKIN
-
-// Create a shared point both branches will reach
-
-LABEL;ROUTE_CHECKIN
-
-// Rate the difficulty of the chosen path
-
-SCALE;Route difficulty;Rate how challenging the segment felt.;[Terrain;Weather];Very Easy [1];Easy [2];Moderate [3];Hard [4];Severe [5]
-
-// Capture free-form notes for later review
-
-INPUTFIELD;Route notes;Capture highlights from the chosen route.;Key Observation;Hazards;Next Action;Submit
-
-// Close out the protocol with a final instruction
-
+// Exit
+// Branching ends here as all options above redirect here
+LABEL;ROUTE_CHECKOUT
 INSTRUCTION;Debrief;Share findings with the team chat.;Done

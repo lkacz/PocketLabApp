@@ -88,6 +88,8 @@ const randomizablePairs = {
 
 const COMMAND_CATEGORIES = ["All", "Content", "Randomization", "Meta", "Style"];
 
+const TEMPLATE_FAVORITES_STORAGE_KEY = "pola-template-favorites-v1";
+
 const COMMAND_PRIORITY = {
   Content: [
     "INSTRUCTION",
@@ -427,9 +429,12 @@ const templatesPlaceholder = document.getElementById("templatesPlaceholder");
 const templateDetail = document.getElementById("templateDetail");
 const templateSummary = document.getElementById("templateSummary");
 const templatePreview = document.getElementById("templatePreview");
+const templatesTagList = document.getElementById("templatesTagList");
+const templatesFavoritesToggle = document.getElementById("templatesFavoritesToggle");
 const templatesDialogMessage = document.getElementById("templatesDialogMessage");
 const insertTemplateButton = document.getElementById("insertTemplateButton");
 const templatesDialogCancel = document.getElementById("templatesDialogCancel");
+const clearTemplateTagsBtn = document.getElementById("clearTemplateTags");
 
 const aboutDialog = document.getElementById("aboutDialog");
 const aboutDialogClose = document.getElementById("aboutDialogClose");
@@ -464,9 +469,11 @@ const templatesDialogElementsReady = Boolean(
   templateDetail &&
   templateSummary &&
   templatePreview &&
+  templatesTagList &&
   templatesDialogMessage &&
   insertTemplateButton &&
-  templatesDialogCancel,
+  templatesDialogCancel &&
+  clearTemplateTagsBtn,
 );
 
 let insertDialogElementsMissingLogged = false;
@@ -495,28 +502,30 @@ const fallbackTemplateDescriptors = [
     id: "mindful-walk",
     name: "Mindful walking session",
     summary: "Outdoor mindfulness loop with mood check, timed walk, and reflective notes.",
+    tags: ["outdoor", "mindfulness", "timed"],
     lines: [
       "// Mindful walking field study",
       "// Tag the protocol with a unique study identifier",
       "STUDY_ID;MindfulWalk01",
       "// Welcome participants and outline the mindful walking goals",
-      "INSTRUCTION;Welcome to the mindful walk;Find a safe route and prepare to observe your surroundings closely.;Begin Walk",
+      "INSTRUCTION;Welcome to the mindful walk;Find a safe route and prepare to observe your surroundings closely.;Begin Walk[HOLD]",
       "// Capture baseline focus before the activity begins",
-      "SCALE;Pre-walk focus check;How present do you feel before starting?;[Breath;Attention;Body];Very Present [5];Present [4];Neutral [3];Distracted [2];Restless [1]",
+      "SCALE[RANDOMIZED];Pre-walk focus check;How present do you feel right now?;Focus rating;Very Present;Present;Neutral;Distracted;Restless",
       "// Run a five-minute mindfulness timer for the walking segment",
       "TIMER;Mindful walking timer;Walk mindfully until the timer completes.;300;Continue",
       "// Collect post-walk ratings to measure change",
-      "SCALE;Post-walk reflection;How mindful was your walk?;[Awareness;Distractions];Extremely Mindful [5];Mindful [4];Neutral [3];Distracted [2];Very Distracted [1]",
+      "SCALE;Post-walk reflection;How mindful was your walk?;Mindfulness rating;Extremely Mindful;Mindful;Neutral;Distracted;Very Distracted",
       "// Gather qualitative notes about observations in the field",
-      "INPUTFIELD;Post-walk notes;Capture key observations from the walk.;Highlight;Unexpected Sound;Final Takeaway;Finish",
+      "INPUTFIELD;Post-walk notes;Capture key observations from the walk.;[Highlight;Unexpected sound;Final takeaway];Finish",
       "// Close the session with a final thank-you message",
-      "INSTRUCTION;Thank you;Great work staying present out there!;Done",
+      "INSTRUCTION;Thank you;Great work staying present out there!;Done[HOLD]",
     ],
   },
   {
     id: "pokemon-go-outing",
     name: "Pokémon GO community outing",
     summary: "Community play session with pre/post energy ratings and catch log.",
+    tags: ["community", "gameplay", "outdoor"],
     lines: [
       "// Pokémon GO community play session",
       "// Identify the session for syncing and analytics",
@@ -524,13 +533,13 @@ const fallbackTemplateDescriptors = [
       "// Greet the group and share meetup instructions",
       "INSTRUCTION;Welcome trainers;Meet at the park fountain and stay aware of traffic while you explore.;Continue",
       "// Check energy levels before the play session",
-      "SCALE;Pre-play energy;How ready do you feel to play?;[Energy;Focus];Fully Charged [5];Ready [4];Moderate [3];Low [2];Need Rest [1]",
+      "SCALE[RANDOMIZED];Pre-play energy;How ready do you feel to play?;Energy level;Fully Charged;Ready;Moderate;Low;Need Rest",
       "// Set a ten-minute exploration window",
       "TIMER;Exploration timer;Head out to catch Pokémon until the timer buzzes.;600;Continue",
       "// Measure mood right after the outing",
-      "SCALE;Post-play mood;How was the session?;[Fun;Challenge];Incredible [5];Great [4];Good [3];Average [2];Rough [1]",
+      "SCALE[RANDOMIZED];Post-play mood;How was the session?;Mood rating;Incredible;Great;Good;Average;Rough",
       "// Log standout catches and group highlights",
-      "INPUTFIELD;Catch log;Record standout catches or raids.;Top Catch;Raid Highlights;Team Strategy;Wrap Up",
+      "INPUTFIELD;Catch log;Record standout catches or raids.;[Top catch;Raid highlights;Team strategy];Wrap Up",
       "// Wrap up with safety and sync reminders",
       "INSTRUCTION;Thank you trainers;Hydrate, stretch, and sync your logs when you return.;Finish",
     ],
@@ -539,32 +548,29 @@ const fallbackTemplateDescriptors = [
     id: "branching-trail",
     name: "Branching trail decision",
     summary: "Demonstrates LABEL and GOTO structure for different field routes.",
+    tags: ["routing", "decision", "labels"],
     lines: [
       "// Branching example using LABEL and GOTO",
       "// Assign a study identifier shared across branches",
       "STUDY_ID;BranchingTrail01",
       "// Brief the participant before they choose a route",
-      "INSTRUCTION;Route briefing;Tap continue after deciding which route matches your conditions.;Continue",
-      "// Replace this GOTO with logic tied to prior responses or custom rules.",
-      "GOTO;SUNNY_ROUTE",
+      "INSTRUCTION;Route briefing;Review today's conditions, then choose the matching route.;Continue",
+      "// Present a scale where each option routes to a matching LABEL",
+      "SCALE;Route selection;Which route fits the current conditions?;Route choice;Sunny route[SUNNY_ROUTE];Rainy route[RAINY_ROUTE]",
       "// Mark the section that handles sunny-day steps",
       "LABEL;SUNNY_ROUTE",
       "// Outline tasks specific to sunny conditions",
       "INSTRUCTION;Sunny route tasks;Document wildlife activity in open light.;Continue",
-      "// Jump to the shared check-in section",
-      "GOTO;ROUTE_CHECKIN",
+      "// Jump to the shared check-out section",
+      "GOTO;ROUTE_CHECKOUT",
       "// Mark the section that handles rainy-day steps",
       "LABEL;RAINY_ROUTE",
       "// Outline tasks specific to wet weather",
       "INSTRUCTION;Rainy route tasks;Note puddles, slick spots, and limited visibility.;Continue",
-      "// Jump back to the shared check-in",
-      "GOTO;ROUTE_CHECKIN",
-      "// Create a shared point both branches will reach",
-      "LABEL;ROUTE_CHECKIN",
-      "// Rate the difficulty of the chosen path",
-      "SCALE;Route difficulty;Rate how challenging the segment felt.;[Terrain;Weather];Very Easy [1];Easy [2];Moderate [3];Hard [4];Severe [5]",
-      "// Capture free-form notes for later review",
-      "INPUTFIELD;Route notes;Capture highlights from the chosen route.;Key Observation;Hazards;Next Action;Submit",
+      "// Jump back to the shared check-out",
+      "GOTO;ROUTE_CHECKOUT",
+      "// Create a shared exit point both branches will reach",
+      "LABEL;ROUTE_CHECKOUT",
       "// Close out the protocol with a final instruction",
       "INSTRUCTION;Debrief;Share findings with the team chat.;Done",
     ],
@@ -573,22 +579,24 @@ const fallbackTemplateDescriptors = [
     id: "rapid-randomized-check",
     name: "Rapid randomized check-in",
     summary: "Quick study with randomized scale items and final thank-you.",
+    tags: ["randomization", "quick", "check-in"],
     lines: [
       "// Quick randomized check-in template",
       "// Assign a short identifier for the rapid check",
       "STUDY_ID;RapidCheck01",
       "// Introduce the purpose and mention randomization",
-      "INSTRUCTION;Welcome investigator;We will randomize item order for balanced feedback.;Start",
+      "INSTRUCTION;Rapid check briefing;We'll shuffle the next screens to balance responses.;Start",
       "// Begin the randomized block",
       "RANDOMIZE_ON",
-      "// Present randomized ratings for current field items",
-      "SCALE[RANDOMIZED];Field item ratings;Evaluate each item based on current conditions.;[Trail signage;Litter levels;Noise];Excellent [5];Good [4];Average [3];Poor [2];Critical [1]",
+      "// Present randomized ratings for current conditions",
+      "SCALE;Mood snapshot;How are you feeling emotionally?;Mood rating;Very Low;Low;Moderate;High;Very High",
+      "SCALE;Clarity snapshot;How clear is your thinking right now?;Clarity rating;Very Low;Low;Moderate;High;Very High",
       "// End the randomized block",
       "RANDOMIZE_OFF",
       "// Collect pressing notes the team needs immediately",
-      "INPUTFIELD;Quick log;List anything the team should know immediately.;Urgent Issue;Opportunity;Next Visit Idea;Finish",
+      "INPUTFIELD;Quick notes;Capture anything the coordinator should know immediately.;[Key observation;Risk to monitor;Follow-up needed];Submit",
       "// Thank the participant and signal completion",
-      "INSTRUCTION;Thank you;Sync your notes and stand by for next assignment.;Complete",
+      "INSTRUCTION;Thanks;Sync your notes and stand by for your next assignment.;Finish",
     ],
   },
 ];
@@ -612,11 +620,99 @@ function formatTemplateContent(lines) {
   return output.join("\n").replace(/\s+$/, "");
 }
 
+function normalizeTemplateTags(rawTags) {
+  if (!rawTags) return [];
+  const source = Array.isArray(rawTags) ? rawTags : [rawTags];
+  const normalized = source
+    .map((tag) => (typeof tag === "string" ? tag.trim().toLowerCase() : ""))
+    .filter(Boolean);
+  return Array.from(new Set(normalized));
+}
+
+function formatTemplateTagLabel(tag) {
+  return tag
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function computeAvailableTemplateTags(templates) {
+  const tagSet = new Set();
+  templates.forEach((template) => {
+    (template.tags || []).forEach((tag) => tagSet.add(tag));
+  });
+  return Array.from(tagSet).sort((a, b) => formatTemplateTagLabel(a).localeCompare(formatTemplateTagLabel(b)));
+}
+
+function loadFavoriteTemplateIds() {
+  if (typeof window === "undefined" || !window.localStorage) return new Set();
+  try {
+    const raw = window.localStorage.getItem(TEMPLATE_FAVORITES_STORAGE_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    const filtered = parsed
+      .map((id) => (typeof id === "string" ? id.trim() : ""))
+      .filter((id) => id.length > 0);
+    return new Set(filtered);
+  } catch (error) {
+    console.warn("Unable to read favorite templates from storage; continuing without persistence.", error);
+    return new Set();
+  }
+}
+
+function persistFavoriteTemplateIds(favoriteSet) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    const payload = JSON.stringify(Array.from(favoriteSet));
+    window.localStorage.setItem(TEMPLATE_FAVORITES_STORAGE_KEY, payload);
+  } catch (error) {
+    console.warn("Unable to persist favorite templates to storage.", error);
+  }
+}
+
+function isTemplateFavorite(templateId) {
+  return favoriteTemplateIds.has(templateId);
+}
+
+function updateFavoritesToggleState() {
+  if (!templatesFavoritesToggle) return;
+  templatesFavoritesToggle.setAttribute("aria-pressed", String(showFavoritesOnly));
+  const icon = templatesFavoritesToggle.querySelector(".favorites-toggle-icon");
+  if (icon) icon.textContent = showFavoritesOnly ? "★" : "☆";
+}
+
+function updateFavoriteButtonState(button, favorite) {
+  if (!button) return;
+  button.classList.toggle("is-favorite", favorite);
+  button.textContent = favorite ? "★" : "☆";
+  button.setAttribute("aria-pressed", String(favorite));
+  const templateName = button.getAttribute("data-template-name") || "template";
+  button.setAttribute(
+    "aria-label",
+    favorite ? `Remove ${templateName} from favorites` : `Add ${templateName} to favorites`,
+  );
+}
+
+function reconcileFavoriteTemplateIds() {
+  const validIds = new Set(protocolTemplates.map((template) => template.id));
+  let changed = false;
+  Array.from(favoriteTemplateIds).forEach((id) => {
+    if (!validIds.has(id)) {
+      favoriteTemplateIds.delete(id);
+      changed = true;
+    }
+  });
+  if (changed) persistFavoriteTemplateIds(favoriteTemplateIds);
+  return changed;
+}
 function buildFallbackTemplates() {
   return fallbackTemplateDescriptors.map((template) => ({
     id: template.id,
     name: template.name,
     summary: template.summary,
+    tags: normalizeTemplateTags(template.tags),
     content: formatTemplateContent(template.lines),
   }));
 }
@@ -627,6 +723,10 @@ function normalizeTemplateContent(raw) {
 
 let protocolTemplates = buildFallbackTemplates();
 let filteredTemplates = [...protocolTemplates];
+let availableTemplateTags = computeAvailableTemplateTags(protocolTemplates);
+let favoriteTemplateIds = loadFavoriteTemplateIds();
+let showFavoritesOnly = false;
+const selectedTemplateTags = new Set();
 let selectedTemplate = null;
 const templatesFetchDisabled = window.location.protocol === "file:";
 let templatesLoadedFromManifest = false;
@@ -698,6 +798,7 @@ async function fetchTemplatesManifest() {
         id: entry.id || `template-${index + 1}`,
         name: entry.name || entry.id || entry.file,
         summary: entry.summary || "",
+        tags: normalizeTemplateTags(entry.tags),
         content: text,
       };
     }),
@@ -707,7 +808,6 @@ async function fetchTemplatesManifest() {
 
 function applyTemplateData(newTemplates) {
   protocolTemplates = newTemplates;
-  filteredTemplates = [...protocolTemplates];
   if (selectedTemplate) {
     const replacement = protocolTemplates.find((template) => template.id === selectedTemplate.id);
     if (replacement) {
@@ -716,8 +816,16 @@ function applyTemplateData(newTemplates) {
       clearTemplateSelection({ keepSearch: true });
     }
   }
+  availableTemplateTags = computeAvailableTemplateTags(protocolTemplates);
+  const selectionChanged = reconcileTemplateTagSelection();
+  const favoritesChanged = reconcileFavoriteTemplateIds();
+  renderTemplateTags();
+  filteredTemplates = [...protocolTemplates];
+  updateFavoritesToggleState();
   if (templatesDialog && templatesDialog.open) {
-    renderTemplatesList(templatesSearchInput ? templatesSearchInput.value : "");
+    refreshTemplatesListForFilters();
+  } else if (selectionChanged || favoritesChanged) {
+    refreshTemplatesListForFilters();
   }
 }
 
@@ -751,14 +859,111 @@ function updateTemplatesListSelection() {
   });
 }
 
+function updateClearTemplateTagsVisibility() {
+  if (!clearTemplateTagsBtn) return;
+  clearTemplateTagsBtn.hidden = selectedTemplateTags.size === 0;
+}
+
+function renderTemplateTags() {
+  if (!templatesTagList) return;
+  templatesTagList.innerHTML = "";
+  if (!availableTemplateTags.length) {
+    updateClearTemplateTagsVisibility();
+    return;
+  }
+  availableTemplateTags.forEach((tag) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tag-chip";
+    if (selectedTemplateTags.has(tag)) button.classList.add("is-selected");
+    button.dataset.tag = tag;
+    button.textContent = formatTemplateTagLabel(tag);
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-selected", String(selectedTemplateTags.has(tag)));
+    button.addEventListener("click", () => {
+      toggleTemplateTag(tag);
+    });
+    button.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleTemplateTag(tag);
+      }
+    });
+    templatesTagList.append(button);
+  });
+  updateClearTemplateTagsVisibility();
+}
+
+function reconcileTemplateTagSelection() {
+  const availableSet = new Set(availableTemplateTags);
+  let changed = false;
+  Array.from(selectedTemplateTags).forEach((tag) => {
+    if (!availableSet.has(tag)) {
+      selectedTemplateTags.delete(tag);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function refreshTemplatesListForFilters() {
+  const term = templatesSearchInput ? templatesSearchInput.value || "" : "";
+  renderTemplatesList(term);
+  if (selectedTemplate && !filteredTemplates.some((t) => t.id === selectedTemplate.id)) {
+    clearTemplateSelection({ keepSearch: true });
+  } else {
+    updateTemplatesListSelection();
+  }
+}
+
+function toggleTemplateTag(tag) {
+  if (selectedTemplateTags.has(tag)) selectedTemplateTags.delete(tag);
+  else selectedTemplateTags.add(tag);
+  renderTemplateTags();
+  refreshTemplatesListForFilters();
+}
+
+function clearTemplateTagFilters() {
+  selectedTemplateTags.clear();
+  renderTemplateTags();
+  refreshTemplatesListForFilters();
+}
+
+function toggleTemplateFavorite(template) {
+  if (!template || !template.id) return;
+  const wasFavorite = favoriteTemplateIds.has(template.id);
+  if (wasFavorite) favoriteTemplateIds.delete(template.id);
+  else favoriteTemplateIds.add(template.id);
+  persistFavoriteTemplateIds(favoriteTemplateIds);
+  updateFavoritesToggleState();
+  const wasSelected = Boolean(selectedTemplate && selectedTemplate.id === template.id);
+  refreshTemplatesListForFilters();
+  if (wasSelected && selectedTemplate && selectedTemplate.id === template.id) {
+    const replacement = protocolTemplates.find((entry) => entry.id === template.id);
+    if (replacement) selectTemplate(replacement);
+  }
+  setStatus(`${wasFavorite ? "Removed from" : "Added to"} favorites: ${template.name}`);
+}
+
 function renderTemplatesList(term = "") {
   if (!templatesList) return;
   const normalized = term.trim().toLowerCase();
+  const activeTags = Array.from(selectedTemplateTags);
   filteredTemplates = protocolTemplates.filter((template) => {
+    if (showFavoritesOnly && !favoriteTemplateIds.has(template.id)) {
+      return false;
+    }
+    if (activeTags.length) {
+      const templateTags = template.tags || [];
+      const matchesTags = activeTags.every((tag) => templateTags.includes(tag));
+      if (!matchesTags) return false;
+    }
     if (!normalized) return true;
+    const templateTags = template.tags || [];
     return (
       template.name.toLowerCase().includes(normalized) ||
-      template.summary.toLowerCase().includes(normalized)
+      template.summary.toLowerCase().includes(normalized) ||
+      templateTags.some((tag) => tag.includes(normalized) || formatTemplateTagLabel(tag).toLowerCase().includes(normalized))
     );
   });
 
@@ -767,7 +972,13 @@ function renderTemplatesList(term = "") {
   if (!filteredTemplates.length) {
     const emptyState = document.createElement("li");
     emptyState.className = "command-item";
-    emptyState.textContent = "No templates match your search.";
+    if (showFavoritesOnly) {
+      emptyState.textContent = favoriteTemplateIds.size
+        ? "No favorite templates match your filters."
+        : "You haven't marked any templates as favorites yet.";
+    } else {
+      emptyState.textContent = "No templates match your filters.";
+    }
     emptyState.setAttribute("aria-disabled", "true");
     emptyState.tabIndex = -1;
     templatesList.append(emptyState);
@@ -780,7 +991,15 @@ function renderTemplatesList(term = "") {
     item.dataset.templateId = template.id;
     item.tabIndex = 0;
     item.setAttribute("role", "option");
-    item.innerHTML = `<strong>${template.name}</strong><p>${template.summary}</p>`;
+    const tagsMarkup = (template.tags || []).length
+      ? `<div class="command-tags">${template.tags
+        .map((tag) => `<span class="command-tag">${formatTemplateTagLabel(tag)}</span>`)
+        .join("")}</div>`
+      : "";
+    const summaryMarkup = template.summary
+      ? `<p>${template.summary}</p>`
+      : "";
+    item.innerHTML = `<strong>${template.name}</strong>${summaryMarkup}${tagsMarkup}`;
     item.addEventListener("click", () => {
       selectTemplate(template);
     });
@@ -790,6 +1009,25 @@ function renderTemplatesList(term = "") {
         selectTemplate(template);
       }
     });
+    const favoriteButton = document.createElement("button");
+    favoriteButton.type = "button";
+    favoriteButton.className = "template-favorite-button";
+    favoriteButton.dataset.templateId = template.id;
+    favoriteButton.setAttribute("data-template-name", template.name);
+    updateFavoriteButtonState(favoriteButton, isTemplateFavorite(template.id));
+    favoriteButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleTemplateFavorite(template);
+    });
+    favoriteButton.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleTemplateFavorite(template);
+      }
+    });
+    item.append(favoriteButton);
     templatesList.append(item);
   });
 
@@ -802,7 +1040,17 @@ function selectTemplate(template) {
   if (clearTemplateSelectionBtn) clearTemplateSelectionBtn.hidden = false;
   if (templatesPlaceholder) templatesPlaceholder.hidden = true;
   if (templateDetail) templateDetail.hidden = false;
-  if (templateSummary) templateSummary.textContent = template.summary;
+  if (templateSummary) {
+    const summaryParts = [];
+    if (template.summary) summaryParts.push(template.summary);
+    if (template.tags && template.tags.length) {
+      summaryParts.push(`Tags: ${template.tags.map((tag) => formatTemplateTagLabel(tag)).join(", ")}`);
+    }
+    if (favoriteTemplateIds.has(template.id)) {
+      summaryParts.push("★ Favorite");
+    }
+    templateSummary.textContent = summaryParts.join(" · ");
+  }
   if (templatePreview) templatePreview.textContent = template.content;
   if (insertTemplateButton) insertTemplateButton.disabled = false;
   resetTemplateMessage();
@@ -827,6 +1075,8 @@ async function openTemplatesDialog() {
     await ensureTemplatesLoaded();
   }
   clearTemplateSelection();
+  renderTemplateTags();
+  updateFavoritesToggleState();
   renderTemplatesList("");
   if ((templatesFetchDisabled || templatesLoadError) && !templatesFallbackMessageShown) {
     showTemplatesMessage(
@@ -2918,15 +3168,22 @@ function setupEventListeners() {
       updateTemplatesListSelection();
     });
   }
+  if (clearTemplateTagsBtn) {
+    clearTemplateTagsBtn.addEventListener("click", () => {
+      clearTemplateTagFilters();
+    });
+  }
+  if (templatesFavoritesToggle) {
+    templatesFavoritesToggle.addEventListener("click", () => {
+      showFavoritesOnly = !showFavoritesOnly;
+      updateFavoritesToggleState();
+      refreshTemplatesListForFilters();
+      setStatus(showFavoritesOnly ? "Showing favorite templates only." : "Showing all templates.");
+    });
+  }
   if (templatesSearchInput) {
     templatesSearchInput.addEventListener("input", () => {
-      const term = templatesSearchInput.value || "";
-      renderTemplatesList(term);
-      if (selectedTemplate && !filteredTemplates.some((t) => t.id === selectedTemplate.id)) {
-        clearTemplateSelection({ keepSearch: true });
-      } else {
-        updateTemplatesListSelection();
-      }
+      refreshTemplatesListForFilters();
     });
   }
   if (templatesDialog) {
@@ -2988,6 +3245,9 @@ function setupEventListeners() {
 function init() {
   updateLineCount();
   populateCommandsList();
+  reconcileFavoriteTemplateIds();
+  renderTemplateTags();
+  updateFavoritesToggleState();
   renderTemplatesList("");
   renderValidationResults();
   setupEventListeners();

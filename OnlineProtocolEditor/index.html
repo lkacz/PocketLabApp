@@ -183,6 +183,27 @@
                 Search
                 <input id="templatesSearch" type="search" placeholder="Search templates" />
               </label>
+              <div class="tag-filter-row" role="group" aria-label="Filter templates by tags">
+                <span class="tag-filter-label">Tags</span>
+                <div
+                  id="templatesTagList"
+                  class="tag-chip-list"
+                  role="listbox"
+                  aria-label="Template tags"
+                  aria-multiselectable="true"
+                ></div>
+                <button id="clearTemplateTags" type="button" class="link-button" hidden>Clear</button>
+              </div>
+              <button
+                id="templatesFavoritesToggle"
+                type="button"
+                class="favorites-toggle"
+                aria-pressed="false"
+                aria-label="Show only favorited templates"
+              >
+                <span class="favorites-toggle-icon" aria-hidden="true">☆</span>
+                Favorites only
+              </button>
             </div>
             <ul id="templatesList" class="command-list" role="listbox"></ul>
           </section>

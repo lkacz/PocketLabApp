@@ -782,6 +782,91 @@ body {
   grid-template-columns: 1fr;
 }
 
+.tag-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tag-filter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.tag-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.favorites-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-translucent);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease, color 0.2s ease;
+}
+
+.favorites-toggle:hover,
+.favorites-toggle:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  background: var(--interactive-hover);
+  border-color: var(--interactive-border);
+}
+
+.favorites-toggle[aria-pressed="true"] {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
+.favorites-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.tag-chip {
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: var(--surface-translucent);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+.tag-chip:hover,
+.tag-chip:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  background: var(--interactive-hover);
+  border-color: var(--interactive-border);
+}
+
+.tag-chip.is-selected {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
 .templates-config {
   display: flex;
   flex-direction: column;
@@ -806,6 +891,7 @@ body {
   border-radius: 12px;
   border: 1px solid var(--border-medium);
   padding: 12px 16px;
+  padding-right: 52px;
   background: var(--surface-overlay);
   font-family: "JetBrains Mono", ui-monospace;
   font-size: 0.85rem;
@@ -813,6 +899,7 @@ body {
   cursor: pointer;
   transition: transform 0.1s ease, background 0.2s ease, border-color 0.2s ease;
   color: var(--text);
+  position: relative;
 }
 
 .command-item:hover,
@@ -834,6 +921,51 @@ body {
   background: var(--primary-softer);
   color: var(--primary);
   box-shadow: 0 8px 24px var(--primary-soft);
+}
+
+.template-favorite-button {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: color 0.2s ease, transform 0.1s ease, background 0.2s ease;
+}
+
+.template-favorite-button:hover,
+.template-favorite-button:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  color: var(--primary);
+  background: var(--interactive-hover);
+}
+
+.template-favorite-button.is-favorite {
+  color: var(--warning);
+}
+
+.command-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.command-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border-radius: 999px;
+  padding: 4px 8px;
 }
 
 .command-config {

@@ -3,24 +3,28 @@
     "id": "mindful-walk",
     "name": "Mindful walking session",
     "summary": "Outdoor mindfulness loop with mood check, timed walk, and reflective notes.",
-    "file": "mindful-walk.txt"
+    "file": "mindful-walk.txt",
+    "tags": ["outdoor", "mindfulness", "timed"]
   },
   {
     "id": "pokemon-go-outing",
     "name": "Pokémon GO community outing",
     "summary": "Community play session with pre/post energy ratings and catch log.",
-    "file": "pokemon-go-outing.txt"
+    "file": "pokemon-go-outing.txt",
+    "tags": ["community", "gameplay", "outdoor"]
   },
   {
     "id": "branching-trail",
     "name": "Branching trail decision",
     "summary": "Demonstrates LABEL and GOTO structure for different field routes.",
-    "file": "branching-trail.txt"
+    "file": "branching-trail.txt",
+    "tags": ["routing", "decision", "labels"]
   },
   {
     "id": "rapid-randomized-check",
     "name": "Rapid randomized check-in",
     "summary": "Quick study with randomized scale items and final thank-you.",
-    "file": "rapid-randomized-check.txt"
+    "file": "rapid-randomized-check.txt",
+    "tags": ["randomization", "quick", "check-in"]
   }
 ]
