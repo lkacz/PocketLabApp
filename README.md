@@ -8,6 +8,27 @@ Use this README as a merged hub for both engineering tasks (builds, tests, relea
 
 ---
 
+## Repository snapshot
+
+**About**  
+No description, website, or topics provided.
+
+**Resources**
+
+- Readme
+- License
+
+**License**  
+Unknown, GPL-3.0 licenses found
+
+**Activity**
+
+- Stars: 0 stars
+- Watchers: 1 watching
+- Forks: 0 forks
+
+---
+
 ## Release status
 
 - **Current version:** 1.0.0 (see [`CHANGELOG.md`](./CHANGELOG.md))
