@@ -394,6 +394,7 @@ const commandHintEl = document.getElementById("commandHint");
 const parameterContainer = document.getElementById("parameterContainer");
 const insertDialogMessage = document.getElementById("insertDialogMessage");
 const insertDialogSubmit = document.getElementById("insertDialogSubmit");
+const insertDialogCancel = document.getElementById("insertDialogCancel");
 
 const templatesDialog = document.getElementById("templatesDialog");
 const templatesForm = templatesDialog ? templatesDialog.querySelector(".templates-form") : null;
@@ -407,6 +408,7 @@ const templateSummary = document.getElementById("templateSummary");
 const templatePreview = document.getElementById("templatePreview");
 const templatesDialogMessage = document.getElementById("templatesDialogMessage");
 const insertTemplateButton = document.getElementById("insertTemplateButton");
+const templatesDialogCancel = document.getElementById("templatesDialogCancel");
 
 const insertDialogElementsReady = Boolean(
   insertDialog &&
@@ -421,7 +423,8 @@ const insertDialogElementsReady = Boolean(
   commandHintEl &&
   parameterContainer &&
   insertDialogMessage &&
-  insertDialogSubmit,
+  insertDialogSubmit &&
+  insertDialogCancel,
 );
 
 const templatesDialogElementsReady = Boolean(
@@ -436,7 +439,8 @@ const templatesDialogElementsReady = Boolean(
   templateSummary &&
   templatePreview &&
   templatesDialogMessage &&
-  insertTemplateButton,
+  insertTemplateButton &&
+  templatesDialogCancel,
 );
 
 let insertDialogElementsMissingLogged = false;
@@ -1302,20 +1306,53 @@ function insertAtCursor(value) {
 }
 
 function populateCommandsList() {
-  const sortedCommands = Object.keys(commandDefinitions).sort((a, b) => a.localeCompare(b));
+  if (!commandList) return;
+  const commandsByCategory = new Map();
+  Object.entries(commandDefinitions).forEach(([name, definition]) => {
+    const category = definition?.category || "Content";
+    if (!commandsByCategory.has(category)) {
+      commandsByCategory.set(category, []);
+    }
+    commandsByCategory.get(category).push(name);
+  });
+
+  const orderedCategories = COMMAND_CATEGORIES.filter((category) => category !== "All").filter((category) =>
+    commandsByCategory.has(category),
+  );
+
+  const leftoverCategories = Array.from(commandsByCategory.keys())
+    .filter((category) => !orderedCategories.includes(category))
+    .sort((a, b) => a.localeCompare(b));
+
   commandList.innerHTML = "";
-  sortedCommands.forEach((command) => {
-    const li = document.createElement("li");
-    li.tabIndex = 0;
-    li.textContent = command;
-    li.addEventListener("click", () => openInsertDialog(command));
-    li.addEventListener("keypress", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openInsertDialog(command);
-      }
+
+  [...orderedCategories, ...leftoverCategories].forEach((category) => {
+    const commands = commandsByCategory.get(category) || [];
+    commands.sort((a, b) => a.localeCompare(b));
+    if (!commands.length) return;
+
+    const group = document.createElement("section");
+    group.className = "command-group";
+
+    const title = document.createElement("h3");
+    title.className = "command-group-title";
+    title.textContent = category;
+    group.append(title);
+
+    const grid = document.createElement("div");
+    grid.className = "command-chip-grid";
+
+    commands.forEach((command) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "command-chip";
+      button.textContent = command;
+      button.addEventListener("click", () => openInsertDialog(command));
+      grid.append(button);
     });
-    commandList.append(li);
+
+    group.append(grid);
+    commandList.append(group);
   });
 }
 
@@ -2669,6 +2706,15 @@ function setupEventListeners() {
   if (insertForm) {
     insertForm.addEventListener("submit", handleInsertFormSubmit);
   }
+  if (insertDialogCancel) {
+    insertDialogCancel.addEventListener("click", () => {
+      clearDialogMessage();
+      if (insertDialog && insertDialog.open) {
+        insertDialog.close("cancel");
+        setStatus("Insert cancelled.");
+      }
+    });
+  }
   if (insertDialog) {
     insertDialog.addEventListener("close", () => {
       clearDialogMessage();
@@ -2684,6 +2730,14 @@ function setupEventListeners() {
       }
       insertTemplateContent(selectedTemplate);
       if (templatesDialog) templatesDialog.close("confirm");
+    });
+  }
+  if (templatesDialogCancel) {
+    templatesDialogCancel.addEventListener("click", () => {
+      if (templatesDialog && templatesDialog.open) {
+        templatesDialog.close("cancel");
+        setStatus("Template selection cancelled.");
+      }
     });
   }
   if (clearTemplateSelectionBtn) {

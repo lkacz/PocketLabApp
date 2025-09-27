@@ -86,7 +86,7 @@
           </header>
           <div class="card-body" id="commandsBody" hidden>
             <p class="card-hint">Commands are case-insensitive. Tap any command to insert a template.</p>
-            <ul id="commandList"></ul>
+            <div id="commandList" class="command-groups"></div>
           </div>
         </section>
 
@@ -156,7 +156,7 @@
           </section>
         </div>
         <footer class="dialog-footer">
-          <button value="cancel" type="reset">Cancel</button>
+          <button id="insertDialogCancel" value="cancel" type="button">Cancel</button>
           <div class="dialog-footer-gap"></div>
           <button id="insertDialogSubmit" value="confirm" type="submit" class="primary">Insert</button>
         </footer>
@@ -202,7 +202,7 @@
           </section>
         </div>
         <footer class="dialog-footer">
-          <button value="cancel" type="reset">Cancel</button>
+          <button id="templatesDialogCancel" value="cancel" type="button">Cancel</button>
           <div class="dialog-footer-gap"></div>
           <button id="insertTemplateButton" value="confirm" type="submit" class="primary" disabled>Insert template</button>
         </footer>
