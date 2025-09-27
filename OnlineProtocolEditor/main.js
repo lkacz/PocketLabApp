@@ -490,7 +490,7 @@ function ensureTemplatesDialogElements() {
   return false;
 }
 
-const protocolTemplates = [
+const fallbackTemplateDescriptors = [
   {
     id: "mindful-walk",
     name: "Mindful walking session",
@@ -612,12 +612,114 @@ function formatTemplateContent(lines) {
   return output.join("\n").replace(/\s+$/, "");
 }
 
-function getTemplateContent(template) {
-  return formatTemplateContent(template.lines);
+function buildFallbackTemplates() {
+  return fallbackTemplateDescriptors.map((template) => ({
+    id: template.id,
+    name: template.name,
+    summary: template.summary,
+    content: formatTemplateContent(template.lines),
+  }));
 }
 
+function normalizeTemplateContent(raw) {
+  return (raw ?? "").replace(/\r\n/g, "\n").replace(/\s+$/, "");
+}
+
+let protocolTemplates = buildFallbackTemplates();
 let filteredTemplates = [...protocolTemplates];
 let selectedTemplate = null;
+const templatesFetchDisabled = window.location.protocol === "file:";
+let templatesLoadedFromManifest = false;
+let templatesLoadingPromise = null;
+let templatesLoadError = null;
+let templatesFallbackMessageShown = false;
+let templatesLoadedStatusAnnounced = false;
+
+async function ensureTemplatesLoaded() {
+  if (templatesFetchDisabled || templatesLoadedFromManifest) return;
+  if (!templatesLoadingPromise) {
+    templatesLoadingPromise = (async () => {
+      try {
+        const templates = await fetchTemplatesManifest();
+        if (templates.length) {
+          applyTemplateData(templates);
+          templatesLoadError = null;
+          if (!templatesLoadedStatusAnnounced) {
+            setStatus("Templates loaded from templates/index.json.");
+            templatesLoadedStatusAnnounced = true;
+          }
+        } else {
+          console.warn("Templates manifest is empty; continuing with bundled templates.");
+        }
+        templatesLoadedFromManifest = true;
+      } catch (error) {
+        templatesLoadError = error;
+        console.warn(
+          "Failed to load external templates. Falling back to bundled templates.",
+          error,
+        );
+        throw error;
+      }
+    })();
+  }
+  try {
+    await templatesLoadingPromise;
+  } catch (error) {
+    console.debug("Templates manifest load failed:", error);
+  } finally {
+    if (templatesLoadError) {
+      templatesLoadingPromise = null;
+    }
+  }
+}
+
+async function fetchTemplatesManifest() {
+  const response = await fetch("templates/index.json", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Manifest request failed with status ${response.status}`);
+  }
+  const manifest = await response.json();
+  if (!Array.isArray(manifest)) {
+    throw new Error("Templates manifest must be an array.");
+  }
+  const templates = await Promise.all(
+    manifest.map(async (entry, index) => {
+      if (!entry || !entry.file) {
+        throw new Error(`Template entry at index ${index} is missing a file property.`);
+      }
+      const fileResponse = await fetch(`templates/${entry.file}`, { cache: "no-store" });
+      if (!fileResponse.ok) {
+        throw new Error(
+          `Failed to load template file ${entry.file} (status ${fileResponse.status}).`,
+        );
+      }
+      const text = normalizeTemplateContent(await fileResponse.text());
+      return {
+        id: entry.id || `template-${index + 1}`,
+        name: entry.name || entry.id || entry.file,
+        summary: entry.summary || "",
+        content: text,
+      };
+    }),
+  );
+  return templates;
+}
+
+function applyTemplateData(newTemplates) {
+  protocolTemplates = newTemplates;
+  filteredTemplates = [...protocolTemplates];
+  if (selectedTemplate) {
+    const replacement = protocolTemplates.find((template) => template.id === selectedTemplate.id);
+    if (replacement) {
+      selectedTemplate = replacement;
+    } else {
+      clearTemplateSelection({ keepSearch: true });
+    }
+  }
+  if (templatesDialog && templatesDialog.open) {
+    renderTemplatesList(templatesSearchInput ? templatesSearchInput.value : "");
+  }
+}
 
 function resetTemplateMessage() {
   if (templatesDialogMessage) {
@@ -701,7 +803,7 @@ function selectTemplate(template) {
   if (templatesPlaceholder) templatesPlaceholder.hidden = true;
   if (templateDetail) templateDetail.hidden = false;
   if (templateSummary) templateSummary.textContent = template.summary;
-  if (templatePreview) templatePreview.textContent = getTemplateContent(template);
+  if (templatePreview) templatePreview.textContent = template.content;
   if (insertTemplateButton) insertTemplateButton.disabled = false;
   resetTemplateMessage();
   updateTemplatesListSelection();
@@ -713,14 +815,25 @@ function showTemplatesMessage(message) {
   templatesDialogMessage.hidden = false;
 }
 
-function openTemplatesDialog() {
+async function openTemplatesDialog() {
   if (!ensureTemplatesDialogElements()) {
     setStatus("Templates are unavailable in this environment.");
     return;
   }
   resetTemplateMessage();
+  if (templatesFetchDisabled && !templatesLoadError) {
+    templatesLoadError = new Error("Templates cannot be fetched over file://");
+  } else {
+    await ensureTemplatesLoaded();
+  }
   clearTemplateSelection();
   renderTemplatesList("");
+  if ((templatesFetchDisabled || templatesLoadError) && !templatesFallbackMessageShown) {
+    showTemplatesMessage(
+      "Showing bundled templates. Serve the editor over http(s) to load custom templates from /templates.",
+    );
+    templatesFallbackMessageShown = true;
+  }
   if (templatesDialog) {
     templatesDialog.showModal();
     requestAnimationFrame(() => {
@@ -731,8 +844,7 @@ function openTemplatesDialog() {
 
 function insertTemplateContent(template) {
   if (!template) return;
-  const content = getTemplateContent(template);
-  insertAtCursor(content);
+  insertAtCursor(template.content);
   setStatus(`Inserted template: ${template.name}`);
 }
 
@@ -2739,7 +2851,9 @@ function setupEventListeners() {
     insertButton.addEventListener("click", () => openInsertDialog());
   }
   if (templatesButton) {
-    templatesButton.addEventListener("click", () => openTemplatesDialog());
+    templatesButton.addEventListener("click", () => {
+      void openTemplatesDialog();
+    });
   }
   if (aboutButton && aboutDialog) {
     aboutButton.addEventListener("click", () => {

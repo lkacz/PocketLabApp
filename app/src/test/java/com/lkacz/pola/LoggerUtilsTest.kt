@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class LoggerUtilsTest {
-
     @Test
     fun sanitizeStudyIdForFile_replacesUnsafeCharacters() {
         val result = sanitizeStudyIdForFile(" Study 123/ABC#Test ")

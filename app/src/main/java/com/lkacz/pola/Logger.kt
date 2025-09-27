@@ -10,6 +10,14 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
@@ -19,14 +27,6 @@ import java.util.Collections
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 class Logger private constructor(private val context: Context) {
     private val excelOperations = ExcelOperations()
@@ -143,7 +143,7 @@ class Logger private constructor(private val context: Context) {
                 if (isBackupCreated) return@launch
 
                 val parentFile = mainFolder.parentFile ?: return@launch
-                val backupFolder = File(parentFile, backupFolderName)
+                val backupFolder = File(parentFile, BACKUP_FOLDER_NAME)
                 if (!backupFolder.exists()) {
                     backupFolder.mkdirs()
                 }
@@ -200,7 +200,10 @@ class Logger private constructor(private val context: Context) {
         }
     }
 
-    private fun applyIdentifiers(participantId: String?, studyId: String?) {
+    private fun applyIdentifiers(
+        participantId: String?,
+        studyId: String?,
+    ) {
         synchronized(renameLock) {
             if (participantId == activeParticipantId && studyId == activeStudyId) return
             runBlocking {
@@ -212,7 +215,10 @@ class Logger private constructor(private val context: Context) {
         }
     }
 
-    private fun renameLogFileLocked(participantId: String?, studyId: String?) {
+    private fun renameLogFileLocked(
+        participantId: String?,
+        studyId: String?,
+    ) {
         val newFileName = buildFileName(participantId, studyId)
         if (newFileName == currentFileName) {
             activeParticipantId = participantId
@@ -240,7 +246,10 @@ class Logger private constructor(private val context: Context) {
         }
     }
 
-    private fun buildFileName(participantId: String?, studyId: String?): String {
+    private fun buildFileName(
+        participantId: String?,
+        studyId: String?,
+    ): String {
         val parts = mutableListOf<String>()
         if (!participantId.isNullOrBlank()) {
             parts += participantId
@@ -248,7 +257,7 @@ class Logger private constructor(private val context: Context) {
         if (!studyId.isNullOrBlank()) {
             parts += studyId
         }
-        parts += "output_${timeStamp}"
+        parts += "output_$timeStamp"
         return parts.joinToString("_") + ".csv"
     }
 
@@ -257,11 +266,14 @@ class Logger private constructor(private val context: Context) {
         snapshot.forEach { it.join() }
     }
 
-    private fun exportLogToSharedLocations(csvFile: File, xlsxFile: File?): List<String> {
+    private fun exportLogToSharedLocations(
+        csvFile: File,
+        xlsxFile: File?,
+    ): List<String> {
         val savedPaths = mutableListOf<String>()
         val baseName = currentFileName.removeSuffix(".csv")
-        val csvName = "${baseName}.csv"
-        val xlsxName = "${baseName}.xlsx"
+        val csvName = "$baseName.csv"
+        val xlsxName = "$baseName.xlsx"
 
         val targetUri = outputFolderUri
         if (targetUri != null) {
@@ -273,7 +285,7 @@ class Logger private constructor(private val context: Context) {
                         folder.name
                             ?: targetUri.lastPathSegment
                             ?: context.getString(R.string.value_selected_folder)
-                    savedPaths += "$folderLabel/${csvName}"
+                    savedPaths += "$folderLabel/$csvName"
                 }
                 if (xlsxFile?.exists() == true) {
                     exportFileToDocumentTree(
@@ -287,7 +299,7 @@ class Logger private constructor(private val context: Context) {
         } else {
             val downloadsCsvExported = exportFileToDownloads(csvName, "text/csv", csvFile)
             if (downloadsCsvExported) {
-                savedPaths += "Downloads/PoLA_Data/${csvName}"
+                savedPaths += "Downloads/PoLA_Data/$csvName"
             }
             if (xlsxFile?.exists() == true) {
                 exportFileToDownloads(
@@ -374,18 +386,18 @@ class Logger private constructor(private val context: Context) {
 
     companion object {
         @Volatile
-        private var INSTANCE: Logger? = null
-        private const val backupFolderName = "PoLA_Backup"
+        private var instance: Logger? = null
+        private const val BACKUP_FOLDER_NAME = "PoLA_Backup"
 
         fun getInstance(context: Context): Logger {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Logger(context).also { INSTANCE = it }
+            return instance ?: synchronized(this) {
+                instance ?: Logger(context).also { instance = it }
             }
         }
 
         fun resetInstance() {
-            INSTANCE?.flushAndClose()
-            INSTANCE = null
+            instance?.flushAndClose()
+            instance = null
         }
     }
 }

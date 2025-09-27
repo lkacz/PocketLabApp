@@ -1,0 +1,28 @@
+// Quick randomized check-in template
+// Assign a short identifier for the rapid check
+
+STUDY_ID;RapidCheck01
+
+// Introduce the purpose and mention randomization
+
+INSTRUCTION;Welcome investigator;We will randomize item order for balanced feedback.;Start
+
+// Begin the randomized block
+
+RANDOMIZE_ON
+
+// Present randomized ratings for current field items
+
+SCALE[RANDOMIZED];Field item ratings;Evaluate each item based on current conditions.;[Trail signage;Litter levels;Noise];Excellent [5];Good [4];Average [3];Poor [2];Critical [1]
+
+// End the randomized block
+
+RANDOMIZE_OFF
+
+// Collect pressing notes the team needs immediately
+
+INPUTFIELD;Quick log;List anything the team should know immediately.;Urgent Issue;Opportunity;Next Visit Idea;Finish
+
+// Thank the participant and signal completion
+
+INSTRUCTION;Thank you;Sync your notes and stand by for next assignment.;Complete

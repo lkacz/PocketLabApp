@@ -1,0 +1,28 @@
+// Pokémon GO community play session
+// Identify the session for syncing and analytics
+
+STUDY_ID;PokemonGoField01
+
+// Greet the group and share meetup instructions
+
+INSTRUCTION;Welcome trainers;Meet at the park fountain and stay aware of traffic while you explore.;Continue
+
+// Check energy levels before the play session
+
+SCALE;Pre-play energy;How ready do you feel to play?;[Energy;Focus];Fully Charged [5];Ready [4];Moderate [3];Low [2];Need Rest [1]
+
+// Set a ten-minute exploration window
+
+TIMER;Exploration timer;Head out to catch Pokémon until the timer buzzes.;600;Continue
+
+// Measure mood right after the outing
+
+SCALE;Post-play mood;How was the session?;[Fun;Challenge];Incredible [5];Great [4];Good [3];Average [2];Rough [1]
+
+// Log standout catches and group highlights
+
+INPUTFIELD;Catch log;Record standout catches or raids.;Top Catch;Raid Highlights;Team Strategy;Wrap Up
+
+// Wrap up with safety and sync reminders
+
+INSTRUCTION;Thank you trainers;Hydrate, stretch, and sync your logs when you return.;Finish

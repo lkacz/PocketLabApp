@@ -47,7 +47,10 @@ object HtmlDialogHelper {
                     return handleExternalNavigation(context, uri)
                 }
 
-                override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView,
+                    url: String,
+                ): Boolean {
                     return handleExternalNavigation(context, Uri.parse(url))
                 }
 

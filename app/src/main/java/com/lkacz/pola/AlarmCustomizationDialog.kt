@@ -53,29 +53,50 @@ class AlarmCustomizationDialog : DialogFragment() {
         timerSoundEditText = view.findViewById(R.id.alarmSoundEditText)
         presetSpinner = view.findViewById(R.id.alarmPresetSpinner)
         val prefs = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        val presets = listOf(
-            AlarmPreset(label = "Classic ring – built-in chime", filename = "pola_alarm_classic.mp3"),
-            AlarmPreset(label = "Soft – gentle chime", filename = "pola_alarm_soft.wav"),
-            AlarmPreset(label = "Medium – balanced tone", filename = "pola_alarm_medium.wav"),
-            AlarmPreset(label = "Hard – assertive alert", filename = "pola_alarm_hard.wav"),
-            AlarmPreset(label = "Extreme – maximum volume", filename = "pola_alarm_extreme.wav"),
-            AlarmPreset(label = "Custom (type filename below)", filename = null),
-        )
-        presetSpinner.adapter = ArrayAdapter(
-            requireContext(),
-            android.R.layout.simple_spinner_item,
-            presets.map { it.label },
-        ).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
+        val presets =
+            listOf(
+                AlarmPreset(
+                    label = "Classic ring – built-in chime",
+                    filename = "pola_alarm_classic.mp3",
+                ),
+                AlarmPreset(
+                    label = "Soft – gentle chime",
+                    filename = "pola_alarm_soft.wav",
+                ),
+                AlarmPreset(
+                    label = "Medium – balanced tone",
+                    filename = "pola_alarm_medium.wav",
+                ),
+                AlarmPreset(
+                    label = "Hard – assertive alert",
+                    filename = "pola_alarm_hard.wav",
+                ),
+                AlarmPreset(
+                    label = "Extreme – maximum volume",
+                    filename = "pola_alarm_extreme.wav",
+                ),
+                AlarmPreset(
+                    label = "Custom (type filename below)",
+                    filename = null,
+                ),
+            )
+        presetSpinner.adapter =
+            ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                presets.map { it.label },
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
 
         // Load current timer sound from shared prefs
         val currentTimerSound =
             prefs.getString("CUSTOM_TIMER_SOUND", "mytimersound.mp3")
                 ?: "mytimersound.mp3"
-        val presetIndex = presets.indexOfFirst { preset ->
-            preset.filename != null && preset.filename.equals(currentTimerSound, ignoreCase = true)
-        }
+        val presetIndex =
+            presets.indexOfFirst { preset ->
+                preset.filename != null && preset.filename.equals(currentTimerSound, ignoreCase = true)
+            }
         val customIndex = presets.lastIndex
         if (presetIndex >= 0) {
             presetSpinner.setSelection(presetIndex)
@@ -87,36 +108,44 @@ class AlarmCustomizationDialog : DialogFragment() {
             timerSoundEditText.isEnabled = true
         }
 
-        presetSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long,
-            ) {
-                val preset = presets[position]
-                if (preset.filename != null) {
-                    timerSoundEditText.setText(preset.filename)
-                    timerSoundEditText.isEnabled = false
-                } else {
-                    timerSoundEditText.isEnabled = true
-                    timerSoundEditText.requestFocus()
+        presetSpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    val preset = presets[position]
+                    if (preset.filename != null) {
+                        timerSoundEditText.setText(preset.filename)
+                        timerSoundEditText.isEnabled = false
+                    } else {
+                        timerSoundEditText.isEnabled = true
+                        timerSoundEditText.requestFocus()
+                    }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    // No-op
                 }
             }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                // No-op
-            }
-        }
 
         view.findViewById<Button>(R.id.btnPreviewAlarmSound).setOnClickListener {
             stopTempPlayer()
             val enteredSound = timerSoundEditText.text.toString().trim()
             prefs.edit().putString("CUSTOM_TIMER_SOUND", enteredSound).apply()
 
-            val played = tryPlayFromResourcesFolder(enteredSound) || tryPlayFromAssets(enteredSound)
+            val played =
+                tryPlayFromResourcesFolder(enteredSound) || tryPlayFromAssets(enteredSound)
             if (!played) {
-                Toast.makeText(requireContext(), "Sound file not found. Add it to your resources folder or app assets.", Toast.LENGTH_SHORT).show()
+                Toast
+                    .makeText(
+                        requireContext(),
+                        "Sound file not found. Add it to your resources folder or app assets.",
+                        Toast.LENGTH_SHORT,
+                    )
+                    .show()
             }
         }
 
@@ -179,7 +208,13 @@ class AlarmCustomizationDialog : DialogFragment() {
                 }
             true
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error playing sound: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast
+                .makeText(
+                    requireContext(),
+                    "Error playing sound: ${e.message}",
+                    Toast.LENGTH_SHORT,
+                )
+                .show()
             false
         }
     }

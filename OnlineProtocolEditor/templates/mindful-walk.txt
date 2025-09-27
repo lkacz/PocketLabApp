@@ -1,0 +1,28 @@
+// Mindful walking field study
+// Tag the protocol with a unique study identifier
+
+STUDY_ID;MindfulWalk01
+
+// Welcome participants and outline the mindful walking goals
+
+INSTRUCTION;Welcome to the mindful walk;Find a safe route and prepare to observe your surroundings closely.;Begin Walk
+
+// Capture baseline focus before the activity begins
+
+SCALE;Pre-walk focus check;How present do you feel before starting?;[Breath;Attention;Body];Very Present [5];Present [4];Neutral [3];Distracted [2];Restless [1]
+
+// Run a five-minute mindfulness timer for the walking segment
+
+TIMER;Mindful walking timer;Walk mindfully until the timer completes.;300;Continue
+
+// Collect post-walk ratings to measure change
+
+SCALE;Post-walk reflection;How mindful was your walk?;[Awareness;Distractions];Extremely Mindful [5];Mindful [4];Neutral [3];Distracted [2];Very Distracted [1]
+
+// Gather qualitative notes about observations in the field
+
+INPUTFIELD;Post-walk notes;Capture key observations from the walk.;Highlight;Unexpected Sound;Final Takeaway;Finish
+
+// Close the session with a final thank-you message
+
+INSTRUCTION;Thank you;Great work staying present out there!;Done

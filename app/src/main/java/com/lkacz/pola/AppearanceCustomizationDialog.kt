@@ -1517,7 +1517,7 @@ class AppearanceCustomizationDialog : DialogFragment() {
         val defaultContinueTextColor = Color.WHITE
         val defaultContinueBgColor = Color.parseColor("#008577")
         val defaultItemColor = Color.parseColor("#008577")
-    val defaultResponseColor = Color.WHITE
+        val defaultResponseColor = Color.WHITE
         val defaultScreenBgColor = Color.parseColor("#F5F5F5")
         val defaultButtonTextColor = Color.WHITE
         val defaultButtonBgColor = Color.parseColor("#008577")

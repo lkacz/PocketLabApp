@@ -6,6 +6,7 @@
     <string name="select_file_button">Select your protocol</string>
     <string name="use_demo_button">Load demo protocol</string>
     <string name="start_protocol_button">Start</string>
+    <string name="time_continue_text">Continue.</string>
     <string name="selected_protocol">Selected:</string>
     <string name="title_current_protocol">CURRENT PROTOCOL</string>
     <string name="label_selected_file">Selected file</string>

@@ -132,8 +132,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             allowEnterTransitionOverlap = true
             allowReturnTransitionOverlap = true
         }
-
-    handleProgressUpdate()
+        handleProgressUpdate()
 
         when (mode) {
             "off" -> {
