@@ -93,40 +93,142 @@ const orderedRecognizedCommands = Array.from(recognizedCommands).sort((a, b) =>
 );
 
 const commandTemplates = {
-  END: "END",
-  GOTO: "GOTO;Label_name",
-  HTML: "HTML;Asset_path;[Continue_button_text]",
-  INSTRUCTION: "INSTRUCTION;Header_text;Body_text;Continue_button_text",
-  INPUTFIELD: "INPUTFIELD;Header_text;Body_text;Field1;Field2;Continue_button_text",
-  "INPUTFIELD[RANDOMIZED]": "INPUTFIELD[RANDOMIZED];Header_text;Body_text;Field1;Field2;Continue_button_text",
-  LABEL: "LABEL;Label_name",
-  LOG: "LOG;Message_text",
-  RANDOMIZE_ON: "RANDOMIZE_ON",
-  RANDOMIZE_OFF: "RANDOMIZE_OFF",
-  SCALE: "SCALE;Header_text;Body_text;[Item1;Item2];Response1;Response2",
-  "SCALE[RANDOMIZED]": "SCALE[RANDOMIZED];Header_text;Body_text;[Item1;Item2];Response1;Response2",
-  SCREEN_BACKGROUND_COLOR: "SCREEN_BACKGROUND_COLOR;#RRGGBB",
-  STUDY_ID: "STUDY_ID;Study_identifier",
-  TIMER: "TIMER;Header_text;Body_text;Seconds;Continue_button_text",
-  TIMER_SOUND: "TIMER_SOUND;audio/file.mp3",
-  TRANSITIONS: "TRANSITIONS;off|slide|slideleft|fade|dissolve",
+  END: {
+    format: "END",
+    segments: [],
+  },
+  GOTO: {
+    format: "GOTO;Label_name",
+    segments: ["Target label name"],
+  },
+  HTML: {
+    format: "HTML;Asset_path;[Continue_text[optional [HOLD]]]",
+    segments: [
+      "Asset path e.g. content/page.html",
+      "Optional continue text (add [HOLD] to require hold)",
+    ],
+  },
+  INSTRUCTION: {
+    format: "INSTRUCTION;Header_text;Body_text;Continue_text[optional [HOLD]]",
+    segments: [
+      "Header text",
+      "Body text",
+      "Continue text (add [HOLD] to require hold)",
+    ],
+  },
+  INPUTFIELD: {
+    format: "INPUTFIELD;Header_text;Body_text;Field1;Field2;Continue_text[optional [HOLD]]",
+    segments: [
+      "Header text",
+      "Body text",
+    ],
+    dynamic: {
+      startIndex: 2,
+      repeatHint: "Field name (add more as needed)",
+      finalHint: "Field name or Continue text (add [HOLD] to require hold)",
+      minRepeatsBeforeFinal: 1,
+    },
+  },
+  "INPUTFIELD[RANDOMIZED]": {
+    format: "INPUTFIELD[RANDOMIZED];Header_text;Body_text;Field1;Field2;Continue_text[optional [HOLD]]",
+    segments: [
+      "Header text",
+      "Body text",
+    ],
+    dynamic: {
+      startIndex: 2,
+      repeatHint: "Field name (randomized order)",
+      finalHint: "Field name or Continue text (add [HOLD] to require hold)",
+      minRepeatsBeforeFinal: 1,
+    },
+  },
+  LABEL: {
+    format: "LABEL;Label_name",
+    segments: ["Label name"],
+  },
+  LOG: {
+    format: "LOG;Message_text",
+    segments: ["Message to log"],
+  },
+  RANDOMIZE_ON: {
+    format: "RANDOMIZE_ON",
+    segments: [],
+  },
+  RANDOMIZE_OFF: {
+    format: "RANDOMIZE_OFF",
+    segments: [],
+  },
+  SCALE: {
+    format: "SCALE;Header_text;Body_text;[Item1;Item2];Response1 [Label];Response2",
+    segments: [
+      "Header text",
+      "Body text",
+      "Items list e.g. [Item1;Item2]",
+      "Response option e.g. Choice [Label]",
+    ],
+    repeatFromIndex: 3,
+  },
+  "SCALE[RANDOMIZED]": {
+    format: "SCALE[RANDOMIZED];Header_text;Body_text;[Item1;Item2];Response1 [Label];Response2",
+    segments: [
+      "Header text",
+      "Body text",
+      "Items list (randomized) e.g. [Item1;Item2]",
+      "Response option e.g. Choice [Label]",
+    ],
+    repeatFromIndex: 3,
+  },
+  SCREEN_BACKGROUND_COLOR: {
+    format: "SCREEN_BACKGROUND_COLOR;#RRGGBB",
+    segments: ["Hex color (#RRGGBB or #AARRGGBB)"],
+  },
+  STUDY_ID: {
+    format: "STUDY_ID;Study_identifier",
+    segments: ["Study identifier"],
+  },
+  TIMER: {
+    format: "TIMER;Header_text;Body_text;Seconds;Continue_text[optional [HOLD]]",
+    segments: [
+      "Header text",
+      "Body text",
+      "Duration in seconds",
+      "Continue text (add [HOLD] to require hold)",
+    ],
+  },
+  TIMER_SOUND: {
+    format: "TIMER_SOUND;audio/file.mp3",
+    segments: ["Audio file path"],
+  },
+  TRANSITIONS: {
+    format: "TRANSITIONS;off|slide|slideleft|fade|dissolve",
+    segments: ["Transition style (off | slide | slideleft | fade | dissolve)"],
+  },
 };
 
 colorCommands.forEach((command) => {
   if (!commandTemplates[command]) {
-    commandTemplates[command] = `${command};#RRGGBB`;
+    commandTemplates[command] = {
+      format: `${command};#RRGGBB`,
+      segments: ["Hex color (#RRGGBB or #AARRGGBB)"],
+    };
   }
 });
 
 sizeCommands.forEach((command) => {
   if (!commandTemplates[command]) {
-    commandTemplates[command] = `${command};Size_value`;
+    commandTemplates[command] = {
+      format: `${command};Size_value`,
+      segments: ["Size in points (e.g. 18)"],
+    };
   }
 });
 
 alignmentCommands.forEach((command) => {
   if (!commandTemplates[command]) {
-    commandTemplates[command] = `${command};LEFT|CENTER|RIGHT`;
+    commandTemplates[command] = {
+      format: `${command};LEFT|CENTER|RIGHT`,
+      segments: ["LEFT | CENTER | RIGHT"],
+    };
   }
 });
 
@@ -267,6 +369,9 @@ const commandList = document.getElementById("commandList");
 const toggleCommandsButton = document.getElementById("toggleCommands");
 const commandsBody = document.getElementById("commandsBody");
 const commandSuggestion = document.getElementById("commandSuggestion");
+const protocolGhost = document.getElementById("protocolGhost");
+const ghostPrefixEl = protocolGhost ? protocolGhost.querySelector(".ghost-prefix") : null;
+const ghostSuggestionEl = protocolGhost ? protocolGhost.querySelector(".ghost-suggestion") : null;
 const newButton = document.getElementById("newButton");
 const loadButton = document.getElementById("loadButton");
 const saveButton = document.getElementById("saveButton");
@@ -344,6 +449,86 @@ function clearCommandSuggestion(message = defaultSuggestionMessage) {
   renderCommandSuggestion(message, false);
 }
 
+function clearInlineGhost() {
+  if (!protocolGhost) return;
+  protocolGhost.style.display = "none";
+  if (ghostPrefixEl) ghostPrefixEl.textContent = "";
+  if (ghostSuggestionEl) ghostSuggestionEl.textContent = "";
+}
+
+function setInlineGhost(prefixText, suggestionText) {
+  if (!protocolGhost || !ghostPrefixEl || !ghostSuggestionEl) return;
+  if (!suggestionText) {
+    clearInlineGhost();
+    return;
+  }
+  protocolGhost.style.display = "block";
+  ghostPrefixEl.textContent = prefixText;
+  ghostSuggestionEl.textContent = suggestionText;
+}
+
+function splitSegments(line) {
+  const segments = [];
+  let current = "";
+  let bracketDepth = 0;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === "[") {
+      bracketDepth += 1;
+    } else if (char === "]" && bracketDepth > 0) {
+      bracketDepth -= 1;
+    }
+
+    if (char === ";" && bracketDepth === 0) {
+      segments.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  segments.push(current);
+  return segments;
+}
+
+function resolveSegmentHint(template, segments, paramIndex) {
+  if (!template || paramIndex < 0) return null;
+
+  const baseSegments = Array.isArray(template.segments) ? template.segments : [];
+  if (paramIndex < baseSegments.length) {
+    const entry = baseSegments[paramIndex];
+    if (typeof entry === "string") return entry;
+    if (entry && typeof entry === "object") return entry.hint || null;
+  }
+
+  if (template.dynamic && paramIndex >= template.dynamic.startIndex) {
+    const { startIndex, repeatHint, finalHint, minRepeatsBeforeFinal = 1 } = template.dynamic;
+    const dynamicSegmentStart = startIndex + 1;
+    const currentSegmentIndex = paramIndex + 1;
+    const precedingValues = segments
+      .slice(dynamicSegmentStart, currentSegmentIndex)
+      .filter((segment) => segment && segment.trim().length > 0);
+    if (finalHint && precedingValues.length >= minRepeatsBeforeFinal) {
+      return finalHint;
+    }
+    return repeatHint || finalHint || null;
+  }
+
+  if (
+    typeof template.repeatFromIndex === "number" &&
+    Number.isFinite(template.repeatFromIndex) &&
+    baseSegments.length
+  ) {
+    const repeatIndex = Math.min(template.repeatFromIndex, baseSegments.length - 1);
+    if (paramIndex >= repeatIndex) {
+      const entry = baseSegments[repeatIndex];
+      if (typeof entry === "string") return entry;
+      if (entry && typeof entry === "object") return entry.hint || null;
+    }
+  }
+
+  return null;
+}
+
 function updateCommandSuggestion() {
   if (!commandSuggestion || !protocolInput) return;
 
@@ -355,6 +540,7 @@ function updateCommandSuggestion() {
     !value
   ) {
     clearCommandSuggestion();
+    clearInlineGhost();
     return;
   }
 
@@ -364,23 +550,47 @@ function updateCommandSuggestion() {
   const linePrefix = value.slice(lineStart, caret);
   if (!linePrefix.trim()) {
     clearCommandSuggestion();
+    clearInlineGhost();
     return;
   }
 
   const trimmedPrefix = linePrefix.replace(/\s+$/, "");
   if (!trimmedPrefix) {
     clearCommandSuggestion();
+    clearInlineGhost();
     return;
   }
 
   const trimmedLeft = trimmedPrefix.trimStart();
   if (trimmedLeft.startsWith("//")) {
+    clearInlineGhost();
     clearCommandSuggestion("Suggestions hidden inside comments.");
     return;
   }
 
-  const semicolonIndex = linePrefix.indexOf(";");
-  if (semicolonIndex === -1) {
+  const segments = splitSegments(linePrefix);
+  const currentSegmentIndex = segments.length - 1;
+  const commandTokenCandidate = (segments[0] || "").trim().toUpperCase();
+  const isRecognizedCommand = recognizedCommands.has(commandTokenCandidate);
+  const template = isRecognizedCommand ? commandTemplates[commandTokenCandidate] : null;
+
+  let inlineShown = false;
+  if (template && currentSegmentIndex > 0) {
+    const currentSegmentRaw = segments[currentSegmentIndex] ?? "";
+    if (!currentSegmentRaw.trim()) {
+      const paramIndex = currentSegmentIndex - 1;
+      const hint = resolveSegmentHint(template, segments, paramIndex);
+      if (hint) {
+        inlineShown = true;
+        setInlineGhost(value.slice(0, caret), hint);
+      }
+    }
+  }
+  if (!inlineShown) {
+    clearInlineGhost();
+  }
+
+  if (currentSegmentIndex === 0) {
     const leadingWhitespaceMatch = linePrefix.match(/^\s*/);
     const fragmentStart = lineStart + (leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0);
     const fragment = value.slice(fragmentStart, caret);
@@ -395,7 +605,6 @@ function updateCommandSuggestion() {
             fragment,
             suggestion,
           };
-
           renderCommandSuggestion(`${suggestion} — press Tab to complete`, true);
           return;
         }
@@ -405,11 +614,8 @@ function updateCommandSuggestion() {
 
   currentSuggestionState = null;
 
-  const commandMatch = trimmedLeft.match(/^([A-Z_\[\]]+)/);
-  const commandToken = commandMatch ? commandMatch[1].toUpperCase() : null;
-  const template = commandToken && recognizedCommands.has(commandToken) ? commandTemplates[commandToken] : null;
   if (template) {
-    renderCommandSuggestion(`Format: ${template}`, true);
+    renderCommandSuggestion(`Format: ${template.format}`, true);
     return;
   }
 
@@ -806,6 +1012,7 @@ function insertAtCursor(value) {
   protocolInput.focus();
   updateLineCount();
   markDirty();
+  updateCommandSuggestion();
   if (autoValidateToggle.checked) debouncedValidate();
 }
 
@@ -1387,7 +1594,7 @@ function createContinueSection(options) {
   if (allowHold) {
     holdField = createCheckboxField({
       label: "Require hold to continue",
-      helper: "Adds a [HOLD] token to the continue value.",
+      helper: "Appends [HOLD] so the button must be held down.",
     });
     section.append(holdField.root);
   }
@@ -1999,6 +2206,8 @@ async function handleNew() {
   validationResults = [];
   renderValidationResults();
   markSaved("Started a blank protocol");
+  clearInlineGhost();
+  clearCommandSuggestion();
 }
 
 async function handleLoad() {
@@ -2026,6 +2235,8 @@ async function handleLoad() {
       validationResults = validateProtocol(text);
       renderValidationResults();
       markSaved(`Loaded ${file.name}`);
+  protocolInput.setSelectionRange(text.length, text.length);
+  updateCommandSuggestion();
       return;
     } catch (error) {
       if (error?.name === "AbortError") {
@@ -2049,6 +2260,8 @@ async function handleFileInputChange(event) {
   validationResults = validateProtocol(text);
   renderValidationResults();
   markSaved(`Loaded ${file.name}`);
+  protocolInput.setSelectionRange(text.length, text.length);
+  updateCommandSuggestion();
 }
 
 async function handleSave() {
@@ -2132,6 +2345,7 @@ function setupEventListeners() {
 
   protocolInput.addEventListener("blur", () => {
     clearCommandSuggestion();
+    clearInlineGhost();
   });
 
   protocolInput.addEventListener("focus", () => {
@@ -2195,6 +2409,7 @@ function init() {
   populateCommandsList();
   renderValidationResults();
   setupEventListeners();
+  clearInlineGhost();
   clearCommandSuggestion();
   setStatus("Ready");
 }

@@ -27,12 +27,15 @@
           </label>
         </div>
         <div id="commandSuggestion" class="suggestion-bar" role="status" aria-live="polite"></div>
-        <textarea
-          id="protocolInput"
-          aria-label="Protocol contents"
-          spellcheck="false"
-          placeholder="Start typing your protocol here…"
-        ></textarea>
+        <div class="protocol-input-wrapper">
+          <pre id="protocolGhost" class="protocol-ghost" aria-hidden="true"><span class="ghost-prefix"></span><span class="ghost-suggestion"></span></pre>
+          <textarea
+            id="protocolInput"
+            aria-label="Protocol contents"
+            spellcheck="false"
+            placeholder="Start typing your protocol here…"
+          ></textarea>
+        </div>
         <footer class="editor-footer">
           <span id="lineCount" aria-live="polite">0 lines</span>
           <span id="statusText" aria-live="polite"></span>

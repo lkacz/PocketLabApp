@@ -172,6 +172,12 @@ body {
   flex: 1 1 auto;
 }
 
+.protocol-input-wrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
+}
+
 #protocolInput {
   font-family: "JetBrains Mono", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.95rem;
@@ -184,10 +190,41 @@ body {
   flex: 1;
   background: var(--surface-translucent);
   color: var(--text);
+  position: relative;
+  z-index: 1;
+  width: 100%;
 }
 
 #protocolInput:focus-visible {
   outline: 2px solid var(--primary);
+}
+
+.protocol-ghost {
+  position: absolute;
+  inset: 0;
+  padding: 18px;
+  margin: 0;
+  font-family: "JetBrains Mono", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  color: transparent;
+  display: none;
+  width: 100%;
+}
+
+.protocol-ghost .ghost-prefix {
+  color: transparent;
+}
+
+.protocol-ghost .ghost-suggestion {
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .editor-footer {
