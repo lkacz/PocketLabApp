@@ -109,6 +109,24 @@ body {
   margin-bottom: 16px;
 }
 
+.suggestion-bar {
+  min-height: 20px;
+  margin: -4px 0 12px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.suggestion-bar.has-suggestion {
+  background: var(--primary-soft);
+  border-color: var(--border);
+  color: var(--primary);
+}
+
 .toolbar button {
   border: none;
   border-radius: 999px;

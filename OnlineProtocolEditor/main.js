@@ -88,6 +88,48 @@ const randomizablePairs = {
 
 const COMMAND_CATEGORIES = ["All", "Content", "Randomization", "Meta", "Style"];
 
+const orderedRecognizedCommands = Array.from(recognizedCommands).sort((a, b) =>
+  a.localeCompare(b),
+);
+
+const commandTemplates = {
+  END: "END",
+  GOTO: "GOTO;Label_name",
+  HTML: "HTML;Asset_path;[Continue_button_text]",
+  INSTRUCTION: "INSTRUCTION;Header_text;Body_text;Continue_button_text",
+  INPUTFIELD: "INPUTFIELD;Header_text;Body_text;Field1;Field2;Continue_button_text",
+  "INPUTFIELD[RANDOMIZED]": "INPUTFIELD[RANDOMIZED];Header_text;Body_text;Field1;Field2;Continue_button_text",
+  LABEL: "LABEL;Label_name",
+  LOG: "LOG;Message_text",
+  RANDOMIZE_ON: "RANDOMIZE_ON",
+  RANDOMIZE_OFF: "RANDOMIZE_OFF",
+  SCALE: "SCALE;Header_text;Body_text;[Item1;Item2];Response1;Response2",
+  "SCALE[RANDOMIZED]": "SCALE[RANDOMIZED];Header_text;Body_text;[Item1;Item2];Response1;Response2",
+  SCREEN_BACKGROUND_COLOR: "SCREEN_BACKGROUND_COLOR;#RRGGBB",
+  STUDY_ID: "STUDY_ID;Study_identifier",
+  TIMER: "TIMER;Header_text;Body_text;Seconds;Continue_button_text",
+  TIMER_SOUND: "TIMER_SOUND;audio/file.mp3",
+  TRANSITIONS: "TRANSITIONS;off|slide|slideleft|fade|dissolve",
+};
+
+colorCommands.forEach((command) => {
+  if (!commandTemplates[command]) {
+    commandTemplates[command] = `${command};#RRGGBB`;
+  }
+});
+
+sizeCommands.forEach((command) => {
+  if (!commandTemplates[command]) {
+    commandTemplates[command] = `${command};Size_value`;
+  }
+});
+
+alignmentCommands.forEach((command) => {
+  if (!commandTemplates[command]) {
+    commandTemplates[command] = `${command};LEFT|CENTER|RIGHT`;
+  }
+});
+
 function friendlyCommandName(command) {
   return command
     .replace(/\[RANDOMIZED]$/i, " (randomized)")
@@ -224,6 +266,7 @@ const nextIssueButton = document.getElementById("nextIssue");
 const commandList = document.getElementById("commandList");
 const toggleCommandsButton = document.getElementById("toggleCommands");
 const commandsBody = document.getElementById("commandsBody");
+const commandSuggestion = document.getElementById("commandSuggestion");
 const newButton = document.getElementById("newButton");
 const loadButton = document.getElementById("loadButton");
 const saveButton = document.getElementById("saveButton");
@@ -280,12 +323,119 @@ let validationResults = [];
 let filteredIndices = [];
 let selectedIssueIndex = -1;
 let debounceTimer = null;
+const defaultSuggestionMessage = "Start typing a command to see completions and format guidance.";
+let currentSuggestionState = null;
 
 function debounce(fn, delay = 250) {
   return (...args) => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => fn(...args), delay);
   };
+}
+
+function renderCommandSuggestion(message, hasSuggestion = false) {
+  if (!commandSuggestion) return;
+  commandSuggestion.textContent = message;
+  commandSuggestion.classList.toggle("has-suggestion", Boolean(hasSuggestion));
+}
+
+function clearCommandSuggestion(message = defaultSuggestionMessage) {
+  currentSuggestionState = null;
+  renderCommandSuggestion(message, false);
+}
+
+function updateCommandSuggestion() {
+  if (!commandSuggestion || !protocolInput) return;
+
+  const { selectionStart, selectionEnd, value } = protocolInput;
+  if (
+    selectionStart === null ||
+    selectionEnd === null ||
+    selectionStart !== selectionEnd ||
+    !value
+  ) {
+    clearCommandSuggestion();
+    return;
+  }
+
+  const caret = selectionStart;
+  const prevNewline = value.lastIndexOf("\n", caret - 1);
+  const lineStart = prevNewline === -1 ? 0 : prevNewline + 1;
+  const linePrefix = value.slice(lineStart, caret);
+  if (!linePrefix.trim()) {
+    clearCommandSuggestion();
+    return;
+  }
+
+  const trimmedPrefix = linePrefix.replace(/\s+$/, "");
+  if (!trimmedPrefix) {
+    clearCommandSuggestion();
+    return;
+  }
+
+  const trimmedLeft = trimmedPrefix.trimStart();
+  if (trimmedLeft.startsWith("//")) {
+    clearCommandSuggestion("Suggestions hidden inside comments.");
+    return;
+  }
+
+  const semicolonIndex = linePrefix.indexOf(";");
+  if (semicolonIndex === -1) {
+    const leadingWhitespaceMatch = linePrefix.match(/^\s*/);
+    const fragmentStart = lineStart + (leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0);
+    const fragment = value.slice(fragmentStart, caret);
+    if (fragment && !/\s/.test(fragment)) {
+      const uppercaseFragment = fragment.toUpperCase();
+      if (/^[A-Z_\[\]]+$/.test(uppercaseFragment)) {
+        const suggestion = orderedRecognizedCommands.find((cmd) => cmd.startsWith(uppercaseFragment));
+        if (suggestion && suggestion !== uppercaseFragment) {
+          currentSuggestionState = {
+            start: fragmentStart,
+            end: caret,
+            fragment,
+            suggestion,
+          };
+
+          renderCommandSuggestion(`${suggestion} — press Tab to complete`, true);
+          return;
+        }
+      }
+    }
+  }
+
+  currentSuggestionState = null;
+
+  const commandMatch = trimmedLeft.match(/^([A-Z_\[\]]+)/);
+  const commandToken = commandMatch ? commandMatch[1].toUpperCase() : null;
+  const template = commandToken && recognizedCommands.has(commandToken) ? commandTemplates[commandToken] : null;
+  if (template) {
+    renderCommandSuggestion(`Format: ${template}`, true);
+    return;
+  }
+
+  clearCommandSuggestion();
+}
+
+function applyCommandSuggestion() {
+  if (!currentSuggestionState) return false;
+  const { start, end, fragment, suggestion } = currentSuggestionState;
+  if (!suggestion || suggestion.length <= fragment.length) return false;
+
+  const before = protocolInput.value.slice(0, start);
+  const after = protocolInput.value.slice(end);
+  const replacement = suggestion;
+  protocolInput.value = `${before}${replacement}${after}`;
+  const newCaret = start + replacement.length;
+  protocolInput.setSelectionRange(newCaret, newCaret);
+
+  markDirty();
+  updateLineCount();
+  clearCommandSuggestion("Suggestion applied.");
+  if (autoValidateToggle.checked) debouncedValidate();
+  else setStatus("Command completed using suggestion.");
+
+  updateCommandSuggestion();
+  return true;
 }
 
 function appendMessage(current, add) {
@@ -1951,9 +2101,41 @@ function setupEventListeners() {
   protocolInput.addEventListener("input", () => {
     updateLineCount();
     markDirty();
+    updateCommandSuggestion();
     if (autoValidateToggle.checked) {
       debouncedValidate();
     }
+  });
+
+  protocolInput.addEventListener("keydown", (event) => {
+    if (event.key === "Tab" && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const applied = applyCommandSuggestion();
+      if (applied) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+  });
+
+  protocolInput.addEventListener("keyup", (event) => {
+    if (event.key === "Tab") return;
+    updateCommandSuggestion();
+  });
+
+  protocolInput.addEventListener("click", () => {
+    updateCommandSuggestion();
+  });
+
+  protocolInput.addEventListener("mouseup", () => {
+    updateCommandSuggestion();
+  });
+
+  protocolInput.addEventListener("blur", () => {
+    clearCommandSuggestion();
+  });
+
+  protocolInput.addEventListener("focus", () => {
+    updateCommandSuggestion();
   });
 
   validateButton.addEventListener("click", () => {
@@ -2013,6 +2195,7 @@ function init() {
   populateCommandsList();
   renderValidationResults();
   setupEventListeners();
+  clearCommandSuggestion();
   setStatus("Ready");
 }
 
