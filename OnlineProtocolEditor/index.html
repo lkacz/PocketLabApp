@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Protocol Editor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>PoLA Online Protocol Editor</h1>
+      <p class="tagline">Edit, validate, and share PoLA protocol files directly in your browser.</p>
+    </header>
+
+    <main class="app-layout">
+      <section class="editor-panel">
+        <div class="toolbar" role="toolbar" aria-label="Protocol actions">
+          <button id="newButton" class="primary" type="button">New</button>
+          <button id="loadButton" type="button">Load…</button>
+          <button id="saveButton" type="button">Save</button>
+          <button id="downloadButton" type="button">Download</button>
+          <button id="insertButton" type="button">Insert Command</button>
+          <div class="toolbar-spacer"></div>
+          <label class="checkbox" for="autoValidate">
+            <input id="autoValidate" type="checkbox" checked />
+            Auto validate
+          </label>
+        </div>
+        <textarea
+          id="protocolInput"
+          aria-label="Protocol contents"
+          spellcheck="false"
+          placeholder="Start typing your protocol here…"
+        ></textarea>
+        <footer class="editor-footer">
+          <span id="lineCount" aria-live="polite">0 lines</span>
+          <span id="statusText" aria-live="polite"></span>
+          <span id="unsavedIndicator" class="status-pill warning" hidden>Unsaved changes</span>
+        </footer>
+      </section>
+
+      <aside class="inspector-panel">
+        <section class="card" id="validationCard">
+          <header class="card-header">
+            <h2>Validation</h2>
+            <div class="card-actions">
+              <button id="validateButton" type="button">Validate now</button>
+            </div>
+          </header>
+          <div class="validation-controls">
+            <input
+              id="issueFilter"
+              type="search"
+              placeholder="Filter by text or line number"
+              aria-label="Filter validation results"
+            />
+            <div class="issue-nav">
+              <button id="prevIssue" type="button" aria-label="Previous issue">◀</button>
+              <button id="nextIssue" type="button" aria-label="Next issue">▶</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table id="validationTable">
+              <thead>
+                <tr>
+                  <th scope="col">Line</th>
+                  <th scope="col">Command</th>
+                  <th scope="col">Error</th>
+                  <th scope="col">Warning</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="commandsCard">
+          <header class="card-header">
+            <h2>Recognized commands</h2>
+            <button id="toggleCommands" type="button" aria-expanded="false">Show all</button>
+          </header>
+          <div class="card-body" id="commandsBody" hidden>
+            <p class="card-hint">Commands are case-insensitive. Tap any command to insert a template.</p>
+            <ul id="commandList"></ul>
+          </div>
+        </section>
+
+        <section class="card" id="cheatsheetCard">
+          <header class="card-header">
+            <h2>Cheat sheet</h2>
+          </header>
+          <div class="card-body">
+            <ul class="cheat-list">
+              <li><strong>//</strong> starts a comment; comments are ignored when validating.</li>
+              <li>Use semicolons to separate command segments.</li>
+              <li>Use <code>LABEL;Name</code> + <code>GOTO;Name</code> for branching.</li>
+              <li>
+                Wrap optional values in brackets, e.g. <code>[Continue]</code> or <code>[Hold]</code>.
+              </li>
+              <li>
+                Randomization uses balanced pairs of <code>RANDOMIZE_ON</code> and <code>RANDOMIZE_OFF</code>.
+              </li>
+            </ul>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <input id="fileInput" type="file" accept=".txt,text/plain" hidden />
+
+    <dialog id="insertDialog">
+      <form method="dialog" class="insert-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="insertDialogTitle">Insert command</h2>
+          <p id="insertDialogSubtitle" class="dialog-subtitle">
+            Pick a command on the left, then configure its parameters before inserting it into the protocol.
+          </p>
+        </header>
+        <div class="dialog-columns">
+          <section class="command-picker" aria-label="Command list">
+            <div class="picker-controls">
+              <label class="field">
+                Category
+                <select id="insertCategory"></select>
+              </label>
+              <label class="field">
+                Search
+                <input id="insertSearch" type="search" placeholder="Search commands" />
+              </label>
+            </div>
+            <ul id="insertCommandList" class="command-list" role="listbox"></ul>
+          </section>
+          <section class="command-config" aria-live="polite">
+            <div class="config-header">
+              <div>
+                <p class="config-label">Selected command</p>
+                <h3 id="selectedCommandName">None</h3>
+              </div>
+              <button id="clearCommandSelection" type="button" class="link-button" hidden>Clear</button>
+            </div>
+            <div id="configContent" class="config-content">
+              <p id="configPlaceholder" class="config-placeholder">
+                Choose a command to see its parameters and validation helpers.
+              </p>
+              <div id="configSections" hidden>
+                <div id="commandHint" class="command-hint" aria-live="polite"></div>
+                <div id="parameterContainer" class="parameter-container"></div>
+              </div>
+              <p id="insertDialogMessage" class="dialog-message" role="alert" hidden></p>
+            </div>
+          </section>
+        </div>
+        <footer class="dialog-footer">
+          <button value="cancel" type="reset">Cancel</button>
+          <div class="dialog-footer-gap"></div>
+          <button id="insertDialogSubmit" value="confirm" type="submit" class="primary">Insert</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script defer src="main.js"></script>
+  </body>
+</html>
