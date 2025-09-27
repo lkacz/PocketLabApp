@@ -3,9 +3,7 @@ name: Deploy Online Editor
 on:
   push:
     branches: [main]
-    paths:
-      - 'OnlineProtocolEditor/**'
-      - '.github/workflows/deploy-editor.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
