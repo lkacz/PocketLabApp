@@ -377,6 +377,7 @@ const loadButton = document.getElementById("loadButton");
 const saveButton = document.getElementById("saveButton");
 const downloadButton = document.getElementById("downloadButton");
 const insertButton = document.getElementById("insertButton");
+const templatesButton = document.getElementById("templatesButton");
 const fileInput = document.getElementById("fileInput");
 const insertDialog = document.getElementById("insertDialog");
 const insertForm = insertDialog ? insertDialog.querySelector(".insert-form") : null;
@@ -394,6 +395,19 @@ const parameterContainer = document.getElementById("parameterContainer");
 const insertDialogMessage = document.getElementById("insertDialogMessage");
 const insertDialogSubmit = document.getElementById("insertDialogSubmit");
 
+const templatesDialog = document.getElementById("templatesDialog");
+const templatesForm = templatesDialog ? templatesDialog.querySelector(".templates-form") : null;
+const templatesSearchInput = document.getElementById("templatesSearch");
+const templatesList = document.getElementById("templatesList");
+const selectedTemplateNameEl = document.getElementById("selectedTemplateName");
+const clearTemplateSelectionBtn = document.getElementById("clearTemplateSelection");
+const templatesPlaceholder = document.getElementById("templatesPlaceholder");
+const templateDetail = document.getElementById("templateDetail");
+const templateSummary = document.getElementById("templateSummary");
+const templatePreview = document.getElementById("templatePreview");
+const templatesDialogMessage = document.getElementById("templatesDialogMessage");
+const insertTemplateButton = document.getElementById("insertTemplateButton");
+
 const insertDialogElementsReady = Boolean(
   insertDialog &&
   insertForm &&
@@ -410,7 +424,23 @@ const insertDialogElementsReady = Boolean(
   insertDialogSubmit,
 );
 
+const templatesDialogElementsReady = Boolean(
+  templatesDialog &&
+  templatesForm &&
+  templatesSearchInput &&
+  templatesList &&
+  selectedTemplateNameEl &&
+  clearTemplateSelectionBtn &&
+  templatesPlaceholder &&
+  templateDetail &&
+  templateSummary &&
+  templatePreview &&
+  templatesDialogMessage &&
+  insertTemplateButton,
+);
+
 let insertDialogElementsMissingLogged = false;
+let templatesDialogElementsMissingLogged = false;
 
 function ensureInsertDialogElements() {
   if (insertDialogElementsReady) return true;
@@ -419,6 +449,261 @@ function ensureInsertDialogElements() {
     insertDialogElementsMissingLogged = true;
   }
   return false;
+}
+
+function ensureTemplatesDialogElements() {
+  if (templatesDialogElementsReady) return true;
+  if (!templatesDialogElementsMissingLogged) {
+    console.warn("Template dialog elements are missing; disabling templates feature.");
+    templatesDialogElementsMissingLogged = true;
+  }
+  return false;
+}
+
+const protocolTemplates = [
+  {
+    id: "mindful-walk",
+    name: "Mindful walking session",
+    summary: "Outdoor mindfulness loop with mood check, timed walk, and reflective notes.",
+    lines: [
+      "// Mindful walking field study",
+      "// Tag the protocol with a unique study identifier",
+      "STUDY_ID;MindfulWalk01",
+      "// Welcome participants and outline the mindful walking goals",
+      "INSTRUCTION;Welcome to the mindful walk;Find a safe route and prepare to observe your surroundings closely.;Begin Walk",
+      "// Capture baseline focus before the activity begins",
+      "SCALE;Pre-walk focus check;How present do you feel before starting?;[Breath;Attention;Body];Very Present [5];Present [4];Neutral [3];Distracted [2];Restless [1]",
+      "// Run a five-minute mindfulness timer for the walking segment",
+      "TIMER;Mindful walking timer;Walk mindfully until the timer completes.;300;Continue",
+      "// Collect post-walk ratings to measure change",
+      "SCALE;Post-walk reflection;How mindful was your walk?;[Awareness;Distractions];Extremely Mindful [5];Mindful [4];Neutral [3];Distracted [2];Very Distracted [1]",
+      "// Gather qualitative notes about observations in the field",
+      "INPUTFIELD;Post-walk notes;Capture key observations from the walk.;Highlight;Unexpected Sound;Final Takeaway;Finish",
+      "// Close the session with a final thank-you message",
+      "INSTRUCTION;Thank you;Great work staying present out there!;Done",
+    ],
+  },
+  {
+    id: "pokemon-go-outing",
+    name: "Pokémon GO community outing",
+    summary: "Community play session with pre/post energy ratings and catch log.",
+    lines: [
+      "// Pokémon GO community play session",
+      "// Identify the session for syncing and analytics",
+      "STUDY_ID;PokemonGoField01",
+      "// Greet the group and share meetup instructions",
+      "INSTRUCTION;Welcome trainers;Meet at the park fountain and stay aware of traffic while you explore.;Continue",
+      "// Check energy levels before the play session",
+      "SCALE;Pre-play energy;How ready do you feel to play?;[Energy;Focus];Fully Charged [5];Ready [4];Moderate [3];Low [2];Need Rest [1]",
+      "// Set a ten-minute exploration window",
+      "TIMER;Exploration timer;Head out to catch Pokémon until the timer buzzes.;600;Continue",
+      "// Measure mood right after the outing",
+      "SCALE;Post-play mood;How was the session?;[Fun;Challenge];Incredible [5];Great [4];Good [3];Average [2];Rough [1]",
+      "// Log standout catches and group highlights",
+      "INPUTFIELD;Catch log;Record standout catches or raids.;Top Catch;Raid Highlights;Team Strategy;Wrap Up",
+      "// Wrap up with safety and sync reminders",
+      "INSTRUCTION;Thank you trainers;Hydrate, stretch, and sync your logs when you return.;Finish",
+    ],
+  },
+  {
+    id: "branching-trail",
+    name: "Branching trail decision",
+    summary: "Demonstrates LABEL and GOTO structure for different field routes.",
+    lines: [
+      "// Branching example using LABEL and GOTO",
+      "// Assign a study identifier shared across branches",
+      "STUDY_ID;BranchingTrail01",
+      "// Brief the participant before they choose a route",
+      "INSTRUCTION;Route briefing;Tap continue after deciding which route matches your conditions.;Continue",
+      "// Replace this GOTO with logic tied to prior responses or custom rules.",
+      "GOTO;SUNNY_ROUTE",
+      "// Mark the section that handles sunny-day steps",
+      "LABEL;SUNNY_ROUTE",
+      "// Outline tasks specific to sunny conditions",
+      "INSTRUCTION;Sunny route tasks;Document wildlife activity in open light.;Continue",
+      "// Jump to the shared check-in section",
+      "GOTO;ROUTE_CHECKIN",
+      "// Mark the section that handles rainy-day steps",
+      "LABEL;RAINY_ROUTE",
+      "// Outline tasks specific to wet weather",
+      "INSTRUCTION;Rainy route tasks;Note puddles, slick spots, and limited visibility.;Continue",
+      "// Jump back to the shared check-in",
+      "GOTO;ROUTE_CHECKIN",
+      "// Create a shared point both branches will reach",
+      "LABEL;ROUTE_CHECKIN",
+      "// Rate the difficulty of the chosen path",
+      "SCALE;Route difficulty;Rate how challenging the segment felt.;[Terrain;Weather];Very Easy [1];Easy [2];Moderate [3];Hard [4];Severe [5]",
+      "// Capture free-form notes for later review",
+      "INPUTFIELD;Route notes;Capture highlights from the chosen route.;Key Observation;Hazards;Next Action;Submit",
+      "// Close out the protocol with a final instruction",
+      "INSTRUCTION;Debrief;Share findings with the team chat.;Done",
+    ],
+  },
+  {
+    id: "rapid-randomized-check",
+    name: "Rapid randomized check-in",
+    summary: "Quick study with randomized scale items and final thank-you.",
+    lines: [
+      "// Quick randomized check-in template",
+      "// Assign a short identifier for the rapid check",
+      "STUDY_ID;RapidCheck01",
+      "// Introduce the purpose and mention randomization",
+      "INSTRUCTION;Welcome investigator;We will randomize item order for balanced feedback.;Start",
+      "// Begin the randomized block",
+      "RANDOMIZE_ON",
+      "// Present randomized ratings for current field items",
+      "SCALE[RANDOMIZED];Field item ratings;Evaluate each item based on current conditions.;[Trail signage;Litter levels;Noise];Excellent [5];Good [4];Average [3];Poor [2];Critical [1]",
+      "// End the randomized block",
+      "RANDOMIZE_OFF",
+      "// Collect pressing notes the team needs immediately",
+      "INPUTFIELD;Quick log;List anything the team should know immediately.;Urgent Issue;Opportunity;Next Visit Idea;Finish",
+      "// Thank the participant and signal completion",
+      "INSTRUCTION;Thank you;Sync your notes and stand by for next assignment.;Complete",
+    ],
+  },
+];
+
+function formatTemplateContent(lines) {
+  const output = [];
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trimEnd();
+    const isComment = line.trimStart().startsWith("//");
+    output.push(line);
+    const isLastLine = index === lines.length - 1;
+    if (isLastLine) return;
+    if (!isComment) {
+      output.push("");
+    } else {
+      const next = lines[index + 1] ?? "";
+      const nextIsComment = next.trimStart().startsWith("//");
+      if (!nextIsComment) output.push("");
+    }
+  });
+  return output.join("\n").replace(/\s+$/, "");
+}
+
+function getTemplateContent(template) {
+  return formatTemplateContent(template.lines);
+}
+
+let filteredTemplates = [...protocolTemplates];
+let selectedTemplate = null;
+
+function resetTemplateMessage() {
+  if (templatesDialogMessage) {
+    templatesDialogMessage.textContent = "";
+    templatesDialogMessage.hidden = true;
+  }
+}
+
+function clearTemplateSelection({ keepSearch = false } = {}) {
+  selectedTemplate = null;
+  if (selectedTemplateNameEl) selectedTemplateNameEl.textContent = "None";
+  if (clearTemplateSelectionBtn) clearTemplateSelectionBtn.hidden = true;
+  if (templateDetail) templateDetail.hidden = true;
+  if (templatesPlaceholder) templatesPlaceholder.hidden = false;
+  if (insertTemplateButton) insertTemplateButton.disabled = true;
+  if (!keepSearch && templatesSearchInput) templatesSearchInput.value = "";
+  resetTemplateMessage();
+  updateTemplatesListSelection();
+}
+
+function updateTemplatesListSelection() {
+  if (!templatesList) return;
+  const items = templatesList.querySelectorAll(".command-item");
+  items.forEach((item) => {
+    const { templateId } = item.dataset;
+    const isSelected = Boolean(selectedTemplate && selectedTemplate.id === templateId);
+    item.classList.toggle("is-selected", isSelected);
+    item.setAttribute("aria-selected", String(isSelected));
+  });
+}
+
+function renderTemplatesList(term = "") {
+  if (!templatesList) return;
+  const normalized = term.trim().toLowerCase();
+  filteredTemplates = protocolTemplates.filter((template) => {
+    if (!normalized) return true;
+    return (
+      template.name.toLowerCase().includes(normalized) ||
+      template.summary.toLowerCase().includes(normalized)
+    );
+  });
+
+  templatesList.innerHTML = "";
+
+  if (!filteredTemplates.length) {
+    const emptyState = document.createElement("li");
+    emptyState.className = "command-item";
+    emptyState.textContent = "No templates match your search.";
+    emptyState.setAttribute("aria-disabled", "true");
+    emptyState.tabIndex = -1;
+    templatesList.append(emptyState);
+    return;
+  }
+
+  filteredTemplates.forEach((template) => {
+    const item = document.createElement("li");
+    item.className = "command-item";
+    item.dataset.templateId = template.id;
+    item.tabIndex = 0;
+    item.setAttribute("role", "option");
+    item.innerHTML = `<strong>${template.name}</strong><p>${template.summary}</p>`;
+    item.addEventListener("click", () => {
+      selectTemplate(template);
+    });
+    item.addEventListener("keypress", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectTemplate(template);
+      }
+    });
+    templatesList.append(item);
+  });
+
+  updateTemplatesListSelection();
+}
+
+function selectTemplate(template) {
+  selectedTemplate = template;
+  if (selectedTemplateNameEl) selectedTemplateNameEl.textContent = template.name;
+  if (clearTemplateSelectionBtn) clearTemplateSelectionBtn.hidden = false;
+  if (templatesPlaceholder) templatesPlaceholder.hidden = true;
+  if (templateDetail) templateDetail.hidden = false;
+  if (templateSummary) templateSummary.textContent = template.summary;
+  if (templatePreview) templatePreview.textContent = getTemplateContent(template);
+  if (insertTemplateButton) insertTemplateButton.disabled = false;
+  resetTemplateMessage();
+  updateTemplatesListSelection();
+}
+
+function showTemplatesMessage(message) {
+  if (!templatesDialogMessage) return;
+  templatesDialogMessage.textContent = message;
+  templatesDialogMessage.hidden = false;
+}
+
+function openTemplatesDialog() {
+  if (!ensureTemplatesDialogElements()) {
+    setStatus("Templates are unavailable in this environment.");
+    return;
+  }
+  resetTemplateMessage();
+  clearTemplateSelection();
+  renderTemplatesList("");
+  if (templatesDialog) {
+    templatesDialog.showModal();
+    requestAnimationFrame(() => {
+      if (templatesSearchInput) templatesSearchInput.focus();
+    });
+  }
+}
+
+function insertTemplateContent(template) {
+  if (!template) return;
+  const content = getTemplateContent(template);
+  insertAtCursor(content);
+  setStatus(`Inserted template: ${template.name}`);
 }
 
 let currentFileHandle = null;
@@ -2235,8 +2520,8 @@ async function handleLoad() {
       validationResults = validateProtocol(text);
       renderValidationResults();
       markSaved(`Loaded ${file.name}`);
-  protocolInput.setSelectionRange(text.length, text.length);
-  updateCommandSuggestion();
+      protocolInput.setSelectionRange(text.length, text.length);
+      updateCommandSuggestion();
       return;
     } catch (error) {
       if (error?.name === "AbortError") {
@@ -2378,6 +2663,9 @@ function setupEventListeners() {
   if (insertButton) {
     insertButton.addEventListener("click", () => openInsertDialog());
   }
+  if (templatesButton) {
+    templatesButton.addEventListener("click", () => openTemplatesDialog());
+  }
   if (insertForm) {
     insertForm.addEventListener("submit", handleInsertFormSubmit);
   }
@@ -2385,6 +2673,41 @@ function setupEventListeners() {
     insertDialog.addEventListener("close", () => {
       clearDialogMessage();
       clearSelectedCommand();
+    });
+  }
+  if (templatesForm) {
+    templatesForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!selectedTemplate) {
+        showTemplatesMessage("Select a template before inserting.");
+        return;
+      }
+      insertTemplateContent(selectedTemplate);
+      if (templatesDialog) templatesDialog.close("confirm");
+    });
+  }
+  if (clearTemplateSelectionBtn) {
+    clearTemplateSelectionBtn.addEventListener("click", () => {
+      clearTemplateSelection({ keepSearch: true });
+      updateTemplatesListSelection();
+    });
+  }
+  if (templatesSearchInput) {
+    templatesSearchInput.addEventListener("input", () => {
+      const term = templatesSearchInput.value || "";
+      renderTemplatesList(term);
+      if (selectedTemplate && !filteredTemplates.some((t) => t.id === selectedTemplate.id)) {
+        clearTemplateSelection({ keepSearch: true });
+      } else {
+        updateTemplatesListSelection();
+      }
+    });
+  }
+  if (templatesDialog) {
+    templatesDialog.addEventListener("close", () => {
+      clearTemplateSelection();
+      renderTemplatesList("");
+      resetTemplateMessage();
     });
   }
 
@@ -2407,6 +2730,7 @@ function setupEventListeners() {
 function init() {
   updateLineCount();
   populateCommandsList();
+  renderTemplatesList("");
   renderValidationResults();
   setupEventListeners();
   clearInlineGhost();

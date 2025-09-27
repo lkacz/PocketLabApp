@@ -20,6 +20,7 @@
           <button id="saveButton" type="button">Save</button>
           <button id="downloadButton" type="button">Download</button>
           <button id="insertButton" type="button">Insert Command</button>
+          <button id="templatesButton" type="button">Templates</button>
           <div class="toolbar-spacer"></div>
           <label class="checkbox" for="autoValidate">
             <input id="autoValidate" type="checkbox" checked />
@@ -158,6 +159,52 @@
           <button value="cancel" type="reset">Cancel</button>
           <div class="dialog-footer-gap"></div>
           <button id="insertDialogSubmit" value="confirm" type="submit" class="primary">Insert</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="templatesDialog">
+      <form method="dialog" class="templates-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="templatesDialogTitle">Protocol templates</h2>
+          <p id="templatesDialogSubtitle" class="dialog-subtitle">
+            Browse ready-to-run study examples. Pick one to insert into your protocol.
+          </p>
+        </header>
+        <div class="dialog-columns templates-columns">
+          <section class="command-picker" aria-label="Template list">
+            <div class="picker-controls templates-controls">
+              <label class="field">
+                Search
+                <input id="templatesSearch" type="search" placeholder="Search templates" />
+              </label>
+            </div>
+            <ul id="templatesList" class="command-list" role="listbox"></ul>
+          </section>
+          <section class="command-config templates-config" aria-live="polite">
+            <div class="config-header">
+              <div>
+                <p class="config-label">Selected template</p>
+                <h3 id="selectedTemplateName">None</h3>
+              </div>
+              <button id="clearTemplateSelection" type="button" class="link-button" hidden>Clear</button>
+            </div>
+            <div id="templatesContent" class="config-content">
+              <p id="templatesPlaceholder" class="config-placeholder">
+                Choose a template to see the study outline and instructions.
+              </p>
+              <div id="templateDetail" hidden>
+                <div id="templateSummary" class="command-hint" aria-live="polite"></div>
+                <pre id="templatePreview" class="template-preview" aria-label="Template preview"></pre>
+              </div>
+              <p id="templatesDialogMessage" class="dialog-message" role="alert" hidden></p>
+            </div>
+          </section>
+        </div>
+        <footer class="dialog-footer">
+          <button value="cancel" type="reset">Cancel</button>
+          <div class="dialog-footer-gap"></div>
+          <button id="insertTemplateButton" value="confirm" type="submit" class="primary" disabled>Insert template</button>
         </footer>
       </form>
     </dialog>

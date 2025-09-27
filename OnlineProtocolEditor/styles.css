@@ -445,7 +445,27 @@ body {
   background: var(--dialog-backdrop);
 }
 
+#templatesDialog {
+  border: none;
+  border-radius: var(--radius);
+  padding: 0;
+  width: min(920px, calc(100% - 32px));
+  max-width: 920px;
+  box-shadow: var(--shadow-xl);
+  background: var(--surface-strong);
+}
+
+#templatesDialog::backdrop {
+  background: var(--dialog-backdrop);
+}
+
 .insert-form {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 96px);
+}
+
+.templates-form {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 96px);
@@ -497,6 +517,29 @@ body {
   padding-right: 4px;
 }
 
+.templates-controls {
+  grid-template-columns: 1fr;
+}
+
+.templates-config {
+  display: flex;
+  flex-direction: column;
+}
+
+.template-preview {
+  margin: 16px 0 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace;
+  font-size: 0.85rem;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+}
+
 .command-item {
   width: 100%;
   border-radius: 12px;
@@ -517,6 +560,12 @@ body {
   transform: translateY(-1px);
   background: var(--interactive-hover);
   border-color: var(--interactive-border);
+}
+
+.command-item.is-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 0 0 1px var(--primary) inset;
 }
 
 .command-item.active {
