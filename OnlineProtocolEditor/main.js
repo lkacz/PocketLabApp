@@ -378,6 +378,8 @@ const saveButton = document.getElementById("saveButton");
 const downloadButton = document.getElementById("downloadButton");
 const insertButton = document.getElementById("insertButton");
 const templatesButton = document.getElementById("templatesButton");
+const aboutButton = document.getElementById("aboutButton");
+const manualButton = document.getElementById("manualButton");
 const fileInput = document.getElementById("fileInput");
 const insertDialog = document.getElementById("insertDialog");
 const insertForm = insertDialog ? insertDialog.querySelector(".insert-form") : null;
@@ -409,6 +411,11 @@ const templatePreview = document.getElementById("templatePreview");
 const templatesDialogMessage = document.getElementById("templatesDialogMessage");
 const insertTemplateButton = document.getElementById("insertTemplateButton");
 const templatesDialogCancel = document.getElementById("templatesDialogCancel");
+
+const aboutDialog = document.getElementById("aboutDialog");
+const aboutDialogClose = document.getElementById("aboutDialogClose");
+const manualDialog = document.getElementById("manualDialog");
+const manualDialogClose = document.getElementById("manualDialogClose");
 
 const insertDialogElementsReady = Boolean(
   insertDialog &&
@@ -2703,6 +2710,26 @@ function setupEventListeners() {
   if (templatesButton) {
     templatesButton.addEventListener("click", () => openTemplatesDialog());
   }
+  if (aboutButton && aboutDialog) {
+    aboutButton.addEventListener("click", () => {
+      aboutDialog.showModal();
+      requestAnimationFrame(() => {
+        const focusTarget = aboutDialog.querySelector(".content-body");
+        if (focusTarget) focusTarget.focus();
+      });
+      setStatus("Viewing About PoLA");
+    });
+  }
+  if (manualButton && manualDialog) {
+    manualButton.addEventListener("click", () => {
+      manualDialog.showModal();
+      requestAnimationFrame(() => {
+        const focusTarget = manualDialog.querySelector(".content-body");
+        if (focusTarget) focusTarget.focus();
+      });
+      setStatus("Viewing PoLA manual");
+    });
+  }
   if (insertForm) {
     insertForm.addEventListener("submit", handleInsertFormSubmit);
   }
@@ -2762,6 +2789,38 @@ function setupEventListeners() {
       clearTemplateSelection();
       renderTemplatesList("");
       resetTemplateMessage();
+    });
+  }
+  if (aboutDialog && aboutDialogClose) {
+    aboutDialogClose.addEventListener("click", () => {
+      aboutDialog.close("cancel");
+      setStatus("Closed About dialog");
+      if (aboutButton) aboutButton.focus();
+    });
+    aboutDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      aboutDialog.close("cancel");
+      setStatus("Closed About dialog");
+      if (aboutButton) aboutButton.focus();
+    });
+    aboutDialog.addEventListener("close", () => {
+      if (aboutButton) aboutButton.focus();
+    });
+  }
+  if (manualDialog && manualDialogClose) {
+    manualDialogClose.addEventListener("click", () => {
+      manualDialog.close("cancel");
+      setStatus("Closed manual");
+      if (manualButton) manualButton.focus();
+    });
+    manualDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      manualDialog.close("cancel");
+      setStatus("Closed manual");
+      if (manualButton) manualButton.focus();
+    });
+    manualDialog.addEventListener("close", () => {
+      if (manualButton) manualButton.focus();
     });
   }
 

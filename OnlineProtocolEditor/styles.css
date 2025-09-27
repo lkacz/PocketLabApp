@@ -109,6 +109,14 @@ body {
   margin-bottom: 16px;
 }
 
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-medium);
+  border-radius: 999px;
+  margin: 0 4px;
+}
+
 .suggestion-bar {
   min-height: 20px;
   margin: -4px 0 12px;
@@ -480,6 +488,209 @@ body {
   background: var(--dialog-backdrop);
 }
 
+.content-dialog {
+  border: none;
+  padding: 0;
+  background: transparent;
+  width: min(960px, 90vw);
+}
+
+.content-dialog::backdrop {
+  background: var(--dialog-backdrop);
+}
+
+.content-surface {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.content-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px 0;
+}
+
+.content-dialog-header h2 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.content-dialog-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.content-body {
+  padding: 0 28px 28px;
+  overflow-y: auto;
+  scroll-padding: 24px;
+}
+
+.content-body a {
+  color: var(--primary);
+}
+
+.about-content,
+.manual-content {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.about-content header,
+.manual-content header {
+  margin-bottom: 24px;
+}
+
+.about-content h1,
+.manual-content h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  line-height: 1.2;
+}
+
+.about-content h2,
+.manual-content h2 {
+  margin-top: 32px;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+}
+
+.about-content p,
+.manual-content p {
+  margin: 0 0 14px;
+}
+
+.about-content .lead,
+.manual-content .tagline {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+}
+
+.content-body table.meta {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 16px;
+  font-size: 0.95rem;
+}
+
+.content-body table.meta th {
+  text-align: left;
+  padding: 6px 16px 6px 0;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.content-body table.meta td {
+  padding: 6px 0;
+  color: var(--text-muted);
+}
+
+.content-body ul,
+.content-body ol {
+  margin: 0 0 18px 24px;
+}
+
+.content-body li {
+  margin-bottom: 6px;
+}
+
+.about-content .callout,
+.manual-content .callout {
+  border-left: 4px solid var(--primary);
+  background: var(--primary-soft);
+  padding: 16px 18px;
+  border-radius: 10px;
+  margin: 24px 0;
+}
+
+.manual-content .quick-links {
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background: var(--surface-muted);
+}
+
+.manual-content .quick-links ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.manual-content .quick-links li {
+  margin: 0;
+}
+
+.manual-content details {
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  background: var(--surface-muted);
+}
+
+.manual-content details summary {
+  font-weight: 600;
+  cursor: pointer;
+  margin: -12px -16px 12px;
+  padding: 12px 16px;
+  list-style: none;
+}
+
+.manual-content details[open] summary {
+  border-bottom: 1px solid var(--border-medium);
+  margin-bottom: 16px;
+}
+
+.manual-content details summary::marker {
+  display: none;
+}
+
+.manual-content dl.commands {
+  margin: 0;
+}
+
+.manual-content dl.commands dt {
+  font-family: "JetBrains Mono", ui-monospace;
+  font-weight: 600;
+  margin: 16px 0 4px;
+}
+
+.manual-content dl.commands dd {
+  margin: 0 0 12px 16px;
+}
+
+.manual-content code {
+  background: var(--code-bg);
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 90%;
+}
+
+.manual-content .back-to-top {
+  font-size: 0.8rem;
+  text-align: right;
+  margin-top: 16px;
+}
+
+.content-body footer {
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-medium);
+  font-size: 0.95rem;
+}
 .insert-form {
   display: flex;
   flex-direction: column;
