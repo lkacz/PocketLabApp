@@ -57,10 +57,17 @@ powershell -ExecutionPolicy Bypass -File scripts/run-app.ps1
 - Java 17 runtime (Gradle 8.x compatible)
 - PowerShell 5+ on Windows for helper scripts
 
+### Android Studio setup
+
+- Use the embedded JDK 17 that ships with Android Studio (recommended) or point Android Studio to any locally installed JDK 17.
+- In Android Studio go to **File → Settings → Build, Execution, Deployment → Build Tools → Gradle** and set **Gradle JDK** to *Android Studio default JDK (17)*.
+- The repository enables Gradle’s toolchain auto-download, so headless builds will fetch JDK 17 automatically if it’s missing. The IDE still needs to know which JDK to use for code insight and Gradle sync, so double-check this setting after upgrading Android Studio.
+
 ### Helper scripts
 
 - `scripts/run-app.ps1` – build, (re)start emulator, install & launch.
 - `scripts/logcat.ps1` – filtered logcat (created on first run if missing).
+- `scripts/doctor.ps1` – quick environment sanity check for JAVA_HOME and Android Studio’s Gradle JDK.
 
 ### Online Protocol Editor quick start
 
