@@ -244,7 +244,7 @@
   <section id="files">
     <h2>Files &amp; exports</h2>
     <ul>
-      <li><strong>Select output folder:</strong> Choose a writable directory where CSV exports and logs will be stored. Verify access on the device before field work.</li>
+  <li><strong>Select output folder:</strong> Choose a writable directory where TSV exports and logs will be stored. Verify access on the device before field work.</li>
       <li><strong>Select resources folder:</strong> Point PoLA to the directory that holds audio, video, images, and HTML referenced in your protocol.</li>
       <li><strong>Back up regularly:</strong> Copy both protocol scripts and exported data to secure storage after each session.</li>
     </ul>

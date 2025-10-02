@@ -127,7 +127,7 @@ class Logger private constructor(private val context: Context) {
             awaitPendingWrites()
             if (!currentFile.exists()) return@launch
             try {
-                val xlsxFile = File(mainFolder, currentFileName.replace(".csv", ".xlsx"))
+                val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
                 excelOperations.createXlsxBackup(
                     xlsxFile,
                     currentFile,
@@ -148,9 +148,9 @@ class Logger private constructor(private val context: Context) {
                     backupFolder.mkdirs()
                 }
 
-                val baseName = currentFileName.removeSuffix(".csv")
-                val backupCsv = File(backupFolder, "${baseName}_backup.csv")
-                currentFile.copyTo(backupCsv, overwrite = true)
+                val baseName = currentFileName.removeSuffix(TSV_EXTENSION)
+                val backupTsv = File(backupFolder, "${baseName}_backup" + TSV_EXTENSION)
+                currentFile.copyTo(backupTsv, overwrite = true)
 
                 val backupXlsx = File(backupFolder, "${baseName}_backup.xlsx")
                 excelOperations.createXlsxBackup(
@@ -258,7 +258,7 @@ class Logger private constructor(private val context: Context) {
             parts += studyId
         }
         parts += "output_$timeStamp"
-        return parts.joinToString("_") + ".csv"
+        return parts.joinToString("_") + TSV_EXTENSION
     }
 
     private suspend fun awaitPendingWrites() {
@@ -267,25 +267,25 @@ class Logger private constructor(private val context: Context) {
     }
 
     private fun exportLogToSharedLocations(
-        csvFile: File,
+        tsvFile: File,
         xlsxFile: File?,
     ): List<String> {
         val savedPaths = mutableListOf<String>()
-        val baseName = currentFileName.removeSuffix(".csv")
-        val csvName = "$baseName.csv"
+        val baseName = currentFileName.removeSuffix(TSV_EXTENSION)
+        val tsvName = baseName + TSV_EXTENSION
         val xlsxName = "$baseName.xlsx"
 
         val targetUri = outputFolderUri
         if (targetUri != null) {
             val folder = DocumentFile.fromTreeUri(context, targetUri)
             if (folder != null && folder.isDirectory) {
-                val customCsvExported = exportFileToDocumentTree(folder, csvName, "text/csv", csvFile)
-                if (customCsvExported) {
+                val customTsvExported = exportFileToDocumentTree(folder, tsvName, TSV_MIME_TYPE, tsvFile)
+                if (customTsvExported) {
                     val folderLabel =
                         folder.name
                             ?: targetUri.lastPathSegment
                             ?: context.getString(R.string.value_selected_folder)
-                    savedPaths += "$folderLabel/$csvName"
+                    savedPaths += "$folderLabel/$tsvName"
                 }
                 if (xlsxFile?.exists() == true) {
                     exportFileToDocumentTree(
@@ -297,9 +297,9 @@ class Logger private constructor(private val context: Context) {
                 }
             }
         } else {
-            val downloadsCsvExported = exportFileToDownloads(csvName, "text/csv", csvFile)
-            if (downloadsCsvExported) {
-                savedPaths += "Downloads/PoLA_Data/$csvName"
+            val downloadsTsvExported = exportFileToDownloads(tsvName, TSV_MIME_TYPE, tsvFile)
+            if (downloadsTsvExported) {
+                savedPaths += "Downloads/PoLA_Data/$tsvName"
             }
             if (xlsxFile?.exists() == true) {
                 exportFileToDownloads(
@@ -388,6 +388,8 @@ class Logger private constructor(private val context: Context) {
         @Volatile
         private var instance: Logger? = null
         private const val BACKUP_FOLDER_NAME = "PoLA_Backup"
+        private const val TSV_EXTENSION = ".tsv"
+        private const val TSV_MIME_TYPE = "text/tab-separated-values"
 
         fun getInstance(context: Context): Logger {
             return instance ?: synchronized(this) {

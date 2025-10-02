@@ -36,7 +36,7 @@ Complete these steps before inviting a participant to begin:
 
 ## Files & exports
 
--   **Select output folder:** Choose a writable directory on the lab smartphone where CSV exports and logs will be stored. Verify access on the device before field work.
+-   **Select output folder:** Choose a writable directory on the lab smartphone where TSV exports and logs will be stored. Verify access on the device before field work.
 -   **Select resources folder:** Point PoLA to the directory that holds audio, video, images, and HTML referenced in your protocol.
 -   **Back up regularly:** Copy both protocol scripts and exported data to secure storage after each session.
 
@@ -87,7 +87,7 @@ Transfers execution to the line immediately after the labeled command. Use this 
 
 `LOG;message`
 
-Writes a custom entry to the session .csv log without presenting UI. Useful for marking experimental phases, counterbalancing groups, or debugging.  
+Writes a custom entry to the session .tsv log without presenting UI. Useful for marking experimental phases, counterbalancing groups, or debugging.  
 **Example:** `LOG;Condition=A`
 
 `RANDOMIZE_ON` … `RANDOMIZE_OFF`
