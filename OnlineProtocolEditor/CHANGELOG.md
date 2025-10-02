@@ -1,6 +1,9 @@
 # Online Protocol Editor Changelog
 
 ## Unreleased
+_No changes yet._
+
+## 1.1.0 - 2025-10-02
 
 ### Added
 - Manifest-driven template loader that fetches metadata from `templates/index.json` with graceful fallback to bundled defaults when external files are unavailable.
