@@ -1,0 +1,25 @@
+{
+  "name": "pola2",
+  "version": "1.0.0",
+  "description": "Developer tooling for PocketLabApp shared documentation",
+  "scripts": {
+    "convert-docs": "node tools/convert-docs.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lkacz/PocketLabApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/lkacz/PocketLabApp/issues"
+  },
+  "homepage": "https://github.com/lkacz/PocketLabApp#readme",
+  "dependencies": {
+    "jsdom": "^27.0.0",
+    "marked": "^16.3.0",
+    "turndown": "^7.2.1",
+    "turndown-plugin-gfm": "^1.0.2"
+  }
+}

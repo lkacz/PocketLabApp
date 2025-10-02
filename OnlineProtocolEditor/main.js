@@ -440,6 +440,8 @@ const aboutDialog = document.getElementById("aboutDialog");
 const aboutDialogClose = document.getElementById("aboutDialogClose");
 const manualDialog = document.getElementById("manualDialog");
 const manualDialogClose = document.getElementById("manualDialogClose");
+const aboutContentContainer = document.getElementById("aboutContent");
+const manualContentContainer = document.getElementById("manualContent");
 
 const insertDialogElementsReady = Boolean(
   insertDialog &&
@@ -495,6 +497,64 @@ function ensureTemplatesDialogElements() {
     templatesDialogElementsMissingLogged = true;
   }
   return false;
+}
+
+let markedConfigured = false;
+
+function getMarkedInstance() {
+  if (typeof window === "undefined") return null;
+  const markedGlobal = window.marked;
+  if (!markedGlobal) {
+    console.error("Marked.js is not available. Documentation content will not render.");
+    return null;
+  }
+
+  if (!markedConfigured && typeof markedGlobal.setOptions === "function") {
+    markedGlobal.setOptions({ headerIds: true, mangle: false });
+    markedConfigured = true;
+  }
+
+  return markedGlobal;
+}
+
+async function renderMarkdownInto(container, label) {
+  if (!container) return;
+  if (container.dataset.loaded === "true") return;
+
+  const source = container.dataset.source;
+  if (!source) {
+    console.warn(`${label} markdown container is missing a data-source attribute.`);
+    return;
+  }
+
+  const markedInstance = getMarkedInstance();
+  if (!markedInstance) {
+    container.innerHTML = '<p class="markdown-error">Unable to render documentation. Check console logs for details.</p>';
+    return;
+  }
+
+  try {
+    const response = await fetch(source, { cache: "no-cache" });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${source}: ${response.status} ${response.statusText}`);
+    }
+    const markdownText = await response.text();
+    const html = typeof markedInstance.parse === "function"
+      ? markedInstance.parse(markdownText)
+      : markedInstance(markdownText);
+    container.innerHTML = html;
+    container.dataset.loaded = "true";
+  } catch (error) {
+    console.error(`Unable to load ${label} documentation from ${source}`, error);
+    container.innerHTML = '<p class="markdown-error">Unable to load documentation. Please refresh and try again.</p>';
+  }
+}
+
+function initializeMarkdownDocuments() {
+  const tasks = [];
+  if (aboutContentContainer) tasks.push(renderMarkdownInto(aboutContentContainer, "About"));
+  if (manualContentContainer) tasks.push(renderMarkdownInto(manualContentContainer, "Manual"));
+  return Promise.allSettled(tasks);
 }
 
 const fallbackTemplateDescriptors = [
@@ -3107,6 +3167,7 @@ function setupEventListeners() {
   }
   if (aboutButton && aboutDialog) {
     aboutButton.addEventListener("click", () => {
+      void renderMarkdownInto(aboutContentContainer, "About");
       aboutDialog.showModal();
       requestAnimationFrame(() => {
         const focusTarget = aboutDialog.querySelector(".content-body");
@@ -3117,6 +3178,7 @@ function setupEventListeners() {
   }
   if (manualButton && manualDialog) {
     manualButton.addEventListener("click", () => {
+      void renderMarkdownInto(manualContentContainer, "Manual");
       manualDialog.showModal();
       requestAnimationFrame(() => {
         const focusTarget = manualDialog.querySelector(".content-body");
@@ -3250,6 +3312,7 @@ function init() {
   updateFavoritesToggleState();
   renderTemplatesList("");
   renderValidationResults();
+  void initializeMarkdownDocuments();
   setupEventListeners();
   clearInlineGhost();
   clearCommandSuggestion();

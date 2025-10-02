@@ -327,7 +327,8 @@ class StartFragment : Fragment() {
             sectionCard(getString(R.string.section_other)) { section ->
                 section.addView(
                     createSecondaryButton(getString(R.string.action_about)) {
-                        val aboutHtmlContent = protocolReader.readFromAssets(requireContext(), "manual.html")
+                        val aboutMarkdown = protocolReader.readFromAssets(requireContext(), "content/about.md")
+                        val aboutHtmlContent = MarkdownRenderer.render(aboutMarkdown)
                         HtmlDialogHelper.showHtmlContent(
                             requireContext(),
                             getString(R.string.action_about),
@@ -337,7 +338,8 @@ class StartFragment : Fragment() {
                 )
                 section.addView(
                     createSecondaryButton(getString(R.string.action_manual)) {
-                        val manualHtmlContent = protocolReader.readFromAssets(requireContext(), "about.txt")
+                        val manualMarkdown = protocolReader.readFromAssets(requireContext(), "content/manual.md")
+                        val manualHtmlContent = MarkdownRenderer.render(manualMarkdown)
                         HtmlDialogHelper.showHtmlContent(
                             requireContext(),
                             getString(R.string.action_manual),
