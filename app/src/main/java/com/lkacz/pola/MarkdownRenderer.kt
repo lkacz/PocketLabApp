@@ -50,7 +50,7 @@ object MarkdownRenderer {
             </style>
         </head>
         <body class=\"markdown-body\">
-        %s
+        {{CONTENT}}
         </body>
         </html>
         """
@@ -59,6 +59,6 @@ object MarkdownRenderer {
         if (markdown.startsWith("Error")) return markdown
         val document: Node = parser.parse(markdown)
         val html = renderer.render(document)
-        return STYLED_HTML_TEMPLATE.format(html)
+        return STYLED_HTML_TEMPLATE.replace("{{CONTENT}}", html)
     }
 }
