@@ -28,7 +28,7 @@ Complete these steps before inviting a participant to begin:
 ## Participant setup
 
 -   **Protocol name:** Confirm the active script shown beneath _Protocol:_. Tap another protocol option to swap it instantly.
--   **Participant ID:** Capture an identifier to tag exports. Clear the field between sessions to avoid cross-participant mixes.
+-   **Participant ID:** Capture an identifier to tag collected data exports.
 -   **Resume vs. restart:** If PoLA detects an interrupted session, it offers to resume. Choose _Don’t continue_ when starting a fresh run.
 -   **Start Study:** Launch the sequence once all devices, timers, and accessories are ready. The app logs the exact start time.
 
@@ -36,7 +36,7 @@ Complete these steps before inviting a participant to begin:
 
 ## Files & exports
 
--   **Select output folder:** Choose a writable directory where CSV exports and logs will be stored. Verify access on the device before field work.
+-   **Select output folder:** Choose a writable directory on the lab smartphone where CSV exports and logs will be stored. Verify access on the device before field work.
 -   **Select resources folder:** Point PoLA to the directory that holds audio, video, images, and HTML referenced in your protocol.
 -   **Back up regularly:** Copy both protocol scripts and exported data to secure storage after each session.
 
@@ -47,7 +47,6 @@ Complete these steps before inviting a participant to begin:
 -   **Layout:** Adjust typography, button colors, and alignment in the Layout dialog. Use the restore defaults action if styling becomes inconsistent.
 -   **Sounds:** Configure alarm tones or mute them in the Sounds dialog. Timer commands will reuse the selected audio.
 -   **Facilitator tips:** Tap the app title seven times to unlock developer tools. Long-press it to disable developer mode.
--   **Protocol hygiene:** Use descriptive label names, and test branching paths with the tutorial or demo protocol before collecting data.
 
 [Back to top ↑](#top)
 
@@ -57,7 +56,6 @@ This reference describes every command the runtime understands. Protocols are pl
 
 **Quick tips:**
 
--   Wrap values containing semicolons inside quotation marks (`"value;with;semicolons"`) or use square brackets.
 -   Resource references (images, audio) should match the filenames stored in your project resources.
 -   Commands are case-insensitive, but the conventional style is UPPERCASE.
 -   Media placeholders such as `<audio.mp3>`, `<video.mp4,60>`, or `<custom.html>` can be embedded in most text fields.
@@ -79,7 +77,7 @@ Defines a unique identifier stored in exports and logs, helping you group sessio
 
 `LABEL;Name`
 
-Marks a jump target. Labels are case-sensitive and should avoid spaces where possible. Duplicate labels trigger validation errors.  
+Marks a jump target. Labels are case-sensitive and should avoid spaces. Duplicate labels trigger validation errors.  
 **Example:** `LABEL;INTRO_COMPLETED`
 
 `GOTO;LabelName`
@@ -89,7 +87,7 @@ Transfers execution to the line immediately after the labeled command. Use this 
 
 `LOG;message`
 
-Writes a custom entry to the session log without presenting UI. Useful for marking experimental phases, counterbalancing groups, or debugging.  
+Writes a custom entry to the session .csv log without presenting UI. Useful for marking experimental phases, counterbalancing groups, or debugging.  
 **Example:** `LOG;Condition=A`
 
 `RANDOMIZE_ON` … `RANDOMIZE_OFF`
@@ -103,7 +101,7 @@ Controls screen-to-screen animations. Accepted modes: `off`, `slide`, `slideleft
 
 `END`
 
-Terminates the protocol immediately and shows the completion screen. Avoid trailing parameters.
+Terminates the protocol immediately, ignoring all subsequent commands. Useful during development for keeping unused parts of a protocol in the same file.
 
 Instructional & survey content
 
@@ -111,11 +109,6 @@ Instructional & survey content
 
 Displays a formatted instruction page. Body text can include HTML, media placeholders, and accessibility modifiers like `[TAP]` or `[HOLD]` (attach to the continue text).  
 **Example:** `INSTRUCTION;Welcome;<b>Please read carefully.</b>;Start`
-
-`HTML;file.html;Continue text`
-
-Loads an HTML file from the resources folder and renders it inside the study screen, preserving layouts and embedded media.  
-**Example:** `HTML;consent_form.html;I agree`
 
 `INPUTFIELD;Header;Body;[Field1;Field2;…];Continue text`
 
@@ -130,15 +123,23 @@ Presents the listed input fields in a randomized order while keeping header, bod
 
 Shows a single-item scale with tap targets. Responses may include optional branch labels in square brackets. `Response text[Label]` directs flow to a matching `LABEL` when selected.  
 **Example:** `SCALE;Mood check;How do you feel now?;Mood;Very low;Low;Neutral;High;Very high`
+**Example:** `SCALE;Mood intervention;How do you feel now?;Mood;Low[Low_Mood_Label];Neutral[Neutral_Mood_Label];High[High_Mood_Label]`
 
 `SCALE[RANDOMIZED]`
 
 Randomizes the order of response options to reduce order effects. Branch labels remain attached to their original response text.
 
+**Example:** `SCALE;Emotions;Emotion intensity right now?;[Sadness;Happines;Anger]; Very low;Low;Neutral;High;Very high`
+
 `TIMER;Header;Body;Seconds;Continue text`
 
 Displays a countdown timer. When the timer reaches zero, participants may proceed using the continue button (or immediately if you specify `0` seconds).  
 **Example:** `TIMER;Break;Rest for one minute;60;Resume task`
+
+`HTML;file.html;Continue text`
+
+Loads an HTML file from the resources folder and renders it inside the study screen, preserving layouts and embedded media.  
+**Example:** `HTML;consent_form.html;I agree`
 
 Media & interaction helpers
 
@@ -148,7 +149,7 @@ Sets the audio file used by subsequent `TIMER` screens. Place the referenced fil
 
 `<resource placeholders>`
 
-Within any textual field you can embed:
+Within any commmand's textual field you can embed:
 
 -   `<audio.mp3,80>` — plays audio at 80% volume.
 -   `<video.mp4,60>` — plays video at 60% volume (0–100).
@@ -233,7 +234,7 @@ Sets timer digits color. **Accepted values:** hex codes or HTML names.
 
 Best practices
 
--   **Validate early:** Use the in-app protocol validator to catch missing labels, malformed commands, or resource mismatches.
+-   **Validate early:** Use the in-app protocol validator or the online editor to catch missing labels, malformed commands, or resource mismatches.
 -   **Use comments:** Prefix lines with `//` to annotate sections or disable commands temporarily.
 -   **Back up resources:** Store referenced media inside the PoLA resources folder so sessions remain consistent across devices.
 -   **Version your scripts:** Pair each public release with a tagged protocol file and bump `STUDY_ID` as you iterate.
@@ -246,6 +247,8 @@ Questions, collaboration ideas, or bug reports are welcome at [lkacz@amu.edu.pl]
 
 [Back to top ↑](#top)
 
-For comprehensive documentation, including data export formats and developer guides, visit the project repository: [github.com/lkacz/PocketLabApp](https://github.com/lkacz/PocketLabApp).
+Questions, collaboration ideas, or bug reports are welcome at [lkacz@amu.edu.pl](mailto:lkacz@amu.edu.pl).  
+Project repository: [github.com/lkacz/PocketLabApp](https://github.com/lkacz/PocketLabApp).  
+PoLA Online Protocol Editor: [lkacz.github.io/PocketLabApp](https://lkacz.github.io/PocketLabApp/).
 
-Thank you for exploring PoLA. We hope these tools help you run precise, participant-friendly studies wherever your research takes you.
+Thank you for exploring PoLA. We hope these tools help you run precise, participant-friendly outdoor studies wherever your research takes you.
