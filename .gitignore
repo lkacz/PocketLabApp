@@ -22,6 +22,7 @@ local.properties
 *.apk
 *.ap_
 *.aab
+app/release/
 
 # Logs & misc
 captures/
