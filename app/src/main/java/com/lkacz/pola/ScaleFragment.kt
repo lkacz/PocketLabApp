@@ -377,7 +377,6 @@ class ScaleFragment : Fragment() {
         }
         return text.replace(matchedFull, "")
     }
-    }
 
     private fun applyHeaderAlignment(textView: TextView) {
         val prefs = requireContext().getSharedPreferences("ProtocolPrefs", Context.MODE_PRIVATE)
