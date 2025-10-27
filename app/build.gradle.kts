@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.lkacz.pola"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.lkacz.pola"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 110
-        versionName = "1.1.0"
+        targetSdk = 35
+        versionCode = 111
+        versionName = "1.1.1"
 
         buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
         buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())
@@ -28,7 +28,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

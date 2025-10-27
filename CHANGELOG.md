@@ -3,6 +3,11 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.1] - 2025-10-27
+### Changed
+- Updated targetSdk and compileSdk to API 35 (Android 15) to meet Google Play requirements
+- Enabled R8 code optimization and resource shrinking for release builds
+
 ## [1.1.0] - 2025-10-02
 ### Highlights
 - Unified About/Manual content across Android and web by consuming the shared Markdown bundle.
