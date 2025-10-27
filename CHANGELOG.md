@@ -3,7 +3,10 @@
 ## [Unreleased]
 _No changes yet._
 
-# Changelog
+## [1.3.2] - 2025-10-28
+### Changed
+- Disabled release minification and resource shrinking so the Play Store build mirrors the crash-free debug build
+- Kept ProGuard configuration for future use if optimization is re-enabled
 
 ## [1.3.1] - 2025-10-28
 ### Fixed
