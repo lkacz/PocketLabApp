@@ -1,5 +1,7 @@
 package com.lkacz.pola
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -8,6 +10,11 @@ import androidx.core.app.NotificationCompat
 class MyForegroundService : Service() {
     private val CHANNEL_ID = "ForegroundServiceChannel"
     private val NOTIFICATION_ID = 1
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+    }
 
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -29,5 +36,16 @@ class MyForegroundService : Service() {
 
         // If you want the service to continue running until explicitly stopped
         return START_STICKY
+    }
+
+    private fun createNotificationChannel() {
+        val channel =
+            NotificationChannel(
+                CHANNEL_ID,
+                "Foreground Service Channel",
+                NotificationManager.IMPORTANCE_LOW,
+            )
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 }
