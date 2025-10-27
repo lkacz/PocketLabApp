@@ -148,12 +148,27 @@ class HtmlFragment : Fragment() {
         htmlFileName: String,
         resourcesFolderUri: Uri?,
     ) {
-        if (htmlFileName.isBlank() || resourcesFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-        val htmlFile = parentFolder.findFile(htmlFileName) ?: return
-        if (!htmlFile.exists() || !htmlFile.isFile) return
+        if (htmlFileName.isBlank()) return
+
+        // Try loading from resources folder if available
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            val htmlFile = parentFolder?.findFile(htmlFileName)
+            if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+                try {
+                    requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                        val htmlContent = inputStream.bufferedReader().readText()
+                        webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                    }
+                    return
+                } catch (_: Exception) {
+                }
+            }
+        }
+
+        // Fallback: try loading from assets
         try {
-            requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+            requireContext().assets.open(htmlFileName).use { inputStream ->
                 val htmlContent = inputStream.bufferedReader().readText()
                 webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
             }

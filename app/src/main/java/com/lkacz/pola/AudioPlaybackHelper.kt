@@ -115,23 +115,42 @@ object AudioPlaybackHelper {
         mediaFolderUri: Uri?,
         mediaPlayers: MutableList<MediaPlayer>,
     ) {
-        if (mediaFolderUri == null) return
-        val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri) ?: return
-        val mediaFile = parentFolder.findFile(fileName) ?: return
-        if (!mediaFile.exists() || !mediaFile.isFile) return
+        // Try loading from resources folder if available
+        if (mediaFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri)
+            val mediaFile = parentFolder?.findFile(fileName)
+            if (mediaFile != null && mediaFile.exists() && mediaFile.isFile) {
+                try {
+                    val mediaPlayer =
+                        MediaPlayer().apply {
+                            val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
+                            pfd?.use {
+                                setDataSource(it.fileDescriptor)
+                                prepare()
+                                setVolume(volume, volume)
+                                start()
+                            }
+                        }
+                    mediaPlayers.add(mediaPlayer)
+                    return
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
 
+        // Fallback: try loading from assets
         try {
-            val mediaPlayer =
-                MediaPlayer().apply {
-                    val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
-                    pfd?.use {
-                        setDataSource(it.fileDescriptor)
+            context.assets.openFd(fileName).use { afd ->
+                val mediaPlayer =
+                    MediaPlayer().apply {
+                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
                         prepare()
                         setVolume(volume, volume)
                         start()
                     }
-                }
-            mediaPlayers.add(mediaPlayer)
+                mediaPlayers.add(mediaPlayer)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -307,9 +307,10 @@ class ScaleFragment : Fragment() {
                 1.0f
             }
 
+        // Try loading from resources folder if available
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri) ?: return
-            val videoFile = parentFolder.findFile(fileName)
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            val videoFile = parentFolder?.findFile(fileName)
             if (videoFile != null && videoFile.exists() && videoFile.isFile) {
                 videoView.visibility = View.VISIBLE
                 videoView.setVideoURI(videoFile.uri)
@@ -317,7 +318,22 @@ class ScaleFragment : Fragment() {
                     mp.start()
                     mp.setVolume(volume, volume)
                 }
+                return
             }
+        }
+
+        // Fallback: try loading from assets
+        try {
+            val afd = requireContext().assets.openFd(fileName)
+            videoView.visibility = View.VISIBLE
+            videoView.setVideoURI(Uri.parse("file:///android_asset/$fileName"))
+            videoView.setOnPreparedListener { mp ->
+                mp.start()
+                mp.setVolume(volume, volume)
+            }
+            afd.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -325,28 +341,42 @@ class ScaleFragment : Fragment() {
         text: String,
         resourcesFolderUri: Uri?,
     ): String {
-        if (text.isBlank() || resourcesFolderUri == null) return text
+        if (text.isBlank()) return text
         val pattern = Regex("<([^>]+\\.html)>", RegexOption.IGNORE_CASE)
         val match = pattern.find(text) ?: return text
         val matchedFull = match.value
         val fileName = match.groupValues[1].trim()
 
-        val parentFolder =
-            DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-                ?: return text
-        val htmlFile = parentFolder.findFile(fileName)
-        if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
-            try {
-                requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
-                    val htmlContent = inputStream.bufferedReader().readText()
-                    webView.visibility = View.VISIBLE
-                    webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+        // Try loading from resources folder if available
+        if (resourcesFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
+            val htmlFile = parentFolder?.findFile(fileName)
+            if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
+                try {
+                    requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
+                        val htmlContent = inputStream.bufferedReader().readText()
+                        webView.visibility = View.VISIBLE
+                        webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+                    }
+                    return text.replace(matchedFull, "")
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
+
+        // Fallback: try loading from assets
+        try {
+            requireContext().assets.open(fileName).use { inputStream ->
+                val htmlContent = inputStream.bufferedReader().readText()
+                webView.visibility = View.VISIBLE
+                webView.loadDataWithBaseURL(null, htmlContent, "text/html", "UTF-8", null)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         return text.replace(matchedFull, "")
+    }
     }
 
     private fun applyHeaderAlignment(textView: TextView) {
