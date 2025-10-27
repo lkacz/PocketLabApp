@@ -3,6 +3,12 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.7] - 2025-10-27
+### Fixed
+- Fixed completion screen potentially closing prematurely by ensuring proper lifecycle management
+- Added main thread safety checks and small delay before showing completion fragment
+- Used commitAllowingStateLoss to prevent state loss exceptions during completion
+
 ## [1.1.6] - 2025-10-27
 ### Added
 - Added welcome dialog for first-time users explaining PoLA's protocol-based workflow
