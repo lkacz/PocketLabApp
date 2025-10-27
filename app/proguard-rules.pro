@@ -101,3 +101,40 @@
 -keepclassmembers class com.lkacz.pola.MainActivity {
     private void onProtocolCompleted();
 }
+
+# Keep critical singleton objects that are accessed throughout the app
+-keep class com.lkacz.pola.Prefs {
+    *;
+}
+-keep class com.lkacz.pola.ColorManager {
+    *;
+}
+-keep class com.lkacz.pola.ParsingUtils {
+    *;
+}
+-keep class com.lkacz.pola.TransitionManager {
+    *;
+}
+
+# Keep listener interfaces to prevent issues with callbacks
+-keep interface com.lkacz.pola.StartFragment$OnProtocolSelectedListener {
+    *;
+}
+
+# Keep Service classes
+-keep class * extends android.app.Service {
+    *;
+}
+
+# Keep FragmentLoader to ensure protocol parsing works correctly
+-keep class com.lkacz.pola.FragmentLoader {
+    *;
+}
+
+# Keep ProtocolManager
+-keep class com.lkacz.pola.ProtocolManager {
+    *;
+}
+-keep class com.lkacz.pola.ProtocolManager$Companion {
+    *;
+}
