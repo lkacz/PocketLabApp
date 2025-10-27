@@ -160,6 +160,13 @@
 -keep class com.lkacz.pola.** { *; }
 -keepclassmembers class com.lkacz.pola.** { *; }
 
+# Keep AlertDialog and related classes
+-keep class androidx.appcompat.app.AlertDialog { *; }
+-keep class androidx.appcompat.app.AlertDialog$Builder { *; }
+-keepclassmembers class androidx.appcompat.app.AlertDialog$Builder { *; }
+-keep class android.content.DialogInterface { *; }
+-keep class android.content.DialogInterface$OnClickListener { *; }
+
 # Keep Apache POI (Excel library) classes
 -keep class org.apache.poi.** { *; }
 -keepclassmembers class org.apache.poi.** { *; }
