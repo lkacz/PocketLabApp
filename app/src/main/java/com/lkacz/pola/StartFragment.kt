@@ -1,10 +1,13 @@
 package com.lkacz.pola
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -66,6 +69,16 @@ class StartFragment : Fragment() {
                 handleOutputFolderSelection(uri)
             } else {
                 showToast(getString(R.string.toast_output_folder_cancelled))
+            }
+        }
+
+    private val storagePermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val allGranted = permissions.values.all { it }
+            if (allGranted) {
+                showToast("Storage permissions granted")
+            } else {
+                showToast("Storage permissions denied - file operations may fail")
             }
         }
 
@@ -352,6 +365,9 @@ class StartFragment : Fragment() {
 
         FeatureFlags.load(requireContext())
         if (DeveloperModeManager.isEnabled(requireContext())) addDeveloperButtons(rootLayout)
+
+        // Request storage permissions if needed
+        checkAndRequestStoragePermissions()
 
         return scrollView
     }
@@ -672,6 +688,38 @@ class StartFragment : Fragment() {
 
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density + 0.5f).toInt()
+    }
+
+    private fun checkAndRequestStoragePermissions() {
+        // For Android 13+ (API 33+), we use scoped storage and don't need these permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+
+        // For Android 10-12, check if permissions are needed
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            storagePermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
     }
 
     private fun addDeveloperButtons(rootLayout: LinearLayout) {

@@ -250,13 +250,14 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private fun onProtocolCompleted() {
         if (hasCompletedProtocol) return
         hasCompletedProtocol = true
-        clearProtocolProgress()
         logger.backupLogFile()
-        lifecycleScope.launch {
-            delay(500)
-            if (!isFinishing) {
-                finish()
-            }
+        
+        // Show completion screen instead of immediately closing
+        val completionFragment = CompletionFragment.newInstance()
+        supportFragmentManager.beginTransaction().apply {
+            setReorderingAllowed(true)
+            replace(fragmentContainerId, completionFragment)
+            commit()
         }
     }
 
