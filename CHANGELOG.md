@@ -7,9 +7,12 @@ _No changes yet._
 
 ## [1.3.1] - 2025-10-28
 ### Fixed
-- Fixed crash in ExcelOperations.createXlsxBackup when log file doesn't exist
-- Added file existence check before attempting to read log file for Excel backup
-- Prevents crash on completion screen when protocol completes without generating log entries
+- Disabled Excel (.xlsx) backup generation due to Apache POI Log4j incompatibility with Android
+- Fixed crash on completion screen caused by Log4j initialization failure
+- TSV log files still export normally to Downloads or selected folder
+### Changed
+- Removed Excel file generation from backupLogFile() - only TSV files are now created
+- This prevents ExceptionInInitializerError from org.apache.logging.log4j
 
 ## [1.3.0] - 2025-10-28
 ### Changed

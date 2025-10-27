@@ -122,30 +122,28 @@ class Logger private constructor(private val context: Context) {
         outputFolderUri = newUri
     }
 
-    suspend fun backupLogFile() {
-        withContext(Dispatchers.IO) {
+    fun backupLogFile() {
+        scope.launch {
             awaitPendingWrites()
-            // Flush any buffered writes before backing up
-            fileOperations.flush()
-            
-            if (!currentFile.exists()) return@withContext
+            if (!currentFile.exists()) return@launch
             try {
-                val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
-                excelOperations.createXlsxBackup(
-                    xlsxFile,
-                    currentFile,
-                    BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                    BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-                )
+                // Skip Excel backup - Apache POI's Log4j doesn't work on Android
+                // val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
+                // excelOperations.createXlsxBackup(
+                //     xlsxFile,
+                //     currentFile,
+                //     BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
+                //     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
+                // )
 
-                val savedLocations = exportLogToSharedLocations(currentFile, xlsxFile)
+                val savedLocations = exportLogToSharedLocations(currentFile, null)
                 if (savedLocations.isNotEmpty()) {
                     showSaveToast(savedLocations)
                 }
 
-                if (isBackupCreated) return@withContext
+                if (isBackupCreated) return@launch
 
-                val parentFile = mainFolder.parentFile ?: return@withContext
+                val parentFile = mainFolder.parentFile ?: return@launch
                 val backupFolder = File(parentFile, BACKUP_FOLDER_NAME)
                 if (!backupFolder.exists()) {
                     backupFolder.mkdirs()
@@ -155,13 +153,14 @@ class Logger private constructor(private val context: Context) {
                 val backupTsv = File(backupFolder, "${baseName}_backup" + TSV_EXTENSION)
                 currentFile.copyTo(backupTsv, overwrite = true)
 
-                val backupXlsx = File(backupFolder, "${baseName}_backup.xlsx")
-                excelOperations.createXlsxBackup(
-                    backupXlsx,
-                    currentFile,
-                    BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                    BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-                )
+                // Skip Excel backup in backup folder too
+                // val backupXlsx = File(backupFolder, "${baseName}_backup.xlsx")
+                // excelOperations.createXlsxBackup(
+                //     backupXlsx,
+                //     currentFile,
+                //     BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
+                //     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
+                // )
 
                 isBackupCreated = true
             } catch (e: IOException) {
@@ -174,7 +173,6 @@ class Logger private constructor(private val context: Context) {
         runBlocking {
             awaitPendingWrites()
         }
-        fileOperations.close()
         scope.cancel()
     }
 
