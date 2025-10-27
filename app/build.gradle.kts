@@ -14,8 +14,8 @@ android {
         applicationId = "com.lkacz.pola"
         minSdk = 29
         targetSdk = 35
-        versionCode = 118
-        versionName = "1.1.8"
+        versionCode = 119
+        versionName = "1.1.9"
 
         buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
         buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())

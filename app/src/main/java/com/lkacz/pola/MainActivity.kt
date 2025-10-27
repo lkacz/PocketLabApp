@@ -111,7 +111,14 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
 
     override fun onDestroy() {
         super.onDestroy()
-        logger.backupLogFile()
+        // Launch backup in lifecycleScope to handle suspend function
+        lifecycleScope.launch {
+            try {
+                logger.backupLogFile()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun loadNextFragment() {
@@ -254,21 +261,45 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private fun onProtocolCompleted() {
         if (hasCompletedProtocol) return
         hasCompletedProtocol = true
-        logger.backupLogFile()
         
-        // Ensure we're on the main thread and fragment manager is in good state
+        // Launch completion process on main thread
         lifecycleScope.launch(Dispatchers.Main) {
-            // Small delay to ensure any pending operations complete
-            delay(100)
-            
-            if (isFinishing || isDestroyed) return@launch
-            
-            // Show completion screen instead of immediately closing
-            val completionFragment = CompletionFragment.newInstance()
-            supportFragmentManager.beginTransaction().apply {
-                setReorderingAllowed(true)
-                replace(fragmentContainerId, completionFragment)
-                commitAllowingStateLoss()
+            try {
+                // First, backup the log file (this runs on IO dispatcher internally)
+                logger.backupLogFile()
+                
+                // Small delay to ensure any pending operations complete
+                delay(200)
+                
+                // Check if activity is still valid
+                if (isFinishing || isDestroyed) return@launch
+                
+                // Show completion screen
+                val completionFragment = CompletionFragment.newInstance()
+                supportFragmentManager.beginTransaction().apply {
+                    setReorderingAllowed(true)
+                    replace(fragmentContainerId, completionFragment)
+                    commitAllowingStateLoss()
+                }
+            } catch (e: Exception) {
+                // If anything fails, log the error but still try to show completion screen
+                e.printStackTrace()
+                android.util.Log.e("MainActivity", "Error in onProtocolCompleted", e)
+                
+                if (!isFinishing && !isDestroyed) {
+                    try {
+                        val completionFragment = CompletionFragment.newInstance()
+                        supportFragmentManager.beginTransaction().apply {
+                            setReorderingAllowed(true)
+                            replace(fragmentContainerId, completionFragment)
+                            commitAllowingStateLoss()
+                        }
+                    } catch (innerE: Exception) {
+                        innerE.printStackTrace()
+                        // Last resort - just finish the activity
+                        finish()
+                    }
+                }
             }
         }
     }

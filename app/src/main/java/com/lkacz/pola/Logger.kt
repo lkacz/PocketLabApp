@@ -122,10 +122,10 @@ class Logger private constructor(private val context: Context) {
         outputFolderUri = newUri
     }
 
-    fun backupLogFile() {
-        scope.launch {
+    suspend fun backupLogFile() {
+        withContext(Dispatchers.IO) {
             awaitPendingWrites()
-            if (!currentFile.exists()) return@launch
+            if (!currentFile.exists()) return@withContext
             try {
                 val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
                 excelOperations.createXlsxBackup(
@@ -140,9 +140,9 @@ class Logger private constructor(private val context: Context) {
                     showSaveToast(savedLocations)
                 }
 
-                if (isBackupCreated) return@launch
+                if (isBackupCreated) return@withContext
 
-                val parentFile = mainFolder.parentFile ?: return@launch
+                val parentFile = mainFolder.parentFile ?: return@withContext
                 val backupFolder = File(parentFile, BACKUP_FOLDER_NAME)
                 if (!backupFolder.exists()) {
                     backupFolder.mkdirs()

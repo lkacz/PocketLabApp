@@ -5,6 +5,14 @@ _No changes yet._
 
 # Changelog
 
+## [1.1.9] - 2025-10-27
+### Fixed
+- Fixed race condition in protocol completion that caused intermittent crashes
+- Made Logger.backupLogFile() a proper suspend function that waits for completion
+- Added comprehensive error handling in onProtocolCompleted() to prevent crashes
+- Increased delay before showing completion screen to ensure all operations finish
+- Added fallback behavior if completion screen fails to display
+
 ## [1.1.8] - 2025-10-27
 ### Fixed
 - Added ProGuard rules to prevent R8 obfuscation from stripping CompletionFragment and its companion object
