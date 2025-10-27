@@ -4,6 +4,7 @@ STUDY_ID;TUTORIAL_ALL_FEATURES
 // - pola_pic.jpg (sunset field photograph used as an inline image placeholder)
 // - pola_video.mp4 (short landscape clip appended to an instruction slide)
 // - pola_reaction_time.html (custom HTML reaction-time explainer page)
+// - psnakev2.html (interactive Snake game demonstrating rich HTML experiences)
 // - pola_sound.mp3 (bird chirp audio clip)
 
 // TRANSITIONS command sets the animation between fragments.
@@ -49,6 +50,9 @@ INSTRUCTION;Embedded video attachment;A short looping clip illustrates how video
 
 // HTML command opens the reaction-time explainer bundled with the tutorial. The continue action is protected with a hold gesture.
 HTML;pola_reaction_time.html;Return to the tutorial flow[HOLD]
+
+// Interactive Snake game demonstrates rich HTML experiences within protocols.
+HTML;psnakev2.html;Exit the game and continue
 
 // SCALE captures a single rating with descriptive anchors.
 SCALE;Confidence check;Rate how confident you feel about navigating PoLA commands after reviewing the introduction.<br><i>Consider how comfortable you are mixing command types.</i>;Confidence level;Very unsure;Somewhat unsure;Neutral;Growing confident;Highly confident

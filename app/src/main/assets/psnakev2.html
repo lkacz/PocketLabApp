@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PoLA Snake Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #f8fafc;
+      background: radial-gradient(circle at top, #1f2937 0%, #0f172a 55%, #020617 100%);
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(440px, 92vw);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 18px;
+      padding: 18px 18px 24px;
+      box-sizing: border-box;
+      position: relative;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    #gameCanvas {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+      border: 2px solid rgba(148, 163, 184, 0.4);
+      border-radius: 10px;
+      display: block;
+    }
+
+    .scoreboard {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+    }
+
+    .score-item {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(15, 118, 110, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+      text-align: center;
+      font-size: 17px;
+      letter-spacing: 0.03em;
+    }
+
+    .score-item.best {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(129, 140, 248, 0.3);
+    }
+
+    .score-item.flash {
+      animation: scoreFlash 0.6s ease;
+      box-shadow: 0 16px 32px rgba(129, 140, 248, 0.3);
+    }
+
+    @keyframes scoreFlash {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(45, 212, 191, 0.0);
+      }
+      40% {
+        transform: scale(1.05);
+        box-shadow: 0 18px 38px rgba(45, 212, 191, 0.45);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(45, 212, 191, 0.0);
+      }
+    }
+
+    /* Mobile-friendly controls */
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .nav-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .middle-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 60px; /* Horizontal gap between Left/Right */
+    }
+
+    .controls button {
+      width: 70px;
+      height: 44px;
+      font-size: 18px;
+      cursor: pointer;
+      background: rgba(15, 23, 42, 0.8);
+      color: #f8fafc;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      border-radius: 10px;
+      transition: transform 120ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .controls button:hover,
+    .controls button:focus-visible {
+      outline: none;
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px rgba(15, 118, 110, 0.25);
+      background: rgba(20, 83, 45, 0.9);
+    }
+
+    .controls button.secondary {
+      background: rgba(71, 85, 105, 0.85);
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    .controls button.secondary:hover,
+    .controls button.secondary:focus-visible {
+      box-shadow: 0 14px 28px rgba(99, 102, 241, 0.25);
+      background: rgba(76, 106, 179, 0.92);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Game Over overlay */
+    .overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 999;
+    }
+
+    .overlay.active {
+      display: flex;
+    }
+
+    .overlay h2 {
+      margin: 10px 0;
+    }
+
+    .overlay button {
+      margin-top: 12px;
+      min-width: 150px;
+    }
+
+    .overlay .difficulty-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .overlay p {
+      margin: 4px 0 8px;
+      max-width: 320px;
+      text-align: center;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container" id="gameContainer">
+    <h1>PoLA Snake</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="scoreboard">
+      <div id="score" class="score-item" role="status" aria-live="polite">Score: 0</div>
+      <div id="highScore" class="score-item best" aria-live="polite">Best: 0</div>
+    </div>
+
+    <!-- Mobile-friendly controls -->
+    <div class="controls">
+      <div class="nav-grid" aria-label="Directional controls">
+        <button aria-label="Move up" onclick="changeDirection('up')">↑</button>
+        <div class="middle-buttons">
+          <button aria-label="Move left" onclick="changeDirection('left')">←</button>
+          <button aria-label="Move right" onclick="changeDirection('right')">→</button>
+        </div>
+        <button aria-label="Move down" onclick="changeDirection('down')">↓</button>
+      </div>
+      <div class="action-buttons">
+        <button id="pauseButton" onclick="togglePause()">Pause</button>
+        <button class="secondary" onclick="closeGame()">Exit</button>
+      </div>
+    </div>
+
+    <div class="overlay active" id="startOverlay">
+      <h2>Ready to slither?</h2>
+      <p>Select a difficulty to begin. Use the arrow keys or on-screen arrows to guide the PoLA snake.</p>
+      <div class="difficulty-buttons">
+        <button onclick="startGame('slow')">Chill (Slow)</button>
+        <button onclick="startGame('normal')">Classic (Normal)</button>
+        <button onclick="startGame('fast')">Rapid (Fast)</button>
+        <button onclick="startGame('hyper')">Turbo (Hyper)</button>
+      </div>
+      <p>Tip: Press Space to pause or resume at any time.</p>
+    </div>
+
+    <!-- Internal overlay for Game Over -->
+    <div class="overlay" id="gameOverOverlay">
+      <h2>Game Over!</h2>
+      <p id="finalScore"></p>
+      <button onclick="restartGame()">Retry</button>
+      <button class="secondary" onclick="showStartOverlay()">Change Difficulty</button>
+    </div>
+  </div>
+
+  <script>
+    //=============================
+    // GLOBAL VARIABLES & SETTINGS
+    //=============================
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const highScoreDisplay = document.getElementById("highScore");
+    const gameOverOverlay = document.getElementById("gameOverOverlay");
+    const finalScoreDisplay = document.getElementById("finalScore");
+    const gameContainer = document.getElementById("gameContainer");
+    const startOverlay = document.getElementById("startOverlay");
+    const pauseButton = document.getElementById("pauseButton");
+
+    const gridSize = 20;          // Size of each cell in pixels
+    const canvasSize = 400;       // Canvas width & height in pixels
+    const totalCells = canvasSize / gridSize;
+
+    const difficultySpeeds = {
+      slow: 420,
+      normal: 320,
+      fast: 220,
+      hyper: 150
+    };
+    const defaultSpeed = difficultySpeeds.normal;
+
+    // Start the snake near the right edge. The head is at x=16, then 17,18,19 behind it.
+    // Moves left so the initial letters will be "POLA".
+    let snake = [
+      { x: 16, y: 10 },
+      { x: 17, y: 10 },
+      { x: 18, y: 10 },
+      { x: 19, y: 10 }
+    ];
+
+    // Velocity: negative X means moving left
+    // (So the next move will place the head at x=15, which is not out of bounds or overlapping.)
+    let velocityX = -1;
+    let velocityY = 0;
+
+    // Food position
+    let food = { x: 0, y: 0 };
+
+    // Scoring
+    let score = 0;
+    let highScore = 0;
+    let highScoreStorageAvailable = true;
+
+    try {
+      const storedHighScore = localStorage.getItem("polaSnakeHighScore");
+      if (storedHighScore !== null) {
+        highScore = Number(storedHighScore) || 0;
+      }
+    } catch (error) {
+      highScoreStorageAvailable = false;
+      console.warn("PoLA Snake: high score persistence is unavailable.", error);
+    }
+
+    // Game speed (ms per update) – starts slower and speeds up with each food
+  let currentSpeed = defaultSpeed;
+  let activeDifficultySpeed = defaultSpeed;
+    let gameInterval = null;
+  let isPaused = true;
+  let gotNewHighScore = false;
+
+    //========================
+    // INITIALIZE / START GAME
+    //========================
+    function initGame() {
+      updateHighScoreDisplay();
+      showStartOverlay();
+    }
+
+    //====================
+    // SET INTERVAL HELPER
+    //====================
+    function setGameInterval(speed) {
+      // Clear old interval if any
+      if (gameInterval) clearInterval(gameInterval);
+      if (isPaused) {
+        gameInterval = null;
+        return;
+      }
+
+      gameInterval = setInterval(() => {
+        update();
+        draw();
+      }, speed);
+    }
+
+    function showStartOverlay() {
+      clearInterval(gameInterval);
+      gameInterval = null;
+      isPaused = true;
+  currentSpeed = defaultSpeed;
+  activeDifficultySpeed = defaultSpeed;
+      updatePauseButton();
+      gameOverOverlay.classList.remove("active");
+      startOverlay.classList.add("active");
+      resetGame();
+      spawnFood();
+      draw();
+    }
+
+    function hideStartOverlay() {
+      startOverlay.classList.remove("active");
+    }
+
+    function startGame(selection = "normal") {
+      const resolvedSpeed = typeof selection === "number"
+        ? selection
+        : difficultySpeeds[selection] || defaultSpeed;
+
+      currentSpeed = resolvedSpeed;
+  activeDifficultySpeed = resolvedSpeed;
+      gameOverOverlay.classList.remove("active");
+      hideStartOverlay();
+      resetGame();
+      spawnFood();
+      draw();
+      isPaused = false;
+      updatePauseButton();
+      setGameInterval(currentSpeed);
+    }
+
+    function togglePause() {
+      if (startOverlay.classList.contains("active") || gameOverOverlay.classList.contains("active")) {
+        return;
+      }
+
+      isPaused = !isPaused;
+      if (isPaused) {
+        if (gameInterval) {
+          clearInterval(gameInterval);
+          gameInterval = null;
+        }
+      } else {
+        setGameInterval(currentSpeed);
+      }
+      updatePauseButton();
+    }
+
+    function updatePauseButton() {
+      if (!pauseButton) return;
+      pauseButton.textContent = isPaused ? "Resume" : "Pause";
+      pauseButton.setAttribute("aria-pressed", (!isPaused).toString());
+      pauseButton.disabled = startOverlay.classList.contains("active");
+    }
+
+    //=======================
+    // GET SNAKE LETTER ARRAY
+    //=======================
+    // For left direction: "P" + "O".repeat(...) + "L" + "A"
+    // For right direction: "A" + "L" + "O".repeat(...) + "P"
+    function getSnakeLetters() {
+      const length = snake.length;
+      let isGoingLeft = (velocityX < 0);
+      let isGoingRight = (velocityX > 0);
+
+      // Minimum length is 4, so handle that first
+      if (length < 4) {
+        // Fallback
+        return Array(length).fill("O");
+      }
+
+      if (isGoingLeft) {
+        // e.g., for length=4 => "POLA", length=5 => "POOLA", etc.
+        let middleCount = length - 3; 
+        let letters = "P" + "O".repeat(middleCount) + "L" + "A";
+        return letters.split("");
+      } else if (isGoingRight) {
+        // e.g., for length=4 => "ALOP", length=5 => "ALOOP", etc.
+        let middleCount = length - 3;
+        let letters = "A" + "L" + "O".repeat(middleCount) + "P";
+        return letters.split("");
+      } else {
+        // For up/down or anything else, default to left logic
+        let middleCount = length - 3; 
+        let letters = "P" + "O".repeat(middleCount) + "L" + "A";
+        return letters.split("");
+      }
+    }
+
+    //======================
+    // UPDATE GAME LOGIC
+    //======================
+    function update() {
+      // Calculate new head position
+      const head = {
+        x: snake[0].x + velocityX,
+        y: snake[0].y + velocityY
+      };
+
+      // Check wall collisions -> game over
+      if (head.x < 0 || head.x >= totalCells || head.y < 0 || head.y >= totalCells) {
+        endGame();
+        return;
+      }
+
+      // Check self-collision
+      for (let i = 0; i < snake.length; i++) {
+        if (snake[i].x === head.x && snake[i].y === head.y) {
+          endGame();
+          return;
+        }
+      }
+
+      // Add new head
+      snake.unshift(head);
+
+      // Check if snake ate the food
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        updateScore();
+        spawnFood();
+        speedUp();
+      } else {
+        // Remove last segment if no food eaten
+        snake.pop();
+      }
+    }
+
+    //====================
+    // SPEED INCREASE LOGIC
+    //====================
+    function speedUp() {
+      // Reduce interval by 25 ms each time; do not go below 90 ms
+      currentSpeed = Math.max(90, currentSpeed - 25);
+      setGameInterval(currentSpeed);
+    }
+
+    //================
+    // DRAW THE GAME
+    //================
+    function draw() {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+      // Retrieve the letter arrangement
+      const letters = getSnakeLetters();
+
+      // Draw each segment
+      snake.forEach((segment, index) => {
+        let letter = letters[index] || "O"; // fallback if mismatch
+        drawLetter(segment.x, segment.y, letter, index === 0);
+      });
+
+      // Draw the food (a simple red cell)
+      ctx.fillStyle = "#f00";
+      ctx.fillRect(
+        food.x * gridSize,
+        food.y * gridSize,
+        gridSize - 2,
+        gridSize - 2
+      );
+    }
+
+    //====================================
+    // DRAW A LETTER AT (x,y) ON THE GRID
+    //====================================
+    function drawLetter(x, y, letter, isHead = false) {
+      const px = x * gridSize;
+      const py = y * gridSize;
+
+      // Snake segment background with a glow on the head
+      ctx.save();
+      ctx.fillStyle = isHead ? "rgba(34, 211, 238, 0.95)" : "rgba(16, 185, 129, 0.9)";
+      if (isHead) {
+        ctx.shadowColor = "rgba(34, 211, 238, 0.55)";
+        ctx.shadowBlur = 14;
+      }
+      ctx.fillRect(px + 1, py + 1, gridSize - 2, gridSize - 2);
+      ctx.restore();
+
+      // Draw the POLA letters with a crisper font
+      ctx.save();
+      ctx.fillStyle = isHead ? "#082f49" : "#011627";
+      ctx.font = `bold ${isHead ? 18 : 16}px "Segoe UI", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(letter, px + gridSize / 2, py + gridSize / 2 + (isHead ? -1 : 0));
+      ctx.restore();
+    }
+
+    //=============================
+    // SPAWN FOOD AT RANDOM PLACE
+    //=============================
+    function spawnFood() {
+      food.x = Math.floor(Math.random() * totalCells);
+      food.y = Math.floor(Math.random() * totalCells);
+
+      // Ensure it's not on the snake
+      for (let i = 0; i < snake.length; i++) {
+        if (snake[i].x === food.x && snake[i].y === food.y) {
+          spawnFood();
+          return;
+        }
+      }
+    }
+
+    //===================
+    // UPDATE THE SCORE
+    //===================
+    function updateScore() {
+      scoreDisplay.textContent = "Score: " + score;
+      if (score > highScore) {
+        highScore = score;
+        if (highScoreStorageAvailable) {
+          try {
+            localStorage.setItem("polaSnakeHighScore", highScore);
+          } catch (error) {
+            highScoreStorageAvailable = false;
+            console.warn("PoLA Snake: unable to persist high score.", error);
+          }
+        }
+        updateHighScoreDisplay(true);
+        gotNewHighScore = true;
+      }
+    }
+
+    function updateHighScoreDisplay(flash = false) {
+      highScoreDisplay.textContent = "Best: " + highScore;
+      if (flash) {
+        highScoreDisplay.classList.add("flash");
+        setTimeout(() => highScoreDisplay.classList.remove("flash"), 650);
+      }
+    }
+
+    //=====================
+    // END GAME SEQUENCE
+    //=====================
+    function endGame() {
+      // Stop the game loop
+      clearInterval(gameInterval);
+      gameInterval = null;
+      isPaused = true;
+      updatePauseButton();
+
+      // Show overlay
+      gameOverOverlay.classList.add("active");
+      const bestSuffix = gotNewHighScore ? "New high score! " : "";
+      finalScoreDisplay.textContent = `${bestSuffix}Your score: ${score} · Best: ${highScore}`;
+    }
+
+    //===========================
+    // RESTART GAME (FROM OVERLAY)
+    //===========================
+    function restartGame() {
+      gameOverOverlay.classList.remove("active");
+      startGame(activeDifficultySpeed);
+    }
+
+    //================
+    // RESET THE GAME
+    //================
+    function resetGame() {
+      snake = [
+        { x: 16, y: 10 },
+        { x: 17, y: 10 },
+        { x: 18, y: 10 },
+        { x: 19, y: 10 }
+      ];
+      velocityX = -1;
+      velocityY = 0;
+      score = 0;
+      isPaused = true;
+      gotNewHighScore = false;
+      updateScore();
+      updatePauseButton();
+    }
+
+    //============================
+    // HANDLE DIRECTION CHANGE
+    //============================
+    function changeDirection(dir) {
+      if (startOverlay.classList.contains("active") || gameOverOverlay.classList.contains("active")) {
+        return;
+      }
+
+      switch (dir) {
+        case "up":
+          // prevent direct reverse if going down
+          if (velocityY === 0) {
+            velocityX = 0;
+            velocityY = -1;
+          }
+          break;
+        case "down":
+          // prevent direct reverse if going up
+          if (velocityY === 0) {
+            velocityX = 0;
+            velocityY = 1;
+          }
+          break;
+        case "left":
+          // prevent direct reverse if going right
+          if (velocityX === 0) {
+            velocityX = -1;
+            velocityY = 0;
+          }
+          break;
+        case "right":
+          // prevent direct reverse if going left
+          if (velocityX === 0) {
+            velocityX = 1;
+            velocityY = 0;
+          }
+          break;
+      }
+    }
+
+    //====================
+    // KEYBOARD CONTROLS
+    //====================
+    window.addEventListener("keydown", e => {
+      const key = e.key;
+      switch (key) {
+        case "ArrowUp":
+        case "w":
+        case "W":
+          e.preventDefault();
+          changeDirection("up");
+          break;
+        case "ArrowDown":
+        case "s":
+        case "S":
+          e.preventDefault();
+          changeDirection("down");
+          break;
+        case "ArrowLeft":
+        case "a":
+        case "A":
+          e.preventDefault();
+          changeDirection("left");
+          break;
+        case "ArrowRight":
+        case "d":
+        case "D":
+          e.preventDefault();
+          changeDirection("right");
+          break;
+        case " ":
+        case "Spacebar":
+        case "p":
+        case "P":
+          e.preventDefault();
+          togglePause();
+          break;
+        case "Enter":
+          if (startOverlay.classList.contains("active")) {
+            e.preventDefault();
+            startGame("normal");
+          } else if (gameOverOverlay.classList.contains("active")) {
+            e.preventDefault();
+            restartGame();
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          showStartOverlay();
+          break;
+      }
+    });
+
+    //====================
+    // CLOSE THE GAME
+    //====================
+    function closeGame() {
+      // Stop game if running
+      showStartOverlay();
+    }
+
+    //====================
+    // INIT ON PAGE LOAD
+    //====================
+    window.onload = initGame;
+  </script>
+</body>
+</html>
