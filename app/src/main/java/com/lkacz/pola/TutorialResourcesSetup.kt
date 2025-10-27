@@ -16,7 +16,8 @@ class TutorialResourcesSetup(private val context: Context) {
         "pola_video.mp4",
         "pola_pic.jpg",
         "pola_reaction_time.html",
-        "psnakev2.html"
+        "psnakev2.html",
+        "wiki.html"
     )
     
     /**

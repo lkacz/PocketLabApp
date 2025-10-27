@@ -27,11 +27,7 @@ class HtmlImageLoader private constructor(
                     context.contentResolver.openInputStream(imageFile.uri).use { stream ->
                         val drawable = Drawable.createFromStream(stream, source)
                         drawable?.apply {
-                            if (sizeInfo != null && sizeInfo.width > 0 && sizeInfo.height > 0) {
-                                setBounds(0, 0, sizeInfo.width, sizeInfo.height)
-                            } else {
-                                setBounds(0, 0, intrinsicWidth, intrinsicHeight)
-                            }
+                            applyBounds(this, sizeInfo)
                         }
                     }
                 } catch (e: Exception) {
@@ -45,15 +41,53 @@ class HtmlImageLoader private constructor(
             context.assets.open(source).use { stream ->
                 val drawable = Drawable.createFromStream(stream, source)
                 drawable?.apply {
-                    if (sizeInfo != null && sizeInfo.width > 0 && sizeInfo.height > 0) {
-                        setBounds(0, 0, sizeInfo.width, sizeInfo.height)
-                    } else {
-                        setBounds(0, 0, intrinsicWidth, intrinsicHeight)
-                    }
+                    applyBounds(this, sizeInfo)
                 }
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private fun applyBounds(drawable: Drawable, sizeInfo: SizeInfo?) {
+        if (sizeInfo == null) {
+            // No size specified - use intrinsic dimensions
+            drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+            return
+        }
+
+        // Get screen width in pixels for responsive sizing
+        val screenWidthPx = context.resources.displayMetrics.widthPixels
+        val density = context.resources.displayMetrics.density
+        
+        when {
+            sizeInfo.width > 0 && sizeInfo.height > 0 -> {
+                // Both width and height specified - treat as max width in dp
+                val maxWidthPx = (sizeInfo.width * density).toInt()
+                val requestedWidth = minOf(maxWidthPx, screenWidthPx - (32 * density).toInt()) // Account for padding
+                val aspectRatio = drawable.intrinsicHeight.toFloat() / drawable.intrinsicWidth.toFloat()
+                val calculatedHeight = (requestedWidth * aspectRatio).toInt()
+                drawable.setBounds(0, 0, requestedWidth, calculatedHeight)
+            }
+            sizeInfo.width > 0 -> {
+                // Only width specified - treat as max width in dp, maintain aspect ratio
+                val maxWidthPx = (sizeInfo.width * density).toInt()
+                val requestedWidth = minOf(maxWidthPx, screenWidthPx - (32 * density).toInt()) // Account for padding
+                val aspectRatio = drawable.intrinsicHeight.toFloat() / drawable.intrinsicWidth.toFloat()
+                val calculatedHeight = (requestedWidth * aspectRatio).toInt()
+                drawable.setBounds(0, 0, requestedWidth, calculatedHeight)
+            }
+            sizeInfo.height > 0 -> {
+                // Only height specified - maintain aspect ratio
+                val scaledHeight = (sizeInfo.height * density).toInt()
+                val aspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                val scaledWidth = (scaledHeight * aspectRatio).toInt()
+                drawable.setBounds(0, 0, scaledWidth, scaledHeight)
+            }
+            else -> {
+                // Shouldn't happen, but fallback to intrinsic
+                drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+            }
         }
     }
 

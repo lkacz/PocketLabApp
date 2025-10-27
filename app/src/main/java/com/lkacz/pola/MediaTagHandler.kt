@@ -78,7 +78,8 @@ class MediaTagHandler : Html.TagHandler {
 
                 val w = extractDimension(fullImgTag, widthPattern)
                 val h = extractDimension(fullImgTag, heightPattern)
-                if (w > 0 && h > 0) {
+                // Store size info even if only width OR only height is specified
+                if (w > 0 || h > 0) {
                     HtmlImageLoader.imageSizeMap[srcValue] = SizeInfo(w, h)
                 }
                 // Return the original <img> tag unmodified, so it displays in normal flow.

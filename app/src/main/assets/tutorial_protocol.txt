@@ -5,6 +5,7 @@ STUDY_ID;TUTORIAL_ALL_FEATURES
 // - pola_video.mp4 (short landscape clip appended to an instruction slide)
 // - pola_reaction_time.html (custom HTML reaction-time explainer page)
 // - psnakev2.html (interactive Snake game demonstrating rich HTML experiences)
+// - wiki.html (Wikipedia psychology article demonstrating internet access)
 // - pola_sound.mp3 (bird chirp audio clip)
 
 // TRANSITIONS command sets the animation between fragments.
@@ -44,15 +45,18 @@ INSTRUCTION;Welcome to the complete PoLA tutorial;This opening slide previews th
 INSTRUCTION;Instruction command with formatting;Instruction screens can include inline HTML for emphasis: <b>bold</b>, <i>italic</i>, <span style='color:#E63946'>color</span>, <small>small text</small>, and <big>big text</big>.<br><small>Media placeholders will appear on the follow-up slides.</small>;Continue to media
 
 // Dedicated INSTRUCTION slides highlight sound, image, and video attachments.
-INSTRUCTION;Ambient sound attachment;This slide plays the calming PoLA soundtrack to demonstrate how audio can accompany instructions without additional media.<br><small>Tip: combine ambient loops with <code>TIMER</code> tasks for guided breathing.</small>;<pola_sound.mp3,60>;Continue to the image feature
-INSTRUCTION;Inline image attachment;Here the branded image is layered beneath the body text to show inline imagery on instruction slides.<br><b>Images resize automatically</b> to fit the safe area.<pola_pic.jpg>;Continue to the video feature
-INSTRUCTION;Embedded video attachment;A short looping clip illustrates how video placeholders sit alongside text to provide richer demonstrations.<br><span style='font-size:0.9em'>Use concise clips so participants stay focused on the task.</span><pola_video.mp4,55>;Open the HTML walkthrough
+INSTRUCTION;Ambient sound attachment;This slide plays the calming PoLA soundtrack to demonstrate how audio can accompany instructions without additional media.<br><br><small>Tip: combine ambient loops with <code>TIMER</code> tasks for guided breathing.</small><pola_sound.mp3,60>;Continue to the image feature
+INSTRUCTION;Inline image attachment;Here the branded image is layered beneath the body text to show inline imagery on instruction slides.<br><br><b>Images resize automatically</b> to fit the safe area.<br><br><img src="pola_pic.jpg" width="800">;Continue to the video feature
+INSTRUCTION;Embedded video attachment;A short looping clip illustrates how video placeholders sit alongside text to provide richer demonstrations.<br><br><span style='font-size:0.9em'>Use concise clips so participants stay focused on the task.</span><pola_video.mp4,55>;Open the HTML walkthrough
 
 // HTML command opens the reaction-time explainer bundled with the tutorial. The continue action is protected with a hold gesture.
 HTML;pola_reaction_time.html;Return to the tutorial flow[HOLD]
 
 // Interactive Snake game demonstrates rich HTML experiences within protocols.
 HTML;psnakev2.html;Exit the game and continue
+
+// Wikipedia page demonstrates internet access capability for research and educational content.
+HTML;wiki.html;Close Wikipedia and continue
 
 // SCALE captures a single rating with descriptive anchors.
 SCALE;Confidence check;Rate how confident you feel about navigating PoLA commands after reviewing the introduction.<br><i>Consider how comfortable you are mixing command types.</i>;Confidence level;Very unsure;Somewhat unsure;Neutral;Growing confident;Highly confident
