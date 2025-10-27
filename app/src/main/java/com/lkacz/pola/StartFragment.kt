@@ -47,6 +47,7 @@ class StartFragment : Fragment() {
     private val protocolReader by lazy { ProtocolReader() }
     private val confirmationDialogManager by lazy { ConfirmationDialogManager(requireContext()) }
     private lateinit var resourcesFolderManager: ResourcesFolderManager
+    private val tutorialResourcesSetup by lazy { TutorialResourcesSetup(requireContext()) }
 
     private val filePicker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -79,6 +80,24 @@ class StartFragment : Fragment() {
                 showToast("Storage permissions granted")
             } else {
                 showToast("Storage permissions denied - file operations may fail")
+            }
+        }
+
+    private val tutorialResourcesFolderPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                handleTutorialResourcesSetup(uri)
+            } else {
+                showToast("Tutorial setup cancelled - resources folder required")
+            }
+        }
+
+    private val tutorialOutputFolderPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                handleTutorialOutputSetup(uri)
+            } else {
+                showToast("Tutorial setup cancelled - output folder required")
             }
         }
 
@@ -584,6 +603,78 @@ class StartFragment : Fragment() {
     }
 
     private fun showStartStudyConfirmation() {
+        // Check if we're starting tutorial/demo mode without resources folder set up
+        val currentMode = sharedPref.getString(Prefs.KEY_CURRENT_MODE, null)
+        val isTutorialOrDemo = currentMode == "tutorial" || currentMode == "demo"
+        val resourcesFolderUri = resourcesFolderManager.getResourcesFolderUri()
+        
+        if (isTutorialOrDemo && !tutorialResourcesSetup.areResourcesSetup(resourcesFolderUri)) {
+            // Show dialog explaining we need to set up resources folder
+            AlertDialogBuilderUtils.showConfirmation(
+                requireContext(),
+                "Set up Tutorial Resources",
+                "The tutorial protocol includes media files (audio, video, images). " +
+                    "Please select a folder where these resources will be copied for easy access.\n\n" +
+                    "This is a one-time setup that will help you learn how to manage protocol resources.",
+                {
+                    tutorialResourcesFolderPicker.launch(null)
+                },
+            )
+            return
+        }
+        
+        // Normal start study flow
+        confirmationDialogManager.showStartStudyConfirmation(
+            protocolUri,
+            { uri -> fileUriUtils.getFileName(requireContext(), uri) },
+        ) {
+            val participantId = participantIdInput.text?.toString()?.trim().orEmpty()
+            persistParticipantId(participantId)
+            Logger.getInstance(requireContext()).updateParticipantId(participantId.takeIf { it.isNotBlank() })
+            ensureProtocolSelection()
+            listener.onProtocolSelected(protocolUri)
+        }
+    }
+
+    private fun handleTutorialResourcesSetup(uri: Uri) {
+        // Store the resources folder URI
+        resourcesFolderManager.storeResourcesFolderUri(uri)
+        
+        // Copy assets to the folder
+        val success = tutorialResourcesSetup.copyAssetsToResourcesFolder(uri)
+        
+        if (success) {
+            showToast("Tutorial resources copied successfully!")
+            
+            // Now check if output folder is set up
+            if (outputFolderUri == null) {
+                AlertDialogBuilderUtils.showConfirmation(
+                    requireContext(),
+                    "Set up Output Folder",
+                    "Now select a folder where protocol logs and data will be saved.\n\n" +
+                        "This helps you learn how to collect and export study results.",
+                    {
+                        tutorialOutputFolderPicker.launch(null)
+                    },
+                )
+            } else {
+                // Both folders set up, proceed with study
+                proceedWithStartStudy()
+            }
+        } else {
+            showToast("Failed to copy tutorial resources. Please try again.")
+        }
+    }
+
+    private fun handleTutorialOutputSetup(uri: Uri) {
+        handleOutputFolderSelection(uri)
+        showToast("Output folder set up successfully!")
+        
+        // Now proceed with starting the study
+        proceedWithStartStudy()
+    }
+
+    private fun proceedWithStartStudy() {
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
             { uri -> fileUriUtils.getFileName(requireContext(), uri) },
