@@ -159,3 +159,15 @@
 # Keep all our app classes to prevent ANY R8 issues (temporary for debugging)
 -keep class com.lkacz.pola.** { *; }
 -keepclassmembers class com.lkacz.pola.** { *; }
+
+# Keep Apache POI (Excel library) classes
+-keep class org.apache.poi.** { *; }
+-keepclassmembers class org.apache.poi.** { *; }
+-dontwarn org.apache.poi.**
+-dontwarn java.awt.Shape
+
+# Keep XML-related classes that POI depends on
+-keep class org.apache.xmlbeans.** { *; }
+-dontwarn org.apache.xmlbeans.**
+-keep class org.openxmlformats.schemas.** { *; }
+-dontwarn org.openxmlformats.schemas.**
