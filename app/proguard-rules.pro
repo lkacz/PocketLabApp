@@ -65,3 +65,39 @@
 -dontwarn org.osgi.framework.BundleContext
 -dontwarn org.osgi.framework.FrameworkUtil
 -dontwarn org.osgi.framework.ServiceReference
+
+# Keep all fragments and their newInstance methods
+-keep class * extends androidx.fragment.app.Fragment {
+    public <init>(...);
+}
+
+# Keep companion object methods for fragments (especially newInstance)
+-keepclassmembers class * extends androidx.fragment.app.Fragment {
+    public static ** newInstance(...);
+}
+
+# Keep fragment companion objects
+-keep class * extends androidx.fragment.app.Fragment$Companion {
+    *;
+}
+
+# Keep CompletionFragment specifically to ensure it's not stripped
+-keep class com.lkacz.pola.CompletionFragment {
+    *;
+}
+-keep class com.lkacz.pola.CompletionFragment$Companion {
+    *;
+}
+
+# Keep Logger class to prevent obfuscation issues
+-keep class com.lkacz.pola.Logger {
+    *;
+}
+-keep class com.lkacz.pola.Logger$Companion {
+    *;
+}
+
+# Keep MainActivity callbacks
+-keepclassmembers class com.lkacz.pola.MainActivity {
+    private void onProtocolCompleted();
+}

@@ -3,6 +3,14 @@
 ## [Unreleased]
 _No changes yet._
 
+# Changelog
+
+## [1.1.8] - 2025-10-27
+### Fixed
+- Added ProGuard rules to prevent R8 obfuscation from stripping CompletionFragment and its companion object
+- Fixed release build crash on completion screen (last slide) caused by R8 removing Fragment.newInstance() methods
+- Added protection for Logger class and MainActivity callbacks to prevent R8 obfuscation issues
+
 ## [1.1.7] - 2025-10-27
 ### Fixed
 - Fixed completion screen potentially closing prematurely by ensuring proper lifecycle management
