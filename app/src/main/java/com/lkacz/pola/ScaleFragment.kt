@@ -179,13 +179,13 @@ class ScaleFragment : Fragment() {
         setupWebView()
         
         // Apply top and bottom margins from SpacingManager
-        val topMargin = SpacingManager.getTopMargin(requireContext())
-        val bottomMargin = SpacingManager.getBottomMargin(requireContext())
+        val topMarginDp = SpacingManager.getTopMargin(requireContext())
+        val bottomMarginDp = SpacingManager.getBottomMargin(requireContext())
         rootLayout.setPadding(
             dpToPx(16),
-            dpToPx(topMargin),
+            dpToPx(topMarginDp),
             dpToPx(16),
-            dpToPx(bottomMargin)
+            dpToPx(bottomMarginDp)
         )
         
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
@@ -244,10 +244,10 @@ class ScaleFragment : Fragment() {
                             LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT,
                         ).apply {
-                            topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
-                            bottomMargin = marginPx
-                            leftMargin = marginPx
-                            rightMargin = marginPx
+                            this.topMargin = if (index == 0) marginPx else (marginPx + extraSpacingPx)
+                            this.bottomMargin = marginPx
+                            this.leftMargin = marginPx
+                            this.rightMargin = marginPx
                         }
                     setPadding(paddingHpx, paddingVpx, paddingHpx, paddingVpx)
 

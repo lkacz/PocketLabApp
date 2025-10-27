@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 class FragmentLoader(
     bufferedReader: java.io.BufferedReader,
     private val logger: Logger,
+    private val context: Context,
 ) {
     private val lines = mutableListOf<String>()
     private val labelMap = mutableMapOf<String, Int>()
@@ -49,50 +50,50 @@ class FragmentLoader(
                 }
                 "TRANSITIONS" -> {
                     val mode = parts.getOrNull(1)?.lowercase() ?: "off"
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("TRANSITION_MODE", mode).apply()
                     continue
                 }
                 "TIMER_SOUND" -> {
                     val filename = parts.getOrNull(1)?.trim().orEmpty()
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("CUSTOM_TIMER_SOUND", filename).apply()
                     continue
                 }
                 "HEADER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("HEADER_ALIGNMENT", alignValue).apply()
                     continue
                 }
                 "HEADER_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setHeaderTextColor(getContext(), colorInt)
+                    ColorManager.setHeaderTextColor(context, colorInt)
                     continue
                 }
                 "BODY_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setBodyTextColor(getContext(), colorInt)
+                    ColorManager.setBodyTextColor(context, colorInt)
                     continue
                 }
                 "BODY_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("BODY_ALIGNMENT", alignValue).apply()
                     continue
                 }
                 "CONTINUE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setContinueTextColor(getContext(), colorInt)
+                    ColorManager.setContinueTextColor(context, colorInt)
                     continue
                 }
                 "CONTINUE_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setContinueBackgroundColor(getContext(), colorInt)
+                    ColorManager.setContinueBackgroundColor(context, colorInt)
                     continue
                 }
                 "CONTINUE_ALIGNMENT" -> {
@@ -119,7 +120,7 @@ class FragmentLoader(
                         }
                     }
 
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit()
                         .putString("CONTINUE_ALIGNMENT_HORIZONTAL", horizontal)
                         .putString("CONTINUE_ALIGNMENT_VERTICAL", vertical)
@@ -128,23 +129,23 @@ class FragmentLoader(
                 }
                 "RESPONSE_SPACING" -> {
                     val spacingVal = parts.getOrNull(1)?.toFloatOrNull() ?: 0f
-                    SpacingManager.setResponseSpacing(getContext(), spacingVal)
+                    SpacingManager.setResponseSpacing(context, spacingVal)
                     continue
                 }
                 "TIMER_SIZE" -> {
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull() ?: 18f
-                    FontSizeManager.setTimerSize(getContext(), sizeValue)
+                    FontSizeManager.setTimerSize(context, sizeValue)
                     continue
                 }
                 "TIMER_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setTimerTextColor(getContext(), colorInt)
+                    ColorManager.setTimerTextColor(context, colorInt)
                     continue
                 }
                 "TIMER_ALIGNMENT" -> {
                     val alignValue = parts.getOrNull(1)?.uppercase() ?: "CENTER"
-                    getContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                    context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
                         .edit().putString("TIMER_ALIGNMENT", alignValue).apply()
                     continue
                 }
@@ -152,11 +153,11 @@ class FragmentLoader(
                     val sizeValue = parts.getOrNull(1)?.toFloatOrNull()
                     if (sizeValue != null) {
                         when (directive) {
-                            "HEADER_SIZE" -> FontSizeManager.setHeaderSize(getContext(), sizeValue)
-                            "BODY_SIZE" -> FontSizeManager.setBodySize(getContext(), sizeValue)
-                            "ITEM_SIZE" -> FontSizeManager.setItemSize(getContext(), sizeValue)
-                            "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(getContext(), sizeValue)
-                            "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(getContext(), sizeValue)
+                            "HEADER_SIZE" -> FontSizeManager.setHeaderSize(context, sizeValue)
+                            "BODY_SIZE" -> FontSizeManager.setBodySize(context, sizeValue)
+                            "ITEM_SIZE" -> FontSizeManager.setItemSize(context, sizeValue)
+                            "RESPONSE_SIZE" -> FontSizeManager.setResponseSize(context, sizeValue)
+                            "CONTINUE_SIZE" -> FontSizeManager.setContinueSize(context, sizeValue)
                         }
                     }
                     continue
@@ -165,8 +166,8 @@ class FragmentLoader(
                     val marginValue = parts.getOrNull(1)?.toIntOrNull()
                     if (marginValue != null) {
                         when (directive) {
-                            "TOP_MARGIN" -> SpacingManager.setTopMargin(getContext(), marginValue)
-                            "BOTTOM_MARGIN" -> SpacingManager.setBottomMargin(getContext(), marginValue)
+                            "TOP_MARGIN" -> SpacingManager.setTopMargin(context, marginValue)
+                            "BOTTOM_MARGIN" -> SpacingManager.setBottomMargin(context, marginValue)
                         }
                     }
                     continue
@@ -174,19 +175,19 @@ class FragmentLoader(
                 "RESPONSE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setResponseTextColor(getContext(), colorInt)
+                    ColorManager.setResponseTextColor(context, colorInt)
                     continue
                 }
                 "RESPONSE_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setButtonBackgroundColor(getContext(), colorInt)
+                    ColorManager.setButtonBackgroundColor(context, colorInt)
                     continue
                 }
                 "SCREEN_BACKGROUND_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)
-                    ColorManager.setScreenBackgroundColor(getContext(), colorInt)
+                    ColorManager.setScreenBackgroundColor(context, colorInt)
                     continue
                 }
                 "SCALE", "SCALE[RANDOMIZED]" -> {
@@ -320,10 +321,4 @@ class FragmentLoader(
         }
         return branchResponses
     }
-
-    private fun getContext() =
-        logger.javaClass
-            .getDeclaredField("context")
-            .apply { isAccessible = true }
-            .get(logger) as Context
 }

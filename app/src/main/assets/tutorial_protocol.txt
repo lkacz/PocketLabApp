@@ -39,7 +39,7 @@ TIMER_ALIGNMENT;CENTER
 LOG;[INFO] Tutorial appearance configured and ready
 
 // INSTRUCTION welcomes participants before stepping through core data-capture commands.
-INSTRUCTION;Welcome to<br>the PoLA tutorial;This opening slide previews the upcoming feature tour with <b>one slide per command</b> so you can focus on each capability.<ul><li><b>Instruction</b> — present media-rich content</li><li><b>Scale & input</b> — collect responses</li><li><b>Timers & logic</b> — pace and branch the experience</li></ul>;Begin the tour
+INSTRUCTION;Welcome to<br><br>the PoLA tutorial;This opening slide previews the upcoming feature tour with <b>one slide per command</b> so you can focus on each capability.<ul><li><b>Instruction</b> — present media-rich content</li><li><b>Scale & input</b> — collect responses</li><li><b>Timers & logic</b> — pace and branch the experience</li></ul>;Begin the tour
 
 // Demonstrate HTML formatting within textual regions right away.
 INSTRUCTION;Instruction command with formatting;Instruction screens can include inline HTML for emphasis: <b>bold</b>, <i>italic</i>, <span style='color:#E63946'>color</span>, <small>small text</small>, and <big>big text</big>.<br><br>Media placeholders will appear on the follow-up slides.;Continue to media
@@ -59,10 +59,10 @@ HTML;psnakev2.html;Exit the game and continue
 HTML;wiki.html;Close Wikipedia and continue
 
 // SCALE captures a single rating with descriptive anchors.
-SCALE;Confidence check;Rate how confident you feel about navigating PoLA commands after reviewing the introduction.<br><i>Consider how comfortable you are mixing command types.</i>;Confidence level;Very unsure;Somewhat unsure;Neutral;Growing confident;Highly confident
+SCALE;Confidence check;Rate how confident you feel about navigating PoLA commands after reviewing the introduction.<br><br><i>Consider how comfortable you are mixing command types.</i>;Confidence level;Very unsure;Somewhat unsure;Neutral;Growing confident;Highly confident
 
 // SCALE[RANDOMIZED] presents response anchors in the same order but randomizes item presentation.
-SCALE[RANDOMIZED];Randomized scale example;This randomized scale reorders internal response items each run to reduce ordering bias.<br><small>The labels stay attached to their original response text.</small>;Randomized item;Strongly disagree;Disagree;Neutral;Agree;Strongly agree
+SCALE[RANDOMIZED];Randomized scale example;This randomized scale reorders internal response items each run to reduce ordering bias.<br><br><small>The labels stay attached to their original response text.</small>;Randomized item;Strongly disagree;Disagree;Neutral;Agree;Strongly agree
 
 // INPUTFIELD collects structured text responses in a fixed order.
 INPUTFIELD;Collecting practice feedback;Provide a short reflection and any questions you want to flag for later follow-up.<ul><li><b>Reflection</b> — recap what stood out</li><li><b>Open question</b> — jot down what to explore later</li></ul>;Share my notes;Reflection;Open question
@@ -80,13 +80,13 @@ TIMER_SOUND;pola_sound.mp3
 LOG;[INFO] Core data commands demonstrated
 
 // SCREEN_MARGIN commands adjust top/bottom padding for every subsequent screen.
-TOP_MARGIN;32
-BOTTOM_MARGIN;48
+TOP_MARGIN;48
+BOTTOM_MARGIN;64
 
-INSTRUCTION;Screen margin demo;Use <code>TOP_MARGIN</code> and <code>BOTTOM_MARGIN</code> to tune the breathing room around your content.<br><br>This slide applies <b>32dp</b> above and <b>48dp</b> below the layout to highlight how generous spacing changes the feel of each screen.;Continue to appearance presets
+INSTRUCTION;Screen margin demo;Use <code>TOP_MARGIN</code> and <code>BOTTOM_MARGIN</code> to tune the breathing room around your content.<br><br>This slide applies <b>48dp</b> above and <b>64dp</b> below the layout to highlight how generous spacing changes the feel of each screen.;Continue to appearance presets
 
 // Transition to customization: colors, sizes, and alignment presets.
-INSTRUCTION;Customizing colors and sizes;Use the <code>COLOR</code>, <code>SIZE</code>, <code>ALIGNMENT</code>, and <code>SCREEN_MARGIN</code> commands above to instantly shift branding and spacing.<br><small>The next layout presets show how these styling decisions cascade to the following slide.</small>;Preview layout presets
+INSTRUCTION;Customizing colors and sizes;Use the <code>COLOR</code>, <code>SIZE</code>, <code>ALIGNMENT</code>, and <code>SCREEN_MARGIN</code> commands above to instantly shift branding and spacing.<br><br><small>The next layout presets show how these styling decisions cascade to the following slide.</small>;Preview layout presets
 
 // Layout preset 1: warm accent palette with left-aligned typography.
 HEADER_COLOR;#003049
@@ -107,7 +107,7 @@ HEADER_ALIGNMENT;LEFT
 BODY_ALIGNMENT;LEFT
 CONTINUE_ALIGNMENT;LEFT
 TIMER_ALIGNMENT;CENTER
-INSTRUCTION;Layout preset: Warm welcome;This screen demonstrates a <b>bold warm palette</b> with left-aligned text and enlarged typography.<br><span style='color:#2A9D8F'><br>Notice how the continue button also adopts the accent colors.</span>;Show cool layout
+INSTRUCTION;Layout preset: Warm welcome;This screen demonstrates a <b>bold warm palette</b> with left-aligned text and enlarged typography.<br><br><span style='color:#2A9D8F'><br><br>Notice how the continue button also adopts the accent colors.</span>;Show cool layout
 
 // Layout preset 2: high-contrast night mode with centered content.
 HEADER_COLOR;#F1FAEE
@@ -204,7 +204,7 @@ INSTRUCTION;Branching recap;Whatever you chose, branch labels directed you to a 
 LOG;[INFO] Participant reached content control showcase
 
 // Alignment, sizing, and color choices already applied remain active as we introduce final reminders.
-INSTRUCTION;Styling recap and hold token;Notice that all appearance and hold token decisions made earlier are still in effect, keeping presentation consistent while demonstrating every configuration command.<br><b>Hold-to-continue</b> ensures participants deliberately advance.;Move to final checks[HOLD]
+INSTRUCTION;Styling recap and hold token;Notice that all appearance and hold token decisions made earlier are still in effect, keeping presentation consistent while demonstrating every configuration command.<br><br><b>Hold-to-continue</b> ensures participants deliberately advance.;Move to final checks[HOLD]
 
 // FINAL instruction summarises pending tasks before concluding the tutorial.
 INSTRUCTION;Before closing the full tutorial;You have now interacted with every PoLA command, including <b>styling controls</b>, <b>randomization blocks</b>, <b>labels</b>, <b>gotos</b>, multimedia attachments, timers, sounds, and input forms.<br><br>Use the Online Protocol Editor to edit protocol on your PC.<br><br><small>Review the exported log to confirm both LOG entries appear.</small>;Finish and export data

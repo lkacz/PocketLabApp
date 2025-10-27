@@ -3,6 +3,23 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.5] - 2025-10-27
+### Fixed
+- **Critical:** Fixed release build crash caused by reflection accessing obfuscated Logger field. Replaced reflection-based context retrieval with direct Context parameter passing to FragmentLoader.
+
+## [1.1.4] - 2025-10-27
+### Added
+- Introduced `TOP_MARGIN` and `BOTTOM_MARGIN` protocol commands for per-screen padding control
+- Added screen margin sliders to the Appearance Customization dialog with live preview updates
+- Documented new spacing commands in the in-app manual and protocol reference
+
+### Changed
+- Tutorial and demo protocols now showcase generous 48dp/64dp spacing and consistent double line breaks for breathing room
+- Appearance presets and documentation refreshed to reference the new screen margin controls
+
+### Fixed
+- Restored missing `dpToPx` helper in `HTMLFragment` and resolved layout param conflicts in `ScaleFragment`
+
 ## [1.1.3] - 2025-10-27
 ### Added
 - Added automatic tutorial resources setup on first run with guided folder selection

@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager = ProtocolManager(this)
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol = protocolManager.getManipulatedProtocol()
-        fragmentLoader = FragmentLoader(manipulatedProtocol, logger)
+        fragmentLoader = FragmentLoader(manipulatedProtocol, logger, this)
         val resumeIndex = pendingResumeIndex
         if (resumeIndex != null) {
             fragmentLoader.prepareForResume(resumeIndex)

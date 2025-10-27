@@ -5,6 +5,10 @@ STUDY_ID;OUTDOOR_MINDFULNESS_V1
 
 LOG;Outdoor mindfulness pilot launched
 
+// Apply substantial top/bottom padding so demo screens have comfortable breathing room.
+TOP_MARGIN;48
+BOTTOM_MARGIN;64
+
 INSTRUCTION;Welcome to the Demo Mindfulness Walk;<p>Preview a <strong>sub-30-second</strong> version of this outdoor mindfulness sequence.</p><p><strong>You'll:</strong></p><ul><li>Record where you'll practice</li><li>Log how you feel before and after the walk</li><li>Capture quick sensory observations</li></ul>;Begin check-in[HOLD]
 
 SCALE;Emotion;<p>Choose the option that best reflects your current emotional tone.</p>;Emotion rating;Very unpleasant;Somewhat uneasy;Neutral;Somewhat pleasant;Very pleasant
@@ -20,9 +24,9 @@ TIMER;Sensory settling;<p>For <strong>25 seconds</strong>, cycle attention among
 INPUTFIELD;What stood out?;<p>Capture three sensory observations from this scan so you can review them later.</p><ul><li>Visual details</li><li>Auditory notes</li><li>Tactile sensations</li></ul>;[What caught your eye;What sounds were most noticeable;What did you feel on your skin];Log observations[HOLD]
 
 RANDOMIZE_ON
-INSTRUCTION;Reflection prompt;<p>Notice the temperature on your skin.<br><em>Where do you feel it most strongly?</em></p>;Noted[HOLD]
+INSTRUCTION;Reflection prompt;<p>Notice the temperature on your skin.<br><br><em>Where do you feel it most strongly?</em></p>;Noted[HOLD]
 INSTRUCTION;Reflection prompt;<p>Observe motion around you—people, leaves, clouds—and silently describe it in neutral language.</p>;Motion observed[HOLD]
-INSTRUCTION;Reflection prompt;<p>Sense the air quality or scents around you.<br><em>How are they shifting moment to moment?</em></p>;Scent logged[HOLD]
+INSTRUCTION;Reflection prompt;<p>Sense the air quality or scents around you.<br><br><em>How are they shifting moment to moment?</em></p>;Scent logged[HOLD]
 RANDOMIZE_OFF
 
 TIMER;Mindful walk;<p>Walk mindfully for <strong>20 seconds</strong>.</p><p>Match your breath to your steps and notice contact with the ground on each footfall.</p>;20;Walk complete

@@ -237,6 +237,10 @@ class HtmlFragment : Fragment() {
         button.setPadding(chPx, cvPx, chPx, cvPx)
     }
 
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density + 0.5f).toInt()
+    }
+
     private fun parseTapAttribute(text: String): Pair<String, Boolean> {
         val regex = Regex("\\[TAP\\]", RegexOption.IGNORE_CASE)
         return if (regex.containsMatchIn(text)) {
