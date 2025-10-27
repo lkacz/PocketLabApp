@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
@@ -23,6 +24,17 @@ class CompletionFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         sharedPref = requireContext().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+
+        // Handle back button press - close app instead of going back
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    clearProtocolProgress()
+                    requireActivity().finish()
+                }
+            },
+        )
 
         val rootLayout =
             LinearLayout(requireContext()).apply {
