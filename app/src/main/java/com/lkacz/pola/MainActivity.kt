@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -255,12 +256,20 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         hasCompletedProtocol = true
         logger.backupLogFile()
         
-        // Show completion screen instead of immediately closing
-        val completionFragment = CompletionFragment.newInstance()
-        supportFragmentManager.beginTransaction().apply {
-            setReorderingAllowed(true)
-            replace(fragmentContainerId, completionFragment)
-            commit()
+        // Ensure we're on the main thread and fragment manager is in good state
+        lifecycleScope.launch(Dispatchers.Main) {
+            // Small delay to ensure any pending operations complete
+            delay(100)
+            
+            if (isFinishing || isDestroyed) return@launch
+            
+            // Show completion screen instead of immediately closing
+            val completionFragment = CompletionFragment.newInstance()
+            supportFragmentManager.beginTransaction().apply {
+                setReorderingAllowed(true)
+                replace(fragmentContainerId, completionFragment)
+                commitAllowingStateLoss()
+            }
         }
     }
 
