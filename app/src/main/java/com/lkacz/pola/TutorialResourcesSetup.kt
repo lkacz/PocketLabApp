@@ -4,6 +4,8 @@ package com.lkacz.pola
 import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Handles automatic setup of resources folder for tutorial and demo protocols.
@@ -22,50 +24,53 @@ class TutorialResourcesSetup(private val context: Context) {
     
     /**
      * Copies tutorial/demo assets to the specified resources folder.
+     * Runs on a background thread to avoid blocking the UI.
      * Returns true if successful, false otherwise.
      */
-    fun copyAssetsToResourcesFolder(resourcesFolderUri: Uri): Boolean {
-        return try {
-            val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return false
-            
-            var allSuccessful = true
-            assetFiles.forEach { fileName ->
-                // Check if file already exists
-                val existingFile = parentFolder.findFile(fileName)
-                if (existingFile != null && existingFile.exists()) {
-                    // Skip if already exists
-                    return@forEach
-                }
+    suspend fun copyAssetsToResourcesFolder(resourcesFolderUri: Uri): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return@withContext false
                 
-                // Create new file and copy content
-                val mimeType = getMimeType(fileName)
-                val newFile = parentFolder.createFile(mimeType, fileName)
-                if (newFile == null) {
-                    allSuccessful = false
-                    return@forEach
-                }
-                
-                try {
-                    context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
-                        context.assets.open(fileName).use { inputStream ->
-                            inputStream.copyTo(outputStream)
+                var allSuccessful = true
+                assetFiles.forEach { fileName ->
+                    // Check if file already exists
+                    val existingFile = parentFolder.findFile(fileName)
+                    if (existingFile != null && existingFile.exists()) {
+                        // Skip if already exists
+                        return@forEach
+                    }
+                    
+                    // Create new file and copy content
+                    val mimeType = getMimeType(fileName)
+                    val newFile = parentFolder.createFile(mimeType, fileName)
+                    if (newFile == null) {
+                        allSuccessful = false
+                        return@forEach
+                    }
+                    
+                    try {
+                        context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
+                            context.assets.open(fileName).use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        } ?: run {
+                            // Output stream was null - delete the empty file and mark as failed
+                            newFile.delete()
+                            allSuccessful = false
                         }
-                    } ?: run {
-                        // Output stream was null - delete the empty file and mark as failed
+                    } catch (e: Exception) {
+                        // Copy failed - delete the partial file and mark as failed
                         newFile.delete()
                         allSuccessful = false
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {
-                    // Copy failed - delete the partial file and mark as failed
-                    newFile.delete()
-                    allSuccessful = false
-                    e.printStackTrace()
                 }
+                allSuccessful
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
-            allSuccessful
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
         }
     }
     

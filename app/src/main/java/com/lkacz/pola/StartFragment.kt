@@ -22,10 +22,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.launch
 
 class StartFragment : Fragment() {
     interface OnProtocolSelectedListener {
@@ -649,32 +651,36 @@ class StartFragment : Fragment() {
     }
 
     private fun handleTutorialResourcesSetup(uri: Uri) {
-        // Copy assets to the folder BEFORE storing the URI
-        // This way if copy fails, we don't have a stale URI saved
-        val success = tutorialResourcesSetup.copyAssetsToResourcesFolder(uri)
+        // Show toast immediately to inform user
+        showToast("Copying tutorial resources... this may take a moment")
         
-        if (success) {
-            // Only store the URI after successful copy
-            resourcesFolderManager.storeResourcesFolderUri(uri)
-            showToast("Tutorial resources copied successfully!")
+        // Copy assets in background to avoid blocking UI
+        lifecycleScope.launch {
+            val success = tutorialResourcesSetup.copyAssetsToResourcesFolder(uri)
             
-            // Now check if output folder is set up
-            if (outputFolderUri == null) {
-                AlertDialogBuilderUtils.showConfirmation(
-                    requireContext(),
-                    "Set up Output Folder",
-                    "Now select a folder where protocol logs and data will be saved.\n\n" +
-                        "This helps you learn how to collect and export study results.",
-                    {
-                        tutorialOutputFolderPicker.launch(null)
-                    },
-                )
+            if (success) {
+                // Only store the URI after successful copy
+                resourcesFolderManager.storeResourcesFolderUri(uri)
+                showToast("Tutorial resources copied successfully!")
+                
+                // Now check if output folder is set up
+                if (outputFolderUri == null) {
+                    AlertDialogBuilderUtils.showConfirmation(
+                        requireContext(),
+                        "Set up Output Folder",
+                        "Now select a folder where protocol logs and data will be saved.\n\n" +
+                            "This helps you learn how to collect and export study results.",
+                        {
+                            tutorialOutputFolderPicker.launch(null)
+                        },
+                    )
+                } else {
+                    // Both folders set up, proceed with study
+                    proceedWithStartStudy()
+                }
             } else {
-                // Both folders set up, proceed with study
-                proceedWithStartStudy()
+                showToast("Failed to copy tutorial resources. Please try again.")
             }
-        } else {
-            showToast("Failed to copy tutorial resources. Please try again.")
         }
     }
 
