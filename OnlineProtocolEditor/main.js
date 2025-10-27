@@ -440,6 +440,9 @@ const aboutDialog = document.getElementById("aboutDialog");
 const aboutDialogClose = document.getElementById("aboutDialogClose");
 const manualDialog = document.getElementById("manualDialog");
 const manualDialogClose = document.getElementById("manualDialogClose");
+const welcomeDialog = document.getElementById("welcomeDialog");
+const welcomeDialogClose = document.getElementById("welcomeDialogClose");
+const welcomeDialogDontShow = document.getElementById("welcomeDialogDontShow");
 const aboutContentContainer = document.getElementById("aboutContent");
 const manualContentContainer = document.getElementById("manualContent");
 
@@ -3288,6 +3291,25 @@ function setupEventListeners() {
     });
   }
 
+  if (welcomeDialog && welcomeDialogClose) {
+    welcomeDialogClose.addEventListener("click", () => {
+      const dontShowAgain = welcomeDialogDontShow && welcomeDialogDontShow.checked;
+      if (dontShowAgain) {
+        localStorage.setItem("pola-welcome-shown", "true");
+      }
+      welcomeDialog.close("confirm");
+      setStatus("Welcome dialog closed");
+    });
+    welcomeDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      const dontShowAgain = welcomeDialogDontShow && welcomeDialogDontShow.checked;
+      if (dontShowAgain) {
+        localStorage.setItem("pola-welcome-shown", "true");
+      }
+      welcomeDialog.close("cancel");
+    });
+  }
+
   toggleCommandsButton.addEventListener("click", () => {
     const expanded = toggleCommandsButton.getAttribute("aria-expanded") === "true";
     const nextState = !expanded;
@@ -3304,6 +3326,16 @@ function setupEventListeners() {
   });
 }
 
+function showWelcomeDialogIfNeeded() {
+  const hasShownWelcome = localStorage.getItem("pola-welcome-shown");
+  if (!hasShownWelcome && welcomeDialog) {
+    // Use setTimeout to ensure the dialog shows after the page is fully loaded
+    setTimeout(() => {
+      welcomeDialog.showModal();
+    }, 300);
+  }
+}
+
 function init() {
   updateLineCount();
   populateCommandsList();
@@ -3317,6 +3349,7 @@ function init() {
   clearInlineGhost();
   clearCommandSuggestion();
   setStatus("Ready");
+  showWelcomeDialogIfNeeded();
 }
 
 init();

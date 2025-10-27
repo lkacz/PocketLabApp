@@ -29,6 +29,10 @@ RESPONSE_SIZE;16
 CONTINUE_SIZE;18
 TIMER_SIZE;26
 
+// SPACING commands add breathing room at the top and bottom of the screen.
+TOP_MARGIN;64
+BOTTOM_MARGIN;48
+
 // ALIGNMENT commands control text layout for each region.
 HEADER_ALIGNMENT;CENTER
 BODY_ALIGNMENT;LEFT
@@ -80,10 +84,10 @@ TIMER_SOUND;pola_sound.mp3
 LOG;[INFO] Core data commands demonstrated
 
 // SCREEN_MARGIN commands adjust top/bottom padding for every subsequent screen.
-TOP_MARGIN;48
+TOP_MARGIN;64
 BOTTOM_MARGIN;64
 
-INSTRUCTION;Screen margin demo;Use <code>TOP_MARGIN</code> and <code>BOTTOM_MARGIN</code> to tune the breathing room around your content.<br><br>This slide applies <b>48dp</b> above and <b>64dp</b> below the layout to highlight how generous spacing changes the feel of each screen.;Continue to appearance presets
+INSTRUCTION;Screen margin demo;Use <code>TOP_MARGIN</code> and <code>BOTTOM_MARGIN</code> to tune the breathing room around your content.<br><br>This slide applies <b>64dp</b> above and <b>64dp</b> below the layout to highlight how generous spacing changes the feel of each screen.;Continue to appearance presets
 
 // Transition to customization: colors, sizes, and alignment presets.
 INSTRUCTION;Customizing colors and sizes;Use the <code>COLOR</code>, <code>SIZE</code>, <code>ALIGNMENT</code>, and <code>SCREEN_MARGIN</code> commands above to instantly shift branding and spacing.<br><br><small>The next layout presets show how these styling decisions cascade to the following slide.</small>;Preview layout presets
@@ -160,8 +164,8 @@ RESPONSE_BACKGROUND_COLOR;#FFFFFF
 CONTINUE_TEXT_COLOR;#FFFFFF
 CONTINUE_BACKGROUND_COLOR;#1D3557
 TIMER_COLOR;#E63946
-TOP_MARGIN;16
-BOTTOM_MARGIN;16
+TOP_MARGIN;64
+BOTTOM_MARGIN;48
 HEADER_SIZE;28
 BODY_SIZE;18
 ITEM_SIZE;18

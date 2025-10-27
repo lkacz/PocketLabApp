@@ -269,6 +269,51 @@
       </article>
     </dialog>
 
+    <dialog id="welcomeDialog" class="content-dialog" aria-labelledby="welcomeDialogTitle">
+      <article class="content-surface">
+        <header class="content-dialog-header">
+          <div>
+            <h2 id="welcomeDialogTitle">Welcome to the Online Protocol Editor!</h2>
+            <p class="content-dialog-subtitle">Create and edit PoLA research protocols in your browser.</p>
+          </div>
+        </header>
+        <div class="content-body" style="padding: 24px;">
+          <div class="dialog-message">
+            <p><strong>What is this editor?</strong></p>
+            <p>This online tool allows you to create and edit research protocol files (.txt) for the <strong>Pocket Lab App</strong>.</p>
+            
+            <p><strong>How to use your protocols:</strong></p>
+            <ol style="margin-left: 20px; line-height: 1.6;">
+              <li><strong>Create</strong> your protocol using this editor</li>
+              <li><strong>Download</strong> the .txt file to your computer</li>
+              <li><strong>Transfer</strong> the file to your smartphone via:
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                  <li>USB cable</li>
+                  <li>Cloud storage (Google Drive, Dropbox, OneDrive, etc.)</li>
+                  <li>Email attachment</li>
+                </ul>
+              </li>
+              <li><strong>Open</strong> the protocol file in the Pocket Lab App on your smartphone</li>
+            </ol>
+            
+            <p style="margin-top: 16px;"><strong>Making adjustments:</strong></p>
+            <p>Minor edits can be made directly on your smartphone using the built-in <strong>Protocol Manager</strong>, but this online editor provides a better experience for creating and editing full protocols.</p>
+            
+            <p style="margin-top: 16px;"><em>For detailed instructions and command reference, see the <strong>Manual</strong> above.</em></p>
+          </div>
+          <div style="margin-top: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="welcomeDialogDontShow" style="cursor: pointer;">
+              <span>Don't show this message again</span>
+            </label>
+          </div>
+        </div>
+        <footer class="dialog-footer">
+          <button id="welcomeDialogClose" type="button" class="primary">Got it!</button>
+        </footer>
+      </article>
+    </dialog>
+
     <script defer src="vendor/marked.js"></script>
     <script defer src="main.js"></script>
   </body>

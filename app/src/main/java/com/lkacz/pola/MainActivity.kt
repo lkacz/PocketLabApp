@@ -86,6 +86,9 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         startForegroundService(serviceIntent)
 
         if (savedInstanceState == null) {
+            // Show welcome dialog on first launch
+            WelcomeDialogManager.showWelcomeDialogIfNeeded(this)
+            
             maybeShowResumeProtocolPrompt(fragmentContainer)
         }
     }
