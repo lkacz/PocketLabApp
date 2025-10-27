@@ -318,15 +318,20 @@ class InputFieldFragment : Fragment() {
         }
 
         // Fallback: try loading from assets
+        // VideoView doesn't support assets directly, so we need to copy to cache temporarily
         try {
-            val afd = requireContext().assets.openFd(fileName)
-            videoView.visibility = View.VISIBLE
-            videoView.setVideoURI(Uri.parse("file:///android_asset/$fileName"))
-            videoView.setOnPreparedListener { mp ->
-                mp.start()
-                mp.setVolume(volume, volume)
+            val cacheFile = java.io.File(requireContext().cacheDir, fileName)
+            requireContext().assets.open(fileName).use { input ->
+                cacheFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
             }
-            afd.close()
+            videoView.visibility = View.VISIBLE
+            videoView.setVideoPath(cacheFile.absolutePath)
+            videoView.setOnPreparedListener { mp ->
+                mp.setVolume(volume, volume)
+                mp.start()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
