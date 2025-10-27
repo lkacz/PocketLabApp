@@ -125,6 +125,9 @@ class Logger private constructor(private val context: Context) {
     suspend fun backupLogFile() {
         withContext(Dispatchers.IO) {
             awaitPendingWrites()
+            // Flush any buffered writes before backing up
+            fileOperations.flush()
+            
             if (!currentFile.exists()) return@withContext
             try {
                 val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
@@ -171,6 +174,7 @@ class Logger private constructor(private val context: Context) {
         runBlocking {
             awaitPendingWrites()
         }
+        fileOperations.close()
         scope.cancel()
     }
 
