@@ -649,13 +649,13 @@ class StartFragment : Fragment() {
     }
 
     private fun handleTutorialResourcesSetup(uri: Uri) {
-        // Store the resources folder URI
-        resourcesFolderManager.storeResourcesFolderUri(uri)
-        
-        // Copy assets to the folder
+        // Copy assets to the folder BEFORE storing the URI
+        // This way if copy fails, we don't have a stale URI saved
         val success = tutorialResourcesSetup.copyAssetsToResourcesFolder(uri)
         
         if (success) {
+            // Only store the URI after successful copy
+            resourcesFolderManager.storeResourcesFolderUri(uri)
             showToast("Tutorial resources copied successfully!")
             
             // Now check if output folder is set up

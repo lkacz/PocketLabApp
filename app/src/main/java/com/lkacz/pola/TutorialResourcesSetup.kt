@@ -27,6 +27,7 @@ class TutorialResourcesSetup(private val context: Context) {
         return try {
             val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return false
             
+            var allSuccessful = true
             assetFiles.forEach { fileName ->
                 // Check if file already exists
                 val existingFile = parentFolder.findFile(fileName)
@@ -37,15 +38,30 @@ class TutorialResourcesSetup(private val context: Context) {
                 
                 // Create new file and copy content
                 val mimeType = getMimeType(fileName)
-                val newFile = parentFolder.createFile(mimeType, fileName) ?: return false
+                val newFile = parentFolder.createFile(mimeType, fileName)
+                if (newFile == null) {
+                    allSuccessful = false
+                    return@forEach
+                }
                 
-                context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
-                    context.assets.open(fileName).use { inputStream ->
-                        inputStream.copyTo(outputStream)
+                try {
+                    context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
+                        context.assets.open(fileName).use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    } ?: run {
+                        // Output stream was null - delete the empty file and mark as failed
+                        newFile.delete()
+                        allSuccessful = false
                     }
+                } catch (e: Exception) {
+                    // Copy failed - delete the partial file and mark as failed
+                    newFile.delete()
+                    allSuccessful = false
+                    e.printStackTrace()
                 }
             }
-            true
+            allSuccessful
         } catch (e: Exception) {
             e.printStackTrace()
             false

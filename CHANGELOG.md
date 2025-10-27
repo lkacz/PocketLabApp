@@ -3,6 +3,20 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.3] - 2025-10-27
+### Added
+- Added automatic tutorial resources setup on first run with guided folder selection
+- Tutorial resources are now automatically copied from assets to user-selected folder
+- Added TutorialResourcesSetup helper class for managing asset copying
+
+### Changed
+- Improved tutorial setup messaging when resources folder exists but lacks tutorial files
+- Better UX for users switching between custom and tutorial protocols
+
+### Fixed
+- Fixed potential incomplete file copies with proper cleanup on failure
+- Fixed resources folder URI persistence to only save after successful copy
+
 ## [1.1.2] - 2025-10-27
 ### Added
 - Added assets fallback for media loading (audio, video, images, HTML) when no resources folder is configured
