@@ -5,6 +5,10 @@ _No changes yet._
 
 # Changelog
 
+## [1.3.0] - 2025-10-28
+### Changed
+- Version bump to 1.3.0
+
 ## [1.1.9] - 2025-10-28
 ### Changed
 - Disabled R8 obfuscation completely to prevent class/method renaming issues in release builds
