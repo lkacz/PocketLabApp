@@ -5,6 +5,12 @@ _No changes yet._
 
 # Changelog
 
+## [1.3.1] - 2025-10-28
+### Fixed
+- Fixed crash in ExcelOperations.createXlsxBackup when log file doesn't exist
+- Added file existence check before attempting to read log file for Excel backup
+- Prevents crash on completion screen when protocol completes without generating log entries
+
 ## [1.3.0] - 2025-10-28
 ### Changed
 - Version bump to 1.3.0

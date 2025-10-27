@@ -36,6 +36,10 @@ class ExcelOperations {
         logFile: File,
     ) {
         val sheet = workbook.createSheet(sheetName)
+        if (!logFile.exists()) {
+            // Create empty sheet if log file doesn't exist
+            return
+        }
         logFile.inputStream().bufferedReader().use { reader ->
             var rowIndex = 0
             reader.forEachLine { line ->
