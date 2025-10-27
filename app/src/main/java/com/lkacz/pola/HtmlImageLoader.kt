@@ -18,20 +18,36 @@ class HtmlImageLoader private constructor(
         // See if we have saved width/height from <img width="..."> or <img height="...">
         val sizeInfo = imageSizeMap.remove(source)
 
-        // If we have a valid parent folder URI, try to locate the file by name.
-        val parentFolder = parentFolderUri?.let { DocumentFile.fromTreeUri(context, it) } ?: return null
-        val imageFile = parentFolder.findFile(source) ?: return null
-        if (!imageFile.exists() || !imageFile.isFile) return null
+        // Try loading from resources folder if available
+        if (parentFolderUri != null) {
+            val parentFolder = DocumentFile.fromTreeUri(context, parentFolderUri)
+            val imageFile = parentFolder?.findFile(source)
+            if (imageFile != null && imageFile.exists() && imageFile.isFile) {
+                return try {
+                    context.contentResolver.openInputStream(imageFile.uri).use { stream ->
+                        val drawable = Drawable.createFromStream(stream, source)
+                        drawable?.apply {
+                            if (sizeInfo != null && sizeInfo.width > 0 && sizeInfo.height > 0) {
+                                setBounds(0, 0, sizeInfo.width, sizeInfo.height)
+                            } else {
+                                setBounds(0, 0, intrinsicWidth, intrinsicHeight)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
 
+        // Fallback: try loading from assets
         return try {
-            context.contentResolver.openInputStream(imageFile.uri).use { stream ->
+            context.assets.open(source).use { stream ->
                 val drawable = Drawable.createFromStream(stream, source)
                 drawable?.apply {
                     if (sizeInfo != null && sizeInfo.width > 0 && sizeInfo.height > 0) {
-                        // Apply explicit width/height if provided in <img>.
                         setBounds(0, 0, sizeInfo.width, sizeInfo.height)
                     } else {
-                        // Otherwise fall back to intrinsic sizes.
                         setBounds(0, 0, intrinsicWidth, intrinsicHeight)
                     }
                 }
