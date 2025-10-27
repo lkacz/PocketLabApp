@@ -139,45 +139,23 @@
     *;
 }
 
-# Keep ALL companion objects in the app to prevent R8 from breaking static initialization
--keep class com.lkacz.pola.**$Companion {
+# Keep all coroutine-related classes to prevent initialization failures
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+-keepclassmembers class kotlinx.coroutines.** { *; }
+
+# Keep Kotlin metadata
+-keep class kotlin.Metadata { *; }
+
+# Keep all lifecycle-related classes
+-keep class androidx.lifecycle.** { *; }
+-keepclassmembers class androidx.lifecycle.** { *; }
+
+# Keep ViewModels
+-keep class * extends androidx.lifecycle.ViewModel {
     *;
 }
 
-# Keep all singleton objects (Kotlin objects)
--keep class com.lkacz.pola.** {
-    public static final ** INSTANCE;
-}
-
-# Prevent R8 from removing or inlining Kotlin object getInstance methods
--keepclassmembers class com.lkacz.pola.** {
-    public static ** getInstance(...);
-}
-
-# Keep all classes with static fields (prevents singleton stripping)
--keepclassmembers class com.lkacz.pola.** {
-    public static <fields>;
-}
-
-# Keep ExcelOperations (used by Logger)
--keep class com.lkacz.pola.ExcelOperations {
-    *;
-}
-
-# Keep all R classes and their fields (prevents resource stripping)
--keepclassmembers class **.R$* {
-    public static <fields>;
-}
-
-# Keep layout inflation resources
--keep class com.lkacz.pola.R$layout {
-    *;
-}
--keep class com.lkacz.pola.R$id {
-    *;
-}
-
-# Prevent stripping of WelcomeDialogManager and its resources
--keep class com.lkacz.pola.WelcomeDialogManager {
-    *;
-}
+# Keep all our app classes to prevent ANY R8 issues (temporary for debugging)
+-keep class com.lkacz.pola.** { *; }
+-keepclassmembers class com.lkacz.pola.** { *; }

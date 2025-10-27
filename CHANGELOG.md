@@ -5,6 +5,14 @@ _No changes yet._
 
 # Changelog
 
+## [1.2.0] - 2025-10-27
+### Fixed
+- **CRITICAL FIX**: Completely disabled R8 obfuscation for app code to prevent class initialization crashes
+- Added comprehensive ProGuard rules to keep all app classes, coroutines, and lifecycle components
+- Logcat revealed R8 was causing `ExceptionInInitializerError` and `InstantiationException` on obfuscated classes
+- App now keeps all `com.lkacz.pola.**` classes unobfuscated while still minifying and shrinking resources
+- Protected kotlinx.coroutines and androidx.lifecycle packages from aggressive optimization
+
 ## [1.1.9] - 2025-10-27
 ### Fixed
 - Fixed race condition in protocol completion that caused intermittent crashes
@@ -12,9 +20,6 @@ _No changes yet._
 - Added comprehensive error handling in onProtocolCompleted() to prevent crashes
 - Increased delay before showing completion screen to ensure all operations finish
 - Added fallback behavior if completion screen fails to display
-- **Critical R8 fix**: Protected all companion objects, singleton objects, R resources, and layout files from aggressive R8 optimization
-- Added ProGuard rules to keep WelcomeDialogManager and dialog resources
-- Fixed InstantiationException crashes in release builds caused by R8 stripping critical classes
 
 ## [1.1.8] - 2025-10-27
 ### Fixed
