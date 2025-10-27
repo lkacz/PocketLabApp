@@ -3,6 +3,24 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.2] - 2025-10-27
+### Added
+- Added assets fallback for media loading (audio, video, images, HTML) when no resources folder is configured
+- Added interactive Snake game (psnakev2.html) to tutorial protocol
+- Added completion screen after protocol END command with proper back button handling
+- Added runtime storage permission requests for Android 6-12
+
+### Changed
+- Tutorial protocol now works out-of-the-box using bundled assets without requiring external resources folder
+- Progress clearing moved from MainActivity to CompletionFragment for better UX
+
+### Fixed
+- Fixed tutorial protocol crash when starting without resources folder configured
+- Fixed images not displaying in tutorial (HtmlImageLoader now falls back to assets)
+- Fixed videos not playing from assets (copy to cache for VideoView compatibility)
+- Fixed completion flow bug where app closed immediately after protocol END
+- Fixed back button in CompletionFragment to close app instead of navigating back
+
 ## [1.1.1] - 2025-10-27
 ### Changed
 - Updated targetSdk and compileSdk to API 35 (Android 15) to meet Google Play requirements
