@@ -12,6 +12,9 @@ _No changes yet._
 - Added comprehensive error handling in onProtocolCompleted() to prevent crashes
 - Increased delay before showing completion screen to ensure all operations finish
 - Added fallback behavior if completion screen fails to display
+- **Critical R8 fix**: Protected all companion objects, singleton objects, R resources, and layout files from aggressive R8 optimization
+- Added ProGuard rules to keep WelcomeDialogManager and dialog resources
+- Fixed InstantiationException crashes in release builds caused by R8 stripping critical classes
 
 ## [1.1.8] - 2025-10-27
 ### Fixed
