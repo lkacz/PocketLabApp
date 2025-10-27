@@ -5,6 +5,12 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
+# Disable obfuscation completely to prevent R8 from renaming classes
+-dontobfuscate
+
+# Keep source file names and line numbers for better stack traces
+-keepattributes SourceFile,LineNumberTable
+
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
 # class:
@@ -101,80 +107,3 @@
 -keepclassmembers class com.lkacz.pola.MainActivity {
     private void onProtocolCompleted();
 }
-
-# Keep critical singleton objects that are accessed throughout the app
--keep class com.lkacz.pola.Prefs {
-    *;
-}
--keep class com.lkacz.pola.ColorManager {
-    *;
-}
--keep class com.lkacz.pola.ParsingUtils {
-    *;
-}
--keep class com.lkacz.pola.TransitionManager {
-    *;
-}
-
-# Keep listener interfaces to prevent issues with callbacks
--keep interface com.lkacz.pola.StartFragment$OnProtocolSelectedListener {
-    *;
-}
-
-# Keep Service classes
--keep class * extends android.app.Service {
-    *;
-}
-
-# Keep FragmentLoader to ensure protocol parsing works correctly
--keep class com.lkacz.pola.FragmentLoader {
-    *;
-}
-
-# Keep ProtocolManager
--keep class com.lkacz.pola.ProtocolManager {
-    *;
-}
--keep class com.lkacz.pola.ProtocolManager$Companion {
-    *;
-}
-
-# Keep all coroutine-related classes to prevent initialization failures
--keep class kotlinx.coroutines.** { *; }
--dontwarn kotlinx.coroutines.**
--keepclassmembers class kotlinx.coroutines.** { *; }
-
-# Keep Kotlin metadata
--keep class kotlin.Metadata { *; }
-
-# Keep all lifecycle-related classes
--keep class androidx.lifecycle.** { *; }
--keepclassmembers class androidx.lifecycle.** { *; }
-
-# Keep ViewModels
--keep class * extends androidx.lifecycle.ViewModel {
-    *;
-}
-
-# Keep all our app classes to prevent ANY R8 issues (temporary for debugging)
--keep class com.lkacz.pola.** { *; }
--keepclassmembers class com.lkacz.pola.** { *; }
-
-# Keep AlertDialog and related classes
--keep class androidx.appcompat.app.AlertDialog { *; }
--keep class androidx.appcompat.app.AlertDialog$Builder { *; }
--keepclassmembers class androidx.appcompat.app.AlertDialog$Builder { *; }
--keep class android.content.DialogInterface { *; }
--keep class android.content.DialogInterface$OnClickListener { *; }
-
-# Keep Apache POI (Excel library) classes
--keep class org.apache.poi.** { *; }
--keepclassmembers class org.apache.poi.** { *; }
--dontwarn org.apache.poi.**
--dontwarn java.awt.Shape
-
-# Keep XML-related classes that POI depends on
--keep class org.apache.xmlbeans.** { *; }
--dontwarn org.apache.xmlbeans.**
--keep class org.openxmlformats.schemas.** { *; }
--dontwarn org.openxmlformats.schemas.**

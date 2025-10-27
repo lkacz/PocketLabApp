@@ -5,21 +5,13 @@ _No changes yet._
 
 # Changelog
 
-## [1.2.0] - 2025-10-27
-### Fixed
-- **CRITICAL FIX**: Completely disabled R8 obfuscation for app code to prevent class initialization crashes
-- Added comprehensive ProGuard rules to keep all app classes, coroutines, and lifecycle components
-- Logcat revealed R8 was causing `ExceptionInInitializerError` and `InstantiationException` on obfuscated classes
-- App now keeps all `com.lkacz.pola.**` classes unobfuscated while still minifying and shrinking resources
-- Protected kotlinx.coroutines and androidx.lifecycle packages from aggressive optimization
-
-## [1.1.9] - 2025-10-27
-### Fixed
-- Fixed race condition in protocol completion that caused intermittent crashes
-- Made Logger.backupLogFile() a proper suspend function that waits for completion
-- Added comprehensive error handling in onProtocolCompleted() to prevent crashes
-- Increased delay before showing completion screen to ensure all operations finish
-- Added fallback behavior if completion screen fails to display
+## [1.1.9] - 2025-10-28
+### Changed
+- Disabled R8 obfuscation completely to prevent class/method renaming issues in release builds
+- Changed from `proguard-android-optimize.txt` to `proguard-android.txt` (non-optimizing)
+- Added `-dontobfuscate` flag to ProGuard rules
+- Kept source file names and line numbers for better crash stack traces
+- Note: Minification and resource shrinking remain enabled for APK size optimization
 
 ## [1.1.8] - 2025-10-27
 ### Fixed

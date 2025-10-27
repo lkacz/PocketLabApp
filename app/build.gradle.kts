@@ -14,8 +14,8 @@ android {
         applicationId = "com.lkacz.pola"
         minSdk = 29
         targetSdk = 35
-        versionCode = 121
-        versionName = "1.2.1"
+        versionCode = 119
+        versionName = "1.1.9"
 
         buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
         buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())
@@ -30,8 +30,9 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            // Use non-optimizing ProGuard config to disable obfuscation
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro",
             )
         }
