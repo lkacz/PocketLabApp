@@ -32,6 +32,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
     private lateinit var videoView: VideoView
     private lateinit var timerTextView: TextView
     private lateinit var nextButton: Button
+    private lateinit var contentLayout: LinearLayout
 
     private var holdEnabled = false
 
@@ -75,7 +76,7 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
                     )
                 isFillViewport = true
             }
-        val contentLayout =
+        contentLayout =
             LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dpToPx(16))
@@ -181,6 +182,15 @@ class TimerFragment : BaseTouchAwareFragment(5000, 20) {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         setupWebView()
+
+        val topMargin = SpacingManager.getTopMargin(requireContext())
+        val bottomMargin = SpacingManager.getBottomMargin(requireContext())
+        contentLayout.setPadding(
+            dpToPx(16),
+            dpToPx(topMargin),
+            dpToPx(16),
+            dpToPx(bottomMargin),
+        )
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 

@@ -87,6 +87,15 @@ class HtmlFragment : Fragment() {
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         setupWebView()
 
+        val topMargin = SpacingManager.getTopMargin(requireContext())
+        val bottomMargin = SpacingManager.getBottomMargin(requireContext())
+        containerLayout.setPadding(
+            dpToPx(16),
+            dpToPx(topMargin),
+            dpToPx(16),
+            dpToPx(bottomMargin),
+        )
+
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
         val (buttonTextNoTap, isTap) =

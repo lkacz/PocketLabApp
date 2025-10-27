@@ -177,6 +177,17 @@ class ScaleFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
         setupWebView()
+        
+        // Apply top and bottom margins from SpacingManager
+        val topMargin = SpacingManager.getTopMargin(requireContext())
+        val bottomMargin = SpacingManager.getBottomMargin(requireContext())
+        rootLayout.setPadding(
+            dpToPx(16),
+            dpToPx(topMargin),
+            dpToPx(16),
+            dpToPx(bottomMargin)
+        )
+        
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
         // Header

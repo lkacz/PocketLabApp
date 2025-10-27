@@ -9,6 +9,7 @@ This document catalogs the protocol command syntax, validation rules, and availa
 - Style (Colors): HEADER_COLOR, BODY_COLOR, RESPONSE_TEXT_COLOR, RESPONSE_BACKGROUND_COLOR, SCREEN_BACKGROUND_COLOR, CONTINUE_TEXT_COLOR, CONTINUE_BACKGROUND_COLOR, TIMER_COLOR
 - Style (Sizes): HEADER_SIZE, BODY_SIZE, ITEM_SIZE, RESPONSE_SIZE, CONTINUE_SIZE, TIMER_SIZE
 - Style (Alignment): HEADER_ALIGNMENT, BODY_ALIGNMENT, CONTINUE_ALIGNMENT, TIMER_ALIGNMENT
+- Style (Screen Margins): TOP_MARGIN, BOTTOM_MARGIN
 
 ## General Notes
 - Commands are semicolon-separated. Empty or comment lines (// ...) are ignored.
@@ -32,6 +33,7 @@ This document catalogs the protocol command syntax, validation rules, and availa
 | *_COLOR | 2 (CMD;#RRGGBB or #AARRGGBB) | Hex validation enforced. |
 | *_SIZE | 2 (CMD;POSITIVE_NUMBER) | >200 produces warning. |
 | *_ALIGNMENT | 2 (CMD;LEFT|CENTER|RIGHT) | Invalid tokens flagged. |
+| TOP_MARGIN / BOTTOM_MARGIN | 2 (CMD;NON-NEGATIVE_DP) | Values ≥0 and ≤200 recommended; larger values warn. |
 | HTML / TIMER_SOUND | 2 (CMD;FILENAME) | Resource existence checked if resources folder configured. |
 | LOG | 2 (LOG;MESSAGE) | Free-form message. |
 | END | 1 | Structural terminator (no validation rules). |
@@ -45,6 +47,7 @@ This document catalogs the protocol command syntax, validation rules, and availa
 - TIMER structural & numeric validation; quick-fix normalizes malformed TIMER lines to a safe default (60s).
 - Color hex pattern: #RRGGBB or #AARRGGBB only.
 - Size numeric >0; large size warning >200.
+- Screen margin commands require numeric dp values ≥0 and warn when exceeding 200.
 - Alignment restricted to LEFT|CENTER|RIGHT.
 
 ## Quick-Fixes Implemented

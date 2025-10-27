@@ -17,6 +17,10 @@ object SpacingManager {
     // Added these keys for timer padding
     private const val TIMER_PADDING_H_KEY = "timerPaddingH"
     private const val TIMER_PADDING_V_KEY = "timerPaddingV"
+    
+    // Screen margin keys for top and bottom spacing
+    private const val TOP_MARGIN_KEY = "topMargin"
+    private const val BOTTOM_MARGIN_KEY = "bottomMargin"
 
     private const val DEFAULT_BUTTON_MARGIN = 0f
     private const val DEFAULT_BUTTON_PADDING_H = 0f
@@ -24,6 +28,8 @@ object SpacingManager {
     private const val DEFAULT_RESPONSE_SPACING = 0f
     private const val DEFAULT_TIMER_PADDING_H = 0f
     private const val DEFAULT_TIMER_PADDING_V = 0f
+    private const val DEFAULT_TOP_MARGIN = 16
+    private const val DEFAULT_BOTTOM_MARGIN = 16
 
     fun getSharedPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(SPACING_PREFS, Context.MODE_PRIVATE)
@@ -116,5 +122,21 @@ object SpacingManager {
 
     fun getTimerPaddingVertical(context: Context): Float {
         return getSharedPrefs(context).getFloat(TIMER_PADDING_V_KEY, DEFAULT_TIMER_PADDING_V)
+    }
+    
+    fun getTopMargin(context: Context): Int {
+        return getSharedPrefs(context).getInt(TOP_MARGIN_KEY, DEFAULT_TOP_MARGIN)
+    }
+
+    fun setTopMargin(context: Context, margin: Int) {
+        getSharedPrefs(context).edit().putInt(TOP_MARGIN_KEY, margin).apply()
+    }
+
+    fun getBottomMargin(context: Context): Int {
+        return getSharedPrefs(context).getInt(BOTTOM_MARGIN_KEY, DEFAULT_BOTTOM_MARGIN)
+    }
+
+    fun setBottomMargin(context: Context, margin: Int) {
+        getSharedPrefs(context).edit().putInt(BOTTOM_MARGIN_KEY, margin).apply()
     }
 }

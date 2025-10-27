@@ -34,6 +34,8 @@ class ProtocolValidator {
                 "SCALE",
                 "SCALE[RANDOMIZED]",
                 "SCREEN_BACKGROUND_COLOR",
+                "TOP_MARGIN",
+                "BOTTOM_MARGIN",
                 "STUDY_ID",
                 "TIMER",
                 "TIMER_SOUND",
@@ -215,6 +217,19 @@ class ProtocolValidator {
                 if (parts.size < 2) {
                     err = append(err, "$command must have at least one parameter after the command")
                 }
+            "TOP_MARGIN", "BOTTOM_MARGIN" -> {
+                val rawValue = parts.getOrNull(1)?.trim().orEmpty()
+                val numeric = rawValue.toIntOrNull()
+                if (rawValue.isEmpty()) {
+                    err = append(err, "$command requires a numeric value in dp")
+                } else if (numeric == null) {
+                    err = append(err, "$command value '$rawValue' is not a number")
+                } else if (numeric < 0) {
+                    err = append(err, "$command value must be >= 0")
+                } else if (numeric > 200) {
+                    warn = append(warn, "$command=$numeric is quite large; ensure this is intentional")
+                }
+            }
             "TIMER" -> {
                 if (parts.size != 5) err = append(err, "TIMER must have exactly 4 semicolons (5 segments)")
                 val timeVal = parts.getOrNull(3)?.trim()?.toIntOrNull()

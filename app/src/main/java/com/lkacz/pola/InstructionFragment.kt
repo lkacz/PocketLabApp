@@ -33,6 +33,7 @@ class InstructionFragment : Fragment() {
     private lateinit var bodyTextView: TextView
     private lateinit var videoView: VideoView
     private lateinit var nextButton: Button
+    private lateinit var contentLayout: LinearLayout
 
     private val mediaPlayers = mutableListOf<MediaPlayer>()
 
@@ -76,7 +77,7 @@ class InstructionFragment : Fragment() {
                     )
                 isFillViewport = true
             }
-        val contentLayout =
+        contentLayout =
             LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
@@ -167,6 +168,16 @@ class InstructionFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         view.setBackgroundColor(ColorManager.getScreenBackgroundColor(requireContext()))
         setupWebView()
+
+        // Apply top and bottom margins from SpacingManager
+        val topMargin = SpacingManager.getTopMargin(requireContext())
+        val bottomMargin = SpacingManager.getBottomMargin(requireContext())
+        contentLayout.setPadding(
+            dpToPx(16),
+            dpToPx(topMargin),
+            dpToPx(16),
+            dpToPx(bottomMargin)
+        )
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 

@@ -161,6 +161,16 @@ class FragmentLoader(
                     }
                     continue
                 }
+                "TOP_MARGIN", "BOTTOM_MARGIN" -> {
+                    val marginValue = parts.getOrNull(1)?.toIntOrNull()
+                    if (marginValue != null) {
+                        when (directive) {
+                            "TOP_MARGIN" -> SpacingManager.setTopMargin(getContext(), marginValue)
+                            "BOTTOM_MARGIN" -> SpacingManager.setBottomMargin(getContext(), marginValue)
+                        }
+                    }
+                    continue
+                }
                 "RESPONSE_TEXT_COLOR" -> {
                     val colorStr = parts.getOrNull(1)?.trim().orEmpty()
                     val colorInt = safeParseColor(colorStr)

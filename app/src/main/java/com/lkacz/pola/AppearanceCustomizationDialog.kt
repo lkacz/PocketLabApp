@@ -42,6 +42,10 @@ class AppearanceCustomizationDialog : DialogFragment() {
     private lateinit var tvContinuePaddingHValue: TextView
     private lateinit var sliderContinuePaddingV: SeekBar
     private lateinit var tvContinuePaddingVValue: TextView
+    private lateinit var sliderTopMargin: SeekBar
+    private lateinit var tvTopMarginValue: TextView
+    private lateinit var sliderBottomMargin: SeekBar
+    private lateinit var tvBottomMarginValue: TextView
 
     private lateinit var previewTimerTextView: TextView
     private lateinit var sliderTimer: SeekBar
@@ -485,6 +489,76 @@ class AppearanceCustomizationDialog : DialogFragment() {
                     }
             }
         continueAlignRow.addView(spinnerContinueAlignment)
+
+        val screenTopMarginRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
+        mainLinearLayout.addView(screenTopMarginRow)
+        val screenTopMarginLabel =
+            TextView(requireContext()).apply {
+                text = "Screen Margin (Top):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        screenTopMarginRow.addView(screenTopMarginLabel)
+        sliderTopMargin =
+            SeekBar(requireContext()).apply {
+                max = 200
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
+        screenTopMarginRow.addView(sliderTopMargin)
+        tvTopMarginValue =
+            TextView(requireContext()).apply {
+                text = "16"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
+        screenTopMarginRow.addView(tvTopMarginValue)
+
+        val screenBottomMarginRow =
+            newRowLayout().apply {
+                (layoutParams as LinearLayout.LayoutParams).topMargin = dpToPx(8)
+            }
+        mainLinearLayout.addView(screenBottomMarginRow)
+        val screenBottomMarginLabel =
+            TextView(requireContext()).apply {
+                text = "Screen Margin (Bottom):"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+        screenBottomMarginRow.addView(screenBottomMarginLabel)
+        sliderBottomMargin =
+            SeekBar(requireContext()).apply {
+                max = 200
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f,
+                    ).apply {
+                        leftMargin = dpToPx(4)
+                    }
+            }
+        screenBottomMarginRow.addView(sliderBottomMargin)
+        tvBottomMarginValue =
+            TextView(requireContext()).apply {
+                text = "16"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { leftMargin = dpToPx(4) }
+            }
+        screenBottomMarginRow.addView(tvBottomMarginValue)
 
         mainLinearLayout.addView(
             View(requireContext()).apply {
@@ -1124,6 +1198,18 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvTimerPaddingVValue.text = savedTimerV.toString()
         applyTimerTextPadding()
 
+        val savedTopMargin =
+            SpacingManager.getTopMargin(requireContext()).coerceIn(0, 200)
+        sliderTopMargin.progress = savedTopMargin
+        tvTopMarginValue.text = savedTopMargin.toString()
+
+        val savedBottomMargin =
+            SpacingManager.getBottomMargin(requireContext()).coerceIn(0, 200)
+        sliderBottomMargin.progress = savedBottomMargin
+        tvBottomMarginValue.text = savedBottomMargin.toString()
+
+        applyScreenMargins(savedTopMargin, savedBottomMargin)
+
         sliderHeader.setOnSeekBarChangeListener(
             simpleSeekBarListener {
                 val size = it.coerceIn(8, 100)
@@ -1171,6 +1257,22 @@ class AppearanceCustomizationDialog : DialogFragment() {
                 timerTextSize = size.toFloat()
                 previewTimerTextView.textSize = size.toFloat()
                 tvTimerSizeValue.text = size.toString()
+            },
+        )
+
+        sliderTopMargin.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val margin = it.coerceIn(0, 200)
+                tvTopMarginValue.text = margin.toString()
+                applyScreenMargins(margin, sliderBottomMargin.progress)
+            },
+        )
+
+        sliderBottomMargin.setOnSeekBarChangeListener(
+            simpleSeekBarListener {
+                val margin = it.coerceIn(0, 200)
+                tvBottomMarginValue.text = margin.toString()
+                applyScreenMargins(sliderTopMargin.progress, margin)
             },
         )
 
@@ -1434,6 +1536,17 @@ class AppearanceCustomizationDialog : DialogFragment() {
         previewTimerTextView.setPadding(horizontalPx, verticalPx, horizontalPx, verticalPx)
     }
 
+    private fun applyScreenMargins(
+        topMarginDp: Int,
+        bottomMarginDp: Int,
+    ) {
+        val horizontalPadding = dpToPx(16)
+        val topPadding = dpToPx(topMarginDp)
+        val bottomPadding = dpToPx(bottomMarginDp)
+        previewContainerTop.setPadding(horizontalPadding, topPadding, horizontalPadding, bottomPadding)
+        previewContainerScaleAndResponse.setPadding(horizontalPadding, topPadding, horizontalPadding, bottomPadding)
+    }
+
     private fun applyColorPickerBoxColor(
         picker: View,
         color: Int,
@@ -1613,6 +1726,13 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvTimerPaddingVValue.text = "0"
         applyTimerTextPadding()
 
+    val defaultScreenMargin = 16
+    sliderTopMargin.progress = defaultScreenMargin
+    sliderBottomMargin.progress = defaultScreenMargin
+    tvTopMarginValue.text = defaultScreenMargin.toString()
+    tvBottomMarginValue.text = defaultScreenMargin.toString()
+    applyScreenMargins(defaultScreenMargin, defaultScreenMargin)
+
         spinnerContinueAlignment.setSelection(1, false)
         spinnerHeaderAlignment.setSelection(1, false)
         spinnerBodyAlignment.setSelection(1, false)
@@ -1673,6 +1793,8 @@ class AppearanceCustomizationDialog : DialogFragment() {
             requireContext(),
             sliderTimerPaddingV.progress.toFloat(),
         )
+        SpacingManager.setTopMargin(requireContext(), sliderTopMargin.progress)
+        SpacingManager.setBottomMargin(requireContext(), sliderBottomMargin.progress)
 
         TransitionManager.setTransitionMode(requireContext(), currentTransitionMode)
 
