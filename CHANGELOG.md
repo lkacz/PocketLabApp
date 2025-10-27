@@ -3,6 +3,20 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.1.6] - 2025-10-27
+### Added
+- Added welcome dialog for first-time users explaining PoLA's protocol-based workflow
+- Added welcome dialog to Online Protocol Editor with localStorage persistence
+
+### Changed
+- Tutorial protocol now uses consistent 64dp top margin throughout for better visual spacing
+- Moved asset copying to background thread to prevent UI blocking during tutorial setup
+- Welcome dialog checkbox moved to footer for better visibility
+
+### Fixed
+- Fixed black screen during tutorial asset deployment by using Kotlin coroutines for async file copying
+- Users now see immediate toast feedback when asset copying begins
+
 ## [1.1.5] - 2025-10-27
 ### Fixed
 - **Critical:** Fixed release build crash caused by reflection accessing obfuscated Logger field. Replaced reflection-based context retrieval with direct Context parameter passing to FragmentLoader.
