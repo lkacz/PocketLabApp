@@ -1,6 +1,6 @@
 {
   "name": "pola2",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Developer tooling for PocketLabApp shared documentation",
   "scripts": {
     "convert-docs": "node tools/convert-docs.mjs"

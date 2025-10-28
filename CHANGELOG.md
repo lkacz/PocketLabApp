@@ -3,19 +3,10 @@
 ## [Unreleased]
 _No changes yet._
 
-## [1.3.2] - 2025-10-28
+## [1.3.3] - 2025-10-28
 ### Changed
-- Disabled release minification and resource shrinking so the Play Store build mirrors the crash-free debug build
-- Kept ProGuard configuration for future use if optimization is re-enabled
-
-## [1.3.1] - 2025-10-28
-### Fixed
-- Disabled Excel (.xlsx) backup generation due to Apache POI Log4j incompatibility with Android
-- Fixed crash on completion screen caused by Log4j initialization failure
-- TSV log files still export normally to Downloads or selected folder
-### Changed
-- Removed Excel file generation from backupLogFile() - only TSV files are now created
-- This prevents ExceptionInInitializerError from org.apache.logging.log4j
+- Disabled all R8 processing (minification and resource shrinking) for release builds to match debug behavior and stop Play Store crashes
+- Verified `:app:assembleDebug` completes successfully after configuration change
 
 ## [1.3.0] - 2025-10-28
 ### Changed
