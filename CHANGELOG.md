@@ -3,7 +3,10 @@
 ## [Unreleased]
 _No changes yet._
 
-# Changelog
+## [1.3.4] - 2025-10-28
+### Changed
+- Disabled release minification and resource shrinking (R8/ProGuard) to avoid obfuscation-related crashes
+- Bumped Android app version to 1.3.4 (versionCode 134) and aligned documentation
 
 ## [1.3.1] - 2025-10-28
 ### Fixed
