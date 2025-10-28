@@ -127,15 +127,6 @@ class Logger private constructor(private val context: Context) {
             awaitPendingWrites()
             if (!currentFile.exists()) return@launch
             try {
-                // Skip Excel backup - Apache POI's Log4j doesn't work on Android
-                // val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")
-                // excelOperations.createXlsxBackup(
-                //     xlsxFile,
-                //     currentFile,
-                //     BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                //     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-                // )
-
                 val savedLocations = exportLogToSharedLocations(currentFile, null)
                 if (savedLocations.isNotEmpty()) {
                     showSaveToast(savedLocations)
@@ -152,15 +143,6 @@ class Logger private constructor(private val context: Context) {
                 val baseName = currentFileName.removeSuffix(TSV_EXTENSION)
                 val backupTsv = File(backupFolder, "${baseName}_backup" + TSV_EXTENSION)
                 currentFile.copyTo(backupTsv, overwrite = true)
-
-                // Skip Excel backup in backup folder too
-                // val backupXlsx = File(backupFolder, "${baseName}_backup.xlsx")
-                // excelOperations.createXlsxBackup(
-                //     backupXlsx,
-                //     currentFile,
-                //     BufferedReader(StringReader(ProtocolManager.originalProtocol ?: "")),
-                //     BufferedReader(StringReader(ProtocolManager.finalProtocol ?: "")),
-                // )
 
                 isBackupCreated = true
             } catch (e: IOException) {

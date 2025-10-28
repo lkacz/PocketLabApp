@@ -35,11 +35,11 @@ class ExcelOperations {
         sheetName: String,
         logFile: File,
     ) {
-        val sheet = workbook.createSheet(sheetName)
         if (!logFile.exists()) {
-            // Create empty sheet if log file doesn't exist
+            // Skip export when the log file has not been created yet.
             return
         }
+        val sheet = workbook.createSheet(sheetName)
         logFile.inputStream().bufferedReader().use { reader ->
             var rowIndex = 0
             reader.forEachLine { line ->

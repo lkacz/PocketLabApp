@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 
@@ -39,6 +40,7 @@ class MyForegroundService : Service() {
     }
 
     private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel =
             NotificationChannel(
                 CHANNEL_ID,
@@ -46,6 +48,6 @@ class MyForegroundService : Service() {
                 NotificationManager.IMPORTANCE_LOW,
             )
         val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
+        manager?.createNotificationChannel(channel)
     }
 }
