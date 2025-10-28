@@ -1,4 +1,4 @@
-# Pocket Lab v1.3.4
+# Pocket Lab v1.3.5
 
 ![CI](https://github.com/lkacz/PocketLabApp/actions/workflows/ci.yml/badge.svg)
 

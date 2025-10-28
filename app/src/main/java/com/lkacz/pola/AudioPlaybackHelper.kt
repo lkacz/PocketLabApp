@@ -4,8 +4,14 @@ package com.lkacz.pola
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import java.util.regex.Pattern
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Parses text for media placeholders (e.g., <filename.mp3>) and plays them if found,
@@ -22,6 +28,7 @@ object AudioPlaybackHelper {
         context: Context,
         rawText: String,
         mediaFolderUri: Uri?,
+        scope: CoroutineScope,
         mediaPlayers: MutableList<MediaPlayer>,
     ): String {
         if (rawText.isBlank()) return rawText
@@ -36,7 +43,7 @@ object AudioPlaybackHelper {
             when {
                 extension == "mp3" || extension == "wav" -> {
                     val (fileName, volume) = parseAudioParams(fullMatch)
-                    playSoundFile(context, fileName, volume, mediaFolderUri, mediaPlayers)
+                    playSoundFile(context, fileName, volume, mediaFolderUri, scope, mediaPlayers)
                     // Remove audio placeholders entirely from displayed text
                     matcher.appendReplacement(buffer, "")
                 }
@@ -113,46 +120,65 @@ object AudioPlaybackHelper {
         fileName: String,
         volume: Float,
         mediaFolderUri: Uri?,
+        scope: CoroutineScope,
         mediaPlayers: MutableList<MediaPlayer>,
     ) {
-        // Try loading from resources folder if available
-        if (mediaFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(context, mediaFolderUri)
-            val mediaFile = parentFolder?.findFile(fileName)
-            if (mediaFile != null && mediaFile.exists() && mediaFile.isFile) {
+        scope.launch(Dispatchers.IO) {
+            val target = ResourceFileCache.getFile(context, mediaFolderUri, fileName)
+            if (target != null && target.exists() && target.isFile) {
                 try {
-                    val mediaPlayer =
-                        MediaPlayer().apply {
-                            val pfd = context.contentResolver.openFileDescriptor(mediaFile.uri, "r")
-                            pfd?.use {
-                                setDataSource(it.fileDescriptor)
-                                prepare()
-                                setVolume(volume, volume)
-                                start()
-                            }
+                    context.contentResolver.openFileDescriptor(target.uri, "r")?.use { pfd ->
+                        val mediaPlayer = MediaPlayer()
+                        mediaPlayer.setOnCompletionListener { mp ->
+                            mp.release()
+                            mainHandler.post { mediaPlayers.remove(mp) }
                         }
-                    mediaPlayers.add(mediaPlayer)
-                    return
+                        mediaPlayer.setOnErrorListener { mp, _, _ ->
+                            mp.release()
+                            mainHandler.post { mediaPlayers.remove(mp) }
+                            true
+                        }
+                        mediaPlayer.setDataSource(pfd.fileDescriptor)
+                        mediaPlayer.prepare()
+                        mediaPlayer.setVolume(volume, volume)
+                        withContext(Dispatchers.Main) {
+                            mediaPlayers.add(mediaPlayer)
+                        }
+                        mediaPlayer.start()
+                    }
+                    return@launch
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Failed to play audio from resources: $fileName", e)
                 }
             }
-        }
 
-        // Fallback: try loading from assets
-        try {
-            context.assets.openFd(fileName).use { afd ->
-                val mediaPlayer =
-                    MediaPlayer().apply {
-                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                        prepare()
-                        setVolume(volume, volume)
-                        start()
+            // Fallback: try loading from assets
+            try {
+                context.assets.openFd(fileName).use { afd ->
+                    val mediaPlayer = MediaPlayer()
+                    mediaPlayer.setOnCompletionListener { mp ->
+                        mp.release()
+                        mainHandler.post { mediaPlayers.remove(mp) }
                     }
-                mediaPlayers.add(mediaPlayer)
+                    mediaPlayer.setOnErrorListener { mp, _, _ ->
+                        mp.release()
+                        mainHandler.post { mediaPlayers.remove(mp) }
+                        true
+                    }
+                    mediaPlayer.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                    mediaPlayer.prepare()
+                    mediaPlayer.setVolume(volume, volume)
+                    withContext(Dispatchers.Main) {
+                        mediaPlayers.add(mediaPlayer)
+                    }
+                    mediaPlayer.start()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to play audio from assets: $fileName", e)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
+
+    private const val TAG = "AudioPlaybackHelper"
+    private val mainHandler = Handler(Looper.getMainLooper())
 }

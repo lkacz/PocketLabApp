@@ -10,9 +10,9 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.*
-import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 
 class ScaleFragment : Fragment() {
     private var header: String? = null
@@ -298,6 +298,7 @@ class ScaleFragment : Fragment() {
             context = requireContext(),
             rawText = text,
             mediaFolderUri = resourcesFolderUri,
+            scope = viewLifecycleOwner.lifecycleScope,
             mediaPlayers = mediaPlayers,
         )
     }
@@ -320,8 +321,7 @@ class ScaleFragment : Fragment() {
 
         // Try loading from resources folder if available
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            val videoFile = parentFolder?.findFile(fileName)
+            val videoFile = ResourceFileCache.getFile(requireContext(), resourcesFolderUri, fileName)
             if (videoFile != null && videoFile.exists() && videoFile.isFile) {
                 videoView.visibility = View.VISIBLE
                 videoView.setVideoURI(videoFile.uri)
@@ -365,8 +365,7 @@ class ScaleFragment : Fragment() {
 
         // Try loading from resources folder if available
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            val htmlFile = parentFolder?.findFile(fileName)
+            val htmlFile = ResourceFileCache.getFile(requireContext(), resourcesFolderUri, fileName)
             if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
                 try {
                     requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->

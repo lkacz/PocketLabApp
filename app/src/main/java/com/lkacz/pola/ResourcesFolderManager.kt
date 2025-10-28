@@ -19,6 +19,7 @@ class ResourcesFolderManager(private val context: Context) {
             uri,
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
         )
+        ResourceFileCache.invalidateAll()
         sharedPref.edit().putString(RESOURCES_FOLDER_URI_KEY, uri.toString()).apply()
     }
 

@@ -2,7 +2,9 @@
 package com.lkacz.pola
 
 import android.content.Context
+import android.net.Uri
 import androidx.fragment.app.Fragment
+import kotlinx.coroutines.CoroutineScope
 
 class FragmentLoader(
     bufferedReader: java.io.BufferedReader,
@@ -12,6 +14,8 @@ class FragmentLoader(
     private val lines = mutableListOf<String>()
     private val labelMap = mutableMapOf<String, Int>()
     private var currentIndex = -1
+    private var preloadScope: CoroutineScope? = null
+    private var resourcesFolderUri: Uri? = null
 
     init {
         val rawLines = bufferedReader.readLines()
@@ -25,6 +29,11 @@ class FragmentLoader(
     }
 
     fun getCurrentCommandIndex(): Int = currentIndex
+
+    fun setPreloadScope(scope: CoroutineScope, resourcesUri: Uri?) {
+        preloadScope = scope
+        resourcesFolderUri = resourcesUri
+    }
 
     fun prepareForResume(resumeIndex: Int) {
         currentIndex = if (resumeIndex >= 0) resumeIndex - 1 else -1
@@ -191,21 +200,27 @@ class FragmentLoader(
                     continue
                 }
                 "SCALE", "SCALE[RANDOMIZED]" -> {
+                    preloadNext()
                     return createScaleFragment(parts)
                 }
                 "INSTRUCTION" -> {
+                    preloadNext()
                     return createInstructionFragment(parts)
                 }
                 "TIMER" -> {
+                    preloadNext()
                     return createTimerFragment(parts)
                 }
                 "INPUTFIELD" -> {
+                    preloadNext()
                     return createInputFieldFragment(parts, isRandom = false)
                 }
                 "INPUTFIELD[RANDOMIZED]" -> {
+                    preloadNext()
                     return createInputFieldFragment(parts, isRandom = true)
                 }
                 "HTML" -> {
+                    preloadNext()
                     return createHtmlFragment(parts)
                 }
                 "END" -> {
@@ -230,6 +245,40 @@ class FragmentLoader(
             return
         }
         currentIndex = targetIndex
+    }
+
+    private fun preloadNext() {
+        val scope = preloadScope ?: return
+        val uri = resourcesFolderUri ?: return
+        
+        // Look ahead to find the next displayable command (skip config directives and GOTO/LABEL/END)
+        var lookAheadIndex = currentIndex + 1
+        var depth = 0
+        while (lookAheadIndex < lines.size && depth < 10) {  // Limit depth to avoid excessive scanning
+            val line = lines[lookAheadIndex]
+            if (line.isBlank()) {
+                lookAheadIndex++
+                depth++
+                continue
+            }
+            
+            val directive = line.split(";").firstOrNull()?.trim()?.uppercase()
+            
+            // Stop preloading at control flow commands - we can't predict where execution will go
+            if (directive in listOf("GOTO", "LABEL", "END")) {
+                break
+            }
+            
+            // Preload media for displayable commands
+            if (directive in listOf("INSTRUCTION", "TIMER", "SCALE", "SCALE[RANDOMIZED]", 
+                                     "INPUTFIELD", "INPUTFIELD[RANDOMIZED]", "HTML")) {
+                MediaPreloader.preloadNextFragment(context, scope, uri, line)
+                break
+            }
+            
+            lookAheadIndex++
+            depth++
+        }
     }
 
     private fun createScaleFragment(parts: List<String>): Fragment {

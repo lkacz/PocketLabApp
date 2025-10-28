@@ -6,7 +6,6 @@ import android.net.Uri
 import android.text.Html
 import android.text.Spanned
 import androidx.core.text.HtmlCompat
-import androidx.documentfile.provider.DocumentFile
 
 class HtmlImageLoader private constructor(
     private val context: Context,
@@ -20,8 +19,7 @@ class HtmlImageLoader private constructor(
 
         // Try loading from resources folder if available
         if (parentFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(context, parentFolderUri)
-            val imageFile = parentFolder?.findFile(source)
+            val imageFile = ResourceFileCache.getFile(context, parentFolderUri, source)
             if (imageFile != null && imageFile.exists() && imageFile.isFile) {
                 return try {
                     context.contentResolver.openInputStream(imageFile.uri).use { stream ->

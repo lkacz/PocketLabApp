@@ -3,6 +3,14 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.3.5] - 2025-10-28
+### Added
+- Completion screen now shows a backup progress indicator and defers the "Close App" button until backups finish
+### Fixed
+- Eliminated race conditions when rebuilding the SAF resource cache and made completion fragment commits state-loss safe
+### Changed
+- Bumped Android app version to 1.3.5 (versionCode 135) and aligned documentation
+
 ## [1.3.4] - 2025-10-28
 ### Changed
 - Disabled release minification and resource shrinking (R8/ProGuard) to avoid obfuscation-related crashes

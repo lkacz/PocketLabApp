@@ -4,7 +4,7 @@
 
 A mobile research app for behavioral scientists and field studies.
 
-<table class="meta"><tbody><tr><th>Version</th><td>1.3.4</td></tr><tr><th>Developed by</th><td><i>Łukasz D. Kaczmarek, PhD, Adam Mickiewicz University, Psychophysiology Laboratory</i></td></tr><tr><th>License</th><td>GNU GPLv3 — community contributions are welcome.</td></tr></tbody></table>
+<table class="meta"><tbody><tr><th>Version</th><td>1.3.5</td></tr><tr><th>Developed by</th><td><i>Łukasz D. Kaczmarek, PhD, Adam Mickiewicz University, Psychophysiology Laboratory</i></td></tr><tr><th>License</th><td>GNU GPLv3 — community contributions are welcome.</td></tr></tbody></table>
 
 ## Why use PoLA?
 

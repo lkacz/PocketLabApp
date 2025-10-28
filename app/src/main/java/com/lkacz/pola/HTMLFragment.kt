@@ -10,8 +10,8 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.*
-import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 
 class HtmlFragment : Fragment() {
     private var fileName: String? = null
@@ -161,8 +161,7 @@ class HtmlFragment : Fragment() {
 
         // Try loading from resources folder if available
         if (resourcesFolderUri != null) {
-            val parentFolder = DocumentFile.fromTreeUri(requireContext(), resourcesFolderUri)
-            val htmlFile = parentFolder?.findFile(htmlFileName)
+            val htmlFile = ResourceFileCache.getFile(requireContext(), resourcesFolderUri, htmlFileName)
             if (htmlFile != null && htmlFile.exists() && htmlFile.isFile) {
                 try {
                     requireContext().contentResolver.openInputStream(htmlFile.uri)?.use { inputStream ->
@@ -193,6 +192,7 @@ class HtmlFragment : Fragment() {
             context = requireContext(),
             rawText = text,
             mediaFolderUri = resourcesFolderUri,
+            scope = viewLifecycleOwner.lifecycleScope,
             mediaPlayers = mediaPlayers,
         )
     }

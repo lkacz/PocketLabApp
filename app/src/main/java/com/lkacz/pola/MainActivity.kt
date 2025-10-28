@@ -23,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListener {
     private val channelId = "ForegroundServiceChannel"
@@ -99,6 +100,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol = protocolManager.getManipulatedProtocol()
         fragmentLoader = FragmentLoader(manipulatedProtocol, logger, this)
+        
+        // Set up preloader with lifecycle scope and resources folder
+        val resourcesFolderUri = ResourcesFolderManager(this).getResourcesFolderUri()
+        fragmentLoader.setPreloadScope(lifecycleScope, resourcesFolderUri)
+        
         val resumeIndex = pendingResumeIndex
         if (resumeIndex != null) {
             fragmentLoader.prepareForResume(resumeIndex)
@@ -262,42 +268,38 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         if (hasCompletedProtocol) return
         hasCompletedProtocol = true
         
-        // Launch completion process on main thread
+        // Create and show completion screen immediately (before slow backup process)
+        val completionFragment = CompletionFragment.newInstance()
+        supportFragmentManager.beginTransaction().apply {
+            setReorderingAllowed(true)
+            replace(fragmentContainerId, completionFragment)
+            // Use commitNowAllowingStateLoss to avoid IllegalStateException if called after onSaveInstanceState
+            commitNowAllowingStateLoss()
+        }
+        
+        // Launch backup process in background
         lifecycleScope.launch(Dispatchers.Main) {
             try {
-                // First, backup the log file (this runs on IO dispatcher internally)
-                logger.backupLogFile()
+                // Run backup on IO dispatcher (this is the slow part)
+                withContext(Dispatchers.IO) {
+                    logger.backupLogFile()
+                }
                 
-                // Small delay to ensure any pending operations complete
-                delay(200)
-                
-                // Check if activity is still valid
-                if (isFinishing || isDestroyed) return@launch
-                
-                // Show completion screen
-                val completionFragment = CompletionFragment.newInstance()
-                supportFragmentManager.beginTransaction().apply {
-                    setReorderingAllowed(true)
-                    replace(fragmentContainerId, completionFragment)
-                    commitAllowingStateLoss()
+                // Check if activity and fragment are still valid
+                if (!isFinishing && !isDestroyed && completionFragment.isAdded) {
+                    completionFragment.onBackupComplete()
                 }
             } catch (e: Exception) {
-                // If anything fails, log the error but still try to show completion screen
+                // If backup fails, still allow user to close the app
                 e.printStackTrace()
                 android.util.Log.e("MainActivity", "Error in onProtocolCompleted", e)
                 
-                if (!isFinishing && !isDestroyed) {
+                // Show button even on error so user isn't stuck
+                if (!isFinishing && !isDestroyed && completionFragment.isAdded) {
                     try {
-                        val completionFragment = CompletionFragment.newInstance()
-                        supportFragmentManager.beginTransaction().apply {
-                            setReorderingAllowed(true)
-                            replace(fragmentContainerId, completionFragment)
-                            commitAllowingStateLoss()
-                        }
-                    } catch (innerE: Exception) {
-                        innerE.printStackTrace()
-                        // Last resort - just finish the activity
-                        finish()
+                        completionFragment.onBackupComplete()
+                    } catch (fe: Exception) {
+                        fe.printStackTrace()
                     }
                 }
             }

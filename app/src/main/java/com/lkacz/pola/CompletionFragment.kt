@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
@@ -17,6 +18,9 @@ import com.google.android.material.button.MaterialButton
 
 class CompletionFragment : Fragment() {
     private lateinit var sharedPref: android.content.SharedPreferences
+    private lateinit var progressBar: ProgressBar
+    private lateinit var statusTextView: TextView
+    private lateinit var closeButton: MaterialButton
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -101,10 +105,43 @@ class CompletionFragment : Fragment() {
             }
         rootLayout.addView(messageTextView)
 
-        // Close button
-        val closeButton =
+        // Progress bar (initially visible)
+        progressBar =
+            ProgressBar(requireContext()).apply {
+                isIndeterminate = true
+                contentDescription = "Creating backup files"
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(16)
+                    }
+            }
+        rootLayout.addView(progressBar)
+
+        // Status text (initially shows backup message)
+        statusTextView =
+            TextView(requireContext()).apply {
+                text = "Creating backups..."
+                textSize = 16f
+                setTextColor(ColorManager.getBodyTextColor(requireContext()))
+                gravity = Gravity.CENTER
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply {
+                        bottomMargin = dpToPx(24)
+                    }
+            }
+        rootLayout.addView(statusTextView)
+
+        // Close button (initially hidden)
+        closeButton =
             MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonStyle).apply {
                 text = "Close App"
+                visibility = View.GONE
                 layoutParams =
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -118,6 +155,19 @@ class CompletionFragment : Fragment() {
         rootLayout.addView(closeButton)
 
         return rootLayout
+    }
+
+    /**
+     * Called when backup process completes - hides progress indicator and shows close button
+     */
+    fun onBackupComplete() {
+        // Defensive checks to ensure fragment and views are still valid
+        if (!isAdded || view == null) return
+        
+        // Safely update UI on main thread
+        progressBar.visibility = View.GONE
+        statusTextView.visibility = View.GONE
+        closeButton.visibility = View.VISIBLE
     }
 
     private fun clearProtocolProgress() {
