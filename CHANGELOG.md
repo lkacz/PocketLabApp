@@ -3,6 +3,11 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.3.6] - 2025-12-28
+### Changed
+- Changed foreground service type from `dataSync` to `specialUse` for Play Store compliance
+- Bumped Android app version to 1.3.6 (versionCode 136)
+
 ## [1.3.5] - 2025-10-28
 ### Added
 - Completion screen now shows a backup progress indicator and defers the "Close App" button until backups finish
