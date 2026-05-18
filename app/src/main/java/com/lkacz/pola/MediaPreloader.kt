@@ -1,7 +1,6 @@
 package com.lkacz.pola
 
 import android.content.Context
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -40,32 +39,32 @@ object MediaPreloader {
 
                 when (directive) {
                     "INSTRUCTION" -> {
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1))  // header
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2))  // body
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(3))  // button
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1)) // header
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2)) // body
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(3)) // button
                     }
                     "TIMER" -> {
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1))  // header
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2))  // body
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(4))  // button
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1)) // header
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2)) // body
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(4)) // button
                     }
                     "SCALE", "SCALE[RANDOMIZED]" -> {
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1))  // header
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2))  // body
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(3))  // item
-                        parts.drop(4).forEach { preloadTextMedia(context, resourcesFolderUri, it) }  // responses
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1)) // header
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2)) // body
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(3)) // item
+                        parts.drop(4).forEach { preloadTextMedia(context, resourcesFolderUri, it) } // responses
                     }
                     "INPUTFIELD", "INPUTFIELD[RANDOMIZED]" -> {
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1))  // header
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2))  // body
-                        preloadTextMedia(context, resourcesFolderUri, parts.lastOrNull())  // button
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(1)) // header
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2)) // body
+                        preloadTextMedia(context, resourcesFolderUri, parts.lastOrNull()) // button
                     }
                     "HTML" -> {
                         val htmlFile = parts.getOrNull(1)
                         if (!htmlFile.isNullOrBlank()) {
                             ResourceFileCache.getFile(context, resourcesFolderUri, htmlFile)
                         }
-                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2))  // button
+                        preloadTextMedia(context, resourcesFolderUri, parts.getOrNull(2)) // button
                     }
                 }
             } catch (e: Exception) {

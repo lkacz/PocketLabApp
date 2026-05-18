@@ -12,10 +12,10 @@ class FileOperations(
 ) {
     @Volatile
     private var targetFile: File = initialFile
-    
+
     @Volatile
     private var writer: BufferedWriter? = null
-    
+
     private val lock = Any()
 
     fun createFileAndFolder() {
@@ -26,13 +26,13 @@ class FileOperations(
                 }
                 val current = targetFile
                 val isFileNewlyCreated = if (!current.exists()) current.createNewFile() else false
-                
+
                 // Close existing writer if any
                 writer?.close()
-                
+
                 // Open new writer
                 writer = BufferedWriter(OutputStreamWriter(FileOutputStream(current, true), Charsets.UTF_8))
-                
+
                 if (isFileNewlyCreated) {
                     writeHeaderInternal()
                 }
@@ -49,19 +49,19 @@ class FileOperations(
                 // Flush and close old writer
                 writer?.flush()
                 writer?.close()
-                
+
                 targetFile = newFile
-                
+
                 // Check if new file needs header
                 val needsHeader = !newFile.exists()
                 if (needsHeader) {
                     newFile.parentFile?.mkdirs()
                     newFile.createNewFile()
                 }
-                
+
                 // Open new writer
                 writer = BufferedWriter(OutputStreamWriter(FileOutputStream(newFile, true), Charsets.UTF_8))
-                
+
                 if (needsHeader) {
                     writeHeaderInternal()
                 }
@@ -70,7 +70,7 @@ class FileOperations(
             }
         }
     }
-    
+
     private fun writeHeaderInternal() {
         try {
             writer?.write("DATE\tTIME\tHEADER\tBODY\tITEM\tITEM RESPONSE (number)\tITEM RESPONSE (text)\tWAITING TIME\tOTHER\n")
@@ -91,7 +91,7 @@ class FileOperations(
                     writer = BufferedWriter(OutputStreamWriter(FileOutputStream(targetFile, true), Charsets.UTF_8))
                     writeHeaderInternal()
                 }
-                
+
                 // Write to buffer (does NOT immediately flush to disk)
                 writer?.write(logMessage)
                 // Note: We intentionally don't flush here to avoid blocking
@@ -101,7 +101,7 @@ class FileOperations(
             }
         }
     }
-    
+
     fun flush() {
         synchronized(lock) {
             try {
@@ -111,7 +111,7 @@ class FileOperations(
             }
         }
     }
-    
+
     fun close() {
         synchronized(lock) {
             try {

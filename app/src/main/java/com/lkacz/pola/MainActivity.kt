@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         if (savedInstanceState == null) {
             // Show welcome dialog on first launch
             WelcomeDialogManager.showWelcomeDialogIfNeeded(this)
-            
+
             maybeShowResumeProtocolPrompt(fragmentContainer)
         }
     }
@@ -100,11 +100,11 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         protocolManager.readOriginalProtocol(protocolUri)
         val manipulatedProtocol = protocolManager.getManipulatedProtocol()
         fragmentLoader = FragmentLoader(manipulatedProtocol, logger, this)
-        
+
         // Set up preloader with lifecycle scope and resources folder
         val resourcesFolderUri = ResourcesFolderManager(this).getResourcesFolderUri()
         fragmentLoader.setPreloadScope(lifecycleScope, resourcesFolderUri)
-        
+
         val resumeIndex = pendingResumeIndex
         if (resumeIndex != null) {
             fragmentLoader.prepareForResume(resumeIndex)
@@ -267,7 +267,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
     private fun onProtocolCompleted() {
         if (hasCompletedProtocol) return
         hasCompletedProtocol = true
-        
+
         // Create and show completion screen immediately (before slow backup process)
         val completionFragment = CompletionFragment.newInstance()
         supportFragmentManager.beginTransaction().apply {
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
             // Use commitNowAllowingStateLoss to avoid IllegalStateException if called after onSaveInstanceState
             commitNowAllowingStateLoss()
         }
-        
+
         // Launch backup process in background
         lifecycleScope.launch(Dispatchers.Main) {
             try {
@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 withContext(Dispatchers.IO) {
                     logger.backupLogFile()
                 }
-                
+
                 // Check if activity and fragment are still valid
                 if (!isFinishing && !isDestroyed && completionFragment.isAdded) {
                     completionFragment.onBackupComplete()
@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                 // If backup fails, still allow user to close the app
                 e.printStackTrace()
                 android.util.Log.e("MainActivity", "Error in onProtocolCompleted", e)
-                
+
                 // Show button even on error so user isn't stuck
                 if (!isFinishing && !isDestroyed && completionFragment.isAdded) {
                     try {

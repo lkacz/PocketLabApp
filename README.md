@@ -31,11 +31,11 @@ Unknown, GPL-3.0 licenses found
 
 ## Release status
 
-- **Current version:** 1.1.2 (see [`CHANGELOG.md`](./CHANGELOG.md))
+- **Current version:** 1.3.6 (see [`CHANGELOG.md`](./CHANGELOG.md))
 - **Build targets:** Debug and release builds validated with Gradle 8 / Java 17
 - **Quality gates:** `ktlintCheck`, `testDebugUnitTest`, and `assembleRelease` must pass before tagging a release
 
-Refer to the changelog for detailed highlights and known considerations for the 1.0.0 rollout.
+Refer to the changelog for detailed highlights and known considerations for the current release.
 
 ## Developer quick start
 

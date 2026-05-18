@@ -47,7 +47,10 @@ class HtmlImageLoader private constructor(
         }
     }
 
-    private fun applyBounds(drawable: Drawable, sizeInfo: SizeInfo?) {
+    private fun applyBounds(
+        drawable: Drawable,
+        sizeInfo: SizeInfo?,
+    ) {
         if (sizeInfo == null) {
             // No size specified - use intrinsic dimensions
             drawable.setBounds(0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
@@ -57,7 +60,7 @@ class HtmlImageLoader private constructor(
         // Get screen width in pixels for responsive sizing
         val screenWidthPx = context.resources.displayMetrics.widthPixels
         val density = context.resources.displayMetrics.density
-        
+
         when {
             sizeInfo.width > 0 && sizeInfo.height > 0 -> {
                 // Both width and height specified - treat as max width in dp

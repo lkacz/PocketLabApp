@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -21,13 +20,17 @@ object WelcomeDialogManager {
         }
     }
 
-    private fun showWelcomeDialog(context: Context, sharedPref: SharedPreferences) {
+    private fun showWelcomeDialog(
+        context: Context,
+        sharedPref: SharedPreferences,
+    ) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_welcome, null)
         val messageTextView = dialogView.findViewById<TextView>(R.id.welcome_message)
         val dontShowAgainCheckBox = dialogView.findViewById<CheckBox>(R.id.dont_show_again_checkbox)
 
         // Format the message with HTML for links and formatting
-        val messageHtml = """
+        val messageHtml =
+            """
             <p><b>Welcome to Pocket Lab App!</b></p>
             
             <p>This app runs research protocols saved as <b>.txt files</b>.</p>
@@ -42,20 +45,21 @@ object WelcomeDialogManager {
             Transfer protocol files to your phone via USB cable or cloud storage (Google Drive, Dropbox, etc.)</p>
             
             <p>For detailed instructions, consult the <b>Manual</b> from the main screen.</p>
-        """.trimIndent()
+            """.trimIndent()
 
         messageTextView.text = HtmlCompat.fromHtml(messageHtml, HtmlCompat.FROM_HTML_MODE_LEGACY)
         messageTextView.movementMethod = LinkMovementMethod.getInstance()
 
-        val dialog = AlertDialog.Builder(context)
-            .setView(dialogView)
-            .setPositiveButton("Got it!") { _, _ ->
-                if (dontShowAgainCheckBox.isChecked) {
-                    sharedPref.edit().putBoolean(Prefs.KEY_WELCOME_DIALOG_SHOWN, true).apply()
+        val dialog =
+            AlertDialog.Builder(context)
+                .setView(dialogView)
+                .setPositiveButton("Got it!") { _, _ ->
+                    if (dontShowAgainCheckBox.isChecked) {
+                        sharedPref.edit().putBoolean(Prefs.KEY_WELCOME_DIALOG_SHOWN, true).apply()
+                    }
                 }
-            }
-            .setCancelable(false)
-            .create()
+                .setCancelable(false)
+                .create()
 
         dialog.show()
     }

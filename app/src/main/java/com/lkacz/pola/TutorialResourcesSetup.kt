@@ -12,16 +12,16 @@ import kotlinx.coroutines.withContext
  * Copies bundled assets to user-selected folder on first run.
  */
 class TutorialResourcesSetup(private val context: Context) {
-    
-    private val assetFiles = listOf(
-        "pola_sound.mp3",
-        "pola_video.mp4",
-        "pola_pic.jpg",
-        "pola_reaction_time.html",
-        "psnakev2.html",
-        "wiki.html"
-    )
-    
+    private val assetFiles =
+        listOf(
+            "pola_sound.mp3",
+            "pola_video.mp4",
+            "pola_pic.jpg",
+            "pola_reaction_time.html",
+            "psnakev2.html",
+            "wiki.html",
+        )
+
     /**
      * Copies tutorial/demo assets to the specified resources folder.
      * Runs on a background thread to avoid blocking the UI.
@@ -31,7 +31,7 @@ class TutorialResourcesSetup(private val context: Context) {
         return withContext(Dispatchers.IO) {
             try {
                 val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return@withContext false
-                
+
                 var allSuccessful = true
                 assetFiles.forEach { fileName ->
                     // Check if file already exists
@@ -40,7 +40,7 @@ class TutorialResourcesSetup(private val context: Context) {
                         // Skip if already exists
                         return@forEach
                     }
-                    
+
                     // Create new file and copy content
                     val mimeType = getMimeType(fileName)
                     val newFile = parentFolder.createFile(mimeType, fileName)
@@ -48,7 +48,7 @@ class TutorialResourcesSetup(private val context: Context) {
                         allSuccessful = false
                         return@forEach
                     }
-                    
+
                     try {
                         context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
                             context.assets.open(fileName).use { inputStream ->
@@ -73,13 +73,13 @@ class TutorialResourcesSetup(private val context: Context) {
             }
         }
     }
-    
+
     /**
      * Checks if resources have already been set up in the specified folder.
      */
     fun areResourcesSetup(resourcesFolderUri: Uri?): Boolean {
         if (resourcesFolderUri == null) return false
-        
+
         return try {
             val parentFolder = DocumentFile.fromTreeUri(context, resourcesFolderUri) ?: return false
             // Check if at least some key files exist
@@ -91,7 +91,7 @@ class TutorialResourcesSetup(private val context: Context) {
             false
         }
     }
-    
+
     private fun getMimeType(fileName: String): String {
         return when {
             fileName.endsWith(".mp3") -> "audio/mpeg"

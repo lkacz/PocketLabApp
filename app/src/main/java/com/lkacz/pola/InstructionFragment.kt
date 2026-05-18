@@ -176,12 +176,12 @@ class InstructionFragment : Fragment() {
             dpToPx(16),
             dpToPx(topMargin),
             dpToPx(16),
-            dpToPx(bottomMargin)
+            dpToPx(bottomMargin),
         )
 
         val resourcesFolderUri = ResourcesFolderManager(requireContext()).getResourcesFolderUri()
 
-    val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
+        val cleanHeader = parseAndPlayAudioIfAny(header.orEmpty(), resourcesFolderUri)
         val refinedHeader = checkAndLoadHtml(cleanHeader, resourcesFolderUri)
         val cleanBody = parseAndPlayAudioIfAny(body.orEmpty(), resourcesFolderUri)
         val refinedBody = checkAndLoadHtml(cleanBody, resourcesFolderUri)

@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object ResourceFileCache {
     private const val TAG = "ResourceFileCache"
-    
+
     private data class CacheEntry(
         val filesByName: Map<String, DocumentFile>,
         val createdAtMs: Long,
@@ -33,14 +33,14 @@ object ResourceFileCache {
         }
         val key = folderUri.toString()
         val now = SystemClock.elapsedRealtime()
-        
+
         // Check if we have a valid cached entry
         cache[key]?.let { entry ->
             if (now - entry.createdAtMs <= CACHE_TTL_MS) {
                 return entry.filesByName[fileName.lowercase()]
             }
         }
-        
+
         // Cache is missing or expired - need to rebuild
         // Use a per-folder lock to prevent multiple threads from building the same cache
         val lock = buildLocks.getOrPut(key) { Any() }
@@ -51,7 +51,7 @@ object ResourceFileCache {
                     return entry.filesByName[fileName.lowercase()]
                 }
             }
-            
+
             // Build the cache
             buildCache(context, folderUri)?.let { newEntry ->
                 cache[key] = newEntry
@@ -59,7 +59,7 @@ object ResourceFileCache {
                 return newEntry.filesByName[fileName.lowercase()]
             }
         }
-        
+
         return null
     }
 

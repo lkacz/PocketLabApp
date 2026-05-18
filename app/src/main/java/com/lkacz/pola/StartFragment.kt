@@ -609,23 +609,24 @@ class StartFragment : Fragment() {
         val currentMode = sharedPref.getString(Prefs.KEY_CURRENT_MODE, null)
         val isTutorialOrDemo = currentMode == "tutorial" || currentMode == "demo"
         val resourcesFolderUri = resourcesFolderManager.getResourcesFolderUri()
-        
+
         // Only prompt for setup if:
         // 1. It's tutorial/demo mode AND
         // 2. Either no resources folder is set OR tutorial files don't exist in the folder
         if (isTutorialOrDemo && !tutorialResourcesSetup.areResourcesSetup(resourcesFolderUri)) {
             // Show dialog explaining we need to set up resources folder
-            val message = if (resourcesFolderUri == null) {
-                "The tutorial protocol includes media files (audio, video, images). " +
-                    "Please select a folder where these resources will be copied for easy access.\n\n" +
-                    "This is a one-time setup that will help you learn how to manage protocol resources."
-            } else {
-                "The tutorial requires specific media files that aren't in your current resources folder. " +
-                    "You can either:\n" +
-                    "• Select the same folder to add tutorial files, or\n" +
-                    "• Choose a different folder for tutorial resources"
-            }
-            
+            val message =
+                if (resourcesFolderUri == null) {
+                    "The tutorial protocol includes media files (audio, video, images). " +
+                        "Please select a folder where these resources will be copied for easy access.\n\n" +
+                        "This is a one-time setup that will help you learn how to manage protocol resources."
+                } else {
+                    "The tutorial requires specific media files that aren't in your current resources folder. " +
+                        "You can either:\n" +
+                        "• Select the same folder to add tutorial files, or\n" +
+                        "• Choose a different folder for tutorial resources"
+                }
+
             AlertDialogBuilderUtils.showConfirmation(
                 requireContext(),
                 "Set up Tutorial Resources",
@@ -636,7 +637,7 @@ class StartFragment : Fragment() {
             )
             return
         }
-        
+
         // Normal start study flow
         confirmationDialogManager.showStartStudyConfirmation(
             protocolUri,
@@ -653,16 +654,16 @@ class StartFragment : Fragment() {
     private fun handleTutorialResourcesSetup(uri: Uri) {
         // Show toast immediately to inform user
         showToast("Copying tutorial resources... this may take a moment")
-        
+
         // Copy assets in background to avoid blocking UI
         lifecycleScope.launch {
             val success = tutorialResourcesSetup.copyAssetsToResourcesFolder(uri)
-            
+
             if (success) {
                 // Only store the URI after successful copy
                 resourcesFolderManager.storeResourcesFolderUri(uri)
                 showToast("Tutorial resources copied successfully!")
-                
+
                 // Now check if output folder is set up
                 if (outputFolderUri == null) {
                     AlertDialogBuilderUtils.showConfirmation(
@@ -687,7 +688,7 @@ class StartFragment : Fragment() {
     private fun handleTutorialOutputSetup(uri: Uri) {
         handleOutputFolderSelection(uri)
         showToast("Output folder set up successfully!")
-        
+
         // Now proceed with starting the study
         proceedWithStartStudy()
     }

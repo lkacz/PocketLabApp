@@ -1726,12 +1726,12 @@ class AppearanceCustomizationDialog : DialogFragment() {
         tvTimerPaddingVValue.text = "0"
         applyTimerTextPadding()
 
-    val defaultScreenMargin = 16
-    sliderTopMargin.progress = defaultScreenMargin
-    sliderBottomMargin.progress = defaultScreenMargin
-    tvTopMarginValue.text = defaultScreenMargin.toString()
-    tvBottomMarginValue.text = defaultScreenMargin.toString()
-    applyScreenMargins(defaultScreenMargin, defaultScreenMargin)
+        val defaultScreenMargin = 16
+        sliderTopMargin.progress = defaultScreenMargin
+        sliderBottomMargin.progress = defaultScreenMargin
+        tvTopMarginValue.text = defaultScreenMargin.toString()
+        tvBottomMarginValue.text = defaultScreenMargin.toString()
+        applyScreenMargins(defaultScreenMargin, defaultScreenMargin)
 
         spinnerContinueAlignment.setSelection(1, false)
         spinnerHeaderAlignment.setSelection(1, false)

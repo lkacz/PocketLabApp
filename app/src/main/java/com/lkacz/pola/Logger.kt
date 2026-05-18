@@ -127,7 +127,7 @@ class Logger private constructor(private val context: Context) {
             awaitPendingWrites()
             // Flush any buffered writes before backing up
             fileOperations.flush()
-            
+
             if (!currentFile.exists()) return@withContext
             try {
                 val xlsxFile = File(mainFolder, currentFileName.removeSuffix(TSV_EXTENSION) + ".xlsx")

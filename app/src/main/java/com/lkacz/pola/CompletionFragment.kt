@@ -163,7 +163,7 @@ class CompletionFragment : Fragment() {
     fun onBackupComplete() {
         // Defensive checks to ensure fragment and views are still valid
         if (!isAdded || view == null) return
-        
+
         // Safely update UI on main thread
         progressBar.visibility = View.GONE
         statusTextView.visibility = View.GONE

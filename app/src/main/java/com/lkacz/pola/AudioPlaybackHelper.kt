@@ -7,11 +7,11 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import java.util.regex.Pattern
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.regex.Pattern
 
 /**
  * Parses text for media placeholders (e.g., <filename.mp3>) and plays them if found,
