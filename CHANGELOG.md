@@ -3,6 +3,12 @@
 ## [Unreleased]
 _No changes yet._
 
+## [1.3.7] - 2026-08-27
+### Changed
+- Updated `targetSdk` and `compileSdk` to API 36 (Android 16) to meet Google Play requirements
+- Added system bar, display cutout, and keyboard inset handling for edge-to-edge layouts
+- Bumped Android app version to 1.3.7 (versionCode 137)
+
 ## [1.3.6] - 2025-12-28
 ### Changed
 - Changed foreground service type from `dataSync` to `specialUse` for Play Store compliance

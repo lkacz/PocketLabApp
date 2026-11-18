@@ -1,4 +1,4 @@
-# Pocket Lab v1.3.6
+# Pocket Lab v1.3.7
 
 ![CI](https://github.com/lkacz/PocketLabApp/actions/workflows/ci.yml/badge.svg)
 
@@ -31,8 +31,8 @@ Unknown, GPL-3.0 licenses found
 
 ## Release status
 
-- **Current version:** 1.3.6 (see [`CHANGELOG.md`](./CHANGELOG.md))
-- **Build targets:** Debug and release builds validated with Gradle 8 / Java 17
+- **Current version:** 1.3.7 (see [`CHANGELOG.md`](./CHANGELOG.md))
+- **Build targets:** Android 16 (API 36); debug and release builds validated with Gradle 8 / Java 17
 - **Quality gates:** `ktlintCheck`, `testDebugUnitTest`, and `assembleRelease` must pass before tagging a release
 
 Refer to the changelog for detailed highlights and known considerations for the current release.
@@ -53,7 +53,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run-app.ps1
 
 ### Prerequisites
 
-- Android Studio / Android SDK (configured via `local.properties`)
+- Android Studio / Android SDK Platform 36 (configured via `local.properties`)
 - Java 17 runtime (Gradle 8.x compatible)
 - PowerShell 5+ on Windows for helper scripts
 

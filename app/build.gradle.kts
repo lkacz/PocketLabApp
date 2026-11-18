@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.lkacz.pola"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.lkacz.pola"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 136
-        versionName = "1.3.6"
+        targetSdk = 36
+        versionCode = 137
+        versionName = "1.3.7"
 
         buildConfigField("String", "APP_VERSION", "\"${'$'}versionName\"")
         buildConfigField("int", "APP_VERSION_CODE", versionCode.toString())

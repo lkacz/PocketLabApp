@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.transition.Fade
 import android.os.StrictMode
@@ -17,6 +18,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
@@ -66,6 +69,13 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
         logger = Logger.getInstance(this)
         sharedPref = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
+        val systemInsets = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+        val contentInsets =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                systemInsets or WindowInsetsCompat.Type.ime()
+            } else {
+                systemInsets
+            }
         val fragmentContainer =
             androidx.fragment.app.FragmentContainerView(this).apply {
                 id = fragmentContainerId
@@ -74,8 +84,14 @@ class MainActivity : AppCompatActivity(), StartFragment.OnProtocolSelectedListen
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
+                ViewCompat.setOnApplyWindowInsetsListener(this) { view, windowInsets ->
+                    val insets = windowInsets.getInsets(contentInsets)
+                    view.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+                    windowInsets
+                }
             }
         setContentView(fragmentContainer)
+        ViewCompat.requestApplyInsets(fragmentContainer)
 
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
